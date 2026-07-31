@@ -239,7 +239,7 @@ def compile_jsonb_sqlite(element, compiler, **kw):
 | `.ilike()` en queries | ✅ SQLAlchemy traduce | `LOWER(col) LIKE LOWER(val)` en SQLite |
 | `SAEnum` en modelos | ✅ SQLAlchemy genera CHECK | `CHECK (col IN ('VAL1', 'VAL2'))` |
 | `DECIMAL` columns | ✅ SQLite NUMERIC type | Almacenamiento correcto de precisión |
-| Frontend | ✅ Sin cambios | API HTTP pura, sin referencias a PostgreSQL |
+| Frontend | ✅ API_BASE sin prefijo `/api` | El prefijo era manejado por nginx en Docker; se eliminó para ejecutable local |
 | `main.py` startup | ✅ `create_all()` | Crea tablas en SQLite automáticamente |
 
 ---
@@ -261,15 +261,14 @@ pytest tests/ -v
 ### 7.1 Arquitectura
 
 ```
-licoreria-desktop/
-├── src-tauri/
-│   ├── bin/
-│   │   └── sistema_licoreria-x86_64-pc-windows-msvc.exe  ← sidecar (PyInstaller)
-│   ├── src/lib.rs          ← Tauri commands (setup, login, etc.)
-│   ├── tauri.conf.json     ← Configuración de ventana, sidecar, permisos
-│   └── Cargo.toml          ← Dependencias Rust (tauri, dirs)
-├── frontend/dist/           ← Build estático de React (copiado por build.bat)
-└── src-tauri/icons/         ← Iconos de la app (placeholder)
+Sistema Licoreria_1.0.0_x64-setup.exe (NSIS, ~56 MB)
+├── licoreria-desktop.exe          ← Tauri (ventana webview, ~11 MB)
+├── sistema_licoreria.exe          ← PyInstaller onefile (~54 MB)
+│   ├── FastAPI + uvicorn
+│   ├── SQLite (AppData/Local/SistemaLicoreria/licoreria.db)
+│   ├── Frontend React compilado (embebido en el .exe)
+│   └── uploads/ (imágenes de facturas)
+└── uninstall.exe
 ```
 
 ### 7.2 Flujo de ejecución
@@ -302,15 +301,25 @@ licoreria-desktop/
 ### 7.5 Build completo
 
 ```bat
-cd backend
-.\build.bat
+:: 1. Frontend
+cd frontend
+pnpm install
+pnpm build
+
+:: 2. Backend (PyInstaller onefile)
+cd ..\backend
+pyinstaller build.spec --clean --noconfirm
+copy /Y dist\sistema_licoreria.exe dist\sistema_licoreria-x86_64-pc-windows-msvc.exe
+
+:: 3. Instalador NSIS
+cd ..\licoreria-desktop\src-tauri
+cargo tauri build
+
+:: Resultado:
+:: licoreria-desktop\src-tauri\target\release\bundle\nsis\Sistema Licoreria_1.0.0_x64-setup.exe
 ```
 
-El script ejecuta:
-1. `pnpm install && pnpm build` en frontend
-2. `pyinstaller build.spec` → genera `dist/sistema_licoreria/sistema_licoreria.exe`
-3. Copia el sidecar a `licoreria-desktop/src-tauri/bin/sistema_licoreria-x86_64-pc-windows-msvc.exe`
-4. `cargo build --release` en `licoreria-desktop/src-tauri/` → genera `licoreria-desktop.exe`
+O ejecutar `backend\build.bat` que hace los pasos 1 y 2.
 
 ### 7.6 Archivos nuevos
 
@@ -330,6 +339,7 @@ El script ejecuta:
 | Tarea | Prioridad | Notas |
 |-------|-----------|-------|
 | Generar iconos reales | Media | Reemplazar placeholders PNG con icono del negocio |
-| MSI installer (WiX) | Baja | Requiere conexión a GitHub para descargar WiX |
 | Ajuste de umbral | Media | Evaluar con datos reales si 30.0 es el umbral óptimo |
 | Migraciones SQLite | Baja | Si el esquema cambia, considerar Alembic para SQLite |
+
+> Para documentación completa de errores durante el empaquetado, ver `docs/DESKTOP_BUILD_LOG.md`.
