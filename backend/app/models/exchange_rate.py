@@ -1,0 +1,20 @@
+from datetime import datetime
+from decimal import Decimal
+
+from sqlalchemy import Integer, DECIMAL, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.database import Base
+from app.core.timezone import VE_NOW
+
+
+class ExchangeRate(Base):
+    __tablename__ = "historico_tasas"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    moneda: Mapped[str] = mapped_column(SAEnum("USD", "EUR", name="moneda_tasa"), nullable=False)
+    tasa_ves: Mapped[Decimal] = mapped_column(DECIMAL(10, 4), nullable=False)
+    fecha_registro: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=VE_NOW)
+    registrado_por: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    registered_by: Mapped["User | None"] = relationship("User", back_populates="exchange_rates")
+    sales: Mapped[list["Sale"]] = relationship("Sale", back_populates="exchange_rate")

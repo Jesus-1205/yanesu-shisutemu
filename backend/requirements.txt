@@ -1,0 +1,19 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+sqlalchemy==2.0.51
+psycopg2-binary==2.9.10
+alembic==1.14.1
+python-dotenv==1.0.1
+pydantic[email]==2.13.4
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose[cryptography]==3.3.0
+pytest==8.3.4
+httpx==0.28.1
+pytest-cov==6.0.0
+requests==2.32.3
+beautifulsoup4==4.12.3
+Pillow==11.1.0; python_version < "3.14"
+tzdata==2025.2
+cryptography==44.0.3

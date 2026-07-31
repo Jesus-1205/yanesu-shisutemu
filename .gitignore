@@ -1,0 +1,75 @@
+# ──────────────────────────────────────
+# Python (backend)
+# ──────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+.venv/
+venv/
+env/
+*.env
+!.env.example
+.mypy_cache/
+.ruff_cache/
+
+# ──────────────────────────────────────
+# Node / Frontend
+# ──────────────────────────────────────
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.pnpm-debug.log
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+
+# ──────────────────────────────────────
+# IDE / Editor
+# ──────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ──────────────────────────────────────
+# Testing / Coverage
+# ──────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+
+# ──────────────────────────────────────
+# Bases de datos locales
+# ──────────────────────────────────────
+*.sqlite3
+*.db
+
+# ──────────────────────────────────────
+# Logs / Temp
+# ──────────────────────────────────────
+*.log
+*.tmp
+*.bak
+
+# Archivos Temporales Microsoft
+~$*
+
+# ──────────────────────────────────────
+# Datos legacy (sensibles, no commitear)
+# ──────────────────────────────────────
+data/legacy/
+
+# ──────────────────────────────────────
+# OpenCode config (local secrets)
+# ──────────────────────────────────────
+.opencode/opencode.json
+.agents/
