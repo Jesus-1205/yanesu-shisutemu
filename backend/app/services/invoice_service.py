@@ -3,7 +3,8 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
-from sqlalchemy import func, or_, select, text
+from rapidfuzz import fuzz, process
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import ConflictError, EntityNotFoundError
@@ -128,11 +129,14 @@ def _save_invoice_image(
     return str(dest)
 
 
-# ── Fuzzy Matching con pg_trgm ───────────────────────────────────────────
+# ── Fuzzy Matching con rapidfuzz ──────────────────────────────────────────
 
 def _similarity_threshold() -> float:
-    """Umbral mínimo de similitud para considerar PARTIAL."""
-    return 0.3
+    """Umbral mínimo de similitud para considerar PARTIAL.
+
+    Escala: 0-100 (rapidfuzz). 30.0 ≈ 30% de similitud.
+    """
+    return 30.0
 
 
 def _strip_unidades(nombre: str) -> str:
@@ -156,16 +160,19 @@ def _strip_unidades(nombre: str) -> str:
 def fuzzy_match_proveedor(
     db: Session, nombre_ia: str
 ) -> MatchedSupplier:
-    """Busca proveedor por similitud trigram.
+    """Busca proveedor por similitud usando rapidfuzz token_set_ratio.
 
     Lógica:
-      1. Intento EXACT (ILIKE)
-      2. Si no, busca los 3 más similares con pg_trgm
-      3. Si el mejor supera umbral → PARTIAL, si no → NOT_FOUND
+      1. Intento EXACT (case-insensitive)
+      2. Carga todos los proveedores a memoria (tabla pequeña)
+      3. process.extract con token_set_ratio, limit=3
+      4. Si el mejor supera umbral → PARTIAL, si no → NOT_FOUND
     """
-    # Intento EXACT
+    nombre_ia_lower = nombre_ia.strip().lower()
+
+    # 1. Intento EXACT
     stmt_exact = select(Supplier).where(
-        func.lower(Supplier.nombre) == func.lower(nombre_ia)
+        func.lower(Supplier.nombre) == nombre_ia_lower
     )
     exacto = db.execute(stmt_exact).scalars().first()
     if exacto:
@@ -176,14 +183,10 @@ def fuzzy_match_proveedor(
             confidence=1.0,
         )
 
-    # Búsqueda difusa con trigram
-    stmt = select(
-        Supplier,
-        func.similarity(Supplier.nombre, nombre_ia).label("sim"),
-    ).order_by(text("sim DESC")).limit(3)
-
-    results = db.execute(stmt).all()
-    if not results:
+    # 2. Cargar todos los proveedores a memoria
+    stmt = select(Supplier)
+    proveedores = db.execute(stmt).scalars().all()
+    if not proveedores:
         return MatchedSupplier(
             id=0,
             nombre=nombre_ia,
@@ -191,121 +194,116 @@ def fuzzy_match_proveedor(
             confidence=0.0,
         )
 
-    best_supplier, best_sim = results[0]
-    if best_sim >= _similarity_threshold():
+    # 3. Construir diccionario {nombre: Supplier}
+    choices = {p.nombre: p for p in proveedores}
+
+    # 4. Buscar los 3 más similares con token_set_ratio
+    matches = process.extract(
+        nombre_ia,
+        choices.keys(),
+        scorer=fuzz.token_set_ratio,
+        limit=3,
+    )
+
+    if not matches:
+        return MatchedSupplier(
+            id=0,
+            nombre=nombre_ia,
+            match_status="NOT_FOUND",
+            confidence=0.0,
+        )
+
+    # 5. Evaluar mejor resultado
+    best_nombre, best_score, _ = matches[0]
+    best_supplier = choices[best_nombre]
+
+    if best_score >= _similarity_threshold():
         return MatchedSupplier(
             id=best_supplier.id,
             nombre=best_supplier.nombre,
             match_status="PARTIAL",
-            confidence=float(best_sim),
+            confidence=best_score / 100.0,
         )
 
     return MatchedSupplier(
         id=0,
         nombre=nombre_ia,
         match_status="NOT_FOUND",
-        confidence=float(best_sim) if results else 0.0,
+        confidence=best_score / 100.0,
     )
 
 
 def fuzzy_match_productos_batch(
     db: Session, productos_ia: list[dict]
 ) -> list[MatchedProduct]:
-    """Match de productos en BATCH para evitar N+1 queries.
+    """Match de productos en BATCH usando rapidfuzz.
 
-    Estrategia:
-      1. Extraigo todos los nombres únicos de la IA
-      2. UNA sola query con CTE + operador GIN (%) para traer TODOS los campos
-      3. Evalúo EXACT/PARTIAL en memoria sobre el diccionario
-
-    IMPORTANTE: No se hacen consultas dentro del bucle.
-    El operador % es el que activa el índice GIN pg_trgm.
+    Estrategia de memoria eficiente:
+      1. UNA sola query: cargar todos los productos activos (id, nombre)
+      2. Construir diccionario {nombre: Product} en memoria
+      3. Para cada ítem de IA: process.extract con token_set_ratio
+      4. Clasificar EXACT/PARTIAL/NOT_FOUND en memoria
     """
     if not productos_ia:
         return []
 
-    nombres_unicos = list({p["nombre"] for p in productos_ia})
     umbral = _similarity_threshold()
 
-    # ── Limpiar unidades de los nombres para mejorar matching ──────────
-    # "MEDIA ANIS CARTUJO 350ML 24UNID." → "MEDIA ANIS CARTUJO 350ML"
-    nombres_limpios = [_strip_unidades(n) for n in nombres_unicos]
-    # Mapa: nombre_limpio → nombre_original (para indexer después)
-    limpia_a_original = {limpia: orig for limpia, orig in zip(nombres_limpios, nombres_unicos)}
+    # ── 1. UNA sola query: catálogo completo ──────────────────────────
+    stmt = select(Product)
+    all_products = db.execute(stmt).scalars().all()
 
-    # ── Query batch con CTE + operador GIN (%) ─────────────────────────
-    # El operador % activa el índice GIN pg_trgm
-    # Generamos placeholders individuales para el array (:n0, :n1, ...)
-    # porque SQLAlchemy text() no entiende la sintaxis PostgreSQL ::text[]
-    placeholders = ", ".join([f":n{i}" for i in range(len(nombres_limpios))])
-    query = text(f"""
-        WITH nombres_ia AS (
-            SELECT unnest(ARRAY[{placeholders}]) AS nombre_busqueda
-        )
-        SELECT
-            p.id,
-            p.codigo_barra,
-            p.nombre,
-            p.unidades_por_caja,
-            p.stock_unidades,
-            p.stock_minimo,
-            p.precio_costo_caja_usd,
-            p.precio_costo_usd,
-            p.precio_unidad_usd,
-            p.precio_caja_usd,
-            p.proveedor_id,
-            p.tipo_iva,
-            n.nombre_busqueda,
-            similarity(p.nombre, n.nombre_busqueda) AS sim
-        FROM productos p
-        JOIN nombres_ia n ON p.nombre % n.nombre_busqueda
-        WHERE similarity(p.nombre, n.nombre_busqueda) > :umbral
-        ORDER BY n.nombre_busqueda, sim DESC
-    """)
+    if not all_products:
+        return [
+            MatchedProduct(
+                producto_id=None,
+                nombre_extraido=item["nombre"],
+                cantidad_cajas=item["cantidad"],
+                precio_unitario=Decimal(str(item["precio_unitario"])),
+                match_status="NOT_FOUND",
+                confidence=0.0,
+                suggestions=[],
+            )
+            for item in productos_ia
+        ]
 
-    params = {f"n{i}": n for i, n in enumerate(nombres_limpios)}
-    params["umbral"] = umbral
-    rows = db.execute(query, params).fetchall()
+    # ── 2. Diccionario {nombre: Product} para lookup rápido ──────────
+    catalogo = {p.nombre: p for p in all_products}
 
-    # ── Indexo por nombre LIMPIO de la IA (el que se usó en la query) ─
-    matches_map: dict[str, list[dict]] = {}
-    for row in rows:
-        key = row.nombre_busqueda
-        if key not in matches_map:
-            matches_map[key] = []
-        matches_map[key].append({
-            "id": row.id,
-            "codigo_barra": row.codigo_barra,
-            "nombre": row.nombre,
-            "unidades_por_caja": row.unidades_por_caja,
-            "stock_unidades": row.stock_unidades,
-            "stock_minimo": row.stock_minimo,
-            "precio_costo_caja_usd": row.precio_costo_caja_usd,
-            "precio_costo_usd": row.precio_costo_usd,
-            "precio_unidad_usd": row.precio_unidad_usd,
-            "precio_caja_usd": row.precio_caja_usd,
-            "proveedor_id": row.proveedor_id,
-            "tipo_iva": row.tipo_iva,
-            "sim": float(row.sim),
-        })
-
-    # ── Armo resultados EN MEMORIA (sin consultas a DB) ────────────────
+    # ── 3. Para cada ítem de IA, buscar top 3 matches ────────────────
     resultados: list[MatchedProduct] = []
     for item in productos_ia:
         nombre_ia = item["nombre"]
         nombre_limpio = _strip_unidades(nombre_ia)
-        candidatos = matches_map.get(nombre_limpio, [])
 
-        # Intento EXACT: busco en memoria por nombre idéntico (usando nombre limpio)
-        exacto = None
-        for c in candidatos:
-            if c["nombre"].lower() == nombre_limpio.lower():
-                exacto = c
-                break
+        # Buscar top 3 matches en el catálogo
+        matches = process.extract(
+            nombre_limpio,
+            catalogo.keys(),
+            scorer=fuzz.token_set_ratio,
+            limit=3,
+        )
 
-        if exacto:
+        if not matches:
             resultados.append(MatchedProduct(
-                producto_id=exacto["id"],
+                producto_id=None,
+                nombre_extraido=nombre_ia,
+                cantidad_cajas=item["cantidad"],
+                precio_unitario=Decimal(str(item["precio_unitario"])),
+                match_status="NOT_FOUND",
+                confidence=0.0,
+                suggestions=[],
+            ))
+            continue
+
+        # ── 4. Evaluar mejor resultado ──────────────────────────────
+        best_nombre, best_score, _ = matches[0]
+        best_product = catalogo[best_nombre]
+
+        # Intento EXACT: comparar nombres normalizados
+        if best_product.nombre.lower() == nombre_limpio.lower():
+            resultados.append(MatchedProduct(
+                producto_id=best_product.id,
                 nombre_extraido=nombre_ia,
                 cantidad_cajas=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
@@ -313,34 +311,36 @@ def fuzzy_match_productos_batch(
                 confidence=1.0,
                 suggestions=[],
             ))
-        elif candidatos:
-            # PARTIAL: armo ProductOut directamente desde datos en memoria
+            continue
+
+        if best_score >= umbral:
+            # PARTIAL: construir suggestions con top 3
             suggestions = []
-            for c in candidatos[:3]:
+            for match_nombre, match_score, _ in matches:
+                p = catalogo[match_nombre]
                 suggestions.append(ProductOutSchema(
-                    id=c["id"],
-                    codigo_barra=c["codigo_barra"],
-                    nombre=c["nombre"],
+                    id=p.id,
+                    codigo_barra=p.codigo_barra,
+                    nombre=p.nombre,
                     categories=[],
-                    unidades_por_caja=c["unidades_por_caja"],
-                    stock_unidades=c["stock_unidades"],
-                    stock_minimo=c["stock_minimo"],
-                    precio_costo_caja_usd=Decimal(str(c["precio_costo_caja_usd"])),
-                    precio_costo_usd=Decimal(str(c["precio_costo_usd"])),
-                    precio_unidad_usd=Decimal(str(c["precio_unidad_usd"])),
-                    precio_caja_usd=Decimal(str(c["precio_caja_usd"])),
-                    proveedor_id=c["proveedor_id"],
-                    tipo_iva=c["tipo_iva"],
+                    unidades_por_caja=p.unidades_por_caja,
+                    stock_unidades=p.stock_unidades,
+                    stock_minimo=p.stock_minimo,
+                    precio_costo_caja_usd=p.precio_costo_caja_usd,
+                    precio_costo_usd=p.precio_costo_usd,
+                    precio_unidad_usd=p.precio_unidad_usd,
+                    precio_caja_usd=p.precio_caja_usd,
+                    proveedor_id=p.proveedor_id,
+                    tipo_iva=p.tipo_iva,
                 ))
 
-            mejor_sim = candidatos[0]["sim"]
             resultados.append(MatchedProduct(
                 producto_id=None,
                 nombre_extraido=nombre_ia,
                 cantidad_cajas=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
                 match_status="PARTIAL",
-                confidence=mejor_sim,
+                confidence=best_score / 100.0,
                 suggestions=suggestions,
             ))
         else:
@@ -350,7 +350,7 @@ def fuzzy_match_productos_batch(
                 cantidad_cajas=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
                 match_status="NOT_FOUND",
-                confidence=0.0,
+                confidence=best_score / 100.0,
                 suggestions=[],
             ))
 
