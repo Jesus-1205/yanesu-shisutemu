@@ -1,5 +1,6 @@
 import hashlib
 import os
+from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
@@ -7,17 +8,15 @@ load_dotenv()
 
 VE_TZ = ZoneInfo("America/Caracas")
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
 
 class Config:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
-    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", 5432))
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "licoreria")
+    DATABASE_PATH: str = os.getenv("DATABASE_PATH", str(BASE_DIR / "licoreria.db"))
 
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
     SECURE_COOKIE: bool = os.getenv("SECURE_COOKIE", "False").lower() == "true"
@@ -26,10 +25,7 @@ class Config:
 
     ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
 
-    SQLALCHEMY_DATABASE_URL: str = (
-        f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
-        f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    )
+    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{DATABASE_PATH}"
 
     @classmethod
     def get_fernet_key(cls) -> bytes:

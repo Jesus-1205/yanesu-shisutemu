@@ -3,10 +3,8 @@ import tempfile
 import pytest
 from fastapi import Depends
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event, JSON
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.compiler import compiles
 
 import app.core.database as db_module
 from app.core.database import Base
@@ -15,11 +13,6 @@ from app.main import app
 from app.models.category import Category
 from app.models.payment_method import PaymentMethod
 from app.models.role import Role
-
-
-@compiles(JSONB, "sqlite")
-def compile_jsonb_sqlite(element, compiler, **kw):
-    return "JSON"
 
 
 @app.get("/admin-only")

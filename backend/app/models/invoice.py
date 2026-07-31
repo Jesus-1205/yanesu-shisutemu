@@ -2,8 +2,7 @@ from datetime import datetime, date
 from decimal import Decimal
 import enum
 
-from sqlalchemy import String, Integer, DECIMAL, Date, DateTime, Text, ForeignKey, UniqueConstraint, CheckConstraint, Boolean
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import String, Integer, DECIMAL, Date, DateTime, Text, ForeignKey, UniqueConstraint, CheckConstraint, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -39,7 +38,7 @@ class Factura(Base):
 
     # Campos de auditoría IA
     procesada_por_ia: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    raw_json_ia: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    raw_json_ia: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=VE_NOW, nullable=False
