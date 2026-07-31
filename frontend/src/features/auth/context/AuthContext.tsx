@@ -18,8 +18,15 @@ const DEV_USER: UserOut = {
 interface AuthContextType {
   user: UserOut | null;
   loading: boolean;
+  needsSetup: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  setupAdmin: (data: {
+    username: string;
+    email: string;
+    password: string;
+    nombre_completo: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -27,21 +34,37 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserOut | null>(DEV_MODE ? DEV_USER : null);
   const [loading, setLoading] = useState(true);
+  const [needsSetup, setNeedsSetup] = useState(false);
 
   useEffect(() => {
     if (DEV_MODE) {
       setLoading(false);
       return;
     }
-    api.me()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    api.getSetupStatus()
+      .then((res) => {
+        if (res.needs_setup) {
+          setNeedsSetup(true);
+          setLoading(false);
+        } else {
+          api.me()
+            .then(setUser)
+            .catch(() => setUser(null))
+            .finally(() => setLoading(false));
+        }
+      })
+      .catch(() => {
+        api.me()
+          .then(setUser)
+          .catch(() => setUser(null))
+          .finally(() => setLoading(false));
+      });
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
     const u = await api.login(username, password);
     setUser(u);
+    setNeedsSetup(false);
   }, []);
 
   const logout = useCallback(async () => {
@@ -53,8 +76,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const setupAdmin = useCallback(async (data: {
+    username: string;
+    email: string;
+    password: string;
+    nombre_completo: string;
+  }) => {
+    const u = await api.setupAdmin(data);
+    setUser(u);
+    setNeedsSetup(false);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, needsSetup, login, logout, setupAdmin }}>
       {children}
     </AuthContext.Provider>
   );

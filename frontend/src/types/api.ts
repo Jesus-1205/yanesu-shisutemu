@@ -9,6 +9,10 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface SetupStatusResponse {
+  needs_setup: boolean;
+}
+
 export interface UserOut {
   id: number;
   username: string;

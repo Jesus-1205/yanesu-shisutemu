@@ -1,0 +1,18 @@
+{
+  "identifier": "default",
+  "description": "Capabilities for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "sistema_licoreria",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import PrivateRoute from "./features/auth/components/PrivateRoute";
 import RoleGuard from "./features/auth/components/RoleGuard";
 import RoleRedirect from "./features/auth/components/RoleRedirect";
 import LoginPage from "./features/auth/pages/LoginPage";
+import SetupPage from "./features/auth/pages/SetupPage";
 import DesignSystemPage from "./features/design-system/pages/DesignSystemPage";
 
 const lazyRoute = (importFn: () => Promise<{ default: React.ComponentType }>) =>
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/setup",
+    element: <SetupPage />,
   },
   {
     path: "/",

@@ -7,14 +7,13 @@ from rapidfuzz import fuzz, process
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import get_uploads_dir
 from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.invoice import DetalleFactura, Factura, MonedaEnum
 from app.models.product import Product
 from app.models.supplier import Supplier
 from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, MatchedProduct, MatchedSupplier
 from app.schemas.product import ProductOut as ProductOutSchema
-
-UPLOAD_DIR = Path("uploads") / "facturas"
 
 # ── System Prompt para el modelo de Visión ────────────────────────────────
 
@@ -106,7 +105,8 @@ def _save_invoice_image(
     import re
     import uuid
 
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    dest_dir = get_uploads_dir()
+    dest_dir.mkdir(parents=True, exist_ok=True)
 
     ext = Path(filename).suffix.lower() if Path(filename).suffix else ".jpg"
     if ext not in (".jpg", ".jpeg", ".png", ".webp", ".pdf"):
@@ -124,7 +124,7 @@ def _save_invoice_image(
     else:
         saved_name = f"FACTURA_{uid}{ext}"
 
-    dest = UPLOAD_DIR / saved_name
+    dest = dest_dir / saved_name
     dest.write_bytes(file_bytes)
     return str(dest)
 

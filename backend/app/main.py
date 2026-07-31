@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from app.core.exceptions import ConflictError, EntityNotFoundError
 
 from app.core.config import Config
-from app.core.database import engine, Base
+from app.core.database import Base, engine
 from app.core.error_handler import register_error_handlers
 from app.models import Role, User, Supplier, Category, producto_categoria, Product, ExchangeRate, Sale, SaleItem, PaymentMethod, SalePayment, Factura, DetalleFactura  # noqa: F401
 from app.routes.auth import router as auth_router
@@ -29,7 +29,12 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
-app = FastAPI(title="Sistema Licoreria API")
+app = FastAPI(
+    title="Sistema Licoreria API",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 app = register_error_handlers(app)
 
 origins = [o.strip() for o in Config.CORS_ORIGINS.split(",")]
@@ -64,9 +69,3 @@ def entity_not_found_handler(request, exc: EntityNotFoundError):
 @app.exception_handler(ConflictError)
 def conflict_handler(request, exc: ConflictError):
     return JSONResponse(status_code=409, content={"detail": str(exc)})
-
-
-if __name__ == "__main__":
-    import uvicorn
-    Base.metadata.create_all(bind=engine)
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

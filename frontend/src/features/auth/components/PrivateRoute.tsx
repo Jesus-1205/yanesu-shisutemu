@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import Spinner from "../../../ui-components/Spinner";
 
 export default function PrivateRoute() {
-  const { user, loading } = useAuth();
+  const { user, loading, needsSetup } = useAuth();
 
   if (loading) {
     return (
@@ -13,6 +13,7 @@ export default function PrivateRoute() {
     );
   }
 
+  if (needsSetup) return <Navigate to="/setup" replace />;
   if (!user) return <Navigate to="/login" replace />;
 
   return <Outlet />;

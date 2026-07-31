@@ -29,6 +29,7 @@ import type {
   SaleCreate,
   SaleOut,
   SalesSummaryItem,
+  SetupStatusResponse,
   SupplierAnalyticsResponse,
   SupplierCreate,
   SupplierDetailAnalytics,
@@ -66,6 +67,23 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  getSetupStatus: () =>
+    request<SetupStatusResponse>("/auth/setup-status"),
+
+  setupAdmin: (data: {
+    username: string;
+    email: string;
+    password: string;
+    nombre_completo: string;
+  }) =>
+    request<UserOut>("/auth/setup", {
+      method: "POST",
+      body: JSON.stringify({
+        ...data,
+        rol_id: 1,
+      }),
+    }),
+
   login: (username: string, password: string) =>
     request<UserOut>("/auth/login", {
       method: "POST",

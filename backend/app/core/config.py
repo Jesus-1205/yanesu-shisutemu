@@ -1,5 +1,6 @@
 import hashlib
 import os
+import sys
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
@@ -8,7 +9,36 @@ load_dotenv()
 
 VE_TZ = ZoneInfo("America/Caracas")
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+def get_app_data_dir() -> Path:
+    """Directorio de datos persistente de la aplicación.
+
+    Windows: %LOCALAPPDATA%/SistemaLicoreria
+    macOS:   ~/Library/Application Support/SistemaLicoreria
+    Linux:   ~/.local/share/SistemaLicoreria
+    """
+    if sys.platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path.home() / ".local" / "share"
+
+    app_dir = base / "SistemaLicoreria"
+    app_dir.mkdir(parents=True, exist_ok=True)
+    return app_dir
+
+
+def get_db_path() -> Path:
+    db_dir = get_app_data_dir() / "data"
+    db_dir.mkdir(parents=True, exist_ok=True)
+    return db_dir / "licoreria.db"
+
+
+def get_uploads_dir() -> Path:
+    uploads = get_app_data_dir() / "uploads" / "facturas"
+    uploads.mkdir(parents=True, exist_ok=True)
+    return uploads
 
 
 class Config:
@@ -16,7 +46,7 @@ class Config:
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    DATABASE_PATH: str = os.getenv("DATABASE_PATH", str(BASE_DIR / "licoreria.db"))
+    DATABASE_PATH: str = os.getenv("DATABASE_PATH", str(get_db_path()))
 
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
     SECURE_COOKIE: bool = os.getenv("SECURE_COOKIE", "False").lower() == "true"

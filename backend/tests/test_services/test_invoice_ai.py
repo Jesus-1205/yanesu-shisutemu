@@ -101,7 +101,7 @@ class TestOptimizeImage:
 class TestSaveInvoiceImage:
 
     def test_saves_with_descriptive_name(self, tmp_path):
-        with patch("app.services.invoice_service.UPLOAD_DIR", tmp_path):
+        with patch("app.services.invoice_service.get_uploads_dir", return_value=tmp_path):
             path = _save_invoice_image(
                 b"fake data", "test.jpg", "DISTRIBUIDORA CAMACHO", "027533"
             )
@@ -112,31 +112,31 @@ class TestSaveInvoiceImage:
             assert saved.suffix == ".jpg"
 
     def test_saves_without_proveedor(self, tmp_path):
-        with patch("app.services.invoice_service.UPLOAD_DIR", tmp_path):
+        with patch("app.services.invoice_service.get_uploads_dir", return_value=tmp_path):
             path = _save_invoice_image(b"fake", "test.jpg", "", "F001")
             saved = Path(path)
             assert saved.exists()
             assert saved.name.startswith("FACTURA_F001_")
 
     def test_saves_without_any_info(self, tmp_path):
-        with patch("app.services.invoice_service.UPLOAD_DIR", tmp_path):
+        with patch("app.services.invoice_service.get_uploads_dir", return_value=tmp_path):
             path = _save_invoice_image(b"fake", "test.jpg", "", "")
             saved = Path(path)
             assert saved.exists()
             assert saved.name.startswith("FACTURA_")
 
     def test_preserves_extension(self, tmp_path):
-        with patch("app.services.invoice_service.UPLOAD_DIR", tmp_path):
+        with patch("app.services.invoice_service.get_uploads_dir", return_value=tmp_path):
             path = _save_invoice_image(b"fake", "photo.png", "SUP", "001")
             assert Path(path).suffix == ".png"
 
     def test_unknown_extension_defaults_to_jpg(self, tmp_path):
-        with patch("app.services.invoice_service.UPLOAD_DIR", tmp_path):
+        with patch("app.services.invoice_service.get_uploads_dir", return_value=tmp_path):
             path = _save_invoice_image(b"fake", "file.bmp", "SUP", "001")
             assert Path(path).suffix == ".jpg"
 
     def test_strips_special_chars_from_proveedor(self, tmp_path):
-        with patch("app.services.invoice_service.UPLOAD_DIR", tmp_path):
+        with patch("app.services.invoice_service.get_uploads_dir", return_value=tmp_path):
             path = _save_invoice_image(b"fake", "test.jpg", "C.A. VENEZOLANA", "001")
             saved = Path(path)
             assert "C_A__VENEZOLANA" in saved.name
