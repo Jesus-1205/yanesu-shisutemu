@@ -256,11 +256,80 @@ pytest tests/ -v
 
 ---
 
-## 7. Pendiente (Fase futura)
+## 7. Empaquetado de escritorio (PyInstaller + Tauri)
+
+### 7.1 Arquitectura
+
+```
+licoreria-desktop/
+├── src-tauri/
+│   ├── bin/
+│   │   └── sistema_licoreria-x86_64-pc-windows-msvc.exe  ← sidecar (PyInstaller)
+│   ├── src/lib.rs          ← Tauri commands (setup, login, etc.)
+│   ├── tauri.conf.json     ← Configuración de ventana, sidecar, permisos
+│   └── Cargo.toml          ← Dependencias Rust (tauri, dirs)
+├── frontend/dist/           ← Build estático de React (copiado por build.bat)
+└── src-tauri/icons/         ← Iconos de la app (placeholder)
+```
+
+### 7.2 Flujo de ejecución
+
+1. Tauri inicia → lanza `sistema_licoreria.exe` como sidecar
+2. Sidecar ejecuta `run.py`:
+   - Crea tablas con `create_all()` si no existen
+   - Busca puerto libre (8000-8010)
+   - Monta `frontend/dist/` como archivos estáticos
+   - Inicia FastAPI en `127.0.0.1:{port}`
+   - Guarda puerto en `AppData/Local/SistemaLicoreria/.port`
+3. Tauri lee el archivo `.port` y navega el webview al backend
+4. El usuario interactúa con la app web embebida
+
+### 7.3 Almacenamiento de datos
+
+| Ubicación | Contenido |
+|-----------|-----------|
+| `AppData/Local/SistemaLicoreria/licoreria.db` | Base de datos SQLite |
+| `AppData/Local/SistemaLicoreria/uploads/` | Imágenes de facturas subidas |
+| `AppData/Local/SistemaLicoreria/.port` | Puerto del servidor (para que Tauri lo lea) |
+
+### 7.4 Primer inicio (Setup)
+
+1. Backend retorna `needs_setup: true` si no hay usuario admin
+2. Frontend redirige a `/setup` (SetupPage)
+3. Usuario crea admin con nombre, email, contraseña
+4. Se guardan roles y usuario admin en SQLite
+
+### 7.5 Build completo
+
+```bat
+cd backend
+.\build.bat
+```
+
+El script ejecuta:
+1. `pnpm install && pnpm build` en frontend
+2. `pyinstaller build.spec` → genera `dist/sistema_licoreria/sistema_licoreria.exe`
+3. Copia el sidecar a `licoreria-desktop/src-tauri/bin/sistema_licoreria-x86_64-pc-windows-msvc.exe`
+4. `cargo build --release` en `licoreria-desktop/src-tauri/` → genera `licoreria-desktop.exe`
+
+### 7.6 Archivos nuevos
+
+| Archivo | Descripción |
+|---------|-------------|
+| `backend/run.py` | Entry point PyInstaller: init DB, find port, mount frontend, start uvicorn |
+| `backend/build.spec` | Spec de PyInstaller para empaquetar backend + frontend |
+| `backend/build.bat` | Script de build completo |
+| `backend/app/core/first_run.py` | Inicialización pasiva de DB + roles + needs_setup check |
+| `backend/app/core/port_manager.py` | Búsqueda de puerto libre + archivo `.port` |
+| `frontend/src/features/auth/pages/SetupPage.tsx` | Pantalla de primer inicio |
+
+---
+
+## 8. Pendiente (Fase futura)
 
 | Tarea | Prioridad | Notas |
 |-------|-----------|-------|
-| PyInstaller bundle | Alta | Configurar `*.spec` para empaquetar backend + frontend |
-| Tauri integration | Alta | Envolver el ejecutable Python en ventana nativa |
+| Generar iconos reales | Media | Reemplazar placeholders PNG con icono del negocio |
+| MSI installer (WiX) | Baja | Requiere conexión a GitHub para descargar WiX |
 | Ajuste de umbral | Media | Evaluar con datos reales si 30.0 es el umbral óptimo |
 | Migraciones SQLite | Baja | Si el esquema cambia, considerar Alembic para SQLite |
