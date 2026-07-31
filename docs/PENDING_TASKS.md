@@ -1,0 +1,162 @@
+# Tareas Pendientes
+
+**Fecha:** Julio 2026  
+**Rama:** `feature/sqlite-migration`
+
+---
+
+## Bugs críticos
+
+### 1. Pantalla negra al primera venta sin tasa BCV
+**Severidad:** Crítica  
+**Ubicación:** Cadena completa (ver abajo)
+
+Al instalar por primera vez, si no se ha registrado ninguna tasa de cambio BCV, intentar crear una venta produce un error 422 de Pydantic y una pantalla negra con JSON de error.
+
+**Cadena de fallo:**
+
+| Paso | Archivo | Qué pasa |
+|------|---------|----------|
+| 1 | `exchangeRateStore.ts:15` | `tasa` se inicializa en `0` |
+| 2 | `exchange_rate_service.py:51-58` | `/exchange-rates/latest` retorna `{ rates: {} }` cuando no hay tasas guardadas |
+| 3 | `exchangeRateStore.ts:25` | `Number(undefined) \|\| 0` = `0`, `tasa` queda en `0` |
+| 4 | `cartStore.ts:116` | Al agregar primer producto, `snapshotTasa` captura `0` |
+| 5 | `cartStore.ts:59-66` | Suscripción nunca actualiza porque `state.tasa > 0` es falso |
+| 6 | `CheckoutDrawer.tsx:52,112` | `tasaNum` = `0`, se envía `tasa_bcv_aplicada: 0` |
+| 7 | `sale.py:53` (schema Pydantic) | `Field(gt=0)` rechaza `0` → error 422 |
+| 8 | `sales.py:36` (ruta) | FastAPI retorna error antes de llegar a `create_sale` |
+
+**Fix necesario:**
+- Frontend: Bloquear botón "Cobrar" si `snapshotTasa <= 0` con mensaje claro ("Registra la tasa BCV antes de vender")
+- Backend: Mensaje de error claro en vez de 422 genérico
+
+---
+
+### 2. Consola visible del sidecar
+**Severidad:** Media  
+**Archivo:** `backend/build.spec:70`
+
+`console=True` hace que `sistema_licoreria.exe` abra una ventana de consola negra cada vez que se ejecuta. Para una app de escritorio, debe ser `console=False`.
+
+---
+
+### 3. SetupPage demasiado grande (scroll vertical)
+**Severidad:** Media (UX)  
+**Archivo:** `frontend/src/features/auth/pages/SetupPage.tsx`
+
+El formulario de 5 campos en una sola columna (`max-w-md`) requiere scroll vertical en pantallas pequeñas.
+
+**Fix:** Distribuir en 2 columnas (izquierda: usuario/email, derecha: nombre/password/confirmación), ampliar el contenedor a `max-w-2xl`.
+
+---
+
+## Bugs menores
+
+### 4. Tauri no maneja fallo del sidecar
+**Severidad:** Alta  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:18-22`
+
+Si el sidecar no se puede ejecutar (DLL faltante, permisos), la app crashea con panic de Rust sin mensaje útil para el usuario.
+
+```rust
+// Actual: panic sin contexto
+sidecar.spawn().expect("Failed to spawn sidecar");
+
+// Debería: mostrar diálogo de error y cerrar graceful
+```
+
+---
+
+### 5. Sleep hardcodeado de 3 segundos
+**Severidad:** Media  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:25`
+
+`std::thread::sleep(Duration::from_secs(3))` asume que el backend tarda menos de 3s. En primera ejecución (creación de BD) puede tardar más, causando que Tauri lea `.port` antes de que exista y navegue al puerto incorrecto.
+
+**Fix:** Polling con timeout (leer `.port` cada 500ms hasta 15s max).
+
+---
+
+### 6. Fallback silencioso a puerto 8000
+**Severidad:** Baja  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:29-39`
+
+Si `.port` no existe o no se puede leer, usa 8000 como fallback. Si el backend arrancó en otro puerto, la pantalla queda en blanco sin error visible.
+
+---
+
+## Seguridad
+
+### 7. SECRET_KEY hardcodeada
+**Severidad:** Crítica (si se expone en red)  
+**Archivo:** `backend/app/core/config.py:45`
+
+```python
+SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
+```
+
+Si no hay variable de entorno, la app usa `"supersecretkey"`. JWTs firmados con esta clave son falsificables.
+
+**Fix:** Generar clave aleatoria al primer inicio y guardarla en `AppData/Local/SistemaLicoreria/.secret_key`.
+
+---
+
+### 8. SECURE_COOKIE = False por defecto
+**Severidad:** Media  
+**Archivo:** `backend/app/core/config.py:52`
+
+Cookies JWT se envían sin flag `Secure`. Aceptable para localhost, pero si el backend se expone en red, los tokens viajan en texto plano.
+
+---
+
+### 9. CORS overly permissive
+**Severidad:** Baja  
+**Archivo:** `backend/app/main.py:45-46`
+
+`allow_methods=["*"]` y `allow_headers=["*"]` son más permisivos de lo necesario.
+
+---
+
+### 10. CSP script-src unsafe-inline
+**Severidad:** Media  
+**Archivo:** `licoreria-desktop/src-tauri/tauri.conf.json:22`
+
+`script-src 'unsafe-inline'` debilita protección XSS. Si un campo (nombre de producto, factura) contiene HTML/JS inyectado, podría ejecutarse.
+
+---
+
+## Pendientes de calidad
+
+### 11. Test Pillow pre-existente falla
+**Severidad:** Baja  
+**Archivo:** `backend/tests/test_services/test_invoice_ai.py:65,84`
+
+`test_valid_image_returns_jpeg` y `test_large_image_resized` fallan dependiendo de la versión de Pillow. El código de producción (`optimize_image`) funciona bien; el problema es assertions excesivamente estrictas en los tests.
+
+---
+
+### 12. Iconos placeholder
+**Severidad:** Baja  
+**Archivo:** `licoreria-desktop/src-tauri/icons/`
+
+Los iconos PNG son cuadrados azules genéricos. Necesitan diseño real del negocio.
+
+---
+
+### 13. Ajuste de umbral fuzzy
+**Severidad:** Baja  
+**Archivo:** `backend/app/services/invoice_service.py`
+
+El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos reales si necesita ajuste.
+
+---
+
+## Resumen
+
+| Categoría | Crítica | Alta | Media | Baja | Total |
+|-----------|---------|------|-------|------|-------|
+| Bugs críticos | 1 | 0 | 2 | 0 | 3 |
+| Bugs menores | 0 | 1 | 2 | 1 | 4 |
+| Seguridad | 1 | 0 | 3 | 1 | 5 |
+| Calidad | 0 | 0 | 0 | 3 | 3 |
+| **Total** | **2** | **1** | **7** | **5** | **15** |
