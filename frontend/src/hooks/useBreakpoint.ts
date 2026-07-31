@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 type Breakpoint = "sm" | "md" | "lg" | "xl" | "2xl";
 
-const queries: Record<Breakpoint, string] = {
+const queries: Record<Breakpoint, string> = {
   sm: "(min-width: 640px)",
   md: "(min-width: 768px)",
   lg: "(min-width: 1024px)",

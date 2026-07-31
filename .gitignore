@@ -69,6 +69,11 @@ coverage/
 data/legacy/
 
 # ──────────────────────────────────────
+# Rust / Tauri
+# ──────────────────────────────────────
+licoreria-desktop/src-tauri/target/
+
+# ──────────────────────────────────────
 # OpenCode config (local secrets)
 # ──────────────────────────────────────
 .opencode/opencode.json

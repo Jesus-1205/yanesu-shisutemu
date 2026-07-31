@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "identifier": "com.licoreria.sistema",
   "build": {
-    "frontendDist": "../backend/frontend/dist",
+    "frontendDist": "../../frontend/dist",
     "devUrl": "http://localhost:5173"
   },
   "app": {
@@ -33,7 +33,7 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "../backend/dist/sistema_licoreria/sistema_licoreria"
+      "../../backend/dist/sistema_licoreria/sistema_licoreria"
     ]
   }
 }

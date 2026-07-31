@@ -41,7 +41,7 @@ pub fn run() {
             // 4. Navegar la ventana al backend
             if let Some(window) = app.get_webview_window("main") {
                 let url = format!("http://127.0.0.1:{}", port);
-                window
+                let _ = window
                     .navigate(url.parse().expect("Invalid URL"));
             }
 
