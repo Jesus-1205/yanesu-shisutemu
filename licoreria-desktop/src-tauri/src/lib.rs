@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::time::Duration;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
 
@@ -21,24 +22,20 @@ pub fn run() {
                 .expect("Failed to create sidecar command");
             sidecar.spawn().expect("Failed to spawn sidecar");
 
-            // 2. Esperar a que el backend escriba .port
-            std::thread::sleep(std::time::Duration::from_secs(3));
-
-            // 3. Leer puerto desde AppData/Local/SistemaLicoreria/.port
+            // 2. Polling: esperar hasta 20s a que .port aparezca
             let port_path = get_port_path();
-            let port: u16 = std::fs::read_to_string(&port_path)
-                .unwrap_or_else(|_| {
-                    eprintln!(
-                        "⚠ No se pudo leer {:?}, usando puerto 8000",
-                        port_path
-                    );
-                    "8000".to_string()
-                })
-                .trim()
-                .parse()
-                .unwrap_or(8000);
+            let mut port: u16 = 8000;
+            for _ in 0..40 {
+                std::thread::sleep(Duration::from_millis(500));
+                if let Ok(content) = std::fs::read_to_string(&port_path) {
+                    if let Ok(p) = content.trim().parse::<u16>() {
+                        port = p;
+                        break;
+                    }
+                }
+            }
 
-            // 4. Navegar la ventana al backend
+            // 3. Navegar la ventana al backend
             if let Some(window) = app.get_webview_window("main") {
                 let url = format!("http://127.0.0.1:{}", port);
                 let _ = window
