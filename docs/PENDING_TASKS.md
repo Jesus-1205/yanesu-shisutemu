@@ -85,6 +85,21 @@ Si `.port` no existe o no se puede leer, usa 8000 como fallback. Si el backend a
 
 ---
 
+### 20. Aviso "Registra la tasa BCV" persiste tras registrar la tasa
+**Severidad:** Baja  
+**Archivos:**
+- `frontend/src/features/sales/pages/POSPage.tsx:67,240-251`
+- `frontend/src/features/sales/store/cartStore.ts:59-66,116`
+- `frontend/src/stores/exchangeRateStore.ts:21-36`
+
+Después de registrar la tasa BCV en la página de tasas de cambio, el aviso "⚠ Registra la tasa BCV antes de cobrar" del POS puede seguir apareciendo, aunque la venta igualmente se puede completar.
+
+El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agregar el primer producto (`cartStore.ts:116`). La auto-sincronización vía suscripción (`cartStore.ts:59-66`) solo actualiza `snapshotTasa` si ya hay items en el carrito **y** `snapshotTasa` es exactamente `0`; si la tasa se registra con el carrito vacío o `loadTasa()` falla silenciosamente (`exchangeRateStore.ts:33-35`), `snapshotTasa` queda en `0` y el aviso no desaparece.
+
+**Fix sugerido:** Sincronizar `snapshotTasa` desde `useExchangeRateStore.getState().tasa` al montar el POS / al abrir el checkout, y no depender únicamente de la suscripción frágil.
+
+---
+
 ## Seguridad
 
 ### 7. SECRET_KEY hardcodeada
@@ -206,13 +221,50 @@ if fecha_hasta:
 
 ---
 
+## Desktop (Tauri)
+
+### 17. Sin retroalimentación visual al descargar archivos
+**Severidad:** Media  
+**Archivos:**
+- `frontend/src/lib/exportToExcel.ts:34-61` — `XLSX.writeFile`
+- `frontend/src/features/invoices/pages/InvoiceDetailPage.tsx:135` — `window.open` para imagen de factura
+
+En el navegador web el usuario ve el ícono de descarga del navegador, pero al embeber en Tauri (WebView2) la descarga es **silenciosa**: el archivo se guarda en `Downloads` sin ninguna indicación visual. El usuario no sabe si la exportación funcionó.
+
+**Fix:** Mostrar un toast de confirmación ("Archivo descargado: Ventas_2026-07-31.xlsx") al completar la exportación, o usar un plugin Tauri (`tauri-plugin-dialog`/`tauri-plugin-fs`) con selector de destino visible. Para la imagen de factura, reemplazar `window.open` por un flujo de descarga con confirmación.
+
+---
+
+### 18. Link "Google AI Studio" no abre en la app de escritorio
+**Severidad:** Media  
+**Archivo:** `frontend/src/features/system-settings/pages/SystemSettingsPage.tsx:224`
+
+El link `<a href="https://aistudio.google.com/apikey" target="_blank">` funciona en el navegador, pero en Tauri `target="_blank"` no abre el navegador externo: el click no hace nada.
+
+**Fix:** Abrir el link con el plugin `tauri-plugin-opener` (o la API `open` de `tauri-plugin-shell`) para abrir en el navegador por defecto.
+
+---
+
+### 19. Backend queda corriendo al cerrar la app
+**Severidad:** Alta  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:23`
+
+Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) **no se mata**: `sidecar.spawn()` no está asociado al ciclo de vida de la ventana. Cada apertura/cierre deja un proceso Python huérfano compitiendo por puertos. Además, el proceso mantiene bloqueados `inventario.db` y los archivos de `AppData/Local/SistemaLicoreria/`, por lo que la desinstalación no puede borrar la data aunque el usuario marque "eliminar datos".
+
+**Fix:**
+- Manejar `RunEvent::ExitRequested`/`RunEvent::Exit` en `lib.rs` y matar el sidecar (guardar el `CommandChild` y llamar a `kill()`).
+- Verificar en el desinstalador NSIS que ningún proceso `sistema_licoreria.exe` quede vivo antes de borrar archivos.
+
+---
+
 ## Resumen
 
 | Categoría | Crítica | Alta | Media | Baja | Total |
 |-----------|---------|------|-------|------|-------|
 | Bugs críticos | 1 | 0 | 2 | 0 | 3 |
-| Bugs menores | 0 | 1 | 2 | 1 | 4 |
-| Seguridad | 1 | 0 | 3 | 1 | 5 |
+| Bugs menores | 0 | 1 | 1 | 2 | 4 |
+| Seguridad | 1 | 0 | 3 | 0 | 4 |
 | Calidad | 0 | 0 | 0 | 3 | 3 |
-| UX | 0 | 0 | 3 | 1 | 4 |
-| **Total** | **2** | **1** | **10** | **6** | **19** |
+| UX | 0 | 0 | 2 | 1 | 3 |
+| Desktop (Tauri) | 0 | 1 | 2 | 0 | 3 |
+| **Total** | **2** | **2** | **10** | **6** | **20** |
