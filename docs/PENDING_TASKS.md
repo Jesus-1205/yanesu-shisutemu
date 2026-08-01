@@ -260,7 +260,7 @@ El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos re
 ---
 
 ### 20. Aviso "Registra la tasa BCV" persiste tras registrar la tasa
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `1640cef`: recargar tasa al montar POS + snapshot si quedó en 0)
 **Severidad:** Baja  
 **Archivos:**
 - `frontend/src/features/sales/pages/POSPage.tsx:67,240-251`
@@ -271,7 +271,25 @@ Después de registrar la tasa BCV en la página de tasas de cambio, el aviso "�
 
 El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agregar el primer producto (`cartStore.ts:116`). La auto-sincronización vía suscripción (`cartStore.ts:59-66`) solo actualiza `snapshotTasa` si ya hay items en el carrito **y** `snapshotTasa` es exactamente `0`; si la tasa se registra con el carrito vacío o `loadTasa()` falla silenciosamente (`exchangeRateStore.ts:33-35`), `snapshotTasa` queda en `0` y el aviso no desaparece.
 
-**Fix sugerido:** Sincronizar `snapshotTasa` desde `useExchangeRateStore.getState().tasa` al montar el POS / al abrir el checkout, y no depender únicamente de la suscripción frágil.
+**Fix aplicado:**
+- `POSPage.tsx`: `useEffect` al montar que llama `useExchangeRateStore.getState().loadTasa()`.
+- `cartStore.ts:addItem`: si `snapshotTasa` quedó en `0` pero el store ya tiene una tasa válida (`> 0`), la captura; si el snapshot ya era válido, se conserva (regla de negocio intacta).
+- Tests: 32/32 pasan (`cartStore`, `CheckoutDrawer`, `usePosKeyboard`).
+
+---
+
+### 21. Método de pago ignora `moneda_default` y `acepta_referencia`
+- [ ] **Pendiente**
+**Severidad:** Alta  
+**Archivos:**
+- `backend/app/services/payment_method_service.py:29` — `crear_payment_method`
+- `backend/app/services/payment_method_service.py:36-50` — `actualizar_payment_method`
+
+Al crear o editar un método de pago, `moneda_default` y `acepta_referencia` **se ignoran**: el service solo persiste `nombre` y `activo`, así que el modelo siempre cae en sus defaults (`"VES"`, `False`).
+
+El frontend (`PaymentMethodsPage.tsx:71-84`) envía ambos campos correctamente y los schemas (`PaymentMethodCreate`/`PaymentMethodUpdate`) los definen, pero el service no los escribe en el modelo. Resultado: todos los métodos se crean **sin referencia** y **en Bs**, y el cambio de VES a USD o activar "Acepta referencia" no se refleja ni en la tabla ni en el POS.
+
+**Fix:** En `crear_payment_method`, pasar `moneda_default=data.moneda_default` y `acepta_referencia=data.acepta_referencia`; en `actualizar_payment_method`, aplicarlos solo cuando `data.X is not None`.
 
 ---
 
@@ -280,7 +298,7 @@ El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agre
 | Severidad | Total | Arregladas | Pendientes |
 |-----------|-------|------------|------------|
 | Crítica | 2 | 2 | 0 |
-| Alta | 2 | 2 | 0 |
+| Alta | 3 | 2 | 1 |
 | Media | 10 | 10 | 0 |
-| Baja | 6 | 0 | 6 |
-| **Total** | **20** | **14** | **6** |
+| Baja | 7 | 1 | 6 |
+| **Total** | **22** | **15** | **7** |
