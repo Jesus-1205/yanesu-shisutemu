@@ -260,7 +260,7 @@ El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos re
 ---
 
 ### 20. Aviso "Registra la tasa BCV" persiste tras registrar la tasa
-- [x] **Arreglada** (commit `1640cef`: recargar tasa al montar POS + snapshot si quedó en 0)
+- [x] **Arreglada** (commits `1640cef` + `be5b524`: recargar tasa al montar POS, snapshot si quedó en 0, eliminar banner visual)
 **Severidad:** Baja  
 **Archivos:**
 - `frontend/src/features/sales/pages/POSPage.tsx:67,240-251`
@@ -274,12 +274,13 @@ El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agre
 **Fix aplicado:**
 - `POSPage.tsx`: `useEffect` al montar que llama `useExchangeRateStore.getState().loadTasa()`.
 - `cartStore.ts:addItem`: si `snapshotTasa` quedó en `0` pero el store ya tiene una tasa válida (`> 0`), la captura; si el snapshot ya era válido, se conserva (regla de negocio intacta).
-- Tests: 32/32 pasan (`cartStore`, `CheckoutDrawer`, `usePosKeyboard`).
+- `POSPage.tsx`: banner visual eliminado completamente; solo se mantiene el toast de error al intentar vender sin tasa.
+- Tests: 54/54 pasan (sales suite completa).
 
 ---
 
 ### 21. Método de pago ignora `moneda_default` y `acepta_referencia`
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `105e110`: persistir ambos campos en crear y actualizar)
 **Severidad:** Alta  
 **Archivos:**
 - `backend/app/services/payment_method_service.py:29` — `crear_payment_method`
@@ -289,12 +290,12 @@ Al crear o editar un método de pago, `moneda_default` y `acepta_referencia` **s
 
 El frontend (`PaymentMethodsPage.tsx:71-84`) envía ambos campos correctamente y los schemas (`PaymentMethodCreate`/`PaymentMethodUpdate`) los definen, pero el service no los escribe en el modelo. Resultado: todos los métodos se crean **sin referencia** y **en Bs**, y el cambio de VES a USD o activar "Acepta referencia" no se refleja ni en la tabla ni en el POS.
 
-**Fix:** En `crear_payment_method`, pasar `moneda_default=data.moneda_default` y `acepta_referencia=data.acepta_referencia`; en `actualizar_payment_method`, aplicarlos solo cuando `data.X is not None`.
+**Fix aplicado:** `crear_payment_method` ahora pasa `moneda_default=data.moneda_default` y `acepta_referencia=data.acepta_referencia`; `actualizar_payment_method` aplica ambos campos solo cuando `data.X is not None`.
 
 ---
 
 ### 22. Desinstalador nunca borra la data aunque se marque "borrar data"
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `105e110`: `deleteAppDataOnUninstall: true` en tauri.conf.json)
 **Severidad:** Alta  
 **Archivos:**
 - `licoreria-desktop/src-tauri/tauri.conf.json:38-44` — config NSIS sin `deleteAppDataOnUninstall`
@@ -304,7 +305,7 @@ Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicaci
 
 **Causa:** La opción de Tauri v2 `deleteAppDataOnUninstall` no está configurada en `bundle.windows.nsis`, por lo que el desinstalador solo remueve los archivos del programa (`Program Files/Sistema Licoreria`) y deja intacta la data de la app.
 
-**Fix:** Agregar `"deleteAppDataOnUninstall": true` en `bundle.windows.nsis` de `tauri.conf.json` (alternativamente, implementar el borrado en `NSIS_HOOK_POSTUNINSTALL` con `RMDir /r "$LOCALAPPDATA\SistemaLicoreria"`), y verificar con una desinstalación real que la carpeta desaparezca.
+**Fix aplicado:** `"deleteAppDataOnUninstall": true` agregado en `bundle.windows.nsis` de `tauri.conf.json`. Verificar con una desinstalación real que la carpeta desaparezca.
 
 ---
 
@@ -313,7 +314,7 @@ Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicaci
 | Severidad | Total | Arregladas | Pendientes |
 |-----------|-------|------------|------------|
 | Crítica | 2 | 2 | 0 |
-| Alta | 4 | 2 | 2 |
+| Alta | 4 | 4 | 0 |
 | Media | 10 | 10 | 0 |
-| Baja | 7 | 1 | 6 |
-| **Total** | **23** | **15** | **8** |
+| Baja | 7 | 2 | 5 |
+| **Total** | **23** | **18** | **5** |
