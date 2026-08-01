@@ -1,13 +1,16 @@
 # Tareas Pendientes
 
 **Fecha:** Julio 2026  
-**Rama:** `feature/sqlite-migration`
+**Rama:** `fix/critical-bugs`
+
+Leyenda: `- [x]` = arreglada · `- [ ]` = pendiente
 
 ---
 
-## Bugs críticos
+## Críticas
 
 ### 1. Pantalla negra al primera venta sin tasa BCV
+- [x] **Arreglada** (commit `0a1e359`: guard en POS + CheckoutDrawer)
 **Severidad:** Crítica  
 **Ubicación:** Cadena completa (ver abajo)
 
@@ -26,33 +29,31 @@ Al instalar por primera vez, si no se ha registrado ninguna tasa de cambio BCV, 
 | 7 | `sale.py:53` (schema Pydantic) | `Field(gt=0)` rechaza `0` → error 422 |
 | 8 | `sales.py:36` (ruta) | FastAPI retorna error antes de llegar a `create_sale` |
 
-**Fix necesario:**
+**Fix aplicado:**
 - Frontend: Bloquear botón "Cobrar" si `snapshotTasa <= 0` con mensaje claro ("Registra la tasa BCV antes de vender")
 - Backend: Mensaje de error claro en vez de 422 genérico
 
 ---
 
-### 2. Consola visible del sidecar
-**Severidad:** Media  
-**Archivo:** `backend/build.spec:70`
+### 2. SECRET_KEY hardcodeada
+- [x] **Arreglada** (commit `0a1e359`: `get_secret_key()` persistente en AppData)
+**Severidad:** Crítica (si se expone en red)  
+**Archivo:** `backend/app/core/config.py:45`
 
-`console=True` hace que `sistema_licoreria.exe` abra una ventana de consola negra cada vez que se ejecuta. Para una app de escritorio, debe ser `console=False`.
+```python
+SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
+```
 
----
+Si no hay variable de entorno, la app usa `"supersecretkey"`. JWTs firmados con esta clave son falsificables.
 
-### 3. SetupPage demasiado grande (scroll vertical)
-**Severidad:** Media (UX)  
-**Archivo:** `frontend/src/features/auth/pages/SetupPage.tsx`
-
-El formulario de 5 campos en una sola columna (`max-w-md`) requiere scroll vertical en pantallas pequeñas.
-
-**Fix:** Distribuir en 2 columnas (izquierda: usuario/email, derecha: nombre/password/confirmación), ampliar el contenedor a `max-w-2xl`.
+**Fix:** Generar clave aleatoria al primer inicio y guardarla en `AppData/Local/SistemaLicoreria/.secret_key`.
 
 ---
 
-## Bugs menores
+## Altas
 
-### 4. Tauri no maneja fallo del sidecar
+### 3. Tauri no maneja fallo del sidecar
+- [ ] **Pendiente**
 **Severidad:** Alta  
 **Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:18-22`
 
@@ -67,7 +68,43 @@ sidecar.spawn().expect("Failed to spawn sidecar");
 
 ---
 
-### 5. Sleep hardcodeado de 3 segundos
+### 4. Backend queda corriendo al cerrar la app
+- [ ] **Pendiente**
+**Severidad:** Alta  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:23`
+
+Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) **no se mata**: `sidecar.spawn()` no está asociado al ciclo de vida de la ventana. Cada apertura/cierre deja un proceso Python huérfano compitiendo por puertos. Además, el proceso mantiene bloqueados `inventario.db` y los archivos de `AppData/Local/SistemaLicoreria/`, por lo que la desinstalación no puede borrar la data aunque el usuario marque "eliminar datos".
+
+**Fix:**
+- Manejar `RunEvent::ExitRequested`/`RunEvent::Exit` en `lib.rs` y matar el sidecar (guardar el `CommandChild` y llamar a `kill()`).
+- Verificar en el desinstalador NSIS que ningún proceso `sistema_licoreria.exe` quede vivo antes de borrar archivos.
+
+---
+
+## Medias
+
+### 5. Consola visible del sidecar
+- [ ] **Pendiente**
+**Severidad:** Media  
+**Archivo:** `backend/build.spec:70`
+
+`console=True` hace que `sistema_licoreria.exe` abra una ventana de consola negra cada vez que se ejecuta. Para una app de escritorio, debe ser `console=False`.
+
+---
+
+### 6. SetupPage demasiado grande (scroll vertical)
+- [ ] **Pendiente**
+**Severidad:** Media (UX)  
+**Archivo:** `frontend/src/features/auth/pages/SetupPage.tsx`
+
+El formulario de 5 campos en una sola columna (`max-w-md`) requiere scroll vertical en pantallas pequeñas.
+
+**Fix:** Distribuir en 2 columnas (izquierda: usuario/email, derecha: nombre/password/confirmación), ampliar el contenedor a `max-w-2xl`.
+
+---
+
+### 7. Sleep hardcodeado de 3 segundos
+- [x] **Arreglada** (commit `78dfac8`: polling de `.port` cada 500ms)
 **Severidad:** Media  
 **Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:25`
 
@@ -77,46 +114,8 @@ sidecar.spawn().expect("Failed to spawn sidecar");
 
 ---
 
-### 6. Fallback silencioso a puerto 8000
-**Severidad:** Baja  
-**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:29-39`
-
-Si `.port` no existe o no se puede leer, usa 8000 como fallback. Si el backend arrancó en otro puerto, la pantalla queda en blanco sin error visible.
-
----
-
-### 20. Aviso "Registra la tasa BCV" persiste tras registrar la tasa
-**Severidad:** Baja  
-**Archivos:**
-- `frontend/src/features/sales/pages/POSPage.tsx:67,240-251`
-- `frontend/src/features/sales/store/cartStore.ts:59-66,116`
-- `frontend/src/stores/exchangeRateStore.ts:21-36`
-
-Después de registrar la tasa BCV en la página de tasas de cambio, el aviso "⚠ Registra la tasa BCV antes de cobrar" del POS puede seguir apareciendo, aunque la venta igualmente se puede completar.
-
-El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agregar el primer producto (`cartStore.ts:116`). La auto-sincronización vía suscripción (`cartStore.ts:59-66`) solo actualiza `snapshotTasa` si ya hay items en el carrito **y** `snapshotTasa` es exactamente `0`; si la tasa se registra con el carrito vacío o `loadTasa()` falla silenciosamente (`exchangeRateStore.ts:33-35`), `snapshotTasa` queda en `0` y el aviso no desaparece.
-
-**Fix sugerido:** Sincronizar `snapshotTasa` desde `useExchangeRateStore.getState().tasa` al montar el POS / al abrir el checkout, y no depender únicamente de la suscripción frágil.
-
----
-
-## Seguridad
-
-### 7. SECRET_KEY hardcodeada
-**Severidad:** Crítica (si se expone en red)  
-**Archivo:** `backend/app/core/config.py:45`
-
-```python
-SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
-```
-
-Si no hay variable de entorno, la app usa `"supersecretkey"`. JWTs firmados con esta clave son falsificables.
-
-**Fix:** Generar clave aleatoria al primer inicio y guardarla en `AppData/Local/SistemaLicoreria/.secret_key`.
-
----
-
 ### 8. SECURE_COOKIE = False por defecto
+- [ ] **Pendiente**
 **Severidad:** Media  
 **Archivo:** `backend/app/core/config.py:52`
 
@@ -124,15 +123,8 @@ Cookies JWT se envían sin flag `Secure`. Aceptable para localhost, pero si el b
 
 ---
 
-### 9. CORS overly permissive
-**Severidad:** Baja  
-**Archivo:** `backend/app/main.py:45-46`
-
-`allow_methods=["*"]` y `allow_headers=["*"]` son más permisivos de lo necesario.
-
----
-
-### 10. CSP script-src unsafe-inline
+### 9. CSP script-src unsafe-inline
+- [ ] **Pendiente**
 **Severidad:** Media  
 **Archivo:** `licoreria-desktop/src-tauri/tauri.conf.json:22`
 
@@ -140,35 +132,8 @@ Cookies JWT se envían sin flag `Secure`. Aceptable para localhost, pero si el b
 
 ---
 
-## Pendientes de calidad
-
-### 11. Test Pillow pre-existente falla
-**Severidad:** Baja  
-**Archivo:** `backend/tests/test_services/test_invoice_ai.py:65,84`
-
-`test_valid_image_returns_jpeg` y `test_large_image_resized` fallan dependiendo de la versión de Pillow. El código de producción (`optimize_image`) funciona bien; el problema es assertions excesivamente estrictas en los tests.
-
----
-
-### 12. Iconos placeholder
-**Severidad:** Baja  
-**Archivo:** `licoreria-desktop/src-tauri/icons/`
-
-Los iconos PNG son cuadrados azules genéricos. Necesitan diseño real del negocio.
-
----
-
-### 13. Ajuste de umbral fuzzy
-**Severidad:** Baja  
-**Archivo:** `backend/app/services/invoice_service.py`
-
-El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos reales si necesita ajuste.
-
----
-
-## UX
-
-### 14. Email sin truncamiento en tabla de usuarios (scroll horizontal)
+### 10. Email sin truncamiento en tabla de usuarios (scroll horizontal)
+- [ ] **Pendiente**
 **Severidad:** Media (UX)  
 **Archivo:** `frontend/src/features/users/pages/UsersPage.tsx:110`
 
@@ -183,20 +148,8 @@ La columna email se renderiza como texto plano (`whitespace-nowrap`) sin límite
 
 ---
 
-### 15. Opción "Tasas de Cambio" duplicada (sidebar + settings)
-**Severidad:** Baja (UX)  
-**Archivos:**
-- `frontend/src/features/settings/components/SettingsNav.tsx:13`
-- `frontend/src/router.tsx:140-141`
-- `frontend/src/features/settings/pages/SettingsExchangeRatesPage.tsx` (wrapper vacío)
-
-"Tasas de Cambio" aparece en **4 lugares**: sidebar admin (App.tsx:47), sidebar operador (App.tsx:61), settings sub-nav (SettingsNav.tsx:13), y breadcrumbs. `SettingsExchangeRatesPage.tsx` solo hace `return <ExchangeRatesPage />`.
-
-**Fix:** Eliminar entrada de `SettingsNav.tsx:13`, eliminar ruta anidada en `router.tsx:140-141`, eliminar `SettingsExchangeRatesPage.tsx`. Mantener solo `/exchange-rates` del sidebar principal.
-
----
-
-### 16. Filtro de fechas en ventas no inclusivo (timezone)
+### 11. Filtro de fechas en ventas no inclusivo (timezone)
+- [ ] **Pendiente**
 **Severidad:** Media  
 **Archivos:**
 - `frontend/src/features/sales/pages/SalesPage.tsx:27-28` — envía `"2025-07-31"` (string plano)
@@ -221,9 +174,8 @@ if fecha_hasta:
 
 ---
 
-## Desktop (Tauri)
-
-### 17. Sin retroalimentación visual al descargar archivos
+### 12. Sin retroalimentación visual al descargar archivos
+- [ ] **Pendiente**
 **Severidad:** Media  
 **Archivos:**
 - `frontend/src/lib/exportToExcel.ts:34-61` — `XLSX.writeFile`
@@ -235,7 +187,8 @@ En el navegador web el usuario ve el ícono de descarga del navegador, pero al e
 
 ---
 
-### 18. Link "Google AI Studio" no abre en la app de escritorio
+### 13. Link "Google AI Studio" no abre en la app de escritorio
+- [ ] **Pendiente**
 **Severidad:** Media  
 **Archivo:** `frontend/src/features/system-settings/pages/SystemSettingsPage.tsx:224`
 
@@ -245,26 +198,89 @@ El link `<a href="https://aistudio.google.com/apikey" target="_blank">` funciona
 
 ---
 
-### 19. Backend queda corriendo al cerrar la app
-**Severidad:** Alta  
-**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:23`
+## Bajas
 
-Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) **no se mata**: `sidecar.spawn()` no está asociado al ciclo de vida de la ventana. Cada apertura/cierre deja un proceso Python huérfano compitiendo por puertos. Además, el proceso mantiene bloqueados `inventario.db` y los archivos de `AppData/Local/SistemaLicoreria/`, por lo que la desinstalación no puede borrar la data aunque el usuario marque "eliminar datos".
+### 14. Fallback silencioso a puerto 8000
+- [ ] **Pendiente**
+**Severidad:** Baja  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:29-39`
 
-**Fix:**
-- Manejar `RunEvent::ExitRequested`/`RunEvent::Exit` en `lib.rs` y matar el sidecar (guardar el `CommandChild` y llamar a `kill()`).
-- Verificar en el desinstalador NSIS que ningún proceso `sistema_licoreria.exe` quede vivo antes de borrar archivos.
+Si `.port` no existe o no se puede leer, usa 8000 como fallback. Si el backend arrancó en otro puerto, la pantalla queda en blanco sin error visible.
+
+---
+
+### 15. CORS overly permissive
+- [ ] **Pendiente**
+**Severidad:** Baja  
+**Archivo:** `backend/app/main.py:45-46`
+
+`allow_methods=["*"]` y `allow_headers=["*"]` son más permisivos de lo necesario.
+
+---
+
+### 16. Test Pillow pre-existente falla
+- [ ] **Pendiente**
+**Severidad:** Baja  
+**Archivo:** `backend/tests/test_services/test_invoice_ai.py:65,84`
+
+`test_valid_image_returns_jpeg` y `test_large_image_resized` fallan dependiendo de la versión de Pillow. El código de producción (`optimize_image`) funciona bien; el problema es assertions excesivamente estrictas en los tests.
+
+---
+
+### 17. Iconos placeholder
+- [ ] **Pendiente**
+**Severidad:** Baja  
+**Archivo:** `licoreria-desktop/src-tauri/icons/`
+
+Los iconos PNG son cuadrados azules genéricos. Necesitan diseño real del negocio.
+
+---
+
+### 18. Ajuste de umbral fuzzy
+- [ ] **Pendiente**
+**Severidad:** Baja  
+**Archivo:** `backend/app/services/invoice_service.py`
+
+El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos reales si necesita ajuste.
+
+---
+
+### 19. Opción "Tasas de Cambio" duplicada (sidebar + settings)
+- [ ] **Pendiente**
+**Severidad:** Baja (UX)  
+**Archivos:**
+- `frontend/src/features/settings/components/SettingsNav.tsx:13`
+- `frontend/src/router.tsx:140-141`
+- `frontend/src/features/settings/pages/SettingsExchangeRatesPage.tsx` (wrapper vacío)
+
+"Tasas de Cambio" aparece en **4 lugares**: sidebar admin (App.tsx:47), sidebar operador (App.tsx:61), settings sub-nav (SettingsNav.tsx:13), y breadcrumbs. `SettingsExchangeRatesPage.tsx` solo hace `return <ExchangeRatesPage />`.
+
+**Fix:** Eliminar entrada de `SettingsNav.tsx:13`, eliminar ruta anidada en `router.tsx:140-141`, eliminar `SettingsExchangeRatesPage.tsx`. Mantener solo `/exchange-rates` del sidebar principal.
+
+---
+
+### 20. Aviso "Registra la tasa BCV" persiste tras registrar la tasa
+- [ ] **Pendiente**
+**Severidad:** Baja  
+**Archivos:**
+- `frontend/src/features/sales/pages/POSPage.tsx:67,240-251`
+- `frontend/src/features/sales/store/cartStore.ts:59-66,116`
+- `frontend/src/stores/exchangeRateStore.ts:21-36`
+
+Después de registrar la tasa BCV en la página de tasas de cambio, el aviso "⚠ Registra la tasa BCV antes de cobrar" del POS puede seguir apareciendo, aunque la venta igualmente se puede completar.
+
+El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agregar el primer producto (`cartStore.ts:116`). La auto-sincronización vía suscripción (`cartStore.ts:59-66`) solo actualiza `snapshotTasa` si ya hay items en el carrito **y** `snapshotTasa` es exactamente `0`; si la tasa se registra con el carrito vacío o `loadTasa()` falla silenciosamente (`exchangeRateStore.ts:33-35`), `snapshotTasa` queda en `0` y el aviso no desaparece.
+
+**Fix sugerido:** Sincronizar `snapshotTasa` desde `useExchangeRateStore.getState().tasa` al montar el POS / al abrir el checkout, y no depender únicamente de la suscripción frágil.
 
 ---
 
 ## Resumen
 
-| Categoría | Crítica | Alta | Media | Baja | Total |
-|-----------|---------|------|-------|------|-------|
-| Bugs críticos | 1 | 0 | 2 | 0 | 3 |
-| Bugs menores | 0 | 1 | 1 | 2 | 4 |
-| Seguridad | 1 | 0 | 3 | 0 | 4 |
-| Calidad | 0 | 0 | 0 | 3 | 3 |
-| UX | 0 | 0 | 2 | 1 | 3 |
-| Desktop (Tauri) | 0 | 1 | 2 | 0 | 3 |
-| **Total** | **2** | **2** | **10** | **6** | **20** |
+| Severidad | Total | Arregladas | Pendientes |
+|-----------|-------|------------|------------|
+| Crítica | 2 | 2 | 0 |
+| Alta | 2 | 0 | 2 |
+| Media | 10 | 1 | 9 |
+| Baja | 6 | 0 | 6 |
+| **Total** | **20** | **3** | **17** |
