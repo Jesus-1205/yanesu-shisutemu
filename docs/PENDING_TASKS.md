@@ -151,6 +151,61 @@ El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos re
 
 ---
 
+## UX
+
+### 14. Email sin truncamiento en tabla de usuarios (scroll horizontal)
+**Severidad:** Media (UX)  
+**Archivo:** `frontend/src/features/users/pages/UsersPage.tsx:110`
+
+La columna email se renderiza como texto plano (`whitespace-nowrap`) sin límite de ancho. Emails largos como `usuario.ejemplo@gmail.com` empujan la tabla y generan scroll horizontal.
+
+**Fix:** Agregar función `render` con truncamiento:
+```tsx
+{ key: "email", header: "Email", render: (u: User) => (
+  <span className="block max-w-[200px] truncate" title={u.email}>{u.email}</span>
+)},
+```
+
+---
+
+### 15. Opción "Tasas de Cambio" duplicada (sidebar + settings)
+**Severidad:** Baja (UX)  
+**Archivos:**
+- `frontend/src/features/settings/components/SettingsNav.tsx:13`
+- `frontend/src/router.tsx:140-141`
+- `frontend/src/features/settings/pages/SettingsExchangeRatesPage.tsx` (wrapper vacío)
+
+"Tasas de Cambio" aparece en **4 lugares**: sidebar admin (App.tsx:47), sidebar operador (App.tsx:61), settings sub-nav (SettingsNav.tsx:13), y breadcrumbs. `SettingsExchangeRatesPage.tsx` solo hace `return <ExchangeRatesPage />`.
+
+**Fix:** Eliminar entrada de `SettingsNav.tsx:13`, eliminar ruta anidada en `router.tsx:140-141`, eliminar `SettingsExchangeRatesPage.tsx`. Mantener solo `/exchange-rates` del sidebar principal.
+
+---
+
+### 16. Filtro de fechas en ventas no inclusivo (timezone)
+**Severidad:** Media  
+**Archivos:**
+- `frontend/src/features/sales/pages/SalesPage.tsx:27-28` — envía `"2025-07-31"` (string plano)
+- `backend/app/routes/sales.py:40-44` — parsea como `datetime` naive (sin timezone)
+- `backend/app/services/sale_service.py:98-101,115-118` — compara contra `fecha_venta` (timezone-aware VE)
+- `backend/app/models/sale.py:15` — `DateTime(timezone=True)` con `VE_NOW`
+
+El frontend envía fechas como `"2025-07-31"`. FastAPI las parsea como `datetime(2025, 7, 31, 0, 0)` naive. La DB almacena en VE (UTC-4). La comparación `<=` contra columna timezone-aware produce resultados impredecibles en bordes de día.
+
+**Fix:** En `sale_service.py`, convertir la fecha recibida antes de comparar:
+```python
+from app.core.timezone import VE_TZ
+from datetime import datetime, time
+
+if fecha_desde:
+    fd = datetime.combine(fecha_desde.date() if isinstance(fecha_desde, datetime) else fecha_desde, time.min, tzinfo=VE_TZ)
+    stmt = stmt.where(Sale.fecha_venta >= fd)
+if fecha_hasta:
+    fh = datetime.combine(fecha_hasta.date() if isinstance(fecha_hasta, datetime) else fecha_hasta, time.max, tzinfo=VE_TZ)
+    stmt = stmt.where(Sale.fecha_venta <= fh)
+```
+
+---
+
 ## Resumen
 
 | Categoría | Crítica | Alta | Media | Baja | Total |
@@ -159,4 +214,5 @@ El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos re
 | Bugs menores | 0 | 1 | 2 | 1 | 4 |
 | Seguridad | 1 | 0 | 3 | 1 | 5 |
 | Calidad | 0 | 0 | 0 | 3 | 3 |
-| **Total** | **2** | **1** | **7** | **5** | **15** |
+| UX | 0 | 0 | 3 | 1 | 4 |
+| **Total** | **2** | **1** | **10** | **6** | **19** |
