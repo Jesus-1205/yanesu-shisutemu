@@ -1,11 +1,15 @@
 import hashlib
+import logging
 import os
+import secrets
 import sys
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 VE_TZ = ZoneInfo("America/Caracas")
 
@@ -29,6 +33,21 @@ def get_app_data_dir() -> Path:
     return app_dir
 
 
+def get_secret_key() -> str:
+    """Retorna SECRET_KEY desde archivo persistente o la genera en el primer inicio."""
+    key_file = get_app_data_dir() / ".secret_key"
+    try:
+        return key_file.read_text().strip()
+    except FileNotFoundError:
+        key = secrets.token_hex(32)
+        key_file.write_text(key)
+        logger.warning("SECRET_KEY generada y guardada en %s", key_file)
+        return key
+    except Exception:
+        logger.exception("Error leyendo .secret_key, usando fallback inseguro")
+        return "supersecretkey"
+
+
 def get_db_path() -> Path:
     db_dir = get_app_data_dir() / "data"
     db_dir.mkdir(parents=True, exist_ok=True)
@@ -42,7 +61,7 @@ def get_uploads_dir() -> Path:
 
 
 class Config:
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
+    SECRET_KEY: str = get_secret_key()
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 

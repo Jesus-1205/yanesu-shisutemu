@@ -240,10 +240,14 @@ export default function POSPage() {
             <Button
               variant="accent"
               className="w-full"
-              disabled={itemCount() === 0}
+              disabled={itemCount() === 0 || tasaNum <= 0}
               onClick={() => {
                 if (itemCount() === 0) {
                   toast("Agrega al menos un producto", "error");
+                  return;
+                }
+                if (tasaNum <= 0) {
+                  toast("Registra la tasa BCV antes de vender", "error");
                   return;
                 }
                 setCheckoutOpen(true);

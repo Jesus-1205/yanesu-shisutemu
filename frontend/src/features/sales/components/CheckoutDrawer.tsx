@@ -92,6 +92,10 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
 
   const handleConfirm = useCallback(async () => {
     if (!suficiente || saving) return;
+    if (tasaNum <= 0) {
+      toast("Registra la tasa BCV antes de vender", "error");
+      return;
+    }
     setSaving(true);
     try {
       const pagos = methods
