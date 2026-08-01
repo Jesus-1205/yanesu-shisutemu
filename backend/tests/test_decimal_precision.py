@@ -10,17 +10,17 @@ _PRODUCT = {"nombre": "Test", "precio_costo_caja_usd": 100,
 
 
 def _login(client, user):
-    client.post("/auth/register", json=user)
+    client.post("/api/auth/register", json=user)
 
 
 def _create_product(client, **overrides):
     data = {**_PRODUCT}
     data.update(overrides)
-    return client.post("/products", json=data)
+    return client.post("/api/products", json=data)
 
 
 def _get_pv_id(client):
-    for m in client.get("/payment-methods?solo_activos=true").json():
+    for m in client.get("/api/payment-methods?solo_activos=true").json():
         if m["nombre"] == "PUNTO_DE_VENTA":
             return m["id"]
     return 3
@@ -28,7 +28,7 @@ def _get_pv_id(client):
 
 def _create_sale(client, product_id, precio_unitario=10, cantidad=2, unidades=2):
     pv_id = _get_pv_id(client)
-    return client.post("/sales", json={
+    return client.post("/api/sales", json={
         "tasa_bcv_aplicada": 50,
         "items": [{
             "producto_id": product_id,
@@ -81,7 +81,7 @@ class TestProductPriceDecimals:
     def test_update_price_two_decimals(self, client):
         _login(client, _ADMIN)
         created = _create_product(client).json()
-        resp = client.put(f"/products/{created['id']}",
+        resp = client.put(f"/api/products/{created['id']}",
                           json={"precio_unidad_usd": 99.99})
         assert resp.status_code == 200
         assert resp.json()["precio_unidad_usd"] == "99.99"
@@ -89,7 +89,7 @@ class TestProductPriceDecimals:
     def test_update_price_rejects_four_decimals(self, client):
         _login(client, _ADMIN)
         created = _create_product(client).json()
-        resp = client.put(f"/products/{created['id']}",
+        resp = client.put(f"/api/products/{created['id']}",
                           json={"precio_unidad_usd": 99.9999})
         assert resp.status_code == 422
 
@@ -142,7 +142,7 @@ class TestExchangeRateDecimals:
 
     def test_tasa_ves_four_decimals(self, client):
         _login(client, _ADMIN)
-        resp = client.post("/exchange-rates", json={
+        resp = client.post("/api/exchange-rates", json={
             "moneda": "USD", "tasa_ves": 90.50,
         })
         assert resp.status_code == 201
@@ -150,7 +150,7 @@ class TestExchangeRateDecimals:
 
     def test_tasa_ves_preserves_precision(self, client):
         _login(client, _ADMIN)
-        resp = client.post("/exchange-rates", json={
+        resp = client.post("/api/exchange-rates", json={
             "moneda": "USD", "tasa_ves": 36.1234,
         })
         assert resp.status_code == 201

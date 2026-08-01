@@ -44,7 +44,7 @@ import type {
   UserUpdate,
 } from "@/types/api";
 
-const API_BASE = "";
+const API_BASE = "/api";
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, {

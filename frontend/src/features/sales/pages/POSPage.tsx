@@ -237,10 +237,23 @@ export default function POSPage() {
               )}
             </div>
 
+            {tasaNum <= 0 && (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <span>⚠ Registra la tasa BCV antes de cobrar</span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/exchange-rates")}
+                  className="font-semibold text-brand-blue hover:underline"
+                >
+                  Ir a tasas
+                </button>
+              </div>
+            )}
+
             <Button
               variant="accent"
               className="w-full"
-              disabled={itemCount() === 0 || tasaNum <= 0}
+              disabled={itemCount() === 0}
               onClick={() => {
                 if (itemCount() === 0) {
                   toast("Agrega al menos un producto", "error");

@@ -6,15 +6,15 @@ _ADMIN = {"username": "admin", "email": "admin@test.com", "password": "admin123"
 
 
 def _login(client, user=_ADMIN):
-    client.post("/auth/register", json=user)
+    client.post("/api/auth/register", json=user)
 
 
 def _create_supplier(client):
-    return client.post("/suppliers", json={"nombre": "Proveedor Test"})
+    return client.post("/api/suppliers", json={"nombre": "Proveedor Test"})
 
 
 def _create_product(client):
-    return client.post("/products", json={
+    return client.post("/api/products", json={
         "nombre": "Producto Test",
         "precio_costo_caja_usd": 120,
         "precio_unidad_usd": 25,
@@ -48,7 +48,7 @@ class TestCreateInvoice:
         prod = _create_product(client).json()
 
         payload = _invoice_payload(sup["id"], prod["id"], "F-TEST-001", cajas=2, costo_usd=60, costo_bs=60)
-        response = client.post("/invoices", data={"data": json.dumps(payload)})
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
         assert response.status_code == 201
         data = response.json()
         assert data["numero_factura"] == "F-TEST-001"
@@ -69,7 +69,7 @@ class TestCreateInvoice:
             "tasa_bs": 1,
             "detalles": [],
         }
-        response = client.post("/invoices", data={"data": json.dumps(payload)})
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
         assert response.status_code == 401
 
     def test_create_duplicate(self, client):
@@ -77,8 +77,8 @@ class TestCreateInvoice:
         sup = _create_supplier(client).json()
         prod = _create_product(client).json()
         payload = _invoice_payload(sup["id"], prod["id"], "F-DUP")
-        client.post("/invoices", data={"data": json.dumps(payload)})
-        response = client.post("/invoices", data={"data": json.dumps(payload)})
+        client.post("/api/invoices", data={"data": json.dumps(payload)})
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
         assert response.status_code == 409
 
     def test_create_product_not_found(self, client):
@@ -91,7 +91,7 @@ class TestCreateInvoice:
             "tasa_bs": 1,
             "detalles": [{"producto_id": 999, "cantidad_cajas": 1, "costo_caja_usd": 50, "costo_caja_bs": 50}],
         }
-        response = client.post("/invoices", data={"data": json.dumps(payload)})
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
         assert response.status_code == 404
 
 
@@ -99,7 +99,7 @@ class TestListInvoices:
 
     def test_list_empty(self, client):
         _login(client)
-        response = client.get("/invoices")
+        response = client.get("/api/invoices")
         assert response.status_code == 200
         data = response.json()
         assert data["items"] == []
@@ -110,10 +110,10 @@ class TestListInvoices:
         sup = _create_supplier(client).json()
         prod = _create_product(client).json()
         for i in range(3):
-            client.post("/invoices", data={"data": json.dumps(
+            client.post("/api/invoices", data={"data": json.dumps(
                 _invoice_payload(sup["id"], prod["id"], f"F-{i:03d}")
             )})
-        response = client.get("/invoices?page=1&page_size=2")
+        response = client.get("/api/invoices?page=1&page_size=2")
         assert response.status_code == 200
         data = response.json()
         assert len(data["items"]) == 2
@@ -122,15 +122,15 @@ class TestListInvoices:
     def test_list_filter_proveedor(self, client):
         _login(client)
         sup1 = _create_supplier(client).json()
-        sup2 = client.post("/suppliers", json={"nombre": "Otro"}).json()
+        sup2 = client.post("/api/suppliers", json={"nombre": "Otro"}).json()
         prod = _create_product(client).json()
-        client.post("/invoices", data={"data": json.dumps(
+        client.post("/api/invoices", data={"data": json.dumps(
             _invoice_payload(sup1["id"], prod["id"], "F-A")
         )})
-        client.post("/invoices", data={"data": json.dumps(
+        client.post("/api/invoices", data={"data": json.dumps(
             _invoice_payload(sup2["id"], prod["id"], "F-B")
         )})
-        response = client.get(f"/invoices?proveedor_id={sup1['id']}")
+        response = client.get(f"/api/invoices?proveedor_id={sup1['id']}")
         assert len(response.json()["items"]) == 1
 
 
@@ -140,11 +140,11 @@ class TestGetInvoice:
         _login(client)
         sup = _create_supplier(client).json()
         prod = _create_product(client).json()
-        created = client.post("/invoices", data={"data": json.dumps(
+        created = client.post("/api/invoices", data={"data": json.dumps(
             _invoice_payload(sup["id"], prod["id"], "F-GET", cajas=2, costo_usd=55, costo_bs=55)
         )}).json()
 
-        response = client.get(f"/invoices/{created['id']}")
+        response = client.get(f"/api/invoices/{created['id']}")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == created["id"]
@@ -158,5 +158,5 @@ class TestGetInvoice:
 
     def test_get_by_id_not_found(self, client):
         _login(client)
-        response = client.get("/invoices/999")
+        response = client.get("/api/invoices/999")
         assert response.status_code == 404

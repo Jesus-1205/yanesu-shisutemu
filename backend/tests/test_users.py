@@ -1,5 +1,5 @@
 def _register_admin(client):
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "admin",
         "email": "admin@test.com",
         "password": "admin123",
@@ -9,7 +9,7 @@ def _register_admin(client):
 
 
 def _register_operator(client):
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "operator",
         "email": "op@test.com",
         "password": "op123",
@@ -19,7 +19,7 @@ def _register_operator(client):
 
 
 def _login_as_admin(client):
-    client.post("/auth/login", json={
+    client.post("/api/auth/login", json={
         "username": "admin",
         "password": "admin123",
     })
@@ -29,7 +29,7 @@ class TestCreateUser:
     def test_create_success(self, client):
         _register_admin(client)
         _login_as_admin(client)
-        response = client.post("/users", json={
+        response = client.post("/api/users", json={
             "username": "newuser",
             "email": "new@test.com",
             "password": "pass123",
@@ -47,7 +47,7 @@ class TestCreateUser:
     def test_create_duplicate_username(self, client):
         _register_admin(client)
         _login_as_admin(client)
-        response = client.post("/users", json={
+        response = client.post("/api/users", json={
             "username": "admin",
             "email": "otro@test.com",
             "password": "pass123",
@@ -60,7 +60,7 @@ class TestCreateUser:
     def test_create_duplicate_email(self, client):
         _register_admin(client)
         _login_as_admin(client)
-        response = client.post("/users", json={
+        response = client.post("/api/users", json={
             "username": "otrouser",
             "email": "admin@test.com",
             "password": "pass123",
@@ -71,7 +71,7 @@ class TestCreateUser:
         assert "email" in response.json()["detail"].lower()
 
     def test_create_unauthenticated(self, client):
-        response = client.post("/users", json={
+        response = client.post("/api/users", json={
             "username": "nobody",
             "email": "nobody@test.com",
             "password": "pass123",
@@ -82,7 +82,7 @@ class TestCreateUser:
 
     def test_create_as_operator_forbidden(self, client):
         _register_operator(client)
-        response = client.post("/users", json={
+        response = client.post("/api/users", json={
             "username": "hacker",
             "email": "hacker@test.com",
             "password": "pass123",
@@ -94,7 +94,7 @@ class TestCreateUser:
     def test_create_missing_fields(self, client):
         _register_admin(client)
         _login_as_admin(client)
-        response = client.post("/users", json={"username": "incomplete"})
+        response = client.post("/api/users", json={"username": "incomplete"})
         assert response.status_code == 422
 
 
@@ -103,18 +103,18 @@ class TestListUsers:
         _register_admin(client)
         _register_operator(client)
         _login_as_admin(client)
-        response = client.get("/users")
+        response = client.get("/api/users")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
 
     def test_list_unauthenticated(self, client):
-        response = client.get("/users")
+        response = client.get("/api/users")
         assert response.status_code == 401
 
     def test_list_as_operator_forbidden(self, client):
         _register_operator(client)
-        response = client.get("/users")
+        response = client.get("/api/users")
         assert response.status_code == 403
 
 
@@ -123,7 +123,7 @@ class TestGetUser:
         _register_admin(client)
         _register_operator(client)
         _login_as_admin(client)
-        response = client.get("/users/2")
+        response = client.get("/api/users/2")
         assert response.status_code == 200
         data = response.json()
         assert data["username"] == "operator"
@@ -132,7 +132,7 @@ class TestGetUser:
 
     def test_get_by_id_not_found(self, client):
         _register_admin(client)
-        response = client.get("/users/999")
+        response = client.get("/api/users/999")
         assert response.status_code == 404
         assert response.json()["detail"] == "Usuario no encontrado"
 
@@ -142,7 +142,7 @@ class TestUpdateUser:
         _register_admin(client)
         _register_operator(client)
         _login_as_admin(client)
-        response = client.put("/users/2", json={
+        response = client.put("/api/users/2", json={
             "nombre_completo": "Updated Operator",
         })
         assert response.status_code == 200
@@ -150,17 +150,17 @@ class TestUpdateUser:
 
     def test_update_not_found(self, client):
         _register_admin(client)
-        response = client.put("/users/999", json={"nombre_completo": "Nope"})
+        response = client.put("/api/users/999", json={"nombre_completo": "Nope"})
         assert response.status_code == 404
         assert "Usuario no encontrado" in response.json()["detail"]
 
     def test_update_unauthenticated(self, client):
-        response = client.put("/users/1", json={"nombre_completo": "Nope"})
+        response = client.put("/api/users/1", json={"nombre_completo": "Nope"})
         assert response.status_code == 401
 
     def test_update_as_operator_forbidden(self, client):
         _register_operator(client)
-        response = client.put("/users/1", json={"nombre_completo": "Nope"})
+        response = client.put("/api/users/1", json={"nombre_completo": "Nope"})
         assert response.status_code == 403
 
 
@@ -169,7 +169,7 @@ class TestToggleActive:
         _register_admin(client)
         _register_operator(client)
         _login_as_admin(client)
-        response = client.patch("/users/2/toggle-active")
+        response = client.patch("/api/users/2/toggle-active")
         assert response.status_code == 200
         assert response.json()["is_active"] is False
 
@@ -177,13 +177,13 @@ class TestToggleActive:
         _register_admin(client)
         _register_operator(client)
         _login_as_admin(client)
-        client.patch("/users/2/toggle-active")
-        response = client.patch("/users/2/toggle-active")
+        client.patch("/api/users/2/toggle-active")
+        response = client.patch("/api/users/2/toggle-active")
         assert response.status_code == 200
         assert response.json()["is_active"] is True
 
     def test_toggle_not_found(self, client):
         _register_admin(client)
-        response = client.patch("/users/999/toggle-active")
+        response = client.patch("/api/users/999/toggle-active")
         assert response.status_code == 404
         assert "Usuario no encontrado" in response.json()["detail"]

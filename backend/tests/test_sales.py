@@ -10,15 +10,15 @@ _PRODUCT = {"nombre": "Producto Test",
 
 
 def _login(client, user):
-    client.post("/auth/register", json=user)
+    client.post("/api/auth/register", json=user)
 
 
 def _create_product(client):
-    return client.post("/products", json=_PRODUCT)
+    return client.post("/api/products", json=_PRODUCT)
 
 
 def _get_punto_venta_id(client):
-    resp = client.get("/payment-methods?solo_activos=true")
+    resp = client.get("/api/payment-methods?solo_activos=true")
     methods = resp.json()
     for m in methods:
         if m["nombre"] == "PUNTO_DE_VENTA":
@@ -41,7 +41,7 @@ def _create_sale(client, product_id, cantidad=2, unidades=2, observaciones=None)
     }
     if observaciones is not None:
         payload["observaciones"] = observaciones
-    return client.post("/sales", json=payload)
+    return client.post("/api/sales", json=payload)
 
 
 class TestCreateSale:
@@ -67,7 +67,7 @@ class TestCreateSale:
         assert response.status_code == 201
 
     def test_create_unauthenticated(self, client):
-        response = client.post("/sales", json={
+        response = client.post("/api/sales", json={
             "tasa_bcv_aplicada": 50, "items": [],
         })
         assert response.status_code == 401
@@ -79,7 +79,7 @@ class TestCreateSale:
 
     def test_create_insufficient_stock(self, client):
         _login(client, _ADMIN)
-        prod = client.post("/products", json={**_PRODUCT, "stock_unidades": 1}).json()
+        prod = client.post("/api/products", json={**_PRODUCT, "stock_unidades": 1}).json()
         response = _create_sale(client, prod["id"], cantidad=5, unidades=5)
         assert response.status_code == 409
         assert "Stock insuficiente" in response.json()["detail"]
@@ -87,7 +87,7 @@ class TestCreateSale:
     def test_create_empty_items(self, client):
         _login(client, _ADMIN)
         pv_id = _get_punto_venta_id(client)
-        response = client.post("/sales", json={
+        response = client.post("/api/sales", json={
             "tasa_bcv_aplicada": 50, "items": [],
             "pagos": [{"metodo_pago_id": pv_id, "monto_usd": 20, "monto_ves": 0}],
         })
@@ -95,13 +95,13 @@ class TestCreateSale:
 
     def test_create_missing_fields(self, client):
         _login(client, _ADMIN)
-        response = client.post("/sales", json={})
+        response = client.post("/api/sales", json={})
         assert response.status_code == 422
 
     def test_create_empty_pagos(self, client):
         _login(client, _ADMIN)
         prod = _create_product(client).json()
-        response = client.post("/sales", json={
+        response = client.post("/api/sales", json={
             "tasa_bcv_aplicada": 50,
             "items": [{"producto_id": prod["id"], "tipo_empaque": "UNIDAD",
                        "cantidad": 2, "unidades_descontadas": 2, "precio_unitario_usd": 10}],
@@ -112,7 +112,7 @@ class TestCreateSale:
     def test_create_metodo_pago_not_found(self, client):
         _login(client, _ADMIN)
         prod = _create_product(client).json()
-        response = client.post("/sales", json={
+        response = client.post("/api/sales", json={
             "tasa_bcv_aplicada": 50,
             "items": [{"producto_id": prod["id"], "tipo_empaque": "UNIDAD",
                        "cantidad": 2, "unidades_descontadas": 2, "precio_unitario_usd": 10}],
@@ -124,7 +124,7 @@ class TestCreateSale:
         _login(client, _ADMIN)
         prod = _create_product(client).json()
         _create_sale(client, prod["id"], cantidad=3, unidades=3)
-        updated = client.get(f"/products/{prod['id']}").json()
+        updated = client.get(f"/api/products/{prod['id']}").json()
         assert updated["stock_unidades"] == 97
 
     def test_create_with_observaciones(self, client):
@@ -146,7 +146,7 @@ class TestListSales:
 
     def test_list_empty(self, client):
         _login(client, _ADMIN)
-        response = client.get("/sales")
+        response = client.get("/api/sales")
         assert response.status_code == 200
         assert response.json() == []
 
@@ -154,7 +154,7 @@ class TestListSales:
         _login(client, _ADMIN)
         prod = _create_product(client).json()
         _create_sale(client, prod["id"])
-        response = client.get("/sales")
+        response = client.get("/api/sales")
         assert response.status_code == 200
         assert len(response.json()) == 1
 
@@ -163,13 +163,13 @@ class TestListSales:
         _login(client, _ADMIN)
         prod = _create_product(client).json()
         _create_sale(client, prod["id"])
-        client.post("/auth/login", json={"username": "op", "password": "op123"})
-        response = client.get("/sales")
+        client.post("/api/auth/login", json={"username": "op", "password": "op123"})
+        response = client.get("/api/sales")
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
     def test_list_unauthenticated(self, client):
-        response = client.get("/sales")
+        response = client.get("/api/sales")
         assert response.status_code == 401
 
 
@@ -179,14 +179,14 @@ class TestGetSale:
         _login(client, _ADMIN)
         prod = _create_product(client).json()
         sale_id = _create_sale(client, prod["id"]).json()["id"]
-        response = client.get(f"/sales/{sale_id}")
+        response = client.get(f"/api/sales/{sale_id}")
         assert response.status_code == 200
         assert response.json()["id"] == sale_id
         assert len(response.json()["items"]) == 1
 
     def test_get_by_id_not_found(self, client):
         _login(client, _ADMIN)
-        response = client.get("/sales/999")
+        response = client.get("/api/sales/999")
         assert response.status_code == 404
 
 
@@ -196,13 +196,13 @@ class TestSalesSummary:
         _login(client, _ADMIN)
         prod = _create_product(client).json()
         _create_sale(client, prod["id"])
-        response = client.get("/sales/summary")
+        response = client.get("/api/sales/summary")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
     def test_summary_operator_forbidden(self, client):
         _login(client, _OPERATOR)
-        response = client.get("/sales/summary")
+        response = client.get("/api/sales/summary")
         assert response.status_code == 403
 
 
@@ -210,14 +210,14 @@ class TestTopWeek:
 
     def test_top_week_admin_no_sales(self, client):
         _login(client, _ADMIN)
-        response = client.get("/sales/top-week")
+        response = client.get("/api/sales/top-week")
         assert response.status_code == 404
 
     def test_top_week_admin_with_sales(self, client):
         _login(client, _ADMIN)
         prod = _create_product(client).json()
         _create_sale(client, prod["id"])
-        response = client.get("/sales/top-week")
+        response = client.get("/api/sales/top-week")
         assert response.status_code == 200
         data = response.json()
         assert "periodo" in data
@@ -227,9 +227,9 @@ class TestTopWeek:
 
     def test_top_week_operator_forbidden(self, client):
         _login(client, _OPERATOR)
-        response = client.get("/sales/top-week")
+        response = client.get("/api/sales/top-week")
         assert response.status_code == 403
 
     def test_top_week_unauthenticated(self, client):
-        response = client.get("/sales/top-week")
+        response = client.get("/api/sales/top-week")
         assert response.status_code == 401

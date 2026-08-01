@@ -1,5 +1,5 @@
 def test_register_success(client):
-    response = client.post("/auth/register", json={
+    response = client.post("/api/auth/register", json={
         "username": "testuser",
         "email": "test@example.com",
         "password": "secure123",
@@ -20,14 +20,14 @@ def test_register_success(client):
 
 
 def test_register_duplicate_username(client):
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "dupuser",
         "email": "first@example.com",
         "password": "secure123",
         "nombre_completo": "Dup User",
         "rol_id": 2,
     })
-    response = client.post("/auth/register", json={
+    response = client.post("/api/auth/register", json={
         "username": "dupuser",
         "email": "second@example.com",
         "password": "secure123",
@@ -40,14 +40,14 @@ def test_register_duplicate_username(client):
 
 
 def test_register_duplicate_email(client):
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "user1",
         "email": "dup@example.com",
         "password": "secure123",
         "nombre_completo": "User One",
         "rol_id": 2,
     })
-    response = client.post("/auth/register", json={
+    response = client.post("/api/auth/register", json={
         "username": "user2",
         "email": "dup@example.com",
         "password": "secure123",
@@ -60,21 +60,21 @@ def test_register_duplicate_email(client):
 
 
 def test_register_missing_fields(client):
-    response = client.post("/auth/register", json={
+    response = client.post("/api/auth/register", json={
         "username": "incomplete",
     })
     assert response.status_code == 422
 
 
 def test_login_success(client):
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "logintest",
         "email": "login@example.com",
         "password": "secure123",
         "nombre_completo": "Login Test",
         "rol_id": 2,
     })
-    response = client.post("/auth/login", json={
+    response = client.post("/api/auth/login", json={
         "username": "logintest",
         "password": "secure123",
     })
@@ -90,7 +90,7 @@ def test_login_success(client):
 
 
 def test_login_invalid_credentials(client):
-    response = client.post("/auth/login", json={
+    response = client.post("/api/auth/login", json={
         "username": "nobody",
         "password": "wrong",
     })
@@ -100,24 +100,24 @@ def test_login_invalid_credentials(client):
 
 
 def test_login_invalid_body(client):
-    response = client.post("/auth/login", json={"username": "foo"})
+    response = client.post("/api/auth/login", json={"username": "foo"})
     assert response.status_code == 422
 
 
 def test_me_authenticated(client):
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "meuser",
         "email": "me@example.com",
         "password": "secure123",
         "nombre_completo": "Me User",
         "rol_id": 2,
     })
-    client.post("/auth/login", json={
+    client.post("/api/auth/login", json={
         "username": "meuser",
         "password": "secure123",
     })
 
-    response = client.get("/auth/me")
+    response = client.get("/api/auth/me")
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == "meuser"
@@ -126,21 +126,21 @@ def test_me_authenticated(client):
 
 
 def test_me_unauthenticated(client):
-    response = client.get("/auth/me")
+    response = client.get("/api/auth/me")
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
 
 
 def test_logout(client):
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "logoutuser",
         "email": "logout@example.com",
         "password": "secure123",
         "nombre_completo": "Logout User",
         "rol_id": 2,
     })
-    response = client.post("/auth/logout")
+    response = client.post("/api/auth/logout")
     assert response.status_code == 200
 
     cookie_header = response.headers.get("set-cookie", "")
@@ -152,7 +152,7 @@ def test_admin_required(client):
     response = client.get("/admin-only")
     assert response.status_code == 401
 
-    client.post("/auth/register", json={
+    client.post("/api/auth/register", json={
         "username": "operator",
         "email": "op@example.com",
         "password": "secure123",
