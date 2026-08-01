@@ -67,5 +67,5 @@ exe = EXE(
     strip=False,
     upx=True,
     upx_exclude=[],
-    console=True,
+    console=False,
 )

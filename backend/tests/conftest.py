@@ -1,3 +1,4 @@
+import os
 import tempfile
 
 import pytest
@@ -5,6 +6,10 @@ from fastapi import Depends
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
+
+# El TestClient corre sobre http://testserver; httpx no reenvía cookies con
+# flag Secure en http. Los tests usan cookies sin Secure.
+os.environ["SECURE_COOKIE"] = "False"
 
 import app.core.database as db_module
 from app.core.database import Base
