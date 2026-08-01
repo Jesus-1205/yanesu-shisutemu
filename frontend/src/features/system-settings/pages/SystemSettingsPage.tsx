@@ -5,6 +5,7 @@ import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import Input from "@/ui-components/Input";
 import { useToast } from "@/ui-components/Toast";
+import { openExternal } from "@/lib/tauri";
 import type { TestConnectionResponse } from "@/types/api";
 
 export default function SystemSettingsPage() {
@@ -221,7 +222,16 @@ export default function SystemSettingsPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <h4 className="text-sm font-semibold text-blue-800 mb-1">¿Cómo obtener una API Key?</h4>
           <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-            <li>Ve a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900">Google AI Studio</a></li>
+            <li>Ve a <a
+              href="https://aistudio.google.com/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                void openExternal("https://aistudio.google.com/apikey");
+              }}
+              className="underline hover:text-blue-900"
+            >Google AI Studio</a></li>
             <li>Inicia sesión con tu cuenta de Google</li>
             <li>Haz clic en "Create API Key"</li>
             <li>Copia la key generada y pégala aquí</li>
