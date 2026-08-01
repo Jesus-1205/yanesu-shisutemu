@@ -26,7 +26,12 @@ def crear_payment_method(db: Session, data: PaymentMethodCreate) -> PaymentMetho
     existing = db.execute(stmt).scalars().first()
     if existing:
         raise ConflictError(f"Ya existe un método de pago con nombre '{data.nombre}'")
-    metodo = PaymentMethod(nombre=data.nombre, activo=data.activo)
+    metodo = PaymentMethod(
+        nombre=data.nombre,
+        moneda_default=data.moneda_default,
+        acepta_referencia=data.acepta_referencia,
+        activo=data.activo,
+    )
     db.add(metodo)
     db.commit()
     db.refresh(metodo)
@@ -45,6 +50,10 @@ def actualizar_payment_method(db: Session, metodo_id: int, data: PaymentMethodUp
         metodo.nombre = data.nombre
     if data.activo is not None:
         metodo.activo = data.activo
+    if data.moneda_default is not None:
+        metodo.moneda_default = data.moneda_default
+    if data.acepta_referencia is not None:
+        metodo.acepta_referencia = data.acepta_referencia
     db.commit()
     db.refresh(metodo)
     return metodo
