@@ -209,6 +209,8 @@ export default function ReportsPage() {
 }
 
 function SortableSalesTable({ data, rango }: { data: SalesSummaryItem[]; rango: string }) {
+  const { toast } = useToast();
+  const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [limit, setLimit] = useState(5);
   const visible = data.slice(0, limit);
   const { sorted, sortConfig, requestSort } = useSortableData<SalesSummaryItem & Record<string, unknown>>(visible as (SalesSummaryItem & Record<string, unknown>)[], "periodo");
@@ -255,6 +257,7 @@ function SortableSalesTable({ data, rango }: { data: SalesSummaryItem[]; rango: 
       emptyMessage="Sin datos"
       exportable
       exportFilename="Resumen_ventas"
+        onExported={notifyExport}
       allData={data as (SalesSummaryItem & Record<string, unknown>)[]}
     />
   );
@@ -277,6 +280,8 @@ function ResumenTab({
   rango: string;
   onRangoChange: (r: string) => void;
 }) {
+  const { toast } = useToast();
+  const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [limitTopSelling, setLimitTopSelling] = useState(5);
   const visibleTopSelling = topSelling.slice(0, limitTopSelling);
 
@@ -349,6 +354,7 @@ function ResumenTab({
               emptyMessage="Sin datos"
               exportable
               exportFilename="Top_vendidos"
+                onExported={notifyExport}
               allData={topSelling}
               fetchAllData={() => api.getTopSellingProducts(9999)}
             />
@@ -376,6 +382,8 @@ function ProductosTab({
   matrixData: ProductMatrixItem[];
   loadingMatrix: boolean;
 }) {
+  const { toast } = useToast();
+  const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [limitSelling, setLimitSelling] = useState(5);
   const [limitTopMargin, setLimitTopMargin] = useState(5);
   const [limitLowMargin, setLimitLowMargin] = useState(5);
@@ -454,6 +462,7 @@ function ProductosTab({
             emptyMessage="Sin datos"
             exportable
             exportFilename="Productos_mas_vendidos"
+              onExported={notifyExport}
             allData={sellingFlat as ({ nombre: string; total_vendido: number; ingresos: number } & Record<string, unknown>)[]}
             fetchAllData={async () => {
               const all = await api.getTopSellingProducts(9999);
@@ -478,6 +487,7 @@ function ProductosTab({
             emptyMessage="Sin datos"
             exportable
             exportFilename="Productos_mayor_margen"
+              onExported={notifyExport}
             allData={topMarginFlat as (ProductOut & { margen_pct: number } & Record<string, unknown>)[]}
             fetchAllData={async () => {
               const all = await api.getTopMarginProducts(9999);
@@ -502,6 +512,7 @@ function ProductosTab({
             emptyMessage="Sin datos"
             exportable
             exportFilename="Productos_menor_margen"
+              onExported={notifyExport}
             allData={lowMarginFlat as (ProductOut & { margen_pct: number } & Record<string, unknown>)[]}
             fetchAllData={async () => {
               const all = await api.getLowestMarginProducts(9999);
@@ -525,6 +536,7 @@ function ProductosTab({
             emptyMessage="Sin datos"
             exportable
             exportFilename="Productos_menor_rotacion"
+              onExported={notifyExport}
             allData={lowRotFlat as ({ nombre: string; total_vendido: number; stock: number } & Record<string, unknown>)[]}
             fetchAllData={async () => {
               const all = await api.getLowRotationProducts(9999);
@@ -551,6 +563,8 @@ function CategoriasTab({
   topSelling: { categoria: CategoryOut; total_vendido: number }[];
   lowRotation: { categoria: CategoryOut; total_vendido: number }[];
 }) {
+  const { toast } = useToast();
+  const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [limitTopSelling, setLimitTopSelling] = useState(5);
   const [limitLowRot, setLimitLowRot] = useState(5);
   const [limitTopMargin, setLimitTopMargin] = useState(5);
@@ -617,6 +631,7 @@ function CategoriasTab({
               emptyMessage="Sin datos"
               exportable
               exportFilename="Categorias_top_ventas"
+                onExported={notifyExport}
               allData={topSellingFlat as ({ nombre: string; total_vendido: number } & Record<string, unknown>)[]}
               fetchAllData={async () => {
                 const all = await api.getTopSellingCategories(9999);
@@ -639,6 +654,7 @@ function CategoriasTab({
               emptyMessage="Sin datos"
               exportable
               exportFilename="Categorias_bajas_ventas"
+                onExported={notifyExport}
               allData={lowRotFlat as ({ nombre: string; total_vendido: number } & Record<string, unknown>)[]}
               fetchAllData={async () => {
                 const all = await api.getLowRotationCategories(9999);
@@ -661,6 +677,7 @@ function CategoriasTab({
               emptyMessage="Sin datos"
               exportable
               exportFilename="Categorias_mayor_margen"
+                onExported={notifyExport}
               allData={data.categorias as (CategoryAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -679,6 +696,7 @@ function CategoriasTab({
               emptyMessage="Sin datos"
               exportable
               exportFilename="Categorias_menor_margen"
+                onExported={notifyExport}
               allData={data.categorias as (CategoryAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -702,6 +720,7 @@ function CategoriasTab({
           emptyMessage="Sin categorías"
           exportable
           exportFilename="Categorias_detalle"
+            onExported={notifyExport}
           allData={data.categorias as (CategoryAnalyticsOut & Record<string, unknown>)[]}
         />
       </div>
@@ -710,6 +729,8 @@ function CategoriasTab({
 }
 
 function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
+  const { toast } = useToast();
+  const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [showInactives, setShowInactives] = useState(false);
   const [limitTopSales, setLimitTopSales] = useState(5);
   const [limitLowSales, setLimitLowSales] = useState(5);
@@ -784,6 +805,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               emptyMessage="Sin datos"
               exportable
               exportFilename="Proveedores_top_ventas"
+                onExported={notifyExport}
               allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -802,6 +824,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               emptyMessage="Sin datos"
               exportable
               exportFilename="Proveedores_bajas_ventas"
+                onExported={notifyExport}
               allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -820,6 +843,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               emptyMessage="Sin datos"
               exportable
               exportFilename="Proveedores_mayor_margen"
+                onExported={notifyExport}
               allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -838,6 +862,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               emptyMessage="Sin datos"
               exportable
               exportFilename="Proveedores_menor_margen"
+                onExported={notifyExport}
               allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -861,6 +886,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
           emptyMessage="Sin proveedores"
           exportable
           exportFilename="Proveedores_detalle"
+            onExported={notifyExport}
           allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
         />
       </div>

@@ -30,6 +30,7 @@ interface TableProps<T> {
   headerLeft?: ReactNode;
   menuDirection?: "up" | "down";
   singleExport?: boolean;
+  onExported?: (filename: string) => void;
 }
 
 function SkeletonRow({ cols }: { cols: number }) {
@@ -59,6 +60,7 @@ export default function Table<T>({
   headerLeft,
   menuDirection = "up",
   singleExport = false,
+  onExported,
 }: TableProps<T>) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportingAll, setExportingAll] = useState(false);
@@ -106,11 +108,12 @@ export default function Table<T>({
                   title="Exportar a Excel"
                   onClick={() => {
                     const exportCols = columns.filter((c) => c.exportable !== false);
-                    exportToExcel({
+                    const name = exportToExcel({
                       data: (allData || data) as (T & Record<string, unknown>)[],
                       columns: exportCols,
                       filename: exportFilename,
                     });
+                    onExported?.(name);
                   }}
                   className="flex items-center gap-1 p-1.5 rounded hover:bg-slate-200 transition-colors cursor-pointer"
                 >
@@ -147,11 +150,12 @@ export default function Table<T>({
                       <button
                         onClick={() => {
                           const exportCols = columns.filter((c) => c.exportable !== false);
-                          exportToExcel({
+                          const name = exportToExcel({
                             data: data as (T & Record<string, unknown>)[],
                             columns: exportCols,
                             filename: exportFilename,
                           });
+                          onExported?.(name);
                           setMenuOpen(false);
                         }}
                         className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
@@ -159,25 +163,26 @@ export default function Table<T>({
                         Datos visibles
                       </button>
                       {hasAllData && (
-                        <button
-                          disabled={exportingAll}
-                          onClick={async () => {
-                            setExportingAll(true);
-                            try {
-                              const exportCols = columns.filter((c) => c.exportable !== false);
-                              const fullData = fetchAllData
-                                ? await fetchAllData()
-                                : allData!;
-                              exportToExcel({
-                                data: fullData as (T & Record<string, unknown>)[],
-                                columns: exportCols,
-                                filename: `${exportFilename}_completo`,
-                              });
-                            } finally {
-                              setExportingAll(false);
-                              setMenuOpen(false);
-                            }
-                          }}
+                          <button
+                            disabled={exportingAll}
+                            onClick={async () => {
+                              setExportingAll(true);
+                              try {
+                                const exportCols = columns.filter((c) => c.exportable !== false);
+                                const fullData = fetchAllData
+                                  ? await fetchAllData()
+                                  : allData!;
+                                const name = exportToExcel({
+                                  data: fullData as (T & Record<string, unknown>)[],
+                                  columns: exportCols,
+                                  filename: `${exportFilename}_completo`,
+                                });
+                                onExported?.(name);
+                              } finally {
+                                setExportingAll(false);
+                                setMenuOpen(false);
+                              }
+                            }}
                           className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                         >
                           {exportingAll ? (

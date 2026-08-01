@@ -451,6 +451,29 @@ export const api = {
   getInvoiceImageUrl: (id: number) =>
     `${API_BASE}/invoices/${id}/image`,
 
+  downloadInvoiceImage: async (id: number): Promise<string> => {
+    const res = await fetch(`${API_BASE}/invoices/${id}/image`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new Error("Error al descargar la imagen");
+    }
+    const blob = await res.blob();
+    const ext = (res.headers.get("Content-Type") || "").includes("png")
+      ? "png"
+      : "jpg";
+    const filename = `factura_${id}.${ext}`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return filename;
+  },
+
   // ── System Settings ──
   getApiKeyStatus: (clave: string) =>
     request<ApiKeyStatusResponse>(`/settings/api-key/${clave}`),

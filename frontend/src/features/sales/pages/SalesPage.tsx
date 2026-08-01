@@ -108,7 +108,8 @@ export default function SalesPage() {
         ...(fechaHasta && { fecha_hasta: fechaHasta }),
         limit: 999999,
       });
-      exportToExcel({ data: allSales, columns: exportColumns, filename: "Ventas" });
+      const name = exportToExcel({ data: allSales, columns: exportColumns, filename: "Ventas" });
+      toast(`Archivo descargado: ${name}`, "success");
     } catch {
       toast("Error al exportar ventas", "error");
     }

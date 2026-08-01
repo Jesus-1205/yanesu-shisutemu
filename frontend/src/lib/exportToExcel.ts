@@ -35,7 +35,7 @@ export function exportToExcel<T extends object>({
   data,
   columns,
   filename,
-}: ExportOptions<T>): void {
+}: ExportOptions<T>): string {
   const headers = columns.map(col => col.header);
 
   const worksheetData = data.map(item => {
@@ -58,5 +58,7 @@ export function exportToExcel<T extends object>({
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
 
   const filenameWithDate = generateFilename(filename);
-  XLSX.writeFile(workbook, `${filenameWithDate}.xlsx`);
+  const fullFilename = `${filenameWithDate}.xlsx`;
+  XLSX.writeFile(workbook, fullFilename);
+  return fullFilename;
 }

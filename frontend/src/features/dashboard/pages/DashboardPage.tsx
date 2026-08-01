@@ -10,8 +10,10 @@ import ChartSkeleton from "@/ui-components/charts/ChartSkeleton";
 const SalesTrendChart = lazy(() => import("../components/SalesTrendChart"));
 const TopProductsBarChart = lazy(() => import("../components/TopProductsBarChart"));
 import { formatCurrency } from "@/lib/utils";
+import { useToast } from "@/ui-components/Toast";
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
 
   const [totalProductos, setTotalProductos] = useState(0);
@@ -165,6 +167,7 @@ export default function DashboardPage() {
               className="text-xs"
               exportable
               exportFilename="Dashboard_mayor_margen"
+              onExported={(name) => toast(`Archivo descargado: ${name}`, "success")}
             />
           ) : (
             <p className="text-sm text-slate-400">Sin datos de margen</p>
@@ -185,6 +188,7 @@ export default function DashboardPage() {
               className="text-xs"
               exportable
               exportFilename="Dashboard_menor_rotacion"
+              onExported={(name) => toast(`Archivo descargado: ${name}`, "success")}
             />
           ) : (
             <p className="text-sm text-slate-400">Sin datos de rotación</p>

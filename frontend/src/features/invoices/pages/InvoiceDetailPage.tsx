@@ -10,15 +10,18 @@ import ErrorBanner from "@/ui-components/ErrorBanner";
 import Table from "@/ui-components/Table";
 import PageHeader from "@/ui-components/PageHeader";
 import Modal from "@/ui-components/Modal";
+import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const fetchInvoice = useCallback(async () => {
     if (!id) return;
@@ -37,6 +40,22 @@ export default function InvoiceDetailPage() {
   useEffect(() => {
     fetchInvoice();
   }, [fetchInvoice]);
+
+  const handleDownloadImage = async () => {
+    if (!invoice) return;
+    setDownloading(true);
+    try {
+      const name = await api.downloadInvoiceImage(invoice.id);
+      toast(`Imagen descargada: ${name}`, "success");
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : "Error al descargar la imagen",
+        "error",
+      );
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -132,7 +151,8 @@ export default function InvoiceDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(api.getInvoiceImageUrl(invoice.id), "_blank")}
+              loading={downloading}
+              onClick={handleDownloadImage}
             >
               <Download className="w-4 h-4" />
               Descargar

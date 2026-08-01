@@ -95,7 +95,8 @@ export default function SuppliersPage() {
   const handleExportAll = async () => {
     try {
       const allSuppliers = await api.getSuppliers();
-      exportToExcel({ data: allSuppliers, columns: exportColumns, filename: "Proveedores" });
+      const name = exportToExcel({ data: allSuppliers, columns: exportColumns, filename: "Proveedores" });
+      toast(`Archivo descargado: ${name}`, "success");
     } catch {
       toast("Error al exportar proveedores", "error");
     }

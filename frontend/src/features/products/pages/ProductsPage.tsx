@@ -131,7 +131,8 @@ export default function ProductsPage() {
   const handleExportAll = async () => {
     try {
       const result = await api.getProducts({ page_size: 999999 });
-      exportToExcel({ data: result.items, columns: exportColumns, filename: "Productos" });
+      const name = exportToExcel({ data: result.items, columns: exportColumns, filename: "Productos" });
+      toast(`Archivo descargado: ${name}`, "success");
     } catch {
       toast("Error al exportar productos", "error");
     }
