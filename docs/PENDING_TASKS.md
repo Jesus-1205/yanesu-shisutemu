@@ -293,12 +293,27 @@ El frontend (`PaymentMethodsPage.tsx:71-84`) envía ambos campos correctamente y
 
 ---
 
+### 22. Desinstalador nunca borra la data aunque se marque "borrar data"
+- [ ] **Pendiente**
+**Severidad:** Alta  
+**Archivos:**
+- `licoreria-desktop/src-tauri/tauri.conf.json:38-44` — config NSIS sin `deleteAppDataOnUninstall`
+- `licoreria-desktop/windows/hooks.nsh` — `NSIS_HOOK_POSTUNINSTALL` vacío
+
+Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicación", **ningún contenido de `AppData/Local/SistemaLicoreria/` se elimina** (`.db`, `.port`, `.secret_key`, logs, etc.). El usuario puede borrar la carpeta manualmente inmediatamente después sin ningún bloqueo activo, lo que confirma que el problema no es de permisos ni de procesos vivos: simplemente el desinstalador **nunca ejecuta el borrado**.
+
+**Causa:** La opción de Tauri v2 `deleteAppDataOnUninstall` no está configurada en `bundle.windows.nsis`, por lo que el desinstalador solo remueve los archivos del programa (`Program Files/Sistema Licoreria`) y deja intacta la data de la app.
+
+**Fix:** Agregar `"deleteAppDataOnUninstall": true` en `bundle.windows.nsis` de `tauri.conf.json` (alternativamente, implementar el borrado en `NSIS_HOOK_POSTUNINSTALL` con `RMDir /r "$LOCALAPPDATA\SistemaLicoreria"`), y verificar con una desinstalación real que la carpeta desaparezca.
+
+---
+
 ## Resumen
 
 | Severidad | Total | Arregladas | Pendientes |
 |-----------|-------|------------|------------|
 | Crítica | 2 | 2 | 0 |
-| Alta | 3 | 2 | 1 |
+| Alta | 4 | 2 | 2 |
 | Media | 10 | 10 | 0 |
 | Baja | 7 | 1 | 6 |
-| **Total** | **22** | **15** | **7** |
+| **Total** | **23** | **15** | **8** |
