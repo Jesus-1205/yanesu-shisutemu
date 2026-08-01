@@ -94,7 +94,8 @@ export default function CategoriesPage() {
   const handleExportAll = async () => {
     try {
       const allCategories = await api.getCategories();
-      exportToExcel({ data: allCategories, columns: exportColumns, filename: "Categorias" });
+      const name = exportToExcel({ data: allCategories, columns: exportColumns, filename: "Categorias" });
+      toast(`Archivo descargado: ${name}`, "success");
     } catch {
       toast("Error al exportar categorias", "error");
     }

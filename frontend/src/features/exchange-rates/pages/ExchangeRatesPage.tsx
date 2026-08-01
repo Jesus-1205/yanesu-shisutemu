@@ -117,7 +117,8 @@ export default function ExchangeRatesPage() {
   const handleExportAll = async () => {
     try {
       const { history: allRates } = await api.getRateHistory();
-      exportToExcel({ data: allRates, columns: exportColumns, filename: "Tasas_cambio" });
+      const name = exportToExcel({ data: allRates, columns: exportColumns, filename: "Tasas_cambio" });
+      toast(`Archivo descargado: ${name}`, "success");
     } catch {
       toast("Error al exportar tasas de cambio", "error");
     }

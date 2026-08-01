@@ -148,6 +148,8 @@ export default function ProductEditPage() {
         precio_caja_usd: n(form.precio_caja_usd),
         proveedor_id: form.proveedor_id,
         tipo_iva: form.tipo_iva,
+        stock_unidades: n(form.stock_unidades),
+        stock_minimo: n(form.stock_minimo),
       };
       payload.precio_costo_caja_usd = n(form.precio_costo_caja_usd);
       await api.updateProduct(product.id, payload);

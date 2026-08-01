@@ -68,7 +68,7 @@ class Config:
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", str(get_db_path()))
 
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
-    SECURE_COOKIE: bool = os.getenv("SECURE_COOKIE", "False").lower() == "true"
+    SECURE_COOKIE: bool = os.getenv("SECURE_COOKIE", "True").lower() == "true"
 
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 

@@ -2,6 +2,7 @@ import { formatCurrency } from "@/lib/utils";
 import type { SupplierDetailProduct } from "@/types/api";
 import Table from "@/ui-components/Table";
 import { useSortableData } from "@/hooks/useSortableData";
+import { useToast } from "@/ui-components/Toast";
 
 interface SupplierInventoryTableProps {
   data: SupplierDetailProduct[];
@@ -9,6 +10,7 @@ interface SupplierInventoryTableProps {
 }
 
 export default function SupplierInventoryTable({ data, supplierName }: SupplierInventoryTableProps) {
+  const { toast } = useToast();
   const { sorted, sortConfig, requestSort } = useSortableData(
     data as (SupplierDetailProduct & Record<string, unknown>)[],
     "stock_unidades",
@@ -79,6 +81,7 @@ export default function SupplierInventoryTable({ data, supplierName }: SupplierI
           exportable
           singleExport
           exportFilename={`Inventario_proveedor_${supplierName}`}
+          onExported={(name) => toast(`Archivo descargado: ${name}`, "success")}
         />
       </div>
     </div>

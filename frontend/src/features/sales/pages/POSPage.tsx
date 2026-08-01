@@ -11,6 +11,7 @@ import ToggleSwitch from "@/ui-components/ToggleSwitch";
 import { useToast } from "@/ui-components/Toast";
 import { formatCurrency, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useCartStore } from "../store/cartStore";
 import CartItemRow from "../components/CartItemRow";
 import CheckoutDrawer from "../components/CheckoutDrawer";
@@ -54,6 +55,12 @@ export default function POSPage() {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    // Asegura que el store de tasas tenga la tasa BCV actual al abrir el POS,
+    // para que addItem capture un snapshotTasa valido.
+    useExchangeRateStore.getState().loadTasa();
+  }, []);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
@@ -236,19 +243,6 @@ export default function POSPage() {
                 </div>
               )}
             </div>
-
-            {tasaNum <= 0 && (
-              <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                <span>⚠ Registra la tasa BCV antes de cobrar</span>
-                <button
-                  type="button"
-                  onClick={() => navigate("/exchange-rates")}
-                  className="font-semibold text-brand-blue hover:underline"
-                >
-                  Ir a tasas
-                </button>
-              </div>
-            )}
 
             <Button
               variant="accent"

@@ -107,7 +107,13 @@ export default function UsersPage() {
       <Table
         columns={[
           { key: "username", header: "Usuario" },
-          { key: "email", header: "Email" },
+          {
+            key: "email",
+            header: "Email",
+            render: (u: User) => (
+              <span className="block max-w-[200px] truncate" title={u.email}>{u.email}</span>
+            ),
+          },
           {
             key: "rol_nombre",
             header: "Rol",

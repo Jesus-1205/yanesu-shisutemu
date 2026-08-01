@@ -9,7 +9,15 @@ vi.mock("@/services/api", () => ({
   api: {
     getInvoice: vi.fn(),
     getInvoiceImageUrl: (id: number) => `/api/invoices/${id}/image`,
+    downloadInvoiceImage: vi.fn(),
   },
+}));
+
+vi.mock("@/ui-components/Toast", () => ({
+  useToast: () => ({ toast: vi.fn() }),
+  ToastProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 import { api } from "@/services/api";

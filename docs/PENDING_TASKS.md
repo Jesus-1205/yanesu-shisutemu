@@ -53,7 +53,7 @@ Si no hay variable de entorno, la app usa `"supersecretkey"`. JWTs firmados con 
 ## Altas
 
 ### 3. Tauri no maneja fallo del sidecar
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `b8444c2`: diálogo de error fatal + `process::exit(1)`)
 **Severidad:** Alta  
 **Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:18-22`
 
@@ -69,7 +69,7 @@ sidecar.spawn().expect("Failed to spawn sidecar");
 ---
 
 ### 4. Backend queda corriendo al cerrar la app
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `b8444c2`: `kill()` del sidecar en `ExitRequested`/`Exit` + hook NSIS pre-uninstall)
 **Severidad:** Alta  
 **Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:23`
 
@@ -84,7 +84,7 @@ Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) **no se mata
 ## Medias
 
 ### 5. Consola visible del sidecar
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `ac5678b`: `console=False` + logging a AppData/logs/sistema.log)
 **Severidad:** Media  
 **Archivo:** `backend/build.spec:70`
 
@@ -93,7 +93,7 @@ Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) **no se mata
 ---
 
 ### 6. SetupPage demasiado grande (scroll vertical)
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `bb6d496`: grid `md:grid-cols-2` + `max-w-2xl`)
 **Severidad:** Media (UX)  
 **Archivo:** `frontend/src/features/auth/pages/SetupPage.tsx`
 
@@ -115,7 +115,7 @@ El formulario de 5 campos en una sola columna (`max-w-md`) requiere scroll verti
 ---
 
 ### 8. SECURE_COOKIE = False por defecto
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `ac5678b`: `SECURE_COOKIE` default `True`; tests lo desactivan vía env)
 **Severidad:** Media  
 **Archivo:** `backend/app/core/config.py:52`
 
@@ -124,7 +124,7 @@ Cookies JWT se envían sin flag `Secure`. Aceptable para localhost, pero si el b
 ---
 
 ### 9. CSP script-src unsafe-inline
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `b8444c2`: `script-src 'self'` sin `'unsafe-inline'`)
 **Severidad:** Media  
 **Archivo:** `licoreria-desktop/src-tauri/tauri.conf.json:22`
 
@@ -133,7 +133,7 @@ Cookies JWT se envían sin flag `Secure`. Aceptable para localhost, pero si el b
 ---
 
 ### 10. Email sin truncamiento en tabla de usuarios (scroll horizontal)
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `bb6d496`: `max-w-[200px] truncate` + `title`)
 **Severidad:** Media (UX)  
 **Archivo:** `frontend/src/features/users/pages/UsersPage.tsx:110`
 
@@ -149,7 +149,7 @@ La columna email se renderiza como texto plano (`whitespace-nowrap`) sin límite
 ---
 
 ### 11. Filtro de fechas en ventas no inclusivo (timezone)
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `4a5b713`: helper `_to_ve_boundary` + tests de bordes VE)
 **Severidad:** Media  
 **Archivos:**
 - `frontend/src/features/sales/pages/SalesPage.tsx:27-28` — envía `"2025-07-31"` (string plano)
@@ -175,7 +175,7 @@ if fecha_hasta:
 ---
 
 ### 12. Sin retroalimentación visual al descargar archivos
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `58db7aa`: toast de confirmación en 16 tablas + descarga blob de imagen con toast)
 **Severidad:** Media  
 **Archivos:**
 - `frontend/src/lib/exportToExcel.ts:34-61` — `XLSX.writeFile`
@@ -188,7 +188,7 @@ En el navegador web el usuario ve el ícono de descarga del navegador, pero al e
 ---
 
 ### 13. Link "Google AI Studio" no abre en la app de escritorio
-- [ ] **Pendiente**
+- [x] **Arreglada** (commit `bb6d496`: `@tauri-apps/plugin-opener` vía `openExternal` con fallback `window.open`)
 **Severidad:** Media  
 **Archivo:** `frontend/src/features/system-settings/pages/SystemSettingsPage.tsx:224`
 
@@ -260,7 +260,7 @@ El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos re
 ---
 
 ### 20. Aviso "Registra la tasa BCV" persiste tras registrar la tasa
-- [ ] **Pendiente**
+- [x] **Arreglada** (commits `1640cef` + `be5b524`: recargar tasa al montar POS, snapshot si quedó en 0, eliminar banner visual)
 **Severidad:** Baja  
 **Archivos:**
 - `frontend/src/features/sales/pages/POSPage.tsx:67,240-251`
@@ -271,7 +271,41 @@ Después de registrar la tasa BCV en la página de tasas de cambio, el aviso "�
 
 El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agregar el primer producto (`cartStore.ts:116`). La auto-sincronización vía suscripción (`cartStore.ts:59-66`) solo actualiza `snapshotTasa` si ya hay items en el carrito **y** `snapshotTasa` es exactamente `0`; si la tasa se registra con el carrito vacío o `loadTasa()` falla silenciosamente (`exchangeRateStore.ts:33-35`), `snapshotTasa` queda en `0` y el aviso no desaparece.
 
-**Fix sugerido:** Sincronizar `snapshotTasa` desde `useExchangeRateStore.getState().tasa` al montar el POS / al abrir el checkout, y no depender únicamente de la suscripción frágil.
+**Fix aplicado:**
+- `POSPage.tsx`: `useEffect` al montar que llama `useExchangeRateStore.getState().loadTasa()`.
+- `cartStore.ts:addItem`: si `snapshotTasa` quedó en `0` pero el store ya tiene una tasa válida (`> 0`), la captura; si el snapshot ya era válido, se conserva (regla de negocio intacta).
+- `POSPage.tsx`: banner visual eliminado completamente; solo se mantiene el toast de error al intentar vender sin tasa.
+- Tests: 54/54 pasan (sales suite completa).
+
+---
+
+### 21. Método de pago ignora `moneda_default` y `acepta_referencia`
+- [x] **Arreglada** (commit `105e110`: persistir ambos campos en crear y actualizar)
+**Severidad:** Alta  
+**Archivos:**
+- `backend/app/services/payment_method_service.py:29` — `crear_payment_method`
+- `backend/app/services/payment_method_service.py:36-50` — `actualizar_payment_method`
+
+Al crear o editar un método de pago, `moneda_default` y `acepta_referencia` **se ignoran**: el service solo persiste `nombre` y `activo`, así que el modelo siempre cae en sus defaults (`"VES"`, `False`).
+
+El frontend (`PaymentMethodsPage.tsx:71-84`) envía ambos campos correctamente y los schemas (`PaymentMethodCreate`/`PaymentMethodUpdate`) los definen, pero el service no los escribe en el modelo. Resultado: todos los métodos se crean **sin referencia** y **en Bs**, y el cambio de VES a USD o activar "Acepta referencia" no se refleja ni en la tabla ni en el POS.
+
+**Fix aplicado:** `crear_payment_method` ahora pasa `moneda_default=data.moneda_default` y `acepta_referencia=data.acepta_referencia`; `actualizar_payment_method` aplica ambos campos solo cuando `data.X is not None`.
+
+---
+
+### 22. Desinstalador nunca borra la data aunque se marque "borrar data"
+- [x] **Arreglada** (commit `105e110`: `deleteAppDataOnUninstall: true` en tauri.conf.json)
+**Severidad:** Alta  
+**Archivos:**
+- `licoreria-desktop/src-tauri/tauri.conf.json:38-44` — config NSIS sin `deleteAppDataOnUninstall`
+- `licoreria-desktop/windows/hooks.nsh` — `NSIS_HOOK_POSTUNINSTALL` vacío
+
+Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicación", **ningún contenido de `AppData/Local/SistemaLicoreria/` se elimina** (`.db`, `.port`, `.secret_key`, logs, etc.). El usuario puede borrar la carpeta manualmente inmediatamente después sin ningún bloqueo activo, lo que confirma que el problema no es de permisos ni de procesos vivos: simplemente el desinstalador **nunca ejecuta el borrado**.
+
+**Causa:** La opción de Tauri v2 `deleteAppDataOnUninstall` no está configurada en `bundle.windows.nsis`, por lo que el desinstalador solo remueve los archivos del programa (`Program Files/Sistema Licoreria`) y deja intacta la data de la app.
+
+**Fix aplicado:** `"deleteAppDataOnUninstall": true` agregado en `bundle.windows.nsis` de `tauri.conf.json`. Verificar con una desinstalación real que la carpeta desaparezca.
 
 ---
 
@@ -280,7 +314,7 @@ El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agre
 | Severidad | Total | Arregladas | Pendientes |
 |-----------|-------|------------|------------|
 | Crítica | 2 | 2 | 0 |
-| Alta | 2 | 0 | 2 |
-| Media | 10 | 1 | 9 |
-| Baja | 6 | 0 | 6 |
-| **Total** | **20** | **3** | **17** |
+| Alta | 4 | 4 | 0 |
+| Media | 10 | 10 | 0 |
+| Baja | 7 | 2 | 5 |
+| **Total** | **23** | **18** | **5** |

@@ -2,6 +2,7 @@ import { formatCurrency } from "@/lib/utils";
 import type { CategoryDetailProduct } from "@/types/api";
 import Table from "@/ui-components/Table";
 import { useSortableData } from "@/hooks/useSortableData";
+import { useToast } from "@/ui-components/Toast";
 
 interface CategoryInventoryTableProps {
   data: CategoryDetailProduct[];
@@ -9,6 +10,7 @@ interface CategoryInventoryTableProps {
 }
 
 export default function CategoryInventoryTable({ data, categoryName }: CategoryInventoryTableProps) {
+  const { toast } = useToast();
   const { sorted, sortConfig, requestSort } = useSortableData(
     data as (CategoryDetailProduct & Record<string, unknown>)[],
     "nombre",
@@ -74,6 +76,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
           exportable
           singleExport
           exportFilename={`Inventario_categoria_${categoryName}`}
+          onExported={(name) => toast(`Archivo descargado: ${name}`, "success")}
         />
       </div>
     </div>
