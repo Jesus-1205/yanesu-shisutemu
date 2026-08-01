@@ -92,7 +92,6 @@ export const useCartStore = create<CartState>((set, get) => {
         },
       });
     } else {
-      const isEmpty = Object.keys(state.items).length === 0;
       const unidades =
         tipo_empaque === "CAJA" ? cantidad * product.unidades_por_caja : cantidad;
 
@@ -111,9 +110,17 @@ export const useCartStore = create<CartState>((set, get) => {
         tipo_iva: product.tipo_iva,
       };
 
+      // Si el snapshot quedó en 0 (la tasa aun no estaba cargada al crear el
+      // carrito) pero el store ya tiene una tasa valida, capturarla ahora.
+      const currentTasa = useExchangeRateStore.getState().tasa;
+      const snapshotTasa =
+        state.snapshotTasa <= 0 && currentTasa > 0
+          ? currentTasa
+          : state.snapshotTasa;
+
       set({
         items: { ...state.items, [cartItemId]: newItem },
-        snapshotTasa: isEmpty ? useExchangeRateStore.getState().tasa : state.snapshotTasa,
+        snapshotTasa,
       });
     }
   },

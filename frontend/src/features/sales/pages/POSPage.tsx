@@ -11,6 +11,7 @@ import ToggleSwitch from "@/ui-components/ToggleSwitch";
 import { useToast } from "@/ui-components/Toast";
 import { formatCurrency, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useCartStore } from "../store/cartStore";
 import CartItemRow from "../components/CartItemRow";
 import CheckoutDrawer from "../components/CheckoutDrawer";
@@ -54,6 +55,12 @@ export default function POSPage() {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    // Asegura que el store de tasas tenga la tasa BCV actual al abrir el POS,
+    // para que addItem capture un snapshotTasa valido.
+    useExchangeRateStore.getState().loadTasa();
+  }, []);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
