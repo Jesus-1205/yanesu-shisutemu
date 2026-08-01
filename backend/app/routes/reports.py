@@ -8,7 +8,9 @@ from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
 from app.schemas.product import ProductMatrixOut
+from app.schemas.sale import PaymentMethodSummaryOut
 from app.services.product_service import get_product_matrix
+from app.services.sale_service import get_payment_method_summary
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -28,3 +30,21 @@ def products_matrix(
     Devuelve: lista de {id, nombre, total_vendido, precio, costo, margen_porcentaje, stock}
     """
     return get_product_matrix(db, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, limit=limit)
+
+
+@router.get("/payment-methods", response_model=list[PaymentMethodSummaryOut])
+def payment_methods_summary(
+    fecha_desde: Optional[date] = None,
+    fecha_hasta: Optional[date] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR")),
+):
+    """GET /reports/payment-methods - Montos recibidos por método de pago
+
+    Recibe: query params fecha_desde, fecha_hasta, cookie access_token
+    Hace:   suma montos USD/VES de pagos agrupados por método activo,
+            incluyendo métodos sin pagos con totales en 0
+    Devuelve: lista de {metodo_pago_id, metodo_pago_nombre, moneda_default,
+              cantidad_pagos, total_usd, total_ves}
+    """
+    return get_payment_method_summary(db, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)

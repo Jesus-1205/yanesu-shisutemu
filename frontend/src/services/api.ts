@@ -19,6 +19,7 @@ import type {
   PaymentMethodCreate,
   PaymentMethodOut,
   PaymentMethodUpdate,
+  PaymentMethodSummaryItem,
   ProductCreate,
   ProductMatrixItem,
   ProductOut,
@@ -377,6 +378,14 @@ export const api = {
     if (params.limit) qs.set("limit", String(params.limit));
     const q = qs.toString();
     return request<ProductMatrixItem[]>(`/reports/products-matrix${q ? `?${q}` : ""}`);
+  },
+
+  getPaymentMethodSummary: (params?: { fecha_desde?: string; fecha_hasta?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
+    if (params?.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
+    const q = qs.toString();
+    return request<PaymentMethodSummaryItem[]>(`/reports/payment-methods${q ? `?${q}` : ""}`);
   },
 
   getTopMarginProducts: (limit = 5) =>

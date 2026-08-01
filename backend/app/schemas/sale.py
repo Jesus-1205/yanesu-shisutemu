@@ -98,3 +98,15 @@ class SalePaginationOut(BaseModel):
     page: int
     page_size: int
     pages: int
+
+
+class PaymentMethodSummaryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    metodo_pago_id: int
+    metodo_pago_nombre: str
+    moneda_default: str
+    cantidad_pagos: int
+    total_usd: Decimal
+    total_ves: Decimal
+    total_equivalente_usd: Decimal

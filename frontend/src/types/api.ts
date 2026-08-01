@@ -407,6 +407,16 @@ export interface TopWeekOut {
   total_ves: number;
 }
 
+export interface PaymentMethodSummaryItem {
+  metodo_pago_id: number;
+  metodo_pago_nombre: string;
+  moneda_default: "USD" | "VES";
+  cantidad_pagos: number;
+  total_usd: number;
+  total_ves: number;
+  total_equivalente_usd: number;
+}
+
 export interface SalePaginationOut {
   items: SaleOut[];
   total: number;

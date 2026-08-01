@@ -11,7 +11,7 @@ from app.models.product import Product
 from app.models.sale import Sale, SaleItem
 
 from app.models.sale_payment import SalePayment
-from app.schemas.sale import SaleCreate, TopWeekOut
+from app.schemas.sale import PaymentMethodSummaryOut, SaleCreate, TopWeekOut
 
 
 def _to_ve_boundary(
@@ -267,3 +267,66 @@ def get_top_week_sales(db: Session, rango: str = "semanal") -> TopWeekOut | None
 
     top = max(groups.values(), key=lambda x: x["total_usd"])
     return TopWeekOut(**top)
+
+
+def get_payment_method_summary(
+    db: Session,
+    *,
+    fecha_desde: datetime | None = None,
+    fecha_hasta: datetime | None = None,
+) -> list[PaymentMethodSummaryOut]:
+    """Resumen de montos recibidos por método de pago activo.
+
+    Agrega en Python con Decimal para poder convertir cada pago en VES a su
+    equivalente USD usando la tasa BCV de su venta (un pago puede cobrarse en
+    VES incluso en un método cuya moneda default es USD). Incluye métodos
+    activos sin pagos con totales en 0.
+    """
+    stmt = select(SalePayment, Sale.tasa_bcv_aplicada).join(Sale, Sale.id == SalePayment.venta_id)
+    if fecha_desde:
+        stmt = stmt.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
+    if fecha_hasta:
+        stmt = stmt.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
+
+    rows = db.execute(stmt).all()
+
+    metodos_stmt = select(PaymentMethod).where(PaymentMethod.activo.is_(True))
+    metodos = db.execute(metodos_stmt).scalars().all()
+
+    agg: dict[int, dict] = {}
+    for payment, tasa in rows:
+        entry = agg.setdefault(payment.metodo_pago_id, {
+            "cantidad_pagos": 0,
+            "total_usd": Decimal("0"),
+            "total_ves": Decimal("0"),
+            "total_equivalente_usd": Decimal("0"),
+        })
+        entry["cantidad_pagos"] += 1
+        entry["total_usd"] += payment.monto_usd or Decimal("0")
+        entry["total_ves"] += payment.monto_ves or Decimal("0")
+        usd_part = payment.monto_usd or Decimal("0")
+        ves_part = payment.monto_ves or Decimal("0")
+        if ves_part and tasa and Decimal(str(tasa)) > 0:
+            usd_part += ves_part / Decimal(str(tasa))
+        entry["total_equivalente_usd"] += usd_part
+
+    result: list[PaymentMethodSummaryOut] = []
+    for metodo in metodos:
+        a = agg.get(metodo.id, {
+            "cantidad_pagos": 0,
+            "total_usd": Decimal("0"),
+            "total_ves": Decimal("0"),
+            "total_equivalente_usd": Decimal("0"),
+        })
+        result.append(PaymentMethodSummaryOut(
+            metodo_pago_id=metodo.id,
+            metodo_pago_nombre=metodo.nombre,
+            moneda_default=metodo.moneda_default,
+            cantidad_pagos=a["cantidad_pagos"],
+            total_usd=a["total_usd"].quantize(Decimal("0.01")),
+            total_ves=a["total_ves"].quantize(Decimal("0.01")),
+            total_equivalente_usd=a["total_equivalente_usd"].quantize(Decimal("0.01")),
+        ))
+
+    result.sort(key=lambda r: r.total_equivalente_usd, reverse=True)
+    return result

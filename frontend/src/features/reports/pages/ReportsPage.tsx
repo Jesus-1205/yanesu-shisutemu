@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
-import { BarChart3, Package, ShoppingBag, Building2, TrendingUp, DollarSign } from "lucide-react";
+import { BarChart3, Package, ShoppingBag, Building2, TrendingUp, DollarSign, Wallet, Banknote } from "lucide-react";
 import { api } from "@/services/api";
-import type { ProductOut, ProductMatrixItem, CategoryOut, CategoryAnalyticsResponse, SupplierAnalyticsResponse, CategoryAnalyticsOut, SupplierAnalyticsOut } from "@/types/api";
+import type { ProductOut, ProductMatrixItem, CategoryOut, CategoryAnalyticsResponse, SupplierAnalyticsResponse, CategoryAnalyticsOut, SupplierAnalyticsOut, PaymentMethodSummaryItem } from "@/types/api";
 import type { SalesSummaryItem } from "@/features/sales/types";
 import { formatPeriodRange } from "@/utils/dateUtils";
 import { useSortableData } from "@/hooks/useSortableData";
@@ -11,13 +11,15 @@ import StatCard from "@/ui-components/StatCard";
 import Table from "@/ui-components/Table";
 import Spinner from "@/ui-components/Spinner";
 import Select from "@/ui-components/Select";
+import Button from "@/ui-components/Button";
 import { useToast } from "@/ui-components/Toast";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatPaymentMethodName } from "@/lib/utils";
 import ChartSkeleton from "@/ui-components/charts/ChartSkeleton";
 const VentasVsCostosChart = lazy(() => import("../components/VentasVsCostosChart"));
 const RentabilityScatterChart = lazy(() => import("../components/RentabilityScatterChart"));
 const CategorySalesDonut = lazy(() => import("../components/CategorySalesDonut"));
 const SupplierComparisonBar = lazy(() => import("../components/SupplierComparisonBar"));
+const PaymentMethodsDonut = lazy(() => import("../components/PaymentMethodsDonut"));
 
 const RANGO_OPTIONS = [
   { value: "diario", label: "Diario" },
@@ -65,6 +67,10 @@ export default function ReportsPage() {
   const [lowRotCats, setLowRotCats] = useState<{ categoria: CategoryOut; total_vendido: number }[]>([]);
   const [matrixData, setMatrixData] = useState<ProductMatrixItem[]>([]);
   const [loadingMatrix, setLoadingMatrix] = useState(false);
+  const [paymentSummary, setPaymentSummary] = useState<PaymentMethodSummaryItem[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [pagoDesde, setPagoDesde] = useState("");
+  const [pagoHasta, setPagoHasta] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -130,13 +136,35 @@ export default function ReportsPage() {
     }
   }, [toast]);
 
+  const fetchPaymentSummary = useCallback(async () => {
+    setLoadingPayments(true);
+    try {
+      const data = await api.getPaymentMethodSummary({
+        ...(pagoDesde && { fecha_desde: pagoDesde }),
+        ...(pagoHasta && { fecha_hasta: pagoHasta }),
+      });
+      setPaymentSummary(data.map((m) => ({
+        ...m,
+        cantidad_pagos: Number(m.cantidad_pagos) || 0,
+        total_usd: Number(m.total_usd) || 0,
+        total_ves: Number(m.total_ves) || 0,
+        total_equivalente_usd: Number(m.total_equivalente_usd) || 0,
+      })));
+    } catch {
+      toast("Error al cargar estadísticas de métodos de pago", "error");
+    } finally {
+      setLoadingPayments(false);
+    }
+  }, [pagoDesde, pagoHasta, toast]);
+
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { fetchMatrixData(); }, [fetchMatrixData]);
 
   useEffect(() => {
     if (activeTab === "categorias" && !categoryAnalytics && !loadingCategories) fetchCategoryAnalytics();
     if (activeTab === "proveedores" && !supplierAnalytics && !loadingSuppliers) fetchSupplierAnalytics();
-  }, [activeTab, categoryAnalytics, supplierAnalytics, loadingCategories, loadingSuppliers, fetchCategoryAnalytics, fetchSupplierAnalytics]);
+    if (activeTab === "pagos") fetchPaymentSummary();
+  }, [activeTab, categoryAnalytics, supplierAnalytics, loadingCategories, loadingSuppliers, fetchCategoryAnalytics, fetchSupplierAnalytics, fetchPaymentSummary]);
 
   const categoriesTotal = Math.round(salesSummary.reduce((sum, s) => sum + Number(s.total_usd), 0) * 100) / 100;
   const categoriesCount = salesSummary.length;
@@ -156,6 +184,7 @@ export default function ReportsPage() {
             { value: "productos", label: "Productos", icon: <Package className="w-4 h-4" /> },
             { value: "categorias", label: "Categorías", icon: <ShoppingBag className="w-4 h-4" /> },
             { value: "proveedores", label: "Proveedores", icon: <Building2 className="w-4 h-4" /> },
+            { value: "pagos", label: "Pagos", icon: <Wallet className="w-4 h-4" /> },
           ]}
           value={activeTab}
           onChange={setActiveTab}
@@ -203,6 +232,16 @@ export default function ReportsPage() {
         ) : (
           <ProveedoresTab data={supplierAnalytics} />
         )
+      ) : activeTab === "pagos" ? (
+        <PagosTab
+          data={paymentSummary}
+          loading={loadingPayments}
+          desde={pagoDesde}
+          hasta={pagoHasta}
+          onDesdeChange={setPagoDesde}
+          onHastaChange={setPagoHasta}
+          onClear={() => { setPagoDesde(""); setPagoHasta(""); }}
+        />
       ) : null}
     </div>
   );
@@ -890,6 +929,148 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
           allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
         />
       </div>
+    </div>
+  );
+}
+
+function PagosTab({
+  data,
+  loading,
+  desde,
+  hasta,
+  onDesdeChange,
+  onHastaChange,
+  onClear,
+}: {
+  data: PaymentMethodSummaryItem[];
+  loading: boolean;
+  desde: string;
+  hasta: string;
+  onDesdeChange: (v: string) => void;
+  onHastaChange: (v: string) => void;
+  onClear: () => void;
+}) {
+  const { toast } = useToast();
+  const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
+  const { sorted, sortConfig, requestSort } = useSortableData<PaymentMethodSummaryItem & Record<string, unknown>>(
+    data as (PaymentMethodSummaryItem & Record<string, unknown>)[],
+    "total_usd",
+    "desc",
+  );
+
+  const totalUsd = data.reduce((sum, m) => sum + (Number(m.total_usd) || 0), 0);
+  const totalVes = data.reduce((sum, m) => sum + (Number(m.total_ves) || 0), 0);
+  const totalPagos = data.reduce((sum, m) => sum + (m.cantidad_pagos || 0), 0);
+  const totalEquivUsd = data.reduce((sum, m) => sum + (Number(m.total_equivalente_usd) || 0), 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Desde</label>
+          <input
+            type="date"
+            value={desde}
+            onChange={(e) => onDesdeChange(e.target.value)}
+            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Hasta</label>
+          <input
+            type="date"
+            value={hasta}
+            onChange={(e) => onHastaChange(e.target.value)}
+            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+          />
+        </div>
+        {(desde || hasta) && (
+          <Button variant="ghost" size="sm" onClick={onClear}>
+            Limpiar
+          </Button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Recibido USD" value={formatCurrency(totalUsd)} icon={<DollarSign className="w-5 h-5" />} variant="success" />
+            <StatCard label="Recibido VES" value={formatCurrency(totalVes, "Bs ")} icon={<Banknote className="w-5 h-5" />} variant="info" />
+            <StatCard label="Equivalente USD" value={formatCurrency(totalEquivUsd)} icon={<DollarSign className="w-5 h-5" />} />
+            <StatCard label="Total de Pagos" value={String(totalPagos)} icon={<Wallet className="w-5 h-5" />} />
+          </div>
+
+          <div className="bg-surface rounded-xl border border-slate-200 p-5">
+            <Suspense fallback={<ChartSkeleton />}>
+              <PaymentMethodsDonut data={data} />
+            </Suspense>
+          </div>
+
+          <div className="bg-surface rounded-xl border border-slate-200 p-5">
+            <h2 className="text-lg font-semibold text-text-main mb-3">Detalle por Método de Pago</h2>
+            <Table
+              columns={[
+                {
+                  key: "metodo_pago_nombre",
+                  header: "Método",
+                  sortable: true,
+                  onSort: () => requestSort("metodo_pago_nombre"),
+                  sortDirection: sortConfig?.key === "metodo_pago_nombre" ? sortConfig.direction : null,
+                  render: (m: PaymentMethodSummaryItem) => (
+                    <span className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                        {formatPaymentMethodName(m.metodo_pago_nombre)}
+                      </span>
+                      <span className="text-xs text-slate-400">{m.moneda_default}</span>
+                    </span>
+                  ),
+                },
+                {
+                  key: "cantidad_pagos",
+                  header: "Pagos",
+                  sortable: true,
+                  onSort: () => requestSort("cantidad_pagos"),
+                  sortDirection: sortConfig?.key === "cantidad_pagos" ? sortConfig.direction : null,
+                  render: (m: PaymentMethodSummaryItem) => String(m.cantidad_pagos),
+                },
+                {
+                  key: "total_usd",
+                  header: "Total USD",
+                  sortable: true,
+                  onSort: () => requestSort("total_usd"),
+                  sortDirection: sortConfig?.key === "total_usd" ? sortConfig.direction : null,
+                  render: (m: PaymentMethodSummaryItem) => formatCurrency(m.total_usd),
+                },
+                {
+                  key: "total_ves",
+                  header: "Total VES",
+                  sortable: true,
+                  onSort: () => requestSort("total_ves"),
+                  sortDirection: sortConfig?.key === "total_ves" ? sortConfig.direction : null,
+                  render: (m: PaymentMethodSummaryItem) => formatCurrency(m.total_ves, "Bs "),
+                },
+                {
+                  key: "total_equivalente_usd",
+                  header: "Equiv. USD",
+                  sortable: true,
+                  onSort: () => requestSort("total_equivalente_usd"),
+                  sortDirection: sortConfig?.key === "total_equivalente_usd" ? sortConfig.direction : null,
+                  render: (m: PaymentMethodSummaryItem) => formatCurrency(m.total_equivalente_usd),
+                },
+              ]}
+              data={sorted}
+              keyExtractor={(m) => m.metodo_pago_id}
+              emptyMessage="Sin datos"
+              exportable
+              exportFilename="Metodos_pago_estadisticas"
+              onExported={notifyExport}
+              allData={data as (PaymentMethodSummaryItem & Record<string, unknown>)[]}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
