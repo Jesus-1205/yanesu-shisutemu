@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 import pytest
 from sqlalchemy import select
 
+from app.core.config import VE_TZ
 from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.payment_method import PaymentMethod
 from app.models.product import Product
@@ -233,6 +234,72 @@ def test_get_sales_limit(db):
     create_sale(db, data, usuario_id=u.id)
 
     assert len(get_sales(db, limit=2)) == 2
+
+
+def _sale_con_fecha(db, u, fecha):
+    s = Sale(
+        usuario_id=u.id,
+        tasa_bcv_aplicada=Decimal("50"),
+        fecha_venta=fecha,
+        monto_exento_usd=Decimal("10"), base_imponible_usd=Decimal("0"),
+        monto_iva_usd=Decimal("0"),
+    )
+    db.add(s)
+    db.commit()
+    return s
+
+
+def test_get_sales_fecha_desde_inclusivo_ve(db):
+    u = _user(db)
+    previa = _sale_con_fecha(db, u, datetime(2026, 7, 31, 0, 0, 0, tzinfo=VE_TZ))
+    limite = _sale_con_fecha(db, u, datetime(2026, 7, 31, 23, 59, 59, tzinfo=VE_TZ))
+    anterior = _sale_con_fecha(db, u, datetime(2026, 7, 30, 23, 59, 59, tzinfo=VE_TZ))
+
+    # El frontend envía "2026-07-31" → FastAPI lo parsea como datetime naive
+    result = get_sales(db, fecha_desde=datetime(2026, 7, 31))
+    ids = {s.id for s in result}
+    assert previa.id in ids
+    assert limite.id in ids
+    assert anterior.id not in ids
+
+
+def test_get_sales_fecha_desde_acepta_date(db):
+    u = _user(db)
+    previa = _sale_con_fecha(db, u, datetime(2026, 7, 31, 0, 0, 0, tzinfo=VE_TZ))
+    anterior = _sale_con_fecha(db, u, datetime(2026, 7, 30, 23, 59, 59, tzinfo=VE_TZ))
+
+    result = get_sales(db, fecha_desde=date(2026, 7, 31))
+    ids = {s.id for s in result}
+    assert previa.id in ids
+    assert anterior.id not in ids
+
+
+def test_get_sales_fecha_hasta_inclusivo_ve(db):
+    u = _user(db)
+    limite = _sale_con_fecha(db, u, datetime(2026, 7, 31, 23, 59, 59, tzinfo=VE_TZ))
+    posterior = _sale_con_fecha(db, u, datetime(2026, 8, 1, 0, 0, 0, tzinfo=VE_TZ))
+
+    result = get_sales(db, fecha_hasta=datetime(2026, 7, 31))
+    ids = {s.id for s in result}
+    assert limite.id in ids
+    assert posterior.id not in ids
+
+
+def test_get_sales_filtro_rango_completo_ve(db):
+    u = _user(db)
+    anterior = _sale_con_fecha(db, u, datetime(2026, 7, 30, 12, 0, 0, tzinfo=VE_TZ))
+    dentro = _sale_con_fecha(db, u, datetime(2026, 7, 31, 12, 0, 0, tzinfo=VE_TZ))
+    posterior = _sale_con_fecha(db, u, datetime(2026, 8, 1, 12, 0, 0, tzinfo=VE_TZ))
+
+    result = get_sales(
+        db,
+        fecha_desde=datetime(2026, 7, 31),
+        fecha_hasta=datetime(2026, 7, 31),
+    )
+    ids = {s.id for s in result}
+    assert dentro.id in ids
+    assert anterior.id not in ids
+    assert posterior.id not in ids
 
 
 # --- get_sale ---

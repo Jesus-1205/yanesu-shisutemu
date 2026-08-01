@@ -14,6 +14,22 @@ from app.models.sale_payment import SalePayment
 from app.schemas.sale import SaleCreate, TopWeekOut
 
 
+def _to_ve_boundary(
+    value: datetime | date | None, *, end_of_day: bool = False
+) -> datetime | None:
+    """Convierte una fecha (string/date/datetime naive) al límite VE timezone-aware.
+
+    `end_of_day=False` → 00:00:00 VE (para filtro `>=`).
+    `end_of_day=True`  → 23:59:59.999999 VE (para filtro `<=`).
+    """
+    if value is None:
+        return None
+    day = value.date() if isinstance(value, datetime) else value
+    if end_of_day:
+        return datetime.combine(day, time.max, tzinfo=VE_TZ)
+    return datetime.combine(day, time.min, tzinfo=VE_TZ)
+
+
 def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
     items: list[SaleItem] = []
     for item_data in data.items:
@@ -96,9 +112,9 @@ def get_sales(
     )
 
     if fecha_desde:
-        stmt = stmt.where(Sale.fecha_venta >= fecha_desde)
+        stmt = stmt.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
-        stmt = stmt.where(Sale.fecha_venta <= fecha_hasta)
+        stmt = stmt.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
 
     return list(db.execute(stmt).scalars().unique().all())
 
@@ -113,9 +129,9 @@ def get_sales_paginated(
 ) -> dict:
     base = select(Sale)
     if fecha_desde:
-        base = base.where(Sale.fecha_venta >= fecha_desde)
+        base = base.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
-        base = base.where(Sale.fecha_venta <= fecha_hasta)
+        base = base.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
 
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)
@@ -183,9 +199,9 @@ def get_sales_summary(
     stmt = select(Sale).order_by(Sale.fecha_venta)
 
     if fecha_desde:
-        stmt = stmt.where(Sale.fecha_venta >= fecha_desde)
+        stmt = stmt.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
-        stmt = stmt.where(Sale.fecha_venta <= fecha_hasta)
+        stmt = stmt.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
 
     sales = list(db.execute(stmt).scalars().all())
 
