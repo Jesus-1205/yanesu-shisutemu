@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::process::Command as StdCommand;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::Manager;
@@ -15,6 +16,16 @@ fn get_port_path() -> PathBuf {
 
 struct SidecarState(Mutex<Option<CommandChild>>);
 
+/// Mata el sidecar y todo su árbol de procesos (incluyendo hijos Python de PyInstaller).
+fn kill_sidecar_tree(child: CommandChild) {
+    let pid = child.pid();
+    let _ = child.kill();
+    // fallback: taskkill /T mata el árbol completo
+    let _ = StdCommand::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .output();
+}
+
 /// Muestra un diálogo de error y cierra la app al pulsar OK.
 /// Si `kill_sidecar` es true, también mata el proceso del backend.
 fn show_fatal_error(app: &tauri::App, message: &str, kill_sidecar: bool) {
@@ -27,7 +38,7 @@ fn show_fatal_error(app: &tauri::App, message: &str, kill_sidecar: bool) {
                 if let Some(state) = handle.try_state::<SidecarState>() {
                     if let Ok(mut guard) = state.0.lock() {
                         if let Some(child) = guard.take() {
-                            let _ = child.kill();
+                            kill_sidecar_tree(child);
                         }
                     }
                 }
@@ -109,7 +120,7 @@ pub fn run() {
                 if let Some(state) = app_handle.try_state::<SidecarState>() {
                     if let Ok(mut guard) = state.0.lock() {
                         if let Some(child) = guard.take() {
-                            let _ = child.kill();
+                            kill_sidecar_tree(child);
                         }
                     }
                 }
