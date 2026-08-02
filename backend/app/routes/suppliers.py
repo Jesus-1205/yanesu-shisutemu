@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
 from app.schemas.supplier import SupplierCreate, SupplierUpdate, SupplierOut, SupplierAnalyticsResponse, SupplierDetailAnalyticsOut, SupplierPaginationOut
+from app.services.audit_service import log_action
 from app.services.supplier_service import get_suppliers, get_suppliers_paginated, get_supplier, create_supplier, update_supplier, delete_supplier, get_supplier_analytics, get_supplier_detail_analytics
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create(
     data: SupplierCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -23,6 +25,8 @@ def create(
     Devuelve: 201 + proveedor creado | 422 validación | 409 duplicado | 401/403 sin permisos
     """
     supplier = create_supplier(db, data)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CREAR", entidad="proveedor", entidad_id=supplier.id, detalle=f"Creado proveedor '{supplier.nombre}'")
     return SupplierOut.model_validate(supplier)
 
 
@@ -108,6 +112,7 @@ def get_by_id(
 def update(
     supplier_id: int,
     data: SupplierUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -118,12 +123,15 @@ def update(
     Devuelve: 200 + proveedor actualizado | 404 no encontrado | 409 duplicado | 401/403 sin permisos
     """
     supplier = update_supplier(db, supplier_id, data)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="EDITAR", entidad="proveedor", entidad_id=supplier.id, detalle=f"Editado proveedor '{supplier.nombre}'")
     return SupplierOut.model_validate(supplier)
 
 
 @router.delete("/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(
     supplier_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -134,3 +142,5 @@ def delete(
     Devuelve: 204 sin contenido | 404 no encontrado | 409 tiene productos | 401/403 sin permisos
     """
     delete_supplier(db, supplier_id)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="ELIMINAR", entidad="proveedor", entidad_id=supplier_id, detalle=f"Eliminado proveedor ID {supplier_id}")

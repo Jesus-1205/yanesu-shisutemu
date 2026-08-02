@@ -60,6 +60,16 @@ def get_uploads_dir() -> Path:
     return uploads
 
 
+def get_audit_log_path() -> Path:
+    log_dir = get_app_data_dir() / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir / "audit.log"
+
+
+AUDIT_MAX_BYTES: int = 5 * 1024 * 1024
+AUDIT_MAX_ROTATED: int = 6
+
+
 class Config:
     SECRET_KEY: str = get_secret_key()
     ALGORITHM: str = "HS256"

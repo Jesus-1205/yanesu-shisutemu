@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,7 @@ from app.core.exceptions import ConflictError
 from app.models.role import Role
 from app.models.user import User
 from app.schemas.user import UserCreate, UserOut, LoginRequest
+from app.services.audit_service import log_action
 from app.services.auth_service import register_user, login_user, set_token_cookie, clear_token_cookie, hash_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,7 +23,7 @@ def setup_status(db: Session = Depends(get_db)):
 
 
 @router.post("/setup")
-def setup_admin(data: UserCreate, response: Response, db: Session = Depends(get_db)):
+def setup_admin(data: UserCreate, response: Response, request: Request, db: Session = Depends(get_db)):
     """Crea el primer usuario administrador. Solo funciona si no hay usuarios."""
     if db.query(User).count() > 0:
         raise HTTPException(
@@ -59,6 +60,8 @@ def setup_admin(data: UserCreate, response: Response, db: Session = Depends(get_
 
     token = create_access_token({"sub": str(user.id)})
     set_token_cookie(response, token)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=user.username, ip=ip, accion="SETUP", entidad="usuario", entidad_id=user.id, detalle=f"Setup inicial: administrador '{user.username}' creado")
     return UserOut.model_validate(user)
 
 
@@ -69,7 +72,7 @@ def _exists(db: Session, field: str, value: str) -> bool:
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(data: UserCreate, response: Response, db: Session = Depends(get_db)):
+def register(data: UserCreate, response: Response, request: Request, db: Session = Depends(get_db)):
     """POST /auth/register - Registrar nuevo usuario
 
     Recibe: JSON body con username, email, password, nombre_completo, rol_id
@@ -78,11 +81,13 @@ def register(data: UserCreate, response: Response, db: Session = Depends(get_db)
     """
     user, token = register_user(db, data)
     set_token_cookie(response, token)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=user.username, ip=ip, accion="REGISTRO", entidad="usuario", entidad_id=user.id, detalle=f"Registro de usuario '{user.username}'")
     return UserOut.model_validate(user)
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
-def login(data: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(data: LoginRequest, response: Response, request: Request, db: Session = Depends(get_db)):
     """POST /auth/login - Iniciar sesión
 
     Recibe: JSON body con username y password
@@ -91,6 +96,8 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
     """
     result = login_user(db, data.username, data.password)
     if not result:
+        ip = request.client.host if request.client else "local"
+        log_action(usuario=None, ip=ip, accion="LOGIN_FALLIDO", entidad="auth", usuario_intentado=data.username, detalle=f"Intento de login fallido para '{data.username}'")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales inválidas",
@@ -98,6 +105,8 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
 
     user, token = result
     set_token_cookie(response, token)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=user.username, ip=ip, accion="LOGIN", entidad="auth", entidad_id=user.id, detalle=f"Login exitoso de '{user.username}'")
     return UserOut.model_validate(user)
 
 
@@ -113,7 +122,7 @@ def me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-def logout(response: Response):
+def logout(response: Response, request: Request):
     """POST /auth/logout - Cerrar sesión
 
     Recibe: cookie access_token (automática)
@@ -121,4 +130,6 @@ def logout(response: Response):
     Devuelve: 200 + mensaje de confirmación
     """
     clear_token_cookie(response)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=None, ip=ip, accion="LOGOUT", entidad="auth", detalle="Sesión cerrada")
     return {"message": "Sesión cerrada"}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, require_role
@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.schemas.system_setting import ApiKeyPayload, ApiKeyStatusResponse, TestConnectionResponse
 from app.services import system_setting_service
+from app.services.audit_service import log_action
 from app.services.gemini_service import check_gemini_connection
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -37,6 +38,7 @@ def get_api_key_status(
 )
 def save_api_key(
     payload: ApiKeyPayload,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -47,6 +49,8 @@ def save_api_key(
         user_id=current_user.id,
         descripcion=payload.descripcion,
     )
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CONFIGURAR", entidad="api_key", detalle=f"Guardada API key '{payload.clave}'")
     return {"message": "API key guardada correctamente"}
 
 
@@ -56,11 +60,14 @@ def save_api_key(
 )
 def delete_api_key(
     clave: str,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     deleted = system_setting_service.delete_api_key(db, clave)
     if not deleted:
         raise EntityNotFoundError(f"No se encontró la API key con clave '{clave}'")
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=None, ip=ip, accion="ELIMINAR", entidad="api_key", detalle=f"Eliminada API key '{clave}'")
     return {"message": "API key eliminada correctamente"}
 
 

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
 from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryOut, CategoryAnalyticsResponse, CategoryDetailAnalyticsOut, CategoryPaginationOut
+from app.services.audit_service import log_action
 from app.services.category_service import (
     create_category,
     delete_category,
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create(
     data: CategoryCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -36,6 +38,8 @@ def create(
     Devuelve: 201 + categoría creada | 422 validación | 409 duplicado | 401/403 sin permisos
     """
     category = create_category(db, data)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CREAR", entidad="categoria", entidad_id=category.id, detalle=f"Creada categoría '{category.nombre}'")
     return CategoryOut.model_validate(category)
 
 
@@ -191,6 +195,7 @@ def get_by_id(
 def update(
     category_id: int,
     data: CategoryUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -201,12 +206,15 @@ def update(
     Devuelve: 200 + categoría actualizada | 404 no encontrada | 409 duplicado | 401/403 sin permisos
     """
     category = update_category(db, category_id, data)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="EDITAR", entidad="categoria", entidad_id=category.id, detalle=f"Editada categoría '{category.nombre}'")
     return CategoryOut.model_validate(category)
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(
     category_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -217,3 +225,5 @@ def delete(
     Devuelve: 204 sin contenido | 404 no encontrada | 401/403 sin permisos
     """
     delete_category(db, category_id)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="ELIMINAR", entidad="categoria", entidad_id=category_id, detalle=f"Eliminada categoría ID {category_id}")

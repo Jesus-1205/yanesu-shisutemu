@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
 from app.schemas.payment_method import PaymentMethodCreate, PaymentMethodOut, PaymentMethodUpdate
+from app.services.audit_service import log_action
 from app.services.payment_method_service import (
     actualizar_payment_method,
     crear_payment_method,
@@ -51,6 +52,7 @@ def get_by_id(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create(
     data: PaymentMethodCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -61,6 +63,8 @@ def create(
     Devuelve: 201 + método creado | 409 duplicado
     """
     metodo = crear_payment_method(db, data)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CREAR", entidad="metodo_pago", entidad_id=metodo.id, detalle=f"Creado método de pago '{metodo.nombre}'")
     return PaymentMethodOut.model_validate(metodo)
 
 
@@ -68,6 +72,7 @@ def create(
 def update(
     metodo_id: int,
     data: PaymentMethodUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -78,12 +83,15 @@ def update(
     Devuelve: 200 + método actualizado | 404 no encontrado | 409 duplicado
     """
     metodo = actualizar_payment_method(db, metodo_id, data)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="EDITAR", entidad="metodo_pago", entidad_id=metodo.id, detalle=f"Editado método de pago '{metodo.nombre}'")
     return PaymentMethodOut.model_validate(metodo)
 
 
 @router.delete("/{metodo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(
     metodo_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -94,3 +102,5 @@ def delete(
     Devuelve: 204 sin contenido | 404 no encontrado | 409 en uso
     """
     eliminar_payment_method(db, metodo_id)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="ELIMINAR", entidad="metodo_pago", entidad_id=metodo_id, detalle=f"Eliminado método de pago ID {metodo_id}")

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
 from app.schemas.exchange_rate import ExchangeRateBulkSave, ExchangeRateCreate, ExchangeRateOut, ExchangeRatePaginationOut
+from app.services.audit_service import log_action
 from app.services.exchange_rate_service import (
     create_rate,
     fetch_bcv_rates,
@@ -22,6 +23,7 @@ router = APIRouter(prefix="/exchange-rates", tags=["exchange-rates"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create(
     data: ExchangeRateCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
@@ -32,12 +34,15 @@ def create(
     Devuelve: 201 + tasa creada | 422 si validación falla | 401/403 si no autenticado/no admin
     """
     rate = create_rate(db, data, current_user.id)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CREAR", entidad="tasa_cambio", entidad_id=rate.id, detalle=f"Creada tasa {rate.moneda} = {rate.tasa_ves}")
     return ExchangeRateOut.model_validate(rate)
 
 
 @router.post("/save-rates", status_code=status.HTTP_201_CREATED)
 def save_bulk(
     data: ExchangeRateBulkSave,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
@@ -48,6 +53,8 @@ def save_bulk(
     Devuelve: 201 + lista de tasas creadas | 422 si validación falla | 401/403
     """
     rates = save_rates(db, data, current_user.id)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CONFIGURAR", entidad="tasa_cambio", detalle=f"Guardadas tasas USD/EUR")
     return [ExchangeRateOut.model_validate(r) for r in rates]
 
 

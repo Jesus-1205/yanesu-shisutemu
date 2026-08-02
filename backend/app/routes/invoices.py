@@ -2,7 +2,7 @@ import json
 import time
 from collections import defaultdict
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from app.schemas.invoice import (
     FacturaPaginationOut,
     InvoiceAnalysisOut,
 )
+from app.services.audit_service import log_action
 from app.services.invoice_service import (
     analyze_invoice_from_image,
     create_invoice,
@@ -114,6 +115,7 @@ async def create(
     image: UploadFile | None = File(default=None),
     procesada_por_ia: bool = Form(default=False),
     raw_json_ia: str | None = Form(default=None),
+    request: Request = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
@@ -157,6 +159,8 @@ async def create(
         raw_json_ia=raw_ia,
         proveedor_nombre=proveedor_nombre,
     )
+    ip = request.client.host if request else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CREAR", entidad="factura", entidad_id=factura.id, detalle=f"Creada factura #{factura.numero_factura} proveedor '{proveedor_nombre}'")
     return _factura_to_out(factura)
 
 

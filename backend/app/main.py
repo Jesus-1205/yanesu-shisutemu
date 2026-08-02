@@ -1,9 +1,11 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.logging_setup import ensure_logging
 from app.core.exceptions import ConflictError, EntityNotFoundError
 
 from app.core.config import Config
@@ -24,16 +26,26 @@ from app.routes.suppliers import router as suppliers_router
 from app.routes.users import router as users_router
 from app.routes.system_settings import router as system_settings_router
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ensure_logging()
+    from app.services.audit_service import start_writer, stop_writer
+    start_writer()
+    logger.info("Sistema Licorería arrancado")
+    yield
+    stop_writer()
+    logger.info("Sistema Licorería detenido")
+
 
 app = FastAPI(
     title="Sistema Licoreria API",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
+    lifespan=lifespan,
 )
 app = register_error_handlers(app)
 

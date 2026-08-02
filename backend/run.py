@@ -16,24 +16,9 @@ sys.path.insert(0, str(BASE_DIR))
 from app.core.config import get_db_path
 from app.core.database import SessionLocal
 from app.core.first_run import initialize_database
+from app.core.logging_setup import ensure_logging
 from app.core.port_manager import find_free_port, save_port_info
 from app.main import app
-
-
-def setup_logging():
-    """Log a archivo en AppData (el .exe empaquetado corre sin consola)."""
-    from app.core.config import get_app_data_dir
-
-    log_dir = get_app_data_dir() / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        handlers=[
-            logging.FileHandler(log_dir / "sistema.log", encoding="utf-8"),
-            logging.StreamHandler(),
-        ],
-    )
 
 
 def setup_frontend():
@@ -58,9 +43,7 @@ def setup_frontend():
 
 
 def main():
-    from app.core.config import get_app_data_dir
-
-    setup_logging()
+    ensure_logging()
     logger = logging.getLogger(__name__)
 
     db = SessionLocal()

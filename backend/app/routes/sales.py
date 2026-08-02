@@ -1,12 +1,13 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
 from app.schemas.sale import SaleCreate, SaleOut, SalePaginationOut, TopWeekOut
+from app.services.audit_service import log_action
 from app.services.sale_service import (
     create_sale,
     current_day_range,
@@ -24,6 +25,7 @@ router = APIRouter(prefix="/sales", tags=["sales"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create(
     data: SaleCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
@@ -34,6 +36,8 @@ def create(
     Devuelve: 201 + venta creada | 422 validación | 404 producto | 409 stock | 401/403
     """
     sale = create_sale(db, data, usuario_id=current_user.id)
+    ip = request.client.host if request.client else "local"
+    log_action(usuario=current_user.username, ip=ip, accion="CREAR", entidad="venta", entidad_id=sale.id, detalle=f"Creada venta ID {sale.id}")
     return SaleOut.model_validate(sale)
 
 
