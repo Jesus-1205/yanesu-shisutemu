@@ -44,7 +44,7 @@ def fetch_bcv_rates() -> dict[str, Decimal]:
 
     Returns:
         dict con claves 'USD' y 'EUR' y sus valores Decimal redondeados
-        a 3 decimales. Si una moneda no se encuentra, se omite del dict.
+        a 4 decimales. Si una moneda no se encuentra, se omite del dict.
 
     Raises:
         ConnectionError: si no se puede conectar al sitio.
@@ -62,7 +62,7 @@ def fetch_bcv_rates() -> dict[str, Decimal]:
     for currency_id, key in [("dolar", "USD"), ("euro", "EUR")]:
         rate = _extract_rate(soup, currency_id)
         if rate is not None:
-            rates[key] = rate.quantize(Decimal("0.001"))
+            rates[key] = rate.quantize(Decimal("0.0001"))
 
     if not rates:
         raise RuntimeError(

@@ -343,29 +343,26 @@ Al cerrar la app, se muestra brevemente una ventana de consola/powershell antes 
 ---
 
 ### 25. Botón de agregar caja en POS requiere clicks innecesarios
-- [ ] **Pendiente**
+- [x] **Arreglada** (commits pendientes: `SplitAddButton` reescrito con botón directo + icono `Package`)
 **Severidad:** Baja (UX)  
-**Archivo:** `frontend/src/features/sales/pages/POSPage.tsx`
+**Archivo:** `frontend/src/features/sales/components/SplitAddButton.tsx`
 
 En la tabla de productos del POS, el botón de agregar caja tiene un dropdown (flecha) que despliega opciones. Esto agrega un click innecesario: el usuario debe primero abrir el dropdown y luego seleccionar "agregar caja".
 
-**Fix propuesto:** Reemplazar el dropdown por un botón simple de acción directa que al darle clic agrega una caja al carrito inmediatamente, sin pasar por un menú desplegable.
+**Fix:** Reemplazar el dropdown por un botón directo con icono `Package` de Lucide que agrega una caja al carrito con un solo clic. Se eliminó el estado `open`, el `useEffect` de click-outside y el dropdown completo (64 → 34 líneas).
 
 ---
 
 ### 26. Decimales de tasa BCV: scrapper usa 3, sistema espera 4, muestra 2
-- [ ] **Pendiente**
+- [x] **Arreglada** (commits pendientes: `bcv_scraper.py` usa `Decimal("0.0001")`)
 **Severidad:** Baja  
 **Archivos:**
-- `backend/app/services/exchange_rate_service.py` — función scrapper con `decimal(0.001)`
-- `backend/app/models/exchange_rate.py` — campo `tasa` con precisión definida
-- `frontend/src/features/exchange-rates/pages/ExchangeRatesPage.tsx` — formato de visualización (2 decimales)
+- `backend/app/core/bcv_scraper.py:65` — `quantize(Decimal("0.0001"))` (antes `"0.001"`)
+- `backend/app/models/exchange_rate.py:15` — `DECIMAL(10, 4)` ya soporta 4 decimales
 
-El frontend y backend esperan recibir **4 dígitos** del BCV (ej: `748.7860`) y mostrar **2 decimales** al usuario final (ej: `748,79`). Sin embargo, la función scrapper que obtiene las tasas del BCV usa `decimal(0.001)`, lo que redondea a **3 decimales** y siempre agrega un `0` al final (ej: `748.7860` → `748.786`).
+El frontend y backend esperan recibir **4 dígitos** del BCV (ej: `748.7860`) y mostrar **2 decimales** al usuario final (ej: `748,79`). Sin embargo, la función scrapper que obtiene las tasas del BCV usaba `decimal(0.001)`, lo que redondeaba a **3 decimales**.
 
-**Impacto:** Los cálculos de ventas y reportes pueden tener una pérdida de precisión por el redondeo innecesario a 3 decimales en lugar de 4.
-
-**Fix propuesto:** Cambiar `decimal(0.001)` por `decimal(0.0001)` en el scrapper para preservar los 4 decimales que provee el BCV.
+**Fix:** Cambiar `quantize(Decimal("0.001"))` por `quantize(Decimal("0.0001"))` en `bcv_scraper.py:65` y actualizar el docstring. No se requieren cambios en el modelo ni en el frontend.
 
 ---
 
@@ -376,5 +373,5 @@ El frontend y backend esperan recibir **4 dígitos** del BCV (ej: `748.7860`) y 
 | Crítica | 2 | 2 | 0 |
 | Alta | 7 | 7 | 0 |
 | Media | 11 | 11 | 0 |
-| Baja | 7 | 5 | 2 |
-| **Total** | **27** | **25** | **2** |
+| Baja | 7 | 7 | 0 |
+| **Total** | **27** | **27** | **0** |
