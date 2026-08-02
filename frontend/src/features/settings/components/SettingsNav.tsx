@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Users, CreditCard, DollarSign, Settings } from "lucide-react";
+import { Users, CreditCard, Settings } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -10,7 +10,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Usuarios y Roles", to: "/settings/users", icon: <Users size={18} /> },
   { label: "Métodos de Pago", to: "/settings/payment-methods", icon: <CreditCard size={18} /> },
-  { label: "Tasas de Cambio", to: "/settings/exchange-rates", icon: <DollarSign size={18} /> },
   { label: "API Keys", to: "/settings/system", icon: <Settings size={18} /> },
 ];
 

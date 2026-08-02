@@ -136,10 +136,7 @@ export const router = createBrowserRouter([
                 path: "payment-methods",
                 lazy: adminOnly(() => import("./features/settings/pages/SettingsPaymentMethodsPage")),
               },
-              {
-                path: "exchange-rates",
-                lazy: adminOnly(() => import("./features/settings/pages/SettingsExchangeRatesPage")),
-              },
+
               {
                 path: "system",
                 lazy: adminOnly(() => import("./features/settings/pages/SettingsSystemPage")),
