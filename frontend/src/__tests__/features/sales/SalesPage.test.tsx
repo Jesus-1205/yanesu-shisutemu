@@ -8,11 +8,13 @@ import type { ReactNode } from "react";
 
 const mockGetSales = vi.fn();
 const mockGetSalesPaginated = vi.fn();
+const mockGetPaymentMethods = vi.fn();
 
 vi.mock("../../../services/api", () => ({
   api: {
     getSales: (...args: unknown[]) => mockGetSales(...args),
     getSalesPaginated: (...args: unknown[]) => mockGetSalesPaginated(...args),
+    getPaymentMethods: (...args: unknown[]) => mockGetPaymentMethods(...args),
   },
 }));
 
@@ -41,6 +43,7 @@ function wrapper({ children }: { children: ReactNode }) {
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetSalesPaginated.mockResolvedValue({ items: [], pages: 1 });
+  mockGetPaymentMethods.mockResolvedValue([]);
 });
 
 describe("SalesPage", () => {
@@ -83,6 +86,17 @@ describe("SalesPage", () => {
         ]),
         filename: "Ventas",
       });
+    });
+  });
+
+  it("renders payment method filter dropdown for admin", async () => {
+    mockGetPaymentMethods.mockResolvedValue([
+      { id: 1, nombre: "DIVISAS", moneda_default: "USD", activo: true, acepta_referencia: false },
+      { id: 2, nombre: "EFECTIVO", moneda_default: "VES", activo: true, acepta_referencia: false },
+    ]);
+    render(<SalesPage />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText("Método de pago")).toBeInTheDocument();
     });
   });
 });

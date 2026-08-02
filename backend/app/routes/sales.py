@@ -41,12 +41,17 @@ def create(
 def list_all(
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
+    metodo_pago_ids: str | None = None,
     limit: int = 50,
     page: int | None = None,
     page_size: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
+    pm_ids: list[int] | None = None
+    if metodo_pago_ids:
+        pm_ids = [int(x.strip()) for x in metodo_pago_ids.split(",") if x.strip()]
+
     if current_user.rol_nombre != "ADMINISTRADOR":
         if not fecha_desde and not fecha_hasta:
             fecha_desde, fecha_hasta = current_day_range()
@@ -56,6 +61,7 @@ def list_all(
             db,
             fecha_desde=fecha_desde,
             fecha_hasta=fecha_hasta,
+            metodo_pago_ids=pm_ids,
             page=page,
             page_size=page_size,
         )
@@ -71,6 +77,7 @@ def list_all(
         db,
         fecha_desde=fecha_desde,
         fecha_hasta=fecha_hasta,
+        metodo_pago_ids=pm_ids,
         limit=limit,
     )
     return [SaleOut.model_validate(s) for s in sales]

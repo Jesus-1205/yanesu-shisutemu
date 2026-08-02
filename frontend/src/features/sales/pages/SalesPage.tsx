@@ -9,10 +9,12 @@ import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import Pagination from "@/ui-components/Pagination";
 import ErrorBanner from "@/ui-components/ErrorBanner";
+import MultiSelectTags from "@/ui-components/MultiSelectTags";
 import { formatCurrency, formatPaymentMethodName, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToast } from "@/ui-components/Toast";
 import { exportToExcel } from "@/lib/exportToExcel";
+import type { PaymentMethodOut } from "@/types/api";
 
 const PAGE_SIZE = 20;
 
@@ -26,6 +28,8 @@ export default function SalesPage() {
   const [error, setError] = useState<string | null>(null);
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
+  const [metodoPagoIds, setMetodoPagoIds] = useState<number[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOut[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -36,6 +40,7 @@ export default function SalesPage() {
       const res = await api.getSalesPaginated({
         ...(fechaDesde && { fecha_desde: fechaDesde }),
         ...(fechaHasta && { fecha_hasta: fechaHasta }),
+        ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
         page,
         page_size: PAGE_SIZE,
       });
@@ -46,14 +51,23 @@ export default function SalesPage() {
     } finally {
       setLoading(false);
     }
-  }, [fechaDesde, fechaHasta, page]);
+  }, [fechaDesde, fechaHasta, metodoPagoIds, page]);
 
   useEffect(() => {
     fetchSales();
   }, [fetchSales]);
 
+  useEffect(() => {
+    api.getPaymentMethods(true).then(setPaymentMethods).catch(() => {});
+  }, []);
+
   const handleFilterChange = (setter: (v: string) => void) => (value: string) => {
     setter(value);
+    setPage(1);
+  };
+
+  const handleMetodoPagoChange = (ids: number[]) => {
+    setMetodoPagoIds(ids);
     setPage(1);
   };
 
@@ -106,6 +120,7 @@ export default function SalesPage() {
       const allSales = await api.getSales({
         ...(fechaDesde && { fecha_desde: fechaDesde }),
         ...(fechaHasta && { fecha_hasta: fechaHasta }),
+        ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
         limit: 999999,
       });
       const name = exportToExcel({ data: allSales, columns: exportColumns, filename: "Ventas" });
@@ -161,11 +176,19 @@ export default function SalesPage() {
               className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             />
           </div>
-          {(fechaDesde || fechaHasta) && (
+          <MultiSelectTags
+            label="Método de pago"
+            selected={metodoPagoIds}
+            options={paymentMethods.map((m) => ({ value: m.id, label: m.nombre }))}
+            onChange={handleMetodoPagoChange}
+            placeholder="Todos"
+            className="min-w-[200px]"
+          />
+          {(fechaDesde || fechaHasta || metodoPagoIds.length > 0) && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setFechaDesde(""); setFechaHasta(""); setPage(1); }}
+              onClick={() => { setFechaDesde(""); setFechaHasta(""); setMetodoPagoIds([]); setPage(1); }}
             >
               Limpiar
             </Button>

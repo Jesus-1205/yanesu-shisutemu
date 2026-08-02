@@ -93,11 +93,23 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
     return sale
 
 
+def _payment_method_filter(
+    metodo_pago_ids: list[int] | None,
+):
+    """WHERE EXISTS … si metodo_pago_ids no es None ni vacío."""
+    if not metodo_pago_ids:
+        return None
+    return Sale.id.in_(
+        select(SalePayment.venta_id).where(SalePayment.metodo_pago_id.in_(metodo_pago_ids))
+    )
+
+
 def get_sales(
     db: Session,
     *,
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
+    metodo_pago_ids: list[int] | None = None,
     limit: int = 50,
 ) -> list[Sale]:
     stmt = (
@@ -115,6 +127,9 @@ def get_sales(
         stmt = stmt.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
         stmt = stmt.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
+    pm_filter = _payment_method_filter(metodo_pago_ids)
+    if pm_filter is not None:
+        stmt = stmt.where(pm_filter)
 
     return list(db.execute(stmt).scalars().unique().all())
 
@@ -124,6 +139,7 @@ def get_sales_paginated(
     *,
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
+    metodo_pago_ids: list[int] | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> dict:
@@ -132,6 +148,9 @@ def get_sales_paginated(
         base = base.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
         base = base.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
+    pm_filter = _payment_method_filter(metodo_pago_ids)
+    if pm_filter is not None:
+        base = base.where(pm_filter)
 
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)
