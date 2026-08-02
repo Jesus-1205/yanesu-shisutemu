@@ -27,50 +27,47 @@ fn kill_sidecar_tree(child: CommandChild) {
     let pid = child.pid();
     let _ = child.kill();
 
-    // En Windows, usar taskkill /IM para matar por nombre de imagen (más confiable
-    // que por PID, que puede ser reciclado). CREATE_NO_WINDOW evita la ventana de consola.
     #[cfg(windows)]
     {
+        // Primero por nombre de imagen (más confiable que por PID)
         let _ = StdCommand::new("taskkill")
             .args(["/IM", "sistema_licoreria.exe", "/T", "/F"])
             .creation_flags(CREATE_NO_WINDOW)
-            .output();
+            .status();
 
-        // Fallback: si por alguna razón el anterior no funcionó, intentar por PID
+        // Fallback por PID
         std::thread::sleep(Duration::from_millis(100));
         let _ = StdCommand::new("taskkill")
             .args(["/PID", &pid.to_string(), "/T", "/F"])
             .creation_flags(CREATE_NO_WINDOW)
-            .output();
+            .status();
     }
 
     #[cfg(not(windows))]
     {
-        let _ = StdCommand::new("taskkill")
-            .args(["/PID", &pid.to_string(), "/T", "/F"])
-            .output();
+        let _ = StdCommand::new("kill")
+            .args(["-9", &pid.to_string()])
+            .status();
     }
 }
 
-/// Muestra un diálogo de error y cierra la app al pulsar OK.
-/// Si `kill_sidecar` es true, también mata el proceso del backend.
-fn show_fatal_error(app: &tauri::App, message: &str, kill_sidecar: bool) {
-    let handle = app.handle().clone();
+/// Muestra diálogo de error, mata el sidecar si es necesario, y cierra la app.
+fn show_fatal_error(app: &tauri::AppHandle, msg: &str, kill_sidecar: bool) {
     app.dialog()
-        .message(message)
+        .message(msg)
         .title("Sistema Licorería")
-        .show(move |_| {
-            if kill_sidecar {
-                if let Some(state) = handle.try_state::<SidecarState>() {
-                    if let Ok(mut guard) = state.0.lock() {
-                        if let Some(child) = guard.take() {
-                            kill_sidecar_tree(child);
-                        }
-                    }
-                }
-            }
-            std::process::exit(1);
-        });
+        .kind(tauri_plugin_dialog::MessageDialogKind::Error)
+        .blocking_show();
+
+    if kill_sidecar {
+        let state = app.state::<SidecarState>();
+        let mut guard = state.0.lock().unwrap();
+        if let Some(child) = guard.take() {
+            drop(guard);
+            kill_sidecar_tree(child);
+        }
+    }
+    app.exit(1);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -79,69 +76,100 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .manage(SidecarState(Mutex::new(None)))
         .setup(|app| {
-            // 1. Iniciar sidecar (backend .exe). Si falla, mostrar diálogo y cerrar.
+            let app_handle = app.handle().clone();
+
+            // 1. Spawnea el sidecar con error handling graceful
             let sidecar = match app.shell().sidecar("sistema_licoreria") {
                 Ok(cmd) => cmd,
                 Err(e) => {
                     show_fatal_error(
-                        app,
-                        &format!("No se pudo preparar el backend del sistema.\n\n{e}"),
+                        &app_handle,
+                        &format!("No se pudo preparar el backend.\n\n{e}"),
                         false,
                     );
                     return Ok(());
                 }
             };
 
-            let (mut _rx, child) = match sidecar.spawn() {
+            let (_, child) = match sidecar.spawn() {
                 Ok(pair) => pair,
                 Err(e) => {
                     show_fatal_error(
-                        app,
-                        &format!("No se pudo iniciar el backend del sistema.\n\n{e}"),
+                        &app_handle,
+                        &format!("No se pudo iniciar el backend.\n\n{e}"),
                         false,
                     );
                     return Ok(());
                 }
             };
 
-            app.manage(SidecarState(Mutex::new(Some(child))));
+            // Guardar referencia al proceso hijo
+            let state = app.state::<SidecarState>();
+            *state.0.lock().unwrap() = Some(child);
 
-            // 2. Polling: esperar hasta 20s a que .port aparezca
-            let port_path = get_port_path();
-            let mut port: Option<u16> = None;
-            for _ in 0..40 {
-                std::thread::sleep(Duration::from_millis(500));
-                if let Ok(content) = std::fs::read_to_string(&port_path) {
-                    if let Ok(p) = content.trim().parse::<u16>() {
-                        port = Some(p);
-                        break;
+            // 2. Hilo en segundo plano: .port -> health check -> transición
+            std::thread::spawn(move || {
+                let client = reqwest::blocking::Client::builder()
+                    .timeout(Duration::from_secs(2))
+                    .build()
+                    .unwrap();
+
+                let port_path = get_port_path();
+                let mut port: Option<u16> = None;
+
+                for _ in 0..40 {
+                    // 2a. Leer .port si aún no tenemos puerto
+                    if port.is_none() {
+                        if let Ok(content) = std::fs::read_to_string(&port_path) {
+                            if let Ok(p) = content.trim().parse::<u16>() {
+                                port = Some(p);
+                            }
+                        }
                     }
-                }
-            }
 
-            let Some(port) = port else {
+                    // 2b. Si tenemos puerto, hacer health check
+                    if let Some(p) = port {
+                        let url = format!("http://127.0.0.1:{}/api/health", p);
+                        if let Ok(res) = client.get(&url).send() {
+                            if res.status().is_success() {
+                                // Backend listo — transición de ventanas
+                                if let Some(main) = app_handle.get_webview_window("main") {
+                                    let _ = main.navigate(
+                                        format!("http://127.0.0.1:{}", p)
+                                            .parse()
+                                            .unwrap(),
+                                    );
+                                    let _ = main.show();
+                                    let _ = main.set_focus();
+                                }
+                                if let Some(splash) = app_handle.get_webview_window("splashscreen")
+                                {
+                                    let _ = splash.close();
+                                }
+                                return;
+                            }
+                        }
+                    }
+
+                    std::thread::sleep(Duration::from_millis(500));
+                }
+
+                // Timeout: backend no respondió
                 show_fatal_error(
-                    app,
-                    "El backend no respondió a tiempo. \
-                     Verifica que no haya otro proceso usando los puertos y vuelve a abrir la app.",
+                    &app_handle,
+                    "El backend no respondió a tiempo.\nVerifica que no haya otro proceso usando los puertos.",
                     true,
                 );
-                return Ok(());
-            };
-
-            // 3. Navegar la ventana al backend
-            if let Some(window) = app.get_webview_window("main") {
-                let url = format!("http://127.0.0.1:{}", port);
-                let _ = window.navigate(url.parse().expect("Invalid URL"));
-            }
+            });
 
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle, event| {
-            // 4. Al cerrar la app, matar el sidecar para no dejar procesos huérfanos
+            // 3. Cleanup al cerrar la app (más confiable que on_window_event)
             if let tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit = event {
                 if let Some(state) = app_handle.try_state::<SidecarState>() {
                     if let Ok(mut guard) = state.0.lock() {
