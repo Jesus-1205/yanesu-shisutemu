@@ -84,8 +84,8 @@ def _writer_loop() -> None:
         if item is _SENTINEL:
             _drain_and_write(path)
             break
-        _drain_and_write(path)
         _append_line(path, item)
+        _drain_and_write(path)
 
 
 def _drain_and_write(path: str) -> None:
