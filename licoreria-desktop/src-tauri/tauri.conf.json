@@ -38,9 +38,7 @@
     "windows": {
       "nsis": {
         "installMode": "both",
-        "displayLanguageSelector": false,
-        "installerHooks": "../windows/hooks.nsh",
-        "deleteAppDataOnUninstall": true
+        "installerHooks": "../windows/hooks.nsh"
       }
     }
   }

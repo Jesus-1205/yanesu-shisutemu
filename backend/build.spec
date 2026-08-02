@@ -41,7 +41,7 @@ a = Analysis(
         'cryptography.fernet',
         'httpx',
         'pydantic',
-        'pydantic.emails',
+        'email_validator',
         'PIL',
     ],
     hookspath=[],
