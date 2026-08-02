@@ -7,6 +7,12 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 fn get_port_path() -> PathBuf {
     let mut port_path = dirs::data_local_dir().expect("No se encontró AppData/Local");
     port_path.push("SistemaLicoreria");
@@ -20,10 +26,30 @@ struct SidecarState(Mutex<Option<CommandChild>>);
 fn kill_sidecar_tree(child: CommandChild) {
     let pid = child.pid();
     let _ = child.kill();
-    // fallback: taskkill /T mata el árbol completo
-    let _ = StdCommand::new("taskkill")
-        .args(["/PID", &pid.to_string(), "/T", "/F"])
-        .output();
+
+    // En Windows, usar taskkill /IM para matar por nombre de imagen (más confiable
+    // que por PID, que puede ser reciclado). CREATE_NO_WINDOW evita la ventana de consola.
+    #[cfg(windows)]
+    {
+        let _ = StdCommand::new("taskkill")
+            .args(["/IM", "sistema_licoreria.exe", "/T", "/F"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+
+        // Fallback: si por alguna razón el anterior no funcionó, intentar por PID
+        std::thread::sleep(Duration::from_millis(100));
+        let _ = StdCommand::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+    }
+
+    #[cfg(not(windows))]
+    {
+        let _ = StdCommand::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .output();
+    }
 }
 
 /// Muestra un diálogo de error y cierra la app al pulsar OK.

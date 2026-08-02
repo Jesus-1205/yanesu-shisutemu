@@ -310,24 +310,31 @@ Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicaci
 ---
 
 ### 23. Al cerrar la app queda un proceso activo del backend
-- [ ] **Pendiente**
+- [x] **Arreglada** (rama `fix/sidecar-cleanup`: `taskkill /IM` + retry + `CREATE_NO_WINDOW`)
 **Severidad:** Alta  
 **Archivo:** `licoreria-desktop/src-tauri/src/lib.rs` (ExitRequested/Exit handler)
 
 Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) no se mata correctamente. El proceso queda como huérfano en el Task Manager, consumiendo recursos y bloqueando archivos en `AppData/Local/SistemaLicoreria/`.
 
-**Causa probable:** El handler `ExitRequested`/`Exit` en `lib.rs` no está matando el árbol de procesos completo del sidecar, o el `kill()` no está siendo invocado al cerrar la ventana.
+**Causa raíz:**
+1. `child.kill()` puede fallar silenciosamente (el resultado se descarta con `let _ =`)
+2. `taskkill /PID` puede fallar si el PID fue reciclado por Windows
+3. No hay retry logic si el primer intento falla
+
+**Fix:** Cambiar a `taskkill /IM sistema_licoreria.exe /T /F` (matar por nombre de imagen, más confiable que por PID) + fallback por PID con delay de 100ms.
 
 ---
 
 ### 24. Ventana de PowerShell aparece momentáneamente al cerrar la app
-- [ ] **Pendiente**
+- [x] **Arreglada** (rama `fix/sidecar-cleanup`: `creation_flags(CREATE_NO_WINDOW)`)
 **Severidad:** Media  
 **Archivo:** `licoreria-desktop/src-tauri/src/lib.rs`
 
 Al cerrar la app, se muestra brevemente una ventana de consola/powershell antes de desaparecer. Esto rompe la experiencia de app de escritorio.
 
-**Causa probable:** Al matar el sidecar (`taskkill`), el proceso hijo genera una ventana de consola visible. Podría resolverse usando `CREATE_NO_WINDOW` flag o redirigiendo stdout/stderr del sidecar.
+**Causa raíz:** `StdCommand::new("taskkill")` en `kill_sidecar_tree` no tiene `CREATE_NO_WINDOW` flag. El `main.rs` tiene `windows_subsystem = "windows"` pero esto solo afecta al proceso principal, no a procesos hijos ejecutados con `StdCommand`.
+
+**Fix:** Importar `std::os::windows::process::CommandExt` y agregar `.creation_flags(CREATE_NO_WINDOW)` al `StdCommand` de `taskkill`.
 
 ---
 
@@ -336,7 +343,7 @@ Al cerrar la app, se muestra brevemente una ventana de consola/powershell antes 
 | Severidad | Total | Arregladas | Pendientes |
 |-----------|-------|------------|------------|
 | Crítica | 2 | 2 | 0 |
-| Alta | 5 | 4 | 1 |
-| Media | 11 | 10 | 1 |
+| Alta | 5 | 5 | 0 |
+| Media | 11 | 11 | 0 |
 | Baja | 7 | 2 | 5 |
-| **Total** | **25** | **18** | **7** |
+| **Total** | **25** | **20** | **5** |
