@@ -134,9 +134,9 @@ def _save_invoice_image(
 def _similarity_threshold() -> float:
     """Umbral mínimo de similitud para considerar PARTIAL.
 
-    Escala: 0-100 (rapidfuzz). 30.0 ≈ 30% de similitud.
+    Escala: 0-100 (rapidfuzz). 50.0 ≈ 50% de similitud.
     """
-    return 30.0
+    return 50.0
 
 
 def _strip_unidades(nombre: str) -> str:

@@ -61,8 +61,8 @@ def db():
 
 class TestSimilarityThreshold:
 
-    def test_threshold_is_30(self):
-        assert _similarity_threshold() == 30.0
+    def test_threshold_is_50(self):
+        assert _similarity_threshold() == 50.0
 
 
 class TestStripUnidades:
