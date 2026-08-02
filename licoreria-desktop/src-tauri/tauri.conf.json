@@ -21,13 +21,12 @@
       },
       {
         "label": "splashscreen",
-        "title": "Cargando",
-        "width": 400,
-        "height": 300,
         "decorations": false,
         "resizable": false,
         "visible": true,
         "center": true,
+        "fullscreen": true,
+        "shadow": false,
         "url": "/splash.html"
       }
     ],
