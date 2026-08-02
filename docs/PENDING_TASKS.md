@@ -351,6 +351,22 @@ En la tabla de productos del POS, el botón de agregar caja tiene un dropdown (f
 
 ---
 
+### 26. Decimales de tasa BCV: scrapper usa 3, sistema espera 4, muestra 2
+- [ ] **Pendiente**
+**Severidad:** Baja  
+**Archivos:**
+- `backend/app/services/exchange_rate_service.py` — función scrapper con `decimal(0.001)`
+- `backend/app/models/exchange_rate.py` — campo `tasa` con precisión definida
+- `frontend/src/features/exchange-rates/pages/ExchangeRatesPage.tsx` — formato de visualización (2 decimales)
+
+El frontend y backend esperan recibir **4 dígitos** del BCV (ej: `748.7860`) y mostrar **2 decimales** al usuario final (ej: `748,79`). Sin embargo, la función scrapper que obtiene las tasas del BCV usa `decimal(0.001)`, lo que redondea a **3 decimales** y siempre agrega un `0` al final (ej: `748.7860` → `748.786`).
+
+**Impacto:** Los cálculos de ventas y reportes pueden tener una pérdida de precisión por el redondeo innecesario a 3 decimales en lugar de 4.
+
+**Fix propuesto:** Cambiar `decimal(0.001)` por `decimal(0.0001)` en el scrapper para preservar los 4 decimales que provee el BCV.
+
+---
+
 ## Resumen
 
 | Severidad | Total | Arregladas | Pendientes |
@@ -358,5 +374,5 @@ En la tabla de productos del POS, el botón de agregar caja tiene un dropdown (f
 | Crítica | 2 | 2 | 0 |
 | Alta | 5 | 5 | 0 |
 | Media | 11 | 11 | 0 |
-| Baja | 8 | 2 | 6 |
-| **Total** | **26** | **20** | **6** |
+| Baja | 9 | 2 | 7 |
+| **Total** | **27** | **20** | **7** |
