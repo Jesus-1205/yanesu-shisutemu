@@ -1,7 +1,7 @@
 # Tareas Pendientes
 
-**Fecha:** Julio 2026  
-**Rama:** `fix/critical-bugs`
+**Fecha:** Agosto 2026  
+**Rama:** `master`
 
 Leyenda: `- [x]` = arreglada · `- [ ]` = pendiente
 
@@ -78,6 +78,32 @@ Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) **no se mata
 **Fix:**
 - Manejar `RunEvent::ExitRequested`/`RunEvent::Exit` en `lib.rs` y matar el sidecar (guardar el `CommandChild` y llamar a `kill()`).
 - Verificar en el desinstalador NSIS que ningún proceso `sistema_licoreria.exe` quede vivo antes de borrar archivos.
+
+---
+
+### 21. Método de pago ignora `moneda_default` y `acepta_referencia`
+- [x] **Arreglada** (commit `105e110`: persistir ambos campos en crear y actualizar)
+**Severidad:** Alta  
+**Archivos:**
+- `backend/app/services/payment_method_service.py:29` — `crear_payment_method`
+- `backend/app/services/payment_method_service.py:36-50` — `actualizar_payment_method`
+
+Al crear o editar un método de pago, `moneda_default` y `acepta_referencia` **se ignoran**: el service solo persiste `nombre` y `activo`, así que el modelo siempre cae en sus defaults (`"VES"`, `False`).
+
+**Fix aplicado:** `crear_payment_method` ahora pasa `moneda_default=data.moneda_default` y `acepta_referencia=data.acepta_referencia`; `actualizar_payment_method` aplica ambos campos solo cuando `data.X is not None`.
+
+---
+
+### 22. Desinstalador nunca borra la data aunque se marque "borrar data"
+- [x] **Arreglada** (commit `105e110`: `deleteAppDataOnUninstall: true` en tauri.conf.json)
+**Severidad:** Alta  
+**Archivos:**
+- `licoreria-desktop/src-tauri/tauri.conf.json:38-44` — config NSIS sin `deleteAppDataOnUninstall`
+- `licoreria-desktop/windows/hooks.nsh` — `NSIS_HOOK_POSTUNINSTALL` vacío
+
+Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicación", **ningún contenido de `AppData/Local/SistemaLicoreria/` se elimina**.
+
+**Fix aplicado:** `"deleteAppDataOnUninstall": true` agregado en `bundle.windows.nsis` de `tauri.conf.json`.
 
 ---
 
@@ -201,29 +227,35 @@ El link `<a href="https://aistudio.google.com/apikey" target="_blank">` funciona
 ## Bajas
 
 ### 14. Fallback silencioso a puerto 8000
-- [ ] **Pendiente**
+- [x] **Arreglada** (health check loop con timeout + error dialog en `lib.rs`)
 **Severidad:** Baja  
 **Archivo:** `licoreria-desktop/src-tauri/src/lib.rs:29-39`
 
 Si `.port` no existe o no se puede leer, usa 8000 como fallback. Si el backend arrancó en otro puerto, la pantalla queda en blanco sin error visible.
 
+**Fix:** El código actual usa un health check loop con timeout (40 iteraciones × 500ms = 20s). Si el backend no responde, muestra diálogo de error y cierra la app. No hay fallback a puerto 8000.
+
 ---
 
 ### 15. CORS overly permissive
-- [ ] **Pendiente**
+- [x] **Arreglada** (métodos y headers restringidos en `main.py:57-58`)
 **Severidad:** Baja  
 **Archivo:** `backend/app/main.py:45-46`
 
 `allow_methods=["*"]` y `allow_headers=["*"]` son más permisivos de lo necesario.
 
+**Fix:** Ahora usa `allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"]` y `allow_headers=["Content-Type"]`.
+
 ---
 
 ### 16. Test Pillow pre-existente falla
-- [ ] **Pendiente**
+- [x] **Arreglada** (tests ahora usan `pytest.skip` si Pillow no está instalado)
 **Severidad:** Baja  
 **Archivo:** `backend/tests/test_services/test_invoice_ai.py:65,84`
 
 `test_valid_image_returns_jpeg` y `test_large_image_resized` fallan dependiendo de la versión de Pillow. El código de producción (`optimize_image`) funciona bien; el problema es assertions excesivamente estrictas en los tests.
+
+**Fix:** Tests ahora envuelven `from PIL import Image` en `try/except` y llaman `pytest.skip` si Pillow no está disponible. Assertions razonables (JPEG output, resized dimensions ≤ 2000px).
 
 ---
 
@@ -237,16 +269,18 @@ Los iconos PNG son cuadrados azules genéricos. Necesitan diseño real del negoc
 ---
 
 ### 18. Ajuste de umbral fuzzy
-- [ ] **Pendiente**
+- [x] **Arreglada** (umbral subido de 30.0 a 50.0 en `invoice_service.py:134-139`)
 **Severidad:** Baja  
 **Archivo:** `backend/app/services/invoice_service.py`
 
 El umbral de 30.0 para `rapidfuzz` fue elegido conservador. Evaluar con datos reales si necesita ajuste.
 
+**Fix:** Umbral ajustado a `50.0` (~50% de similitud) para reducir falsos positivos.
+
 ---
 
 ### 19. Opción "Tasas de Cambio" duplicada (sidebar + settings)
-- [ ] **Pendiente**
+- [x] **Arreglada** (nav, ruta y wrapper page eliminados)
 **Severidad:** Baja (UX)  
 **Archivos:**
 - `frontend/src/features/settings/components/SettingsNav.tsx:13`
@@ -279,36 +313,6 @@ El POS usa `snapshotTasa` del carrito (`POSPage.tsx:67`), que se captura al agre
 
 ---
 
-### 21. Método de pago ignora `moneda_default` y `acepta_referencia`
-- [x] **Arreglada** (commit `105e110`: persistir ambos campos en crear y actualizar)
-**Severidad:** Alta  
-**Archivos:**
-- `backend/app/services/payment_method_service.py:29` — `crear_payment_method`
-- `backend/app/services/payment_method_service.py:36-50` — `actualizar_payment_method`
-
-Al crear o editar un método de pago, `moneda_default` y `acepta_referencia` **se ignoran**: el service solo persiste `nombre` y `activo`, así que el modelo siempre cae en sus defaults (`"VES"`, `False`).
-
-El frontend (`PaymentMethodsPage.tsx:71-84`) envía ambos campos correctamente y los schemas (`PaymentMethodCreate`/`PaymentMethodUpdate`) los definen, pero el service no los escribe en el modelo. Resultado: todos los métodos se crean **sin referencia** y **en Bs**, y el cambio de VES a USD o activar "Acepta referencia" no se refleja ni en la tabla ni en el POS.
-
-**Fix aplicado:** `crear_payment_method` ahora pasa `moneda_default=data.moneda_default` y `acepta_referencia=data.acepta_referencia`; `actualizar_payment_method` aplica ambos campos solo cuando `data.X is not None`.
-
----
-
-### 22. Desinstalador nunca borra la data aunque se marque "borrar data"
-- [x] **Arreglada** (commit `105e110`: `deleteAppDataOnUninstall: true` en tauri.conf.json)
-**Severidad:** Alta  
-**Archivos:**
-- `licoreria-desktop/src-tauri/tauri.conf.json:38-44` — config NSIS sin `deleteAppDataOnUninstall`
-- `licoreria-desktop/windows/hooks.nsh` — `NSIS_HOOK_POSTUNINSTALL` vacío
-
-Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicación", **ningún contenido de `AppData/Local/SistemaLicoreria/` se elimina** (`.db`, `.port`, `.secret_key`, logs, etc.). El usuario puede borrar la carpeta manualmente inmediatamente después sin ningún bloqueo activo, lo que confirma que el problema no es de permisos ni de procesos vivos: simplemente el desinstalador **nunca ejecuta el borrado**.
-
-**Causa:** La opción de Tauri v2 `deleteAppDataOnUninstall` no está configurada en `bundle.windows.nsis`, por lo que el desinstalador solo remueve los archivos del programa (`Program Files/Sistema Licoreria`) y deja intacta la data de la app.
-
-**Fix aplicado:** `"deleteAppDataOnUninstall": true` agregado en `bundle.windows.nsis` de `tauri.conf.json`. Verificar con una desinstalación real que la carpeta desaparezca.
-
----
-
 ### 23. Al cerrar la app queda un proceso activo del backend
 - [x] **Arreglada** (rama `fix/sidecar-cleanup`: `taskkill /IM` + retry + `CREATE_NO_WINDOW`)
 **Severidad:** Alta  
@@ -337,8 +341,6 @@ Al cerrar la app, se muestra brevemente una ventana de consola/powershell antes 
 **Fix:** Importar `std::os::windows::process::CommandExt` y agregar `.creation_flags(CREATE_NO_WINDOW)` al `StdCommand` de `taskkill`.
 
 ---
-
-## Bajas
 
 ### 25. Botón de agregar caja en POS requiere clicks innecesarios
 - [ ] **Pendiente**
@@ -372,7 +374,7 @@ El frontend y backend esperan recibir **4 dígitos** del BCV (ej: `748.7860`) y 
 | Severidad | Total | Arregladas | Pendientes |
 |-----------|-------|------------|------------|
 | Crítica | 2 | 2 | 0 |
-| Alta | 5 | 5 | 0 |
+| Alta | 7 | 7 | 0 |
 | Media | 11 | 11 | 0 |
-| Baja | 9 | 2 | 7 |
-| **Total** | **27** | **20** | **7** |
+| Baja | 7 | 5 | 2 |
+| **Total** | **27** | **25** | **2** |
