@@ -338,6 +338,19 @@ Al cerrar la app, se muestra brevemente una ventana de consola/powershell antes 
 
 ---
 
+## Bajas
+
+### 25. Botón de agregar caja en POS requiere clicks innecesarios
+- [ ] **Pendiente**
+**Severidad:** Baja (UX)  
+**Archivo:** `frontend/src/features/sales/pages/POSPage.tsx`
+
+En la tabla de productos del POS, el botón de agregar caja tiene un dropdown (flecha) que despliega opciones. Esto agrega un click innecesario: el usuario debe primero abrir el dropdown y luego seleccionar "agregar caja".
+
+**Fix propuesto:** Reemplazar el dropdown por un botón simple de acción directa que al darle clic agrega una caja al carrito inmediatamente, sin pasar por un menú desplegable.
+
+---
+
 ## Resumen
 
 | Severidad | Total | Arregladas | Pendientes |
@@ -345,5 +358,5 @@ Al cerrar la app, se muestra brevemente una ventana de consola/powershell antes 
 | Crítica | 2 | 2 | 0 |
 | Alta | 5 | 5 | 0 |
 | Media | 11 | 11 | 0 |
-| Baja | 7 | 2 | 5 |
-| **Total** | **25** | **20** | **5** |
+| Baja | 8 | 2 | 6 |
+| **Total** | **26** | **20** | **6** |
