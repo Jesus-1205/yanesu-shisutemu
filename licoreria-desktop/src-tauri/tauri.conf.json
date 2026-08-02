@@ -11,21 +11,18 @@
       {
         "label": "main",
         "title": "Sistema Licorería",
-        "width": 1280,
-        "height": 800,
-        "minWidth": 1024,
-        "minHeight": 600,
-        "resizable": true,
-        "fullscreen": false,
+        "fullscreen": true,
         "visible": false
       },
       {
         "label": "splashscreen",
+        "title": "Cargando",
+        "width": 500,
+        "height": 400,
         "decorations": false,
         "resizable": false,
         "visible": true,
         "center": true,
-        "fullscreen": true,
         "shadow": false,
         "url": "/splash.html"
       }
