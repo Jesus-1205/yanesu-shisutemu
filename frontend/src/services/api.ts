@@ -19,6 +19,7 @@ import type {
   PaymentMethodCreate,
   PaymentMethodOut,
   PaymentMethodUpdate,
+  PaymentMethodSummaryItem,
   ProductCreate,
   ProductMatrixItem,
   ProductOut,
@@ -311,19 +312,21 @@ export const api = {
     request<void>(`/products/${id}`, { method: "DELETE" }),
 
   // ── Ventas ──
-  getSales: (params?: { fecha_desde?: string; fecha_hasta?: string; limit?: number }) => {
+  getSales: (params?: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params?.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
     if (params?.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
+    if (params?.metodo_pago_ids && params.metodo_pago_ids.length > 0) qs.set("metodo_pago_ids", params.metodo_pago_ids.join(","));
     if (params?.limit) qs.set("limit", String(params.limit));
     const q = qs.toString();
     return request<SaleOut[]>(`/sales${q ? `?${q}` : ""}`);
   },
 
-  getSalesPaginated: (params: { fecha_desde?: string; fecha_hasta?: string; page: number; page_size: number }) => {
+  getSalesPaginated: (params: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; page: number; page_size: number }) => {
     const qs = new URLSearchParams();
     if (params.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
     if (params.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
+    if (params.metodo_pago_ids && params.metodo_pago_ids.length > 0) qs.set("metodo_pago_ids", params.metodo_pago_ids.join(","));
     qs.set("page", String(params.page));
     qs.set("page_size", String(params.page_size));
     return request<SalePaginationOut>(`/sales?${qs.toString()}`);
@@ -377,6 +380,14 @@ export const api = {
     if (params.limit) qs.set("limit", String(params.limit));
     const q = qs.toString();
     return request<ProductMatrixItem[]>(`/reports/products-matrix${q ? `?${q}` : ""}`);
+  },
+
+  getPaymentMethodSummary: (params?: { fecha_desde?: string; fecha_hasta?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
+    if (params?.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
+    const q = qs.toString();
+    return request<PaymentMethodSummaryItem[]>(`/reports/payment-methods${q ? `?${q}` : ""}`);
   },
 
   getTopMarginProducts: (limit = 5) =>
