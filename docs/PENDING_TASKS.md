@@ -309,12 +309,34 @@ Al desinstalar, aunque el usuario marque la opción "borrar datos de la aplicaci
 
 ---
 
+### 23. Al cerrar la app queda un proceso activo del backend
+- [ ] **Pendiente**
+**Severidad:** Alta  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs` (ExitRequested/Exit handler)
+
+Al cerrar la ventana de Tauri, el sidecar (`sistema_licoreria.exe`) no se mata correctamente. El proceso queda como huérfano en el Task Manager, consumiendo recursos y bloqueando archivos en `AppData/Local/SistemaLicoreria/`.
+
+**Causa probable:** El handler `ExitRequested`/`Exit` en `lib.rs` no está matando el árbol de procesos completo del sidecar, o el `kill()` no está siendo invocado al cerrar la ventana.
+
+---
+
+### 24. Ventana de PowerShell aparece momentáneamente al cerrar la app
+- [ ] **Pendiente**
+**Severidad:** Media  
+**Archivo:** `licoreria-desktop/src-tauri/src/lib.rs`
+
+Al cerrar la app, se muestra brevemente una ventana de consola/powershell antes de desaparecer. Esto rompe la experiencia de app de escritorio.
+
+**Causa probable:** Al matar el sidecar (`taskkill`), el proceso hijo genera una ventana de consola visible. Podría resolverse usando `CREATE_NO_WINDOW` flag o redirigiendo stdout/stderr del sidecar.
+
+---
+
 ## Resumen
 
 | Severidad | Total | Arregladas | Pendientes |
 |-----------|-------|------------|------------|
 | Crítica | 2 | 2 | 0 |
-| Alta | 4 | 4 | 0 |
-| Media | 10 | 10 | 0 |
+| Alta | 5 | 4 | 1 |
+| Media | 11 | 10 | 1 |
 | Baja | 7 | 2 | 5 |
-| **Total** | **23** | **18** | **5** |
+| **Total** | **25** | **18** | **7** |
