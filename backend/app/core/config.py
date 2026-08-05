@@ -73,7 +73,7 @@ AUDIT_MAX_ROTATED: int = 6
 class Config:
     SECRET_KEY: str = get_secret_key()
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 240
 
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", str(get_db_path()))
 
