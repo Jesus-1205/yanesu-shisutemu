@@ -1,12 +1,12 @@
 [package]
-name = "licoreria-desktop"
+name = "yanesu-desktop"
 version = "1.0.0"
-description = "Sistema Licorería - Desktop App"
-authors = ["Sistema Licorería"]
+description = "Yanesu Shisutemu - Desktop App"
+authors = ["Yanesu Shisutemu"]
 edition = "2021"
 
 [lib]
-name = "licoreria_desktop_lib"
+name = "yanesu_desktop_lib"
 crate-type = ["staticlib", "cdylib", "lib"]
 
 [build-dependencies]

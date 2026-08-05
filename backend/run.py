@@ -57,7 +57,7 @@ def main():
 
     import uvicorn
 
-    logger.info("Sistema Licorería iniciado en http://127.0.0.1:%s", port)
+    logger.info("Yanesu Shisutemu iniciado en http://127.0.0.1:%s", port)
     logger.info("Base de datos: %s", get_db_path())
     if needs_setup:
         logger.info("Primera ejecución: crea el usuario administrador desde la app.")

@@ -34,14 +34,14 @@ async def lifespan(app: FastAPI):
     ensure_logging()
     from app.services.audit_service import start_writer, stop_writer
     start_writer()
-    logger.info("Sistema Licorería arrancado")
+    logger.info("Yanesu Shisutemu arrancado")
     yield
     stop_writer()
-    logger.info("Sistema Licorería detenido")
+    logger.info("Yanesu Shisutemu detenido")
 
 
 app = FastAPI(
-    title="Sistema Licoreria API",
+    title="Yanesu Shisutemu API",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,

@@ -61,7 +61,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='sistema_licoreria',
+    name='yanesu_shisutemu',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -15,7 +15,7 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 fn get_port_path() -> PathBuf {
     let mut port_path = dirs::data_local_dir().expect("No se encontró AppData/Local");
-    port_path.push("SistemaLicoreria");
+    port_path.push("YanesuShisutemu");
     port_path.push(".port");
     port_path
 }
@@ -31,7 +31,7 @@ fn kill_sidecar_tree(child: CommandChild) {
     {
         // Primero por nombre de imagen (más confiable que por PID)
         let _ = StdCommand::new("taskkill")
-            .args(["/IM", "sistema_licoreria.exe", "/T", "/F"])
+            .args(["/IM", "yanesu_shisutemu.exe", "/T", "/F"])
             .creation_flags(CREATE_NO_WINDOW)
             .status();
 
@@ -55,7 +55,7 @@ fn kill_sidecar_tree(child: CommandChild) {
 fn show_fatal_error(app: &tauri::AppHandle, msg: &str, kill_sidecar: bool) {
     app.dialog()
         .message(msg)
-        .title("Sistema Licorería")
+        .title("Yanesu Shisutemu")
         .kind(tauri_plugin_dialog::MessageDialogKind::Error)
         .blocking_show();
 
@@ -81,7 +81,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
 
             // 1. Spawnea el sidecar con error handling graceful
-            let sidecar = match app.shell().sidecar("sistema_licoreria") {
+            let sidecar = match app.shell().sidecar("yanesu_shisutemu") {
                 Ok(cmd) => cmd,
                 Err(e) => {
                     show_fatal_error(

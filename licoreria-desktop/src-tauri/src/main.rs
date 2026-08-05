@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    licoreria_desktop_lib::run()
+    yanesu_desktop_lib::run()
 }

@@ -10,10 +10,10 @@ pyinstaller build.spec --clean --noconfirm
 
 echo === Preparando sidecar para Tauri ===
 set TARGET_TRIPLE=x86_64-pc-windows-msvc
-copy /Y "dist\sistema_licoreria.exe" "dist\sistema_licoreria-%TARGET_TRIPLE%.exe"
+copy /Y "dist\yanesu_shisutemu.exe" "dist\yanesu_shisutemu-%TARGET_TRIPLE%.exe"
 
 echo === Build completado ===
-echo Backend (onefile): dist\sistema_licoreria.exe
+echo Backend (onefile): dist\yanesu_shisutemu.exe
 echo.
 echo Para crear el instalador NSIS:
 echo   cd ..\licoreria-desktop\src-tauri

@@ -96,7 +96,7 @@ export default function SetupPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
               <input
                 type="email"
-                placeholder="admin@licoreria.com"
+                placeholder="admin@yanesu.test"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}

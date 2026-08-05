@@ -42,7 +42,7 @@ def find_free_port(start: int = 8000, end: int = 8010) -> int:
 
 
 def save_port_info(port: int) -> None:
-    """Escribe el puerto y el PID en AppData/Local/SistemaLicoreria/.port"""
+    """Escribe el puerto y el PID en AppData/Local/YanesuShisutemu/.port"""
     app_dir = get_app_data_dir()
     port_file = app_dir / ".port"
     pid_file = app_dir / ".port.pid"

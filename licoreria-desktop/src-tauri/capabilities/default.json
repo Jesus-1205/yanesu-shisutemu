@@ -8,7 +8,7 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "sistema_licoreria",
+          "name": "yanesu_shisutemu",
           "sidecar": true,
           "args": true
         }

@@ -1,7 +1,7 @@
 {
-  "productName": "Sistema Licoreria",
+  "productName": "Yanesu Shisutemu",
   "version": "1.0.0",
-  "identifier": "com.licoreria.sistema",
+  "identifier": "com.yanesu.shisutemu",
   "build": {
     "frontendDist": "../../frontend/dist",
     "devUrl": "http://localhost:5173"
@@ -10,7 +10,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Sistema Licorería",
+        "title": "Yanesu Shisutemu",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,
@@ -47,7 +47,7 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "../../backend/dist/sistema_licoreria"
+      "../../backend/dist/yanesu_shisutemu"
     ],
     "windows": {
       "nsis": {

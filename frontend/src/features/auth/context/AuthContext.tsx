@@ -7,7 +7,7 @@ const DEV_MODE = import.meta.env.VITE_SKIP_AUTH === "true" || localStorage.getIt
 const DEV_USER: UserOut = {
   id: 1,
   username: "dev",
-  email: "dev@licoreria.test",
+  email: "dev@yanesu.test",
   nombre_completo: "Usuario Desarrollo",
   rol_id: 1,
   rol_nombre: "ADMINISTRADOR",

@@ -1,5 +1,5 @@
 // ============================================================
-// Sistema Licoreria — Tipos de la API
+// Yanesu Shisutemu — Tipos de la API
 // Generado a partir de los schemas Pydantic del backend
 // ============================================================
 

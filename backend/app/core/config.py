@@ -17,9 +17,9 @@ VE_TZ = ZoneInfo("America/Caracas")
 def get_app_data_dir() -> Path:
     """Directorio de datos persistente de la aplicación.
 
-    Windows: %LOCALAPPDATA%/SistemaLicoreria
-    macOS:   ~/Library/Application Support/SistemaLicoreria
-    Linux:   ~/.local/share/SistemaLicoreria
+    Windows: %LOCALAPPDATA%/YanesuShisutemu
+    macOS:   ~/Library/Application Support/YanesuShisutemu
+    Linux:   ~/.local/share/YanesuShisutemu
     """
     if sys.platform == "win32":
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
@@ -28,7 +28,7 @@ def get_app_data_dir() -> Path:
     else:
         base = Path.home() / ".local" / "share"
 
-    app_dir = base / "SistemaLicoreria"
+    app_dir = base / "YanesuShisutemu"
     app_dir.mkdir(parents=True, exist_ok=True)
     return app_dir
 
@@ -51,7 +51,7 @@ def get_secret_key() -> str:
 def get_db_path() -> Path:
     db_dir = get_app_data_dir() / "data"
     db_dir.mkdir(parents=True, exist_ok=True)
-    return db_dir / "licoreria.db"
+    return db_dir / "yanesu.db"
 
 
 def get_uploads_dir() -> Path:

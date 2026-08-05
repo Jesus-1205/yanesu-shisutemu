@@ -269,7 +269,7 @@ function AppLayoutInner({
       >
         <Sidebar
           items={sidebarItems}
-          brand="Licorería"
+          brand="Yanesu Shisutemu"
           collapsed={collapsed}
           onCollapsedChange={setCollapsed}
           expandAll={isOperator}
