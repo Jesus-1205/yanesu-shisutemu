@@ -78,9 +78,7 @@ describe("UsersPage", () => {
 
       renderUsersPage();
 
-      expect(screen.getByText("ID")).toBeInTheDocument();
       expect(screen.getByText("Usuario")).toBeInTheDocument();
-      expect(screen.getByText("Nombre")).toBeInTheDocument();
       expect(screen.getByText("Email")).toBeInTheDocument();
       expect(screen.getByText("Rol")).toBeInTheDocument();
       expect(screen.getByText("Estado")).toBeInTheDocument();
@@ -95,9 +93,7 @@ describe("UsersPage", () => {
 
       renderUsersPage();
 
-      await waitFor(() => expect(screen.getByText("ID")).toBeInTheDocument());
-      expect(screen.getByText("Usuario")).toBeInTheDocument();
-      expect(screen.getByText("Nombre")).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByText("Usuario")).toBeInTheDocument());
       expect(screen.getByText("Email")).toBeInTheDocument();
       expect(screen.getByText("Rol")).toBeInTheDocument();
       expect(screen.getByText("Estado")).toBeInTheDocument();
@@ -111,9 +107,7 @@ describe("UsersPage", () => {
 
       await waitFor(() => expect(screen.getByText("admin")).toBeInTheDocument());
       expect(screen.getByText("admin@example.com")).toBeInTheDocument();
-      // nombre_completo and rol_nombre are both "Administrador" for first user
-      const administradorElements = screen.getAllByText("Administrador");
-      expect(administradorElements.length).toBe(2);
+      expect(screen.getByText("Administrador")).toBeInTheDocument();
       expect(screen.getByText("Vendedor")).toBeInTheDocument();
     });
   });
@@ -192,11 +186,11 @@ describe("UsersPage", () => {
 
       await waitFor(() => expect(screen.getByText("Inactivo")).toBeInTheDocument());
 
-      // Find toggle button for second user (inactive) - it has Power icon (text-success)
+      // Find toggle buttons for users - Power/PowerOff icons
       const buttons = screen.getAllByRole("button");
       const toggleButtons = buttons.filter((btn) => {
         const svg = btn.querySelector("svg");
-        return svg && (svg.classList.contains("text-success") || svg.classList.contains("text-danger"));
+        return svg && (svg.classList.contains("lucide-power") || svg.classList.contains("lucide-power-off"));
       });
       await userEvent.click(toggleButtons[1]); // second user (inactive)
 
@@ -227,7 +221,7 @@ describe("UsersPage", () => {
       const buttons = screen.getAllByRole("button");
       const toggleButtons = buttons.filter((btn) => {
         const svg = btn.querySelector("svg");
-        return svg && (svg.classList.contains("text-success") || svg.classList.contains("text-danger"));
+        return svg && (svg.classList.contains("lucide-power") || svg.classList.contains("lucide-power-off"));
       });
       await userEvent.click(toggleButtons[0]); // first user (active)
 

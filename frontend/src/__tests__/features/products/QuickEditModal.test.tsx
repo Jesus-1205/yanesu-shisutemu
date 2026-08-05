@@ -50,9 +50,9 @@ describe("QuickEditModal", () => {
 
   it("renders form inputs", () => {
     renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
-    expect(screen.getByText("Stock (uds)")).toBeInTheDocument();
     expect(screen.getByText("Costo caja USD")).toBeInTheDocument();
     expect(screen.getByText("Precio unidad USD")).toBeInTheDocument();
+    expect(screen.getByText("Precio caja USD")).toBeInTheDocument();
   });
 
   it("renders margin and suggested price", () => {
@@ -88,19 +88,19 @@ describe("QuickEditModal", () => {
     expect(api.updateProduct).not.toHaveBeenCalled();
   });
 
-  it("submits changed stock value", async () => {
+  it("submits changed precio caja value", async () => {
     const onSaved = vi.fn();
     const { api } = await import("../../../services/api");
     renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={onSaved} product={product} />);
 
-    const stockInput = screen.getByLabelText("Stock (uds)");
-    await userEvent.clear(stockInput);
-    await userEvent.type(stockInput, "60");
+    const precioCajaInput = screen.getByLabelText("Precio caja USD");
+    await userEvent.clear(precioCajaInput);
+    await userEvent.type(precioCajaInput, "200");
 
     await userEvent.click(screen.getByText("Guardar Cambios"));
 
     await waitFor(() => {
-      expect(api.updateProduct).toHaveBeenCalledWith(1, { stock_unidades: 60 });
+      expect(api.updateProduct).toHaveBeenCalledWith(1, { precio_caja_usd: 200 });
     });
     expect(onSaved).toHaveBeenCalled();
   });

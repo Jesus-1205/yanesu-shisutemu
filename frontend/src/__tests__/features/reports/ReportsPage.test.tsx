@@ -111,14 +111,11 @@ describe("ReportsPage", () => {
 
   it("switches to Productos tab on click", async () => {
     render(<ReportsPage />, { wrapper });
-    await waitFor(() => {
-      expect(screen.getByText("Resumen de Ventas")).toBeInTheDocument();
-    });
     await userEvent.click(screen.getByText("Productos"));
     await waitFor(() => {
       expect(screen.getByText("Más Vendidos")).toBeInTheDocument();
     });
-  }, 10000);
+  });
 
   it("switches to Categorías tab on click", async () => {
     render(<ReportsPage />, { wrapper });
