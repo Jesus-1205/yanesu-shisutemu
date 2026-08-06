@@ -25,6 +25,7 @@ export default function ExchangeRatesPage() {
   const { user } = useAuth();
   const isAdmin = user?.rol_nombre === "ADMINISTRADOR";
   const loadTasa = useExchangeRateStore((s) => s.loadTasa);
+  const checkDailyStatus = useExchangeRateStore((s) => s.checkDailyStatus);
 
   const [latest, setLatest] = useState<Record<string, string>>({});
   const [fechaActualizacion, setFechaActualizacion] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export default function ExchangeRatesPage() {
       setModalOpen(false);
       fetchData();
       loadTasa();
+      checkDailyStatus();
     } catch (err) {
       toast(
         err instanceof Error ? err.message : "Error al guardar tasas",
