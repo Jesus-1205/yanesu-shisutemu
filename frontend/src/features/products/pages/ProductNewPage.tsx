@@ -360,7 +360,7 @@ export default function ProductNewPage() {
                     id={fieldId("precio-u")}
                     type="number"
                     step="0.01"
-                    min="0"
+                    min="0.01"
                     value={form.precio_unidad_usd}
                     onChange={numChange("precio_unidad_usd")}
                     required
@@ -397,7 +397,7 @@ export default function ProductNewPage() {
                     id={fieldId("precio-c")}
                     type="number"
                     step="0.01"
-                    min="0"
+                    min="0.01"
                     value={form.precio_caja_usd}
                     onChange={numChange("precio_caja_usd")}
                     required

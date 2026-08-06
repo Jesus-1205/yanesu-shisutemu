@@ -97,6 +97,12 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
       return;
     }
     setSaving(true);
+    const currentTasa = useCartStore.getState().snapshotTasa;
+    if (currentTasa <= 0) {
+      toast("Registra la tasa BCV antes de vender", "error");
+      setSaving(false);
+      return;
+    }
     try {
       const pagos = methods
         .map((m) => {
@@ -113,7 +119,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
         .filter((p) => p.monto_usd > 0 || p.monto_ves > 0);
 
       await api.createSale({
-        tasa_bcv_aplicada: tasaNum,
+        tasa_bcv_aplicada: currentTasa,
         observaciones: observaciones.trim() || null,
         monto_exento_usd: totals.monto_exento_usd,
         base_imponible_usd: totals.base_imponible_usd,

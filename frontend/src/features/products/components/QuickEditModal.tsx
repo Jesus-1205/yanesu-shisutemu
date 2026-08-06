@@ -140,7 +140,7 @@ export default function QuickEditModal({
                 id={id("costo")}
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 value={form.precio_costo_caja_usd}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -161,7 +161,7 @@ export default function QuickEditModal({
                 id={id("precio-u")}
                 type="number"
                   step="0.01"
-                min="0"
+                min="0.01"
                 value={form.precio_unidad_usd}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -179,7 +179,7 @@ export default function QuickEditModal({
                 id={id("precio-c")}
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 value={form.precio_caja_usd}
                 onChange={(e) => {
                   const raw = e.target.value;

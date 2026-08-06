@@ -180,7 +180,7 @@ export default function POSPage() {
                   <SplitAddButton
                     onAddUnit={() => addItem(p, "UNIDAD")}
                     onAddBox={() => addItem(p, "CAJA")}
-                    disabled={p.stock_unidades === 0}
+                    disabled={p.stock_unidades === 0 || (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)}
                   />
                 ),
               },

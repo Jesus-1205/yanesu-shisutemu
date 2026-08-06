@@ -64,8 +64,8 @@ class ProductUpdate(BaseModel):
     stock_unidades: int | None = None
     stock_minimo: int | None = None
     precio_costo_caja_usd: Decimal | None = None
-    precio_unidad_usd: Decimal | None = Field(default=None, max_digits=12, decimal_places=2)
-    precio_caja_usd: Decimal | None = Field(default=None, max_digits=12, decimal_places=2)
+    precio_unidad_usd: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    precio_caja_usd: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
     proveedor_id: int | None = None
     tipo_iva: Literal["GRAVADO", "EXENTO"] | None = None
 
