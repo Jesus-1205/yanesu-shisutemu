@@ -9,12 +9,14 @@ from app.services.audit_service import log_action
 from app.services.product_service import (
     create_product,
     delete_product,
+    get_favorites,
     get_low_rotation,
     get_lowest_margin,
     get_product,
     get_products,
     get_top_margin,
     get_top_selling,
+    toggle_favorite,
     update_product,
 )
 
@@ -52,6 +54,7 @@ def list_all(
     sort_by: str | None = None,
     order: str | None = None,
     tipo_iva: str | None = None,
+    es_favorito: bool | None = None,
     page: int = 1,
     page_size: int = 20,
     db: Session = Depends(get_db),
@@ -80,6 +83,7 @@ def list_all(
         sort_by=sort_by,
         order=order,
         tipo_iva=tipo_iva,
+        es_favorito=es_favorito,
         page=page,
         page_size=page_size,
     )
@@ -160,6 +164,44 @@ def low_rotation(
         {"producto": ProductOut.model_validate(p), "total_vendido": count}
         for p, count in results
     ]
+
+
+@router.get("/favorites", response_model=ProductPaginationOut, status_code=status.HTTP_200_OK)
+def favorites(
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /products/favorites - Productos favoritos para el POS
+
+    Recibe: query param limit (default 10), cookie access_token
+    Hace:   busca productos con es_favorito=True, ordenados por nombre
+    Devuelve: 200 + ProductPaginationOut con items favoritos | 401/403 sin permisos
+    """
+    result = get_favorites(db, limit=limit)
+    return {
+        "items": [ProductOut.model_validate(p) for p in result["items"]],
+        "total": result["total"],
+        "page": 1,
+        "page_size": limit,
+        "pages": 1,
+    }
+
+
+@router.patch("/{product_id}/toggle-favorite", status_code=status.HTTP_200_OK)
+def toggle_favorite_endpoint(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """PATCH /products/{id}/toggle-favorite - Alternar estado de favorito
+
+    Recibe: product_id en path, cookie access_token
+    Hace:   alterna el campo es_favorito del producto
+    Devuelve: 200 + producto actualizado | 404 no encontrado | 401/403 sin permisos
+    """
+    product = toggle_favorite(db, product_id)
+    return ProductOut.model_validate(product)
 
 
 @router.get("/{product_id}", status_code=status.HTTP_200_OK)

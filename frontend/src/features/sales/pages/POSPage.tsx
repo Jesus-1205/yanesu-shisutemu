@@ -26,6 +26,8 @@ export default function POSPage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [hideNoStock, setHideNoStock] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [showAllFavorites, setShowAllFavorites] = useState(false);
+  const [totalFavorites, setTotalFavorites] = useState(0);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -50,9 +52,23 @@ export default function POSPage() {
     }
   }, [toast]);
 
+  const loadFavorites = useCallback(async (showAll = false) => {
+    setLoadingProducts(true);
+    try {
+      const limit = showAll ? 50 : 10;
+      const data = await api.getFavoriteProducts(limit);
+      setProducts(data.items);
+      setTotalFavorites(data.total);
+    } catch {
+      toast("Error al cargar favoritos", "error");
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    loadFavorites(false);
+  }, [loadFavorites]);
 
   useEffect(() => {
     // Asegura que el store de tasas tenga la tasa BCV actual al abrir el POS,
@@ -62,9 +78,13 @@ export default function POSPage() {
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => loadProducts(search || undefined), 300);
+    if (!search.trim()) {
+      loadFavorites(showAllFavorites);
+    } else {
+      debounceRef.current = setTimeout(() => loadProducts(search), 300);
+    }
     return () => clearTimeout(debounceRef.current);
-  }, [search, loadProducts]);
+  }, [search, loadProducts, loadFavorites, showAllFavorites]);
 
   const totals = getTotals();
   const totalUsd = getTotalUsd();
@@ -107,6 +127,12 @@ export default function POSPage() {
     },
     [search, products, addItem],
   );
+
+  const handleShowMore = () => {
+    setShowAllFavorites(true);
+  };
+
+  const hasMoreFavorites = !search && !showAllFavorites && totalFavorites > 10;
 
   return (
     <div>
@@ -190,6 +216,15 @@ export default function POSPage() {
             loading={loadingProducts}
             emptyMessage="No se encontraron productos"
           />
+
+          {hasMoreFavorites && (
+            <button
+              onClick={handleShowMore}
+              className="w-full py-2 text-sm text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-colors"
+            >
+              Ver más favoritos ({totalFavorites - 10} restantes)
+            </button>
+          )}
         </div>
 
         {/* Right panel: cart */}

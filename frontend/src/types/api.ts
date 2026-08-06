@@ -208,6 +208,7 @@ export interface ProductOut {
   precio_sugerido_caja_usd: number;
   proveedor_id: number | null;
   tipo_iva: "GRAVADO" | "EXENTO";
+  es_favorito: boolean;
 }
 
 export interface ProductMatrixItem {
@@ -246,6 +247,7 @@ export interface ProductUpdate {
   precio_caja_usd?: number;
   proveedor_id?: number | null;
   tipo_iva?: "GRAVADO" | "EXENTO";
+  es_favorito?: boolean;
 }
 
 export interface ProductSold {

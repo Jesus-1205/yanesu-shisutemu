@@ -24,6 +24,7 @@ def get_products(
     sort_by: str | None = None,
     order: str | None = None,
     tipo_iva: str | None = None,
+    es_favorito: bool | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> dict:
@@ -59,6 +60,8 @@ def get_products(
         base_stmt = base_stmt.where(Product.stock_unidades == 0)
     if tipo_iva:
         base_stmt = base_stmt.where(Product.tipo_iva == tipo_iva)
+    if es_favorito is not None:
+        base_stmt = base_stmt.where(Product.es_favorito == es_favorito)
 
     # Count query using subquery to support join count correctly
     count_stmt = select(func.count()).select_from(base_stmt.subquery())
@@ -245,6 +248,28 @@ def get_low_rotation(db: Session, limit: int = 10) -> list[tuple[Product, int]]:
         .limit(limit)
     )
     return [(row[0], row[1]) for row in db.execute(stmt).all()]
+
+
+def get_favorites(db: Session, limit: int = 10) -> dict:
+    stmt = (
+        select(Product)
+        .options(selectinload(Product.categories))
+        .where(Product.es_favorito == True)
+        .order_by(Product.nombre)
+        .limit(limit)
+    )
+    items = list(db.execute(stmt).scalars().all())
+    count_stmt = select(func.count()).select_from(Product).where(Product.es_favorito == True)
+    total = db.execute(count_stmt).scalar() or 0
+    return {"items": items, "total": total}
+
+
+def toggle_favorite(db: Session, product_id: int) -> Product:
+    product = get_product(db, product_id)
+    product.es_favorito = not product.es_favorito
+    db.commit()
+    db.refresh(product)
+    return product
 
 
 def get_product_matrix(

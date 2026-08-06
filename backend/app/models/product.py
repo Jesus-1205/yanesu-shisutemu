@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import String, Integer, DECIMAL, ForeignKey, Enum as SAEnum
+from sqlalchemy import Boolean, String, Integer, DECIMAL, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -22,6 +22,7 @@ class Product(Base):
     precio_caja_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
     proveedor_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("proveedores.id", ondelete="RESTRICT"), nullable=True)
     tipo_iva: Mapped[str] = mapped_column(SAEnum("GRAVADO", "EXENTO", name="tipo_iva"), nullable=False, default="GRAVADO")
+    es_favorito: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     supplier: Mapped["Supplier | None"] = relationship("Supplier", back_populates="products")
     sale_items: Mapped[list["SaleItem"]] = relationship("SaleItem", back_populates="product")

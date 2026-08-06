@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, SlidersHorizontal, FileText, Download } from "lucide-react";
+import { Plus, SlidersHorizontal, FileText, Download, Star } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut, CategoryOut, SupplierOut } from "@/types/api";
 import type { Column } from "@/ui-components/Table";
@@ -42,7 +42,7 @@ const sortOptionsAdmin = [
   { value: "margen_desc", label: "Margen (Mayor-Menor)" },
 ];
 
-function filtersToParams(filters: ProductFiltersState): Record<string, unknown> {
+function filtersToParams(filters: ProductFiltersState, showFavoritesOnly: boolean): Record<string, unknown> {
   const params: Record<string, unknown> = {};
   if (filters.search) params.search = filters.search;
   if (filters.categoria_ids.length > 0) params.categoria_ids = filters.categoria_ids;
@@ -55,6 +55,7 @@ function filtersToParams(filters: ProductFiltersState): Record<string, unknown> 
   if (filters.precio_min !== "") params.precio_min = filters.precio_min;
   if (filters.precio_max !== "") params.precio_max = filters.precio_max;
   if (filters.tipo_iva) params.tipo_iva = filters.tipo_iva;
+  if (showFavoritesOnly) params.es_favorito = true;
   return params;
 }
 
@@ -91,6 +92,7 @@ export default function ProductsPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const openCreate = () => {
     navigate("/products/new");
@@ -208,15 +210,15 @@ export default function ProductsPage() {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setPage(1);
-      fetchProducts({ ...filtersToParams(filters), page: 1, page_size: PAGE_SIZE });
+      fetchProducts({ ...filtersToParams(filters, showFavoritesOnly), page: 1, page_size: PAGE_SIZE });
     }, 300);
     return () => clearTimeout(debounceRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtersKey]);
+  }, [filtersKey, showFavoritesOnly]);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    fetchProducts({ ...filtersToParams(filters), page: newPage, page_size: PAGE_SIZE });
+    fetchProducts({ ...filtersToParams(filters, showFavoritesOnly), page: newPage, page_size: PAGE_SIZE });
   };
 
   const handleDelete = async () => {
@@ -234,6 +236,21 @@ export default function ProductsPage() {
       );
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleToggleFavorite = async (product: Product) => {
+    try {
+      const updated = await api.toggleProductFavorite(product.id);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, es_favorito: updated.es_favorito } : p))
+      );
+      toast(
+        updated.es_favorito ? `"${product.nombre}" agregado a favoritos` : `"${product.nombre}" removido de favoritos`,
+        "success"
+      );
+    } catch {
+      toast("Error al actualizar favorito", "error");
     }
   };
 
@@ -273,7 +290,7 @@ export default function ProductsPage() {
 
       {error && (
         <div className="mb-4">
-          <ErrorBanner onRetry={() => fetchProducts({ ...filtersToParams(filters), page, page_size: PAGE_SIZE })}>
+          <ErrorBanner onRetry={() => fetchProducts({ ...filtersToParams(filters, showFavoritesOnly), page, page_size: PAGE_SIZE })}>
             {error}
           </ErrorBanner>
         </div>
@@ -297,6 +314,17 @@ export default function ProductsPage() {
               }}
             />
           </div>
+          <button
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className={`p-2 rounded-lg transition-colors ${
+              showFavoritesOnly
+                ? "bg-yellow-100 text-yellow-600"
+                : "text-slate-400 hover:text-yellow-500 hover:bg-yellow-50"
+            }`}
+            title={showFavoritesOnly ? "Mostrar todos los productos" : "Mostrar solo favoritos"}
+          >
+            <Star className={`w-4 h-4 ${showFavoritesOnly ? "fill-yellow-400" : ""}`} />
+          </button>
           {!isOperator && (
             <div className="hidden md:block w-56 lg:w-72">
               <Select
@@ -352,6 +380,7 @@ export default function ProductsPage() {
             loading={loading}
             onEdit={openEdit}
             onDelete={setDeleteTarget}
+            onToggleFavorite={handleToggleFavorite}
             sortField={filters.sortField}
             sortOrder={filters.sortOrder}
             onSortColumn={handleTableSort}
@@ -373,6 +402,7 @@ export default function ProductsPage() {
                 product={p}
                 onEdit={openEdit}
                 onDelete={setDeleteTarget}
+                onToggleFavorite={handleToggleFavorite}
               />
             ))}
           </div>

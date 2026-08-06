@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Star } from "lucide-react";
 import Badge from "@/ui-components/Badge";
 import Table, { type Column } from "@/ui-components/Table";
 import { formatCurrency } from "@/lib/utils";
@@ -11,6 +11,7 @@ interface ProductTableProps {
   loading?: boolean;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onToggleFavorite?: (product: Product) => void;
   sortField?: SortField;
   sortOrder?: "asc" | "desc";
   onSortColumn?: (field: SortField) => void;
@@ -18,7 +19,7 @@ interface ProductTableProps {
 }
 
 export default function ProductTable({
-  products, loading, onEdit, onDelete,
+  products, loading, onEdit, onDelete, onToggleFavorite,
   sortField, sortOrder, onSortColumn,
   role = "admin",
 }: ProductTableProps) {
@@ -31,6 +32,20 @@ export default function ProductTable({
   });
 
   const columns: Column<Product>[] = [
+    {
+      key: "favorito",
+      header: "★",
+      className: "w-10",
+      render: (p: Product) => (
+        <button
+          onClick={() => onToggleFavorite?.(p)}
+          className="p-1 rounded hover:bg-yellow-50 transition-colors cursor-pointer"
+          title={p.es_favorito ? "Quitar de favoritos" : "Agregar a favoritos"}
+        >
+          <Star className={`w-4 h-4 ${p.es_favorito ? "fill-yellow-400 text-yellow-400" : "text-slate-300 hover:text-yellow-400"}`} />
+        </button>
+      ),
+    },
     {
       key: "nombre",
       header: "Producto",

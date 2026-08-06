@@ -302,3 +302,81 @@ class TestLowRotation:
         _login(client, _OPERATOR)
         response = client.get("/api/products/low-rotation")
         assert response.status_code == 403
+
+
+class TestGetFavorites:
+
+    def test_get_favorites_admin(self, client):
+        _login(client, _ADMIN)
+        response = client.get("/api/products/favorites")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert "total" in data
+
+    def test_get_favorites_operator(self, client):
+        _login(client, _OPERATOR)
+        response = client.get("/api/products/favorites")
+        assert response.status_code == 200
+
+    def test_get_favorites_unauthenticated(self, client):
+        response = client.get("/api/products/favorites")
+        assert response.status_code == 401
+
+    def test_get_favorites_with_limit(self, client):
+        _login(client, _ADMIN)
+        response = client.get("/api/products/favorites?limit=5")
+        assert response.status_code == 200
+        assert response.json()["page_size"] == 5
+
+
+class TestToggleFavorite:
+
+    def test_toggle_favorite_admin(self, client):
+        _login(client, _ADMIN)
+        created = _create_product(client).json()
+        assert created["es_favorito"] is False
+        response = client.patch(f"/api/products/{created['id']}/toggle-favorite")
+        assert response.status_code == 200
+        assert response.json()["es_favorito"] is True
+
+    def test_toggle_favorite_operator(self, client):
+        _login(client, _OPERATOR)
+        _login(client, _ADMIN)
+        created = _create_product(client).json()
+        client.post("/api/auth/login", json={"username": "op", "password": "op123"})
+        response = client.patch(f"/api/products/{created['id']}/toggle-favorite")
+        assert response.status_code == 200
+        assert response.json()["es_favorito"] is True
+
+    def test_toggle_favorite_not_found(self, client):
+        _login(client, _ADMIN)
+        response = client.patch("/api/products/999/toggle-favorite")
+        assert response.status_code == 404
+
+    def test_toggle_favorite_unauthenticated(self, client):
+        response = client.patch("/api/products/1/toggle-favorite")
+        assert response.status_code == 401
+
+    def test_toggle_favorite_twice(self, client):
+        _login(client, _ADMIN)
+        created = _create_product(client).json()
+        client.patch(f"/api/products/{created['id']}/toggle-favorite")
+        response = client.patch(f"/api/products/{created['id']}/toggle-favorite")
+        assert response.status_code == 200
+        assert response.json()["es_favorito"] is False
+
+
+class TestListWithFavoriteFilter:
+
+    def test_list_filter_es_favorito(self, client):
+        _login(client, _ADMIN)
+        p1 = _create_product(client).json()
+        client.post("/api/products", json={**_PRODUCT, "nombre": "NoFav"})
+        client.patch(f"/api/products/{p1['id']}/toggle-favorite")
+        response = client.get("/api/products?es_favorito=true")
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert all(p["es_favorito"] is True for p in items)
+        assert len(items) == 1
+        assert items[0]["nombre"] == _PRODUCT["nombre"]

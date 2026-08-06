@@ -271,6 +271,7 @@ export const api = {
     sort_by?: "nombre" | "stock" | "precio" | "margen";
     order?: "asc" | "desc";
     tipo_iva?: "GRAVADO" | "EXENTO";
+    es_favorito?: boolean;
     page?: number;
     page_size?: number;
   }) => {
@@ -287,6 +288,7 @@ export const api = {
     if (params?.sort_by) qs.set("sort_by", params.sort_by);
     if (params?.order) qs.set("order", params.order);
     if (params?.tipo_iva) qs.set("tipo_iva", params.tipo_iva);
+    if (params?.es_favorito !== undefined) qs.set("es_favorito", String(params.es_favorito));
     if (params?.page) qs.set("page", String(params.page));
     if (params?.page_size) qs.set("page_size", String(params.page_size));
     const q = qs.toString();
@@ -310,6 +312,12 @@ export const api = {
 
   deleteProduct: (id: number) =>
     request<void>(`/products/${id}`, { method: "DELETE" }),
+
+  getFavoriteProducts: (limit = 10) =>
+    request<ProductPaginationOut>(`/products/favorites?limit=${limit}`),
+
+  toggleProductFavorite: (id: number) =>
+    request<ProductOut>(`/products/${id}/toggle-favorite`, { method: "PATCH" }),
 
   // ── Ventas ──
   getSales: (params?: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; limit?: number }) => {

@@ -1,4 +1,4 @@
-import { Pencil, Trash2, Box, Package } from "lucide-react";
+import { Pencil, Trash2, Box, Package, Star } from "lucide-react";
 import type { Product } from "@/types/api";
 import Badge from "@/ui-components/Badge";
 import { formatCurrency } from "@/lib/utils";
@@ -9,9 +9,10 @@ interface ProductCardProps {
   product: Product;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onToggleFavorite?: (product: Product) => void;
 }
 
-export default function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
+export default function ProductCard({ product, onEdit, onDelete, onToggleFavorite }: ProductCardProps) {
   const tasa = useExchangeRateStore((s) => s.tasa);
   const margin = calcMargin(Number(product.precio_costo_usd), Number(product.precio_unidad_usd));
 
@@ -30,6 +31,13 @@ export default function ProductCard({ product, onEdit, onDelete }: ProductCardPr
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onToggleFavorite?.(product)}
+            className="p-1.5 rounded-lg transition-colors cursor-pointer"
+            title={product.es_favorito ? "Quitar de favoritos" : "Agregar a favoritos"}
+          >
+            <Star className={`w-4 h-4 ${product.es_favorito ? "fill-yellow-400 text-yellow-400" : "text-slate-400 hover:text-yellow-400"}`} />
+          </button>
           <button
             onClick={() => onEdit(product)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors cursor-pointer"

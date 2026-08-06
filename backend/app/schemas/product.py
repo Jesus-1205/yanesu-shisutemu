@@ -38,6 +38,7 @@ class ProductOut(BaseModel):
     precio_caja_usd: Decimal
     proveedor_id: int | None
     tipo_iva: str
+    es_favorito: bool
 
     @computed_field
     @property
@@ -68,6 +69,7 @@ class ProductUpdate(BaseModel):
     precio_caja_usd: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
     proveedor_id: int | None = None
     tipo_iva: Literal["GRAVADO", "EXENTO"] | None = None
+    es_favorito: bool | None = None
 
 
 class ProductPaginationOut(BaseModel):
