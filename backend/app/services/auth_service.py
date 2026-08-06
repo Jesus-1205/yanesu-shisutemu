@@ -70,7 +70,7 @@ def set_token_cookie(response: Response, token: str):
         httponly=True,
         secure=Config.SECURE_COOKIE,
         samesite="lax",
-        max_age=3600,
+        max_age=Config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
 
