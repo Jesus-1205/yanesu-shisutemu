@@ -16,6 +16,7 @@ export function usePosKeyboard(
       if (e.key === "F2") {
         e.preventDefault();
         searchRef.current?.focus();
+        searchRef.current?.select();
         return;
       }
 

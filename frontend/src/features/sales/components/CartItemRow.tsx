@@ -39,12 +39,12 @@ export default function CartItemRow({ item }: CartItemRowProps) {
           <option value="CAJA">Caja</option>
         </select>
 
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="flex items-center gap-1.5 ml-auto">
           <button
             onClick={() => updateQuantity(item.cartItemId, item.cantidad - 1)}
-            className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <Minus className="w-3 h-3" />
+            <Minus className="w-3.5 h-3.5" />
           </button>
           <input
             type="number"
@@ -54,13 +54,13 @@ export default function CartItemRow({ item }: CartItemRowProps) {
               const v = parseInt(e.target.value, 10);
               if (!isNaN(v)) updateQuantity(item.cartItemId, v);
             }}
-            className="w-12 text-center text-sm rounded-md border border-slate-300 bg-surface py-1 outline-none focus:border-brand-blue [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="w-14 text-center text-base font-semibold rounded-md border border-slate-300 bg-surface py-1 outline-none focus:border-brand-blue [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <button
             onClick={() => updateQuantity(item.cartItemId, item.cantidad + 1)}
-            className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Search, ShoppingCart } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
@@ -19,7 +18,6 @@ import SplitAddButton from "../components/SplitAddButton";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
 
 export default function POSPage() {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const isOperator = user?.rol_nombre !== "ADMINISTRADOR";
@@ -129,6 +127,7 @@ export default function POSPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={handleBarcode}
+                onFocus={(e) => e.target.select()}
                 className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
                 autoFocus
               />
@@ -271,7 +270,7 @@ export default function POSPage() {
         onClose={() => setCheckoutOpen(false)}
         onSuccess={() => {
           setCheckoutOpen(false);
-          navigate("/sales");
+          loadProducts();
         }}
       />
     </div>
