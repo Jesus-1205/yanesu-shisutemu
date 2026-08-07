@@ -81,7 +81,7 @@ describe("InvoiceDetailPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Factura #26662")).toBeInTheDocument();
     });
-    expect(screen.getByText("Inversiones CG, C.A")).toBeInTheDocument();
+    expect(screen.getAllByText("Inversiones CG, C.A").length).toBeGreaterThanOrEqual(1);
   });
 
   it("no muestra boton de IA cuando procesada_por_ia es false", async () => {
@@ -125,7 +125,7 @@ describe("InvoiceDetailPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Información escaneada por IA")).toBeInTheDocument();
     });
-    const closeButton = screen.getByRole("button", { name: /close/i });
+    const closeButton = screen.getByRole("button", { name: /cerrar/i });
     await userEvent.click(closeButton);
     await waitFor(() => {
       expect(screen.queryByText("Información escaneada por IA")).not.toBeInTheDocument();

@@ -31,7 +31,7 @@ const mockProducts: ProductOut[] = [
     precio_costo_caja_usd: 96, precio_costo_usd: 8,
     precio_unidad_usd: 15, precio_caja_usd: 150,
     precio_sugerido_unidad_usd: 11.43, precio_sugerido_caja_usd: 137.14,
-    proveedor_id: null, tipo_iva: "GRAVADO",
+    proveedor_id: null, tipo_iva: "GRAVADO", es_favorito: false,
   },
 ];
 

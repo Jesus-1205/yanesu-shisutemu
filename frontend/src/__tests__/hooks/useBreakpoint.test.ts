@@ -4,12 +4,16 @@ import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 function setWidth(width: number) {
   Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: width });
-  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  }));
+  window.matchMedia = vi.fn().mockImplementation((query: string) => {
+    const match = query.match(/min-width:\s*(\d+)px/);
+    const minWidth = match ? parseInt(match[1]) : 0;
+    return {
+      matches: window.innerWidth >= minWidth,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+  });
 }
 
 describe("useBreakpoint", () => {

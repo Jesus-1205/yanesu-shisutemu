@@ -69,10 +69,13 @@ class TestOptimizeImage:
         except ImportError:
             pytest.skip("Pillow not installed")
 
-        img = Image.new("RGB", (1000, 1000), color="red")
-        for x in range(0, 1000, 5):
-            for y in range(0, 1000, 5):
-                img.putpixel((x, y), ((x * 7) % 256, (y * 3) % 256, (x + y) % 256))
+        import random
+        random.seed(42)
+        img = Image.new("RGB", (2000, 2000))
+        pixels = img.load()
+        for x in range(2000):
+            for y in range(2000):
+                pixels[x, y] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         buf = BytesIO()
         img.save(buf, format="PNG")
         png_bytes = buf.getvalue()

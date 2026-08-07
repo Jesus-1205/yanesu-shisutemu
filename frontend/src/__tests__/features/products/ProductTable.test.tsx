@@ -15,7 +15,7 @@ const products: Product[] = [
     precio_costo_caja_usd: 96, precio_costo_usd: 8,
     precio_unidad_usd: 15, precio_caja_usd: 150,
     precio_sugerido_unidad_usd: 11.43, precio_sugerido_caja_usd: 137.14,
-    proveedor_id: null, tipo_iva: "GRAVADO",
+    proveedor_id: null, tipo_iva: "GRAVADO", es_favorito: false,
   },
   {
     id: 2, codigo_barra: null, nombre: "Whisky B",
@@ -23,7 +23,7 @@ const products: Product[] = [
     precio_costo_caja_usd: 50, precio_costo_usd: 8.33,
     precio_unidad_usd: 10, precio_caja_usd: 100,
     precio_sugerido_unidad_usd: 11.9, precio_sugerido_caja_usd: 71.43,
-    proveedor_id: null, tipo_iva: "EXENTO",
+    proveedor_id: null, tipo_iva: "EXENTO", es_favorito: false,
   },
 ];
 

@@ -21,7 +21,7 @@ function getBreakpoint(width: number): Breakpoint {
 
 function getMatches(): Record<Breakpoint, boolean> {
   if (typeof window === "undefined") {
-    return { sm: true, md: false, lg: false, xl: false, "2xl": false };
+    return { sm: false, md: false, lg: false, xl: false, "2xl": false };
   }
   return {
     sm: window.matchMedia(queries.sm).matches,

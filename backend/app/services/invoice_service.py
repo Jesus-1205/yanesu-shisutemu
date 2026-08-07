@@ -332,6 +332,7 @@ def fuzzy_match_productos_batch(
                     precio_caja_usd=p.precio_caja_usd,
                     proveedor_id=p.proveedor_id,
                     tipo_iva=p.tipo_iva,
+                    es_favorito=p.es_favorito,
                 ))
 
             resultados.append(MatchedProduct(

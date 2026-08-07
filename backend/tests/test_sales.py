@@ -320,7 +320,8 @@ class TestListSalesPaymentMethodFilter:
         methods = _get_method_ids(client)
         _create_sale_with_method(client, prod["id"], methods["DIVISAS"])
         _create_sale_with_method(client, prod["id"], methods["EFECTIVO"])
-        today = "2026-08-01"
+        from datetime import date
+        today = date.today().isoformat()
         resp = client.get(f"/api/sales?metodo_pago_ids={methods['DIVISAS']}&fecha_desde={today}&fecha_hasta={today}")
         assert resp.status_code == 200
         assert len(resp.json()) == 1

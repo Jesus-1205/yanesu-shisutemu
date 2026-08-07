@@ -34,6 +34,7 @@ const product: Product = {
   precio_sugerido_caja_usd: 137.14,
   proveedor_id: null,
   tipo_iva: "GRAVADO",
+  es_favorito: false,
 };
 
 describe("QuickEditModal", () => {

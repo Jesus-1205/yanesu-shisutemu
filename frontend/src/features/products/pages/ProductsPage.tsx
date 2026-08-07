@@ -418,7 +418,7 @@ export default function ProductsPage() {
       <QuickEditModal
         open={quickEditProduct !== null}
         onClose={closeQuickEdit}
-        onSaved={() => fetchProducts(filtersToParams(filters))}
+        onSaved={() => fetchProducts(filtersToParams(filters, showFavoritesOnly))}
         product={quickEditProduct}
         role={isOperator ? "operator" : "admin"}
       />

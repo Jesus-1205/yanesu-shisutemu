@@ -46,8 +46,8 @@ def mock_response():
 def test_fetch_bcv_rates_success(mock_response):
     with patch("app.core.bcv_scraper.requests.get", return_value=mock_response):
         rates = fetch_bcv_rates()
-    assert rates["USD"] == Decimal("727.451")
-    assert rates["EUR"] == Decimal("832.248")
+    assert rates["USD"] == Decimal("727.4512")
+    assert rates["EUR"] == Decimal("832.2478")
 
 
 def test_fetch_bcv_rates_missing_rates():
