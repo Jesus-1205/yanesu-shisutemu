@@ -305,7 +305,8 @@ export default function POSPage() {
         onClose={() => setCheckoutOpen(false)}
         onSuccess={() => {
           setCheckoutOpen(false);
-          loadProducts();
+          setSearch("");
+          loadFavorites(false);
         }}
       />
     </div>
