@@ -174,8 +174,12 @@ export const api = {
     request<void>(`/categories/${id}`, { method: "DELETE" }),
 
   // ── Proveedores ──
-  getSuppliers: () =>
-    request<SupplierOut[]>("/suppliers"),
+  getSuppliers: (params?: { search?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set("search", params.search);
+    const q = qs.toString();
+    return request<SupplierOut[]>(`/suppliers${q ? `?${q}` : ""}`);
+  },
 
   getSuppliersPaginated: (params: { page: number; page_size: number }) => {
     const qs = new URLSearchParams();

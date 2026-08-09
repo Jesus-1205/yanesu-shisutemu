@@ -32,6 +32,7 @@ def create(
 
 @router.get("", status_code=status.HTTP_200_OK)
 def list_all(
+    search: str | None = None,
     page: int | None = None,
     page_size: int | None = None,
     db: Session = Depends(get_db),
@@ -46,7 +47,7 @@ def list_all(
             page_size=result["page_size"],
             pages=result["pages"],
         )
-    suppliers = get_suppliers(db)
+    suppliers = get_suppliers(db, search=search)
     return [SupplierOut.model_validate(s) for s in suppliers]
 
 

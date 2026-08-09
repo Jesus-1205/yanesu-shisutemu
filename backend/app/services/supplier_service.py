@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, EntityNotFoundError
@@ -17,8 +17,18 @@ from app.schemas.supplier import (
 )
 
 
-def get_suppliers(db: Session) -> list[Supplier]:
-    stmt = select(Supplier).order_by(Supplier.nombre)
+def get_suppliers(db: Session, search: str | None = None) -> list[Supplier]:
+    stmt = select(Supplier)
+    if search:
+        pattern = f"%{search}%"
+        stmt = stmt.where(
+            or_(
+                Supplier.nombre.ilike(pattern),
+                Supplier.telefono.ilike(pattern),
+                Supplier.email.ilike(pattern),
+            )
+        )
+    stmt = stmt.order_by(Supplier.nombre)
     return list(db.execute(stmt).scalars().all())
 
 

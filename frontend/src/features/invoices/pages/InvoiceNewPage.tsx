@@ -5,6 +5,7 @@ import { api } from "@/services/api";
 import type { MonedaEnum, ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut, MatchedProduct, MatchStatus } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Combobox from "@/ui-components/Combobox";
+import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import Textarea from "@/ui-components/Textarea";
 import FileUpload from "@/ui-components/FileUpload";
 import PageHeader from "@/ui-components/PageHeader";
@@ -288,13 +289,26 @@ export default function InvoiceNewPage() {
   const [newUnidadesPorCaja, setNewUnidadesPorCaja] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      api.getSuppliers(),
-      api.getProducts({ page_size: 200 }),
-    ]).then(([sups, prods]) => {
-      setSuppliers(sups);
-      setProducts(prods.items);
-    }).catch(() => {});
+    api.getSuppliers().then(setSuppliers).catch(() => {});
+  }, []);
+
+  const handleSearchProducts = useCallback(async (query: string) => {
+    const data = await api.getProducts({ search: query || undefined });
+    setProducts(data.items);
+    return data.items.map((p) => ({
+      value: p.id,
+      label: p.nombre,
+      subtitle: p.codigo_barra || undefined,
+    }));
+  }, []);
+
+  const handleSearchSuppliers = useCallback(async (query: string) => {
+    const data = await api.getSuppliers({ search: query || undefined });
+    setSuppliers(data);
+    return data.map((s) => ({
+      value: s.id,
+      label: s.nombre,
+    }));
   }, []);
 
   const esBs = moneda === "BS";
@@ -454,16 +468,6 @@ export default function InvoiceNewPage() {
     }
   };
 
-  const supplierOptions = suppliers.map((s) => ({
-    value: s.id,
-    label: s.nombre,
-  }));
-
-  const productOptions = products.map((p) => ({
-    value: p.id,
-    label: `${p.nombre}${p.codigo_barra ? ` (${p.codigo_barra})` : ""}`,
-  }));
-
   const labelBase = "block text-xs font-medium text-slate-700 mb-1";
   const inputBase =
     "w-full h-10 rounded-lg border border-slate-300 bg-surface px-3 text-sm text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20";
@@ -500,11 +504,11 @@ export default function InvoiceNewPage() {
             <div className="space-y-4">
               <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <Combobox
+                  <AsyncCombobox
                     label="Proveedor"
                     value={proveedorId}
                     onChange={(val) => setProveedorId(val as number | null)}
-                    options={supplierOptions}
+                    onSearch={handleSearchSuppliers}
                     placeholder="Buscar proveedor..."
                     allowClear={false}
                   />
@@ -646,11 +650,11 @@ export default function InvoiceNewPage() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 items-end">
               <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-                <Combobox
+                <AsyncCombobox
                   label="Buscar producto"
                   value={newProductId}
                   onChange={handleProductSelect}
-                  options={productOptions}
+                  onSearch={handleSearchProducts}
                   placeholder="Buscar producto por nombre o código..."
                   allowClear
                   clearLabel="Limpiar"
@@ -859,7 +863,7 @@ export default function InvoiceNewPage() {
               ) : aiAnalysis.proveedor.match_status === "PARTIAL" ? (
                 <div className="flex items-center gap-2 flex-1">
                   <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                  <Combobox
+                  <AsyncCombobox
                     value={aiAnalysis.proveedor.id || null}
                     onChange={(val) => {
                       if (val) {
@@ -878,7 +882,7 @@ export default function InvoiceNewPage() {
                         }
                       }
                     }}
-                    options={supplierOptions}
+                    onSearch={handleSearchSuppliers}
                     placeholder="Seleccionar proveedor..."
                     allowClear={false}
                     className="flex-1 min-w-0"

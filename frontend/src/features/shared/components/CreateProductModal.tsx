@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "@/services/api";
 import type { ProductOut, CategoryOut, SupplierOut } from "@/types/api";
 import Modal from "@/ui-components/Modal";
 import Input from "@/ui-components/Input";
-import Combobox from "@/ui-components/Combobox";
+import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import MultiSelectTags from "@/ui-components/MultiSelectTags";
 import Select from "@/ui-components/Select";
 import Button from "@/ui-components/Button";
@@ -69,11 +69,8 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
 
   useEffect(() => {
     if (!open) return;
-    Promise.all([api.getCategories(), api.getSuppliers()])
-      .then(([cats, sups]) => {
-        setCategories(cats);
-        setSuppliers(sups);
-      })
+    api.getCategories()
+      .then(setCategories)
       .catch(() => {});
 
     // Pre-llenar campos si vienen de IA
@@ -91,6 +88,15 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
     }
     if (initialProveedorId) setProveedorId(initialProveedorId);
   }, [open, initialNombre, initialPrecio, initialMoneda, initialProveedorId, tasaBs]);
+
+  const handleSearchSuppliers = useCallback(async (query: string) => {
+    const data = await api.getSuppliers({ search: query || undefined });
+    setSuppliers(data);
+    return data.map((s) => ({
+      value: s.id,
+      label: s.nombre,
+    }));
+  }, []);
 
   const resetForm = () => {
     setNombre("");
@@ -135,7 +141,6 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
     [costoUnitario, precioUnidad],
   );
 
-  const supplierOptions = suppliers.map((s) => ({ value: s.id, label: s.nombre }));
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.nombre }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -205,10 +210,10 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
                 onChange={setCategoriaIds}
                 placeholder="Seleccionar categorías..."
               />
-              <Combobox
+              <AsyncCombobox
                 label="Proveedor"
                 value={proveedorId}
-                options={supplierOptions}
+                onSearch={handleSearchSuppliers}
                 onChange={(val) => setProveedorId(val as number | null)}
                 placeholder="Buscar proveedor..."
                 allowClear
