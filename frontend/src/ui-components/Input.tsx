@@ -17,7 +17,8 @@ export default function Input({
   autoComplete = "off",
   ...props
 }: InputProps) {
-  const inputId = id ?? useId();
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
 
   return (
     <div className="flex w-full flex-col gap-1.5">

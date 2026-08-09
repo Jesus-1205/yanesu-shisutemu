@@ -17,7 +17,7 @@ export interface CartItem {
   tipo_iva: "GRAVADO" | "EXENTO";
 }
 
-interface CartTotals {
+export interface CartTotals {
   monto_exento_usd: number;
   base_imponible_usd: number;
   monto_iva_usd: number;
@@ -31,13 +31,9 @@ interface CartState {
   updateEmpaque: (cartItemId: string, nuevoEmpaque: "UNIDAD" | "CAJA") => void;
   removeItem: (cartItemId: string) => void;
   clearCart: () => void;
-  getTotals: () => CartTotals;
-  getTotalUsd: () => number;
-  getTotalVes: () => number;
-  itemCount: () => number;
 }
 
-function computeTotals(items: Record<string, CartItem>): CartTotals {
+export function computeTotals(items: Record<string, CartItem>): CartTotals {
   const acc = { monto_exento_usd: 0, base_imponible_usd: 0, monto_iva_usd: 0 };
   for (const item of Object.values(items)) {
     const subtotal = Math.round(item.cantidad * item.precio_unitario_usd * 100) / 100;
@@ -186,21 +182,5 @@ export const useCartStore = create<CartState>((set, get) => {
   clearCart: () => {
     set({ items: {}, snapshotTasa: 0 });
   },
-
-  getTotals: () => computeTotals(get().items),
-
-  getTotalUsd: () => {
-    const t = computeTotals(get().items);
-    return t.monto_exento_usd + t.base_imponible_usd + t.monto_iva_usd;
-  },
-
-  getTotalVes: () => {
-    const t = computeTotals(get().items);
-    const totalUsd = t.monto_exento_usd + t.base_imponible_usd + t.monto_iva_usd;
-    const tasa = get().snapshotTasa;
-    return tasa > 0 ? Math.round(totalUsd * tasa * 100) / 100 : 0;
-  },
-
-  itemCount: () => Object.keys(get().items).length,
 };
 });

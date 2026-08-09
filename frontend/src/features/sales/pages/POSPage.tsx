@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, ShoppingCart } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
@@ -11,18 +11,70 @@ import { useToast } from "@/ui-components/Toast";
 import { formatCurrency, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, computeTotals } from "../store/cartStore";
 import CartItemRow from "../components/CartItemRow";
 import CheckoutDrawer from "../components/CheckoutDrawer";
 import SplitAddButton from "../components/SplitAddButton";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
+import { memo } from "react";
+
+const ProductRow = memo(function ProductRow({
+  product,
+  isOperator,
+  onAddUnit,
+  onAddBox,
+}: {
+  product: ProductOut;
+  isOperator: boolean;
+  onAddUnit: () => void;
+  onAddBox: () => void;
+}) {
+  return (
+    <tr className="border-b border-slate-100 last:border-b-0 transition-colors duration-150 hover:bg-blue-50/40">
+      {!isOperator && (
+        <td className="px-4 py-3 text-text-main whitespace-nowrap">{product.id}</td>
+      )}
+      <td className="px-4 py-3 text-text-main whitespace-nowrap">{product.nombre}</td>
+      <td className="px-4 py-3 text-text-main whitespace-nowrap">
+        {isOperator ? (
+          product.stock_unidades > 0 ? (
+            <Badge variant="success">Disponible</Badge>
+          ) : (
+            <Badge variant="danger">Agotado</Badge>
+          )
+        ) : (
+          <span className={product.stock_unidades === 0 ? "text-danger font-semibold" : ""}>
+            {product.stock_unidades}
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-text-main whitespace-nowrap">
+        {formatCurrency(product.precio_unidad_usd)}
+      </td>
+      <td className="px-4 py-3 text-text-main whitespace-nowrap">
+        {formatCurrency(product.precio_caja_usd)}
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap w-16">
+        <SplitAddButton
+          onAddUnit={onAddUnit}
+          onAddBox={onAddBox}
+          disabled={product.stock_unidades === 0 || (product.precio_unidad_usd <= 0 && product.precio_caja_usd <= 0)}
+        />
+      </td>
+    </tr>
+  );
+});
 
 export default function POSPage() {
   const { toast } = useToast();
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+
   const { user } = useAuth();
   const isOperator = user?.rol_nombre !== "ADMINISTRADOR";
   const [products, setProducts] = useState<ProductOut[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [hideNoStock, setHideNoStock] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -34,11 +86,18 @@ export default function POSPage() {
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
-  const itemCount = useCartStore((s) => s.itemCount);
-  const getTotals = useCartStore((s) => s.getTotals);
-  const getTotalUsd = useCartStore((s) => s.getTotalUsd);
-  const getTotalVes = useCartStore((s) => s.getTotalVes);
   const snapshotTasa = useCartStore((s) => s.snapshotTasa);
+
+  const totals = useMemo(() => computeTotals(items), [items]);
+  const totalUsd = useMemo(
+    () => totals.monto_exento_usd + totals.base_imponible_usd + totals.monto_iva_usd,
+    [totals],
+  );
+  const totalVes = useMemo(
+    () => (snapshotTasa > 0 ? Math.round(totalUsd * snapshotTasa * 100) / 100 : 0),
+    [totalUsd, snapshotTasa],
+  );
+  const itemCount = useMemo(() => Object.keys(items).length, [items]);
 
   const loadProducts = useCallback(async (q?: string) => {
     setLoadingProducts(true);
@@ -46,11 +105,11 @@ export default function POSPage() {
       const data = await api.getProducts(q ? { search: q } : undefined);
       setProducts(data.items);
     } catch {
-      toast("Error al cargar productos", "error");
+      toastRef.current("Error al cargar productos", "error");
     } finally {
       setLoadingProducts(false);
     }
-  }, [toast]);
+  }, []);
 
   const loadFavorites = useCallback(async (showAll = false) => {
     setLoadingProducts(true);
@@ -60,79 +119,179 @@ export default function POSPage() {
       setProducts(data.items);
       setTotalFavorites(data.total);
     } catch {
-      toast("Error al cargar favoritos", "error");
+      toastRef.current("Error al cargar favoritos", "error");
     } finally {
       setLoadingProducts(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     loadFavorites(false);
   }, [loadFavorites]);
 
   useEffect(() => {
-    // Asegura que el store de tasas tenga la tasa BCV actual al abrir el POS,
-    // para que addItem capture un snapshotTasa valido.
     useExchangeRateStore.getState().loadTasa();
   }, []);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    if (!search.trim()) {
+    if (!debouncedSearch.trim()) {
       loadFavorites(showAllFavorites);
     } else {
-      debounceRef.current = setTimeout(() => loadProducts(search), 300);
+      loadProducts(debouncedSearch);
     }
     return () => clearTimeout(debounceRef.current);
-  }, [search, loadProducts, loadFavorites, showAllFavorites]);
+  }, [debouncedSearch, loadProducts, loadFavorites, showAllFavorites]);
 
-  const totals = getTotals();
-  const totalUsd = getTotalUsd();
-  const totalVes = getTotalVes();
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    if (!search.trim()) {
+      setDebouncedSearch("");
+    } else {
+      debounceRef.current = setTimeout(() => {
+        setDebouncedSearch(search);
+      }, 300);
+    }
+    return () => clearTimeout(debounceRef.current);
+  }, [search]);
+
   const tasaNum = snapshotTasa;
 
-  const filteredProducts = (hideNoStock
-    ? products.filter((p) => p.stock_unidades > 0)
-    : [...products]
-  ).sort((a, b) => {
-    const aHasStock = a.stock_unidades > 0 ? 0 : 1;
-    const bHasStock = b.stock_unidades > 0 ? 0 : 1;
-    if (aHasStock !== bHasStock) return aHasStock - bHasStock;
-    return a.nombre.localeCompare(b.nombre, "es");
-  });
-
-  usePosKeyboard(
-    searchRef,
-    () => {
-      if (itemCount() === 0) {
-        toast("Agrega al menos un producto", "error");
-        return;
-      }
-      setCheckoutOpen(true);
-    },
-    checkoutOpen,
-    () => setCheckoutOpen(false),
+  const filteredProducts = useMemo(
+    () =>
+      (hideNoStock
+        ? products.filter((p) => p.stock_unidades > 0)
+        : [...products]
+      ).sort((a, b) => {
+        const aHasStock = a.stock_unidades > 0 ? 0 : 1;
+        const bHasStock = b.stock_unidades > 0 ? 0 : 1;
+        if (aHasStock !== bHasStock) return aHasStock - bHasStock;
+        return a.nombre.localeCompare(b.nombre, "es");
+      }),
+    [products, hideNoStock],
   );
+
+  const clearSearch = useCallback(() => {
+    setSearch("");
+    setDebouncedSearch("");
+  }, []);
+
+  const handleCheckout = useCallback(() => {
+    if (itemCount === 0) {
+      toastRef.current("Agrega al menos un producto", "error");
+      return;
+    }
+    setCheckoutOpen(true);
+  }, [itemCount]);
+
+  const handleCloseCheckout = useCallback(() => {
+    setCheckoutOpen(false);
+  }, []);
+
+  usePosKeyboard(searchRef, handleCheckout, checkoutOpen, handleCloseCheckout, clearSearch);
 
   const handleBarcode = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== "Enter") return;
-      const trimmed = search.trim();
+      const trimmed = searchRef.current?.value?.trim() ?? "";
       if (!trimmed) return;
       const match = products.find((p) => p.codigo_barra === trimmed);
       if (!match) return;
       e.preventDefault();
       addItem(match, "UNIDAD");
       setSearch("");
+      setDebouncedSearch("");
     },
-    [search, products, addItem],
+    [products, addItem],
   );
 
-  const handleShowMore = () => {
+  const handleShowMore = useCallback(() => {
     setShowAllFavorites(true);
-  };
+  }, []);
 
   const hasMoreFavorites = !search && !showAllFavorites && totalFavorites > 10;
+
+  const handleSuccess = useCallback(() => {
+    setCheckoutOpen(false);
+    setSearch("");
+    setDebouncedSearch("");
+    loadFavorites(false);
+  }, [loadFavorites]);
+
+  const handleAddUnit = useCallback(
+    (p: ProductOut) => () => addItem(p, "UNIDAD"),
+    [addItem],
+  );
+
+  const handleAddBox = useCallback(
+    (p: ProductOut) => () => addItem(p, "CAJA"),
+    [addItem],
+  );
+
+  const columns = useMemo(
+    () => [
+      ...(!isOperator ? [{ key: "id", header: "ID" }] : []),
+      { key: "nombre", header: "Nombre" },
+      {
+        key: "stock_unidades",
+        header: "Stock",
+        render: (p: ProductOut) => {
+          if (isOperator) {
+            return p.stock_unidades > 0
+              ? <Badge variant="success">Disponible</Badge>
+              : <Badge variant="danger">Agotado</Badge>;
+          }
+          return (
+            <span className={p.stock_unidades === 0 ? "text-danger font-semibold" : ""}>
+              {p.stock_unidades}
+            </span>
+          );
+        },
+      },
+      {
+        key: "precio_unidad_usd",
+        header: "Precio Ud.",
+        render: (p: ProductOut) => formatCurrency(p.precio_unidad_usd),
+      },
+      {
+        key: "precio_caja_usd",
+        header: "Precio Caja",
+        render: (p: ProductOut) => formatCurrency(p.precio_caja_usd),
+      },
+      {
+        key: "acciones",
+        header: "",
+        exportable: false,
+        className: "w-16",
+        render: (p: ProductOut) => (
+          <SplitAddButton
+            onAddUnit={() => addItem(p, "UNIDAD")}
+            onAddBox={() => addItem(p, "CAJA")}
+            disabled={p.stock_unidades === 0 || (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)}
+          />
+        ),
+      },
+    ],
+    [isOperator, addItem],
+  );
+
+  const keyExtractor = useCallback((p: ProductOut) => p.id, []);
+
+  const handleOpenCheckout = useCallback(() => {
+    if (itemCount === 0) {
+      toastRef.current("Agrega al menos un producto", "error");
+      return;
+    }
+    if (tasaNum <= 0) {
+      toastRef.current("Registra la tasa BCV antes de vender", "error");
+      return;
+    }
+    setCheckoutOpen(true);
+  }, [itemCount, tasaNum]);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  }, []);
 
   return (
     <div>
@@ -151,7 +310,7 @@ export default function POSPage() {
                 ref={searchRef}
                 placeholder="Buscar productos o escanear código de barras..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={handleSearchChange}
                 onKeyDown={handleBarcode}
                 onFocus={(e) => e.target.select()}
                 className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
@@ -168,51 +327,9 @@ export default function POSPage() {
           </div>
 
           <Table
-            columns={[
-              ...(!isOperator ? [{ key: "id", header: "ID" }] : []),
-              { key: "nombre", header: "Nombre" },
-              {
-                key: "stock_unidades",
-                header: "Stock",
-                render: (p: ProductOut) => {
-                  if (isOperator) {
-                    return p.stock_unidades > 0
-                      ? <Badge variant="success">Disponible</Badge>
-                      : <Badge variant="danger">Agotado</Badge>;
-                  }
-                  return (
-                    <span className={p.stock_unidades === 0 ? "text-danger font-semibold" : ""}>
-                      {p.stock_unidades}
-                    </span>
-                  );
-                },
-              },
-              {
-                key: "precio_unidad_usd",
-                header: "Precio Ud.",
-                render: (p: ProductOut) => formatCurrency(p.precio_unidad_usd),
-              },
-              {
-                key: "precio_caja_usd",
-                header: "Precio Caja",
-                render: (p: ProductOut) => formatCurrency(p.precio_caja_usd),
-              },
-              {
-                key: "acciones",
-                header: "",
-                exportable: false,
-                className: "w-16",
-                render: (p: ProductOut) => (
-                  <SplitAddButton
-                    onAddUnit={() => addItem(p, "UNIDAD")}
-                    onAddBox={() => addItem(p, "CAJA")}
-                    disabled={p.stock_unidades === 0 || (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)}
-                  />
-                ),
-              },
-            ]}
+            columns={columns}
             data={filteredProducts}
-            keyExtractor={(p) => p.id}
+            keyExtractor={keyExtractor}
             loading={loadingProducts}
             emptyMessage="No se encontraron productos"
           />
@@ -231,10 +348,10 @@ export default function POSPage() {
         <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="flex items-center gap-2 text-lg font-semibold text-text-main">
             <ShoppingCart className="w-5 h-5" />
-            Carrito ({itemCount()})
+            Carrito ({itemCount})
           </div>
 
-          {itemCount() === 0 ? (
+          {itemCount === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8">
               Selecciona productos para agregar
             </p>
@@ -281,18 +398,8 @@ export default function POSPage() {
             <Button
               variant="accent"
               className="w-full"
-              disabled={itemCount() === 0}
-              onClick={() => {
-                if (itemCount() === 0) {
-                  toast("Agrega al menos un producto", "error");
-                  return;
-                }
-                if (tasaNum <= 0) {
-                  toast("Registra la tasa BCV antes de vender", "error");
-                  return;
-                }
-                setCheckoutOpen(true);
-              }}
+              disabled={itemCount === 0}
+              onClick={handleOpenCheckout}
             >
               Cobrar
             </Button>
@@ -302,12 +409,8 @@ export default function POSPage() {
 
       <CheckoutDrawer
         open={checkoutOpen}
-        onClose={() => setCheckoutOpen(false)}
-        onSuccess={() => {
-          setCheckoutOpen(false);
-          setSearch("");
-          loadFavorites(false);
-        }}
+        onClose={handleCloseCheckout}
+        onSuccess={handleSuccess}
       />
     </div>
   );

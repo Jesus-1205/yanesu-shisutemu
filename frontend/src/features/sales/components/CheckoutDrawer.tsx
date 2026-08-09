@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Drawer from "@/ui-components/Drawer";
 import Button from "@/ui-components/Button";
 import Input from "@/ui-components/Input";
 import { useToast } from "@/ui-components/Toast";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, computeTotals } from "../store/cartStore";
 import { api } from "@/services/api";
 import { formatCurrency, formatRate, formatPaymentMethodName } from "@/lib/utils";
 import type { PaymentMethodOut as PaymentMethod } from "@/types/api";
@@ -17,9 +17,6 @@ interface CheckoutDrawerProps {
 export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDrawerProps) {
   const { toast } = useToast();
   const items = useCartStore((s) => s.items);
-  const getTotals = useCartStore((s) => s.getTotals);
-  const getTotalUsd = useCartStore((s) => s.getTotalUsd);
-  const getTotalVes = useCartStore((s) => s.getTotalVes);
   const snapshotTasa = useCartStore((s) => s.snapshotTasa);
   const clearCart = useCartStore((s) => s.clearCart);
 
@@ -30,11 +27,14 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
   const [isSplit, setIsSplit] = useState(false);
   const [observaciones, setObservaciones] = useState("");
 
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (open) {
       api.getPaymentMethods(true).then(setMethods).catch(() => {
         toast("Error al cargar métodos de pago", "error");
-        onClose();
+        onCloseRef.current();
       });
     }
     if (!open) {
@@ -44,42 +44,81 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
       setIsSplit(false);
       setObservaciones("");
     }
-  }, [open, onClose, toast]);
+  }, [open, toast]);
 
-  const totals = getTotals();
-  const totalUsd = getTotalUsd();
-  const totalVes = getTotalVes();
   const tasaNum = snapshotTasa;
 
-  const setAmount = (id: number, value: string) =>
-    setAmounts((prev) => ({ ...prev, [id]: value }));
+  const totals = useMemo(() => computeTotals(items), [items]);
+  const totalUsd = useMemo(
+    () => totals.monto_exento_usd + totals.base_imponible_usd + totals.monto_iva_usd,
+    [totals],
+  );
+  const totalVes = useMemo(
+    () => (tasaNum > 0 ? Math.round(totalUsd * tasaNum * 100) / 100 : 0),
+    [totalUsd, tasaNum],
+  );
 
-  const pagadoUSD = Math.round(methods.reduce((sum, m) => {
-    const val = Number(amounts[m.id]) || 0;
-    return sum + (m.moneda_default === "VES" ? val / (tasaNum || 1) : val);
-  }, 0) * 100) / 100;
+  const setAmount = useCallback((id: number, value: string) =>
+    setAmounts((prev) => ({ ...prev, [id]: value })), []);
 
-  const pagadoVES = Math.round(methods.reduce((sum, m) => {
-    const val = Number(amounts[m.id]) || 0;
-    return sum + (m.moneda_default === "VES" ? val : val * (tasaNum || 1));
-  }, 0) * 100) / 100;
+  const {
+    pagadoUSD,
+    pagadoVES,
+    isPayingVES,
+    totalEnMonedaPago,
+    pagadoEnMonedaPago,
+    restanteEnMonedaPago,
+    restanteUSD,
+    restanteVES,
+    vueltoEnMonedaPago,
+    vueltoUSD,
+    vueltoVES,
+    suficiente,
+    progressPct,
+  } = useMemo(() => {
+    const pUSD = Math.round(methods.reduce((sum, m) => {
+      const val = Number(amounts[m.id]) || 0;
+      return sum + (m.moneda_default === "VES" ? val / (tasaNum || 1) : val);
+    }, 0) * 100) / 100;
 
-  const isPayingVES = !methods.some((m) => Number(amounts[m.id]) > 0 && m.moneda_default !== "VES");
-  const totalEnMonedaPago = isPayingVES ? totalVes : totalUsd;
-  const pagadoEnMonedaPago = isPayingVES ? pagadoVES : pagadoUSD;
+    const pVES = Math.round(methods.reduce((sum, m) => {
+      const val = Number(amounts[m.id]) || 0;
+      return sum + (m.moneda_default === "VES" ? val : val * (tasaNum || 1));
+    }, 0) * 100) / 100;
 
-  const restanteEnMonedaPago = Math.max(0, Math.round((totalEnMonedaPago - pagadoEnMonedaPago) * 100) / 100);
-  const restanteUSD = isPayingVES ? Math.round(restanteEnMonedaPago / (tasaNum || 1) * 100) / 100 : restanteEnMonedaPago;
-  const restanteVES = isPayingVES ? restanteEnMonedaPago : Math.round(restanteEnMonedaPago * (tasaNum || 1) * 100) / 100;
+    const payingVES = !methods.some((m) => Number(amounts[m.id]) > 0 && m.moneda_default !== "VES");
+    const totalMoneda = payingVES ? totalVes : totalUsd;
+    const pagadoMoneda = payingVES ? pVES : pUSD;
 
-  const vueltoEnMonedaPago = Math.max(0, Math.round((pagadoEnMonedaPago - totalEnMonedaPago) * 100) / 100);
-  const vueltoUSD = isPayingVES ? Math.round(vueltoEnMonedaPago / (tasaNum || 1) * 100) / 100 : vueltoEnMonedaPago;
-  const vueltoVES = isPayingVES ? vueltoEnMonedaPago : Math.round(vueltoEnMonedaPago * (tasaNum || 1) * 100) / 100;
+    const restanteMoneda = Math.max(0, Math.round((totalMoneda - pagadoMoneda) * 100) / 100);
+    const restUSD = payingVES ? Math.round(restanteMoneda / (tasaNum || 1) * 100) / 100 : restanteMoneda;
+    const restVES = payingVES ? restanteMoneda : Math.round(restanteMoneda * (tasaNum || 1) * 100) / 100;
 
-  const suficiente = pagadoEnMonedaPago >= totalEnMonedaPago - 0.01;
-  const progressPct = totalEnMonedaPago > 0
-    ? Math.min(100, Math.round((pagadoEnMonedaPago / totalEnMonedaPago) * 10000) / 100)
-    : 0;
+    const vueltoMoneda = Math.max(0, Math.round((pagadoMoneda - totalMoneda) * 100) / 100);
+    const vUSD = payingVES ? Math.round(vueltoMoneda / (tasaNum || 1) * 100) / 100 : vueltoMoneda;
+    const vVES = payingVES ? vueltoMoneda : Math.round(vueltoMoneda * (tasaNum || 1) * 100) / 100;
+
+    const suf = pagadoMoneda >= totalMoneda - 0.01;
+    const pct = totalMoneda > 0
+      ? Math.min(100, Math.round((pagadoMoneda / totalMoneda) * 10000) / 100)
+      : 0;
+
+    return {
+      pagadoUSD: pUSD,
+      pagadoVES: pVES,
+      isPayingVES: payingVES,
+      totalEnMonedaPago: totalMoneda,
+      pagadoEnMonedaPago: pagadoMoneda,
+      restanteEnMonedaPago: restanteMoneda,
+      restanteUSD: restUSD,
+      restanteVES: restVES,
+      vueltoEnMonedaPago: vueltoMoneda,
+      vueltoUSD: vUSD,
+      vueltoVES: vVES,
+      suficiente: suf,
+      progressPct: pct,
+    };
+  }, [methods, amounts, tasaNum, totalUsd, totalVes]);
 
   const handleExpressClick = useCallback(
     (m: PaymentMethod) => {
@@ -238,7 +277,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                 }}
                 className="block text-[11px] text-brand-blue hover:underline mx-auto mb-2"
               >
-                ¿Pago dividido / monto exacto?
+                Pago dividido / monto exacto?
               </button>
             </>
           ) : (

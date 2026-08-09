@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "../store/cartStore";
 import { useCartStore } from "../store/cartStore";
@@ -7,7 +8,7 @@ interface CartItemRowProps {
   item: CartItem;
 }
 
-export default function CartItemRow({ item }: CartItemRowProps) {
+export default memo(function CartItemRow({ item }: CartItemRowProps) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const updateEmpaque = useCartStore((s) => s.updateEmpaque);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -77,4 +78,4 @@ export default function CartItemRow({ item }: CartItemRowProps) {
       </div>
     </div>
   );
-}
+});
