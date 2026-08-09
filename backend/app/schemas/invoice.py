@@ -15,9 +15,10 @@ class DetalleFacturaCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     producto_id: int
-    cantidad_cajas: int = Field(gt=0)
-    costo_caja_usd: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
-    costo_caja_bs: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    tipo_empaque: Literal["UNIDAD", "CAJA"] = "CAJA"
+    cantidad: int = Field(gt=0)
+    costo_unitario_usd: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    costo_unitario_bs: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
     unidades_por_caja: int | None = Field(gt=0, default=None)
 
 
@@ -39,9 +40,10 @@ class DetalleFacturaOut(BaseModel):
     id: int
     factura_id: int
     producto_id: int
-    cantidad_cajas: int
-    costo_caja_usd: Decimal
-    costo_caja_bs: Decimal
+    tipo_empaque: str
+    cantidad: int
+    costo_unitario_usd: Decimal
+    costo_unitario_bs: Decimal
     product: ProductOut | None = None
 
 
@@ -96,7 +98,8 @@ class MatchedProduct(BaseModel):
 
     producto_id: int | None = None
     nombre_extraido: str
-    cantidad_cajas: int
+    tipo_empaque: Literal["UNIDAD", "CAJA"] = "CAJA"
+    cantidad: int
     precio_unitario: Decimal
     match_status: MatchStatus
     confidence: float = Field(ge=0.0, le=1.0)

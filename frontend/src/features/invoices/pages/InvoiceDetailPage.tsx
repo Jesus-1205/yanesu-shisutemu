@@ -178,26 +178,49 @@ export default function InvoiceDetailPage() {
         <Table
           columns={[
             { key: "producto", header: "Producto", render: (d) => d.product?.nombre || "—" },
-            { key: "cantidad_cajas", header: "Cajas" },
             {
-              key: "costo_caja_usd",
-              header: "$ / Caja",
-              render: (d) => <span className="font-mono">{formatUsd(Number(d.costo_caja_usd))}</span>,
+              key: "tipo_empaque",
+              header: "Tipo",
+              render: (d) => (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                  d.tipo_empaque === "CAJA"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-green-100 text-green-700"
+                }`}>
+                  {d.tipo_empaque === "CAJA" ? "Caja" : "Und"}
+                </span>
+              ),
+            },
+            { key: "cantidad", header: "Cant" },
+            {
+              key: "costo_unitario_usd",
+              header: "$ / Unid",
+              render: (d) => <span className="font-mono">{formatUsd(Number(d.costo_unitario_usd))}</span>,
             },
             {
-              key: "costo_caja_bs",
-              header: "Bs. / Caja",
-              render: (d) => <span className="font-mono">Bs. {formatBs(Number(d.costo_caja_bs))}</span>,
+              key: "costo_unitario_bs",
+              header: "Bs. / Unid",
+              render: (d) => <span className="font-mono">Bs. {formatBs(Number(d.costo_unitario_bs))}</span>,
             },
             {
               key: "subtotal_usd",
               header: "Subtotal USD",
-              render: (d) => <span className="font-mono">{formatUsd(d.cantidad_cajas * Number(d.costo_caja_usd))}</span>,
+              render: (d) => {
+                const unidades = d.tipo_empaque === "CAJA"
+                  ? d.cantidad * (d.product?.unidades_por_caja ?? 1)
+                  : d.cantidad;
+                return <span className="font-mono">{formatUsd(unidades * Number(d.costo_unitario_usd))}</span>;
+              },
             },
             {
               key: "subtotal_bs",
               header: "Subtotal Bs.",
-              render: (d) => <span className="font-mono">Bs. {formatBs(d.cantidad_cajas * Number(d.costo_caja_bs))}</span>,
+              render: (d) => {
+                const unidades = d.tipo_empaque === "CAJA"
+                  ? d.cantidad * (d.product?.unidades_por_caja ?? 1)
+                  : d.cantidad;
+                return <span className="font-mono">Bs. {formatBs(unidades * Number(d.costo_unitario_bs))}</span>;
+              },
             },
           ]}
           data={invoice.detalles}
@@ -209,7 +232,12 @@ export default function InvoiceDetailPage() {
 
       {invoice.detalles.length > 0 && (() => {
         const baseImponible = invoice.detalles
-          .reduce((sum, d) => sum + d.cantidad_cajas * Number(d.costo_caja_bs), 0);
+          .reduce((sum, d) => {
+            const unidades = d.tipo_empaque === "CAJA"
+              ? d.cantidad * (d.product?.unidades_por_caja ?? 1)
+              : d.cantidad;
+            return sum + unidades * Number(d.costo_unitario_bs);
+          }, 0);
         const iva = invoice.moneda_principal === "BS" ? baseImponible * 0.16 : 0;
         const exento = invoice.moneda_principal === "USD"
           ? Number(invoice.total_usd)

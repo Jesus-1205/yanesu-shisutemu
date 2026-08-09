@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_uploads_dir
 from app.core.exceptions import ConflictError, EntityNotFoundError
-from app.models.invoice import DetalleFactura, Factura, MonedaEnum
+from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoEmpaqueFactura
 from app.models.product import Product
 from app.models.supplier import Supplier
 from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, MatchedProduct, MatchedSupplier
@@ -52,7 +52,7 @@ Reglas generales:
 """
 
 INVOICE_PRODUCTS_PROMPT = """Eres un extractor de productos de facturas comerciales venezolanas.
-Tu ÚNICO trabajo es extraer la lista de productos con sus cantidades y precios.
+Tu ÚNICO trabajo es extraer la lista de productos con sus cantidades, tipo de empaque y precios.
 Devuelve EXCLUSIVAMENTE un JSON válido sin texto adicional.
 
 Formato requerido:
@@ -60,8 +60,9 @@ Formato requerido:
   "productos": [
     {
       "nombre": "string - nombre/descripción del producto",
+      "tipo_empaque": "CAJA o UNIDAD - indica si el producto se vende por cajas completas o por unidades sueltas",
       "cantidad": "number - cantidad de cajas o unidades compradas",
-      "precio_unitario": "number - precio por caja sin impuestos CON DECIMALES EXACTOS"
+      "precio_unitario": "number - precio por caja o por unidad sin impuestos CON DECIMALES EXACTOS"
     }
   ]
 }
@@ -77,6 +78,13 @@ Reglas para tablas complejas con variantes:
 - Ignora columnas de "LITROS", "ALICUOTA" (IVA), "TOTAL CON IMPUESTOS".
 - Unidades de medida (BOTELLAS, LATAS, PET) van en el nombre del producto.
 - NO agrupes productos que tengan diferente volumen o tipo de envase, aunque tengan el mismo nombre base.
+
+Reglas para tipo_empaque:
+- Si la factura muestra cantidades en CAJAS (multiplicado por unidades_por_caja implícitamente), usa "CAJA".
+- Si la factura muestra cantidades en UNIDADES sueltas (piezas individuales), usa "UNIDAD".
+- Si el producto se vende por piezas individuales (ej: 24 piezas de refresco, 12 unidades de snack), usa "UNIDAD".
+- Si el producto se vende por cajas/bultos/bandas completas, usa "CAJA".
+- El precio_unitario debe ser el precio por el tipo de empaque indicado (precio por caja si CAJA, precio por unidad si UNIDAD).
 
 Reglas para nombres correctos:
 - Si un producto está bajo una categoría (ej: "SANGRÍA"), incluye la categoría en el nombre: "SANGRÍA VERANO LATA", NO solo "VERANO LATA".
@@ -258,7 +266,8 @@ def fuzzy_match_productos_batch(
             MatchedProduct(
                 producto_id=None,
                 nombre_extraido=item["nombre"],
-                cantidad_cajas=item["cantidad"],
+                tipo_empaque=item.get("tipo_empaque", "CAJA"),
+                cantidad=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
                 match_status="NOT_FOUND",
                 confidence=0.0,
@@ -288,7 +297,8 @@ def fuzzy_match_productos_batch(
             resultados.append(MatchedProduct(
                 producto_id=None,
                 nombre_extraido=nombre_ia,
-                cantidad_cajas=item["cantidad"],
+                tipo_empaque=item.get("tipo_empaque", "CAJA"),
+                cantidad=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
                 match_status="NOT_FOUND",
                 confidence=0.0,
@@ -305,7 +315,8 @@ def fuzzy_match_productos_batch(
             resultados.append(MatchedProduct(
                 producto_id=best_product.id,
                 nombre_extraido=nombre_ia,
-                cantidad_cajas=item["cantidad"],
+                tipo_empaque=item.get("tipo_empaque", "CAJA"),
+                cantidad=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
                 match_status="EXACT",
                 confidence=1.0,
@@ -338,7 +349,8 @@ def fuzzy_match_productos_batch(
             resultados.append(MatchedProduct(
                 producto_id=None,
                 nombre_extraido=nombre_ia,
-                cantidad_cajas=item["cantidad"],
+                tipo_empaque=item.get("tipo_empaque", "CAJA"),
+                cantidad=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
                 match_status="PARTIAL",
                 confidence=best_score / 100.0,
@@ -348,7 +360,8 @@ def fuzzy_match_productos_batch(
             resultados.append(MatchedProduct(
                 producto_id=None,
                 nombre_extraido=nombre_ia,
-                cantidad_cajas=item["cantidad"],
+                tipo_empaque=item.get("tipo_empaque", "CAJA"),
+                cantidad=item["cantidad"],
                 precio_unitario=Decimal(str(item["precio_unitario"])),
                 match_status="NOT_FOUND",
                 confidence=best_score / 100.0,
@@ -547,6 +560,7 @@ def analyze_invoice_from_image(
         [
             {
                 "nombre": p["nombre"],
+                "tipo_empaque": p.get("tipo_empaque", "CAJA").upper(),
                 "cantidad": p.get("cantidad", 1),
                 "precio_unitario": p.get("precio_unitario", 0),
             }
@@ -626,43 +640,49 @@ def create_invoice(
             raise EntityNotFoundError(f"Producto ID {item.producto_id} no encontrado")
 
         if data.moneda_principal == MonedaEnum.USD:
-            costo_usd = item.costo_caja_usd
-            costo_bs = (item.costo_caja_usd * tasa).quantize(Decimal("0.01"))
+            costo_usd = item.costo_unitario_usd
+            costo_bs = (item.costo_unitario_usd * tasa).quantize(Decimal("0.01"))
         else:
-            costo_bs = item.costo_caja_bs
-            costo_usd = (item.costo_caja_bs / tasa).quantize(Decimal("0.01"))
+            costo_bs = item.costo_unitario_bs
+            costo_usd = (item.costo_unitario_bs / tasa).quantize(Decimal("0.01"))
 
         detalle = DetalleFactura(
             factura=factura,
             producto_id=item.producto_id,
-            cantidad_cajas=item.cantidad_cajas,
-            costo_caja_usd=costo_usd,
-            costo_caja_bs=costo_bs,
+            tipo_empaque=item.tipo_empaque,
+            cantidad=item.cantidad,
+            costo_unitario_usd=costo_usd,
+            costo_unitario_bs=costo_bs,
         )
         detalles.append(detalle)
 
-        subtotal_usd = Decimal(item.cantidad_cajas) * costo_usd
-        subtotal_bs = Decimal(item.cantidad_cajas) * costo_bs
+        if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
+            unidades_por_caja = item.unidades_por_caja or product.unidades_por_caja
+            unidades_ingresadas = item.cantidad * unidades_por_caja
+        else:
+            unidades_por_caja = product.unidades_por_caja
+            unidades_ingresadas = item.cantidad
+
+        subtotal_usd = Decimal(unidades_ingresadas) * costo_usd
+        subtotal_bs = Decimal(unidades_ingresadas) * costo_bs
         total_usd += subtotal_usd
         total_bs += subtotal_bs
 
-        unidades_por_caja = item.unidades_por_caja or product.unidades_por_caja
-        unidades_ingresadas = item.cantidad_cajas * unidades_por_caja
         nuevo_stock = product.stock_unidades + unidades_ingresadas
 
-        stock_cajas_actual = Decimal(product.stock_unidades) / Decimal(product.unidades_por_caja)
-        total_cajas = stock_cajas_actual + Decimal(item.cantidad_cajas)
+        stock_unidades_actual = Decimal(product.stock_unidades)
+        total_unidades = stock_unidades_actual + Decimal(unidades_ingresadas)
 
-        if total_cajas > 0:
-            nuevo_costo_caja = (
-                (stock_cajas_actual * product.precio_costo_caja_usd)
-                + (Decimal(item.cantidad_cajas) * costo_usd)
-            ) / total_cajas
-            nuevo_costo_caja = nuevo_costo_caja.quantize(Decimal("0.01"))
+        if total_unidades > 0:
+            nuevo_costo_unidad = (
+                (stock_unidades_actual * product.precio_costo_usd)
+                + (Decimal(unidades_ingresadas) * costo_usd)
+            ) / total_unidades
+            nuevo_costo_unidad = nuevo_costo_unidad.quantize(Decimal("0.01"))
         else:
-            nuevo_costo_caja = product.precio_costo_caja_usd
+            nuevo_costo_unidad = product.precio_costo_usd
 
-        nuevo_costo_unidad = (nuevo_costo_caja / Decimal(unidades_por_caja)).quantize(
+        nuevo_costo_caja = (nuevo_costo_unidad * Decimal(unidades_por_caja)).quantize(
             Decimal("0.01")
         )
 

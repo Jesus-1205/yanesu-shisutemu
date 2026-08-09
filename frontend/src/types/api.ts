@@ -440,12 +440,14 @@ export interface ValidationErrorDetail {
 
 // ─── Facturas de Proveedor ────────────────────────────────────
 export type MonedaEnum = "USD" | "BS";
+export type TipoEmpaque = "UNIDAD" | "CAJA";
 
 export interface DetalleFacturaCreate {
   producto_id: number;
-  cantidad_cajas: number;
-  costo_caja_usd: number;
-  costo_caja_bs: number;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  costo_unitario_usd: number;
+  costo_unitario_bs: number;
   unidades_por_caja?: number | null;
 }
 
@@ -463,9 +465,10 @@ export interface DetalleFacturaOut {
   id: number;
   factura_id: number;
   producto_id: number;
-  cantidad_cajas: number;
-  costo_caja_usd: number;
-  costo_caja_bs: number;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  costo_unitario_usd: number;
+  costo_unitario_bs: number;
   product: ProductOut | null;
 }
 
@@ -509,7 +512,8 @@ export interface MatchedSupplier {
 export interface MatchedProduct {
   producto_id: number | null;
   nombre_extraido: string;
-  cantidad_cajas: number;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
   precio_unitario: number;
   match_status: MatchStatus;
   confidence: number;

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, Package, CirclePlus, ScanLine, CheckCircle2, AlertTriangle, XCircle, Loader2, X } from "lucide-react";
 import { api } from "@/services/api";
-import type { MonedaEnum, ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut, MatchedProduct, MatchStatus } from "@/types/api";
+import type { MonedaEnum, TipoEmpaque, ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut, MatchedProduct, MatchStatus } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Combobox from "@/ui-components/Combobox";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
@@ -22,9 +22,10 @@ interface LineItem {
   producto_id: number;
   nombre: string;
   codigo_barra: string | null;
-  cantidad_cajas: number;
-  costo_caja_usd: number;
-  costo_caja_bs: number;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  costo_unitario_usd: number;
+  costo_unitario_bs: number;
   subtotal_usd: number;
   subtotal_bs: number;
   unidades_por_caja: number;
@@ -225,17 +226,23 @@ export default function InvoiceNewPage() {
           ? Math.round((precioUnitario * tasaNum) * 100) / 100
           : 0;
 
+      const unidadesPorCaja = prod?.unidades_por_caja ?? 1;
+      const unidades = item.tipo_empaque === "CAJA"
+        ? item.cantidad * unidadesPorCaja
+        : item.cantidad;
+
       return {
         key: crypto.randomUUID(),
         producto_id: item.resolved_producto_id!,
         nombre: item.resolved_nombre,
         codigo_barra: prod?.codigo_barra ?? null,
-        cantidad_cajas: item.cantidad_cajas,
-        costo_caja_usd: costoUsd,
-        costo_caja_bs: costoBs,
-        subtotal_usd: Math.round(item.cantidad_cajas * costoUsd * 100) / 100,
-        subtotal_bs: Math.round(item.cantidad_cajas * costoBs * 100) / 100,
-        unidades_por_caja: prod?.unidades_por_caja ?? 1,
+        tipo_empaque: item.tipo_empaque,
+        cantidad: item.cantidad,
+        costo_unitario_usd: costoUsd,
+        costo_unitario_bs: costoBs,
+        subtotal_usd: Math.round(unidades * costoUsd * 100) / 100,
+        subtotal_bs: Math.round(unidades * costoBs * 100) / 100,
+        unidades_por_caja: unidadesPorCaja,
         tipo_iva: prod?.tipo_iva ?? "GRAVADO",
         costo_ingresado: precioUnitario,
         moneda_ingreso: selectedAiCurrency,
@@ -261,12 +268,12 @@ export default function InvoiceNewPage() {
     setAiItems((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleAiItemEdit = useCallback((index: number, field: "cantidad_cajas" | "precio_unitario", value: string) => {
+  const handleAiItemEdit = useCallback((index: number, field: "cantidad" | "precio_unitario", value: string) => {
     setAiItems((prev) => {
       const updated = [...prev];
       const item = { ...updated[index] };
-      if (field === "cantidad_cajas") {
-        item.cantidad_cajas = value === "" ? 0 : parseInt(value, 10) || 0;
+      if (field === "cantidad") {
+        item.cantidad = value === "" ? 0 : parseInt(value, 10) || 0;
       } else {
         item.precio_unitario = value === "" ? 0 : parseFloat(value) || 0;
       }
@@ -284,6 +291,7 @@ export default function InvoiceNewPage() {
   }, [selectedAiCurrency, tasa]);
 
   const [newProductId, setNewProductId] = useState<number | null>(null);
+  const [newTipoEmpaque, setNewTipoEmpaque] = useState<TipoEmpaque>("CAJA");
   const [newCantidad, setNewCantidad] = useState("1");
   const [newCostoPrimario, setNewCostoPrimario] = useState("");
   const [newUnidadesPorCaja, setNewUnidadesPorCaja] = useState("");
@@ -341,7 +349,7 @@ export default function InvoiceNewPage() {
     }
   }, [products]);
 
-  const canAdd = newProductId !== null && nCajas > 0 && nCostoPrim > 0 && nUndsCaja > 0 && nTasa > 0;
+  const canAdd = newProductId !== null && nCajas > 0 && nCostoPrim > 0 && nTasa > 0 && (newTipoEmpaque === "UNIDAD" || nUndsCaja > 0);
 
   useEffect(() => {
     if (nTasa <= 0) return;
@@ -355,12 +363,15 @@ export default function InvoiceNewPage() {
           item.moneda_ingreso === "BS"
             ? item.costo_ingresado
             : Math.round((item.costo_ingresado * nTasa) * 100) / 100;
+        const unidades = item.tipo_empaque === "CAJA"
+          ? item.cantidad * item.unidades_por_caja
+          : item.cantidad;
         return {
           ...item,
-          costo_caja_usd: costo_usd,
-          costo_caja_bs: costo_bs,
-          subtotal_usd: Math.round(item.cantidad_cajas * costo_usd * 100) / 100,
-          subtotal_bs: Math.round(item.cantidad_cajas * costo_bs * 100) / 100,
+          costo_unitario_usd: costo_usd,
+          costo_unitario_bs: costo_bs,
+          subtotal_usd: Math.round(unidades * costo_usd * 100) / 100,
+          subtotal_bs: Math.round(unidades * costo_bs * 100) / 100,
         };
       })
     );
@@ -372,17 +383,20 @@ export default function InvoiceNewPage() {
     const moneda_ingreso = moneda;
     const costo_usd = Math.round((esBs ? (nTasa > 0 ? nCostoPrim / nTasa : 0) : nCostoPrim) * 100) / 100;
     const costo_bs = Math.round((esBs ? nCostoPrim : nCostoPrim * nTasa) * 100) / 100;
+    const unidadesPorCaja = newTipoEmpaque === "CAJA" ? nUndsCaja : selectedProduct.unidades_por_caja;
+    const unidades = newTipoEmpaque === "CAJA" ? nCajas * unidadesPorCaja : nCajas;
     const item: LineItem = {
       key: crypto.randomUUID(),
       producto_id: newProductId!,
       nombre: selectedProduct.nombre,
       codigo_barra: selectedProduct.codigo_barra,
-      cantidad_cajas: nCajas,
-      costo_caja_usd: costo_usd,
-      costo_caja_bs: costo_bs,
-      subtotal_usd: Math.round(nCajas * costo_usd * 100) / 100,
-      subtotal_bs: Math.round(nCajas * costo_bs * 100) / 100,
-      unidades_por_caja: nUndsCaja,
+      tipo_empaque: newTipoEmpaque,
+      cantidad: nCajas,
+      costo_unitario_usd: costo_usd,
+      costo_unitario_bs: costo_bs,
+      subtotal_usd: Math.round(unidades * costo_usd * 100) / 100,
+      subtotal_bs: Math.round(unidades * costo_bs * 100) / 100,
+      unidades_por_caja: unidadesPorCaja,
       tipo_iva: selectedProduct.tipo_iva,
       costo_ingresado,
       moneda_ingreso,
@@ -392,7 +406,7 @@ export default function InvoiceNewPage() {
     setNewCantidad("1");
     setNewCostoPrimario("");
     setNewUnidadesPorCaja("");
-  }, [canAdd, selectedProduct, esBs, newProductId, nCajas, nCostoPrim, nTasa, nUndsCaja, moneda]);
+  }, [canAdd, selectedProduct, esBs, newProductId, nCajas, nCostoPrim, nTasa, nUndsCaja, moneda, newTipoEmpaque]);
 
   const handleRemoveLine = useCallback((key: string) => {
     setLineItems((prev) => prev.filter((d) => d.key !== key));
@@ -411,10 +425,13 @@ export default function InvoiceNewPage() {
     let exento = 0;
     let base = 0;
     let iva = 0;
-    let totalCajas = 0;
+    let totalUnidades = 0;
     const aplicaIva = moneda === "BS"; // IVA solo aplica en bolívares
     for (const item of lineItems) {
-      totalCajas += item.cantidad_cajas;
+      const unidades = item.tipo_empaque === "CAJA"
+        ? item.cantidad * item.unidades_por_caja
+        : item.cantidad;
+      totalUnidades += unidades;
       if (aplicaIva && item.tipo_iva === "GRAVADO") {
         base += item.subtotal_usd;
         iva += Math.round(item.subtotal_usd * 0.16 * 100) / 100;
@@ -427,7 +444,7 @@ export default function InvoiceNewPage() {
       base_imponible: Math.round(base * 100) / 100,
       iva: Math.round(iva * 100) / 100,
       total: Math.round((exento + base + iva) * 100) / 100,
-      totalCajas,
+      totalUnidades,
     };
   }, [lineItems, moneda]);
 
@@ -450,10 +467,11 @@ export default function InvoiceNewPage() {
           tasa_bs: Math.round(nTasa * 100) / 100,
           detalles: lineItems.map((d) => ({
             producto_id: d.producto_id,
-            cantidad_cajas: d.cantidad_cajas,
-            costo_caja_usd: d.costo_caja_usd,
-            costo_caja_bs: d.costo_caja_bs,
-            unidades_por_caja: d.unidades_por_caja,
+            tipo_empaque: d.tipo_empaque,
+            cantidad: d.cantidad,
+            costo_unitario_usd: d.costo_unitario_usd,
+            costo_unitario_bs: d.costo_unitario_bs,
+            unidades_por_caja: d.tipo_empaque === "CAJA" ? d.unidades_por_caja : null,
           })),
         },
         invoiceFiles[0] || undefined,
@@ -661,7 +679,7 @@ export default function InvoiceNewPage() {
                 />
               </div>
               <div>
-                <label htmlFor={fid("cajas")} className={labelBase}>Cajas</label>
+                <label htmlFor={fid("cajas")} className={labelBase}>{newTipoEmpaque === "CAJA" ? "Cajas" : "Unids"}</label>
                 <input
                   id={fid("cajas")}
                   type="number"
@@ -673,7 +691,7 @@ export default function InvoiceNewPage() {
               </div>
               <div>
                 <label htmlFor={fid("costo-prim")} className={labelBase}>
-                  $/Caja <span className="text-slate-400 font-normal">({esBs ? "Bs" : "USD"})</span>
+                  {newTipoEmpaque === "CAJA" ? "$/Caja" : "$/Unid"} <span className="text-slate-400 font-normal">({esBs ? "Bs" : "USD"})</span>
                 </label>
                 <input
                   id={fid("costo-prim")}
@@ -701,16 +719,38 @@ export default function InvoiceNewPage() {
                   placeholder="—"
                 />
               </div>
-              <div className="hidden sm:block">
-                <label htmlFor={fid("uds-caja")} className={labelBase}>Unds/caja</label>
-                <input
-                  id={fid("uds-caja")}
-                  type="number"
-                  min={1}
-                  value={newUnidadesPorCaja}
-                  onChange={(e) => setNewUnidadesPorCaja(e.target.value)}
-                  className={inputBase}
-                />
+              <div>
+                <label className={labelBase}>Empaque</label>
+                <div className="flex rounded-lg border border-slate-300 overflow-hidden h-10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewTipoEmpaque("CAJA");
+                      if (selectedProduct) setNewUnidadesPorCaja(String(selectedProduct.unidades_por_caja));
+                    }}
+                    className={`flex-1 text-xs font-medium transition-colors cursor-pointer ${
+                      newTipoEmpaque === "CAJA"
+                        ? "bg-brand-blue text-white"
+                        : "bg-surface text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Caja
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewTipoEmpaque("UNIDAD");
+                      setNewUnidadesPorCaja("");
+                    }}
+                    className={`flex-1 text-xs font-medium transition-colors cursor-pointer ${
+                      newTipoEmpaque === "UNIDAD"
+                        ? "bg-brand-blue text-white"
+                        : "bg-surface text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Unid
+                  </button>
+                </div>
               </div>
               <div className="flex justify-end">
                 <Button
@@ -735,7 +775,9 @@ export default function InvoiceNewPage() {
                     <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-500">
                       <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-3">Producto</th>
                       <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-3">Código</th>
-                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Cajas</th>
+                      <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-3">Tipo</th>
+                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Cant</th>
+                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">$/Unid</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">USD</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Bs.</th>
                       <th className="text-center text-xs font-medium uppercase tracking-wider px-3 py-3 w-16">Acciones</th>
@@ -754,8 +796,20 @@ export default function InvoiceNewPage() {
                             <span className="text-slate-300 font-light">—</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            item.tipo_empaque === "CAJA"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-green-100 text-green-700"
+                          }`}>
+                            {item.tipo_empaque === "CAJA" ? "Caja" : "Und"}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
-                          {item.cantidad_cajas}
+                          {item.cantidad}
+                        </td>
+                        <td className="px-4 py-3 text-right text-text-main font-mono text-xs">
+                          ${item.costo_unitario_usd.toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
                           ${item.subtotal_usd.toFixed(2)}
@@ -781,9 +835,11 @@ export default function InvoiceNewPage() {
                     <tr className="bg-slate-100/70 border-t-2 border-slate-200 font-semibold text-text-main">
                       <td className="px-4 py-3.5">Totales</td>
                       <td />
+                      <td />
                       <td className="px-4 py-3.5 text-right tabular-nums">
-                        {ivaBreakdown.totalCajas}
+                        {ivaBreakdown.totalUnidades}
                       </td>
+                      <td />
                       <td className="px-4 py-3.5 text-right tabular-nums">
                         ${total_usd.toFixed(2)}
                       </td>
@@ -969,7 +1025,8 @@ export default function InvoiceNewPage() {
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500">
                       <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Estado</th>
                       <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Producto IA</th>
-                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Cajas</th>
+                      <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-2">Tipo</th>
+                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Cant</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Precio</th>
                       <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2 min-w-[200px]">Acción</th>
                     </tr>
@@ -987,11 +1044,20 @@ export default function InvoiceNewPage() {
                           )}
                         </td>
                         <td className="px-4 py-2 text-text-main font-medium">{item.nombre_extraido}</td>
+                        <td className="px-4 py-2 text-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            item.tipo_empaque === "CAJA"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-green-100 text-green-700"
+                          }`}>
+                            {item.tipo_empaque === "CAJA" ? "Caja" : "Und"}
+                          </span>
+                        </td>
                         <td className="px-4 py-2 text-right">
                           <input
                             type="number"
-                            value={item.cantidad_cajas || ""}
-                            onChange={(e) => handleAiItemEdit(idx, "cantidad_cajas", e.target.value)}
+                            value={item.cantidad || ""}
+                            onChange={(e) => handleAiItemEdit(idx, "cantidad", e.target.value)}
                             min="0"
                             className="w-16 h-8 text-right text-sm font-mono rounded border border-slate-300 bg-surface px-1 outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                           />

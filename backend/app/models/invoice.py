@@ -55,6 +55,11 @@ class Factura(Base):
     )
 
 
+class TipoEmpaqueFactura(str, enum.Enum):
+    UNIDAD = "UNIDAD"
+    CAJA = "CAJA"
+
+
 class DetalleFactura(Base):
     __tablename__ = "detalles_facturas"
 
@@ -65,14 +70,19 @@ class DetalleFactura(Base):
     producto_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("productos.id", ondelete="RESTRICT"), nullable=False
     )
-    cantidad_cajas: Mapped[int] = mapped_column(Integer, nullable=False)
-    costo_caja_usd: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    costo_caja_bs: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    tipo_empaque: Mapped[str] = mapped_column(String(10), nullable=False, default="CAJA")
+    cantidad: Mapped[int] = mapped_column(Integer, nullable=False)
+    costo_unitario_usd: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    costo_unitario_bs: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
 
     __table_args__ = (
-        CheckConstraint("cantidad_cajas > 0", name="ck_detalle_factura_cantidad_positivo"),
-        CheckConstraint("costo_caja_usd > 0", name="ck_detalle_factura_costo_usd_positivo"),
-        CheckConstraint("costo_caja_bs > 0", name="ck_detalle_factura_costo_bs_positivo"),
+        CheckConstraint("cantidad > 0", name="ck_detalle_factura_cantidad_positivo"),
+        CheckConstraint("costo_unitario_usd > 0", name="ck_detalle_factura_costo_usd_positivo"),
+        CheckConstraint("costo_unitario_bs > 0", name="ck_detalle_factura_costo_bs_positivo"),
+        CheckConstraint(
+            "tipo_empaque IN ('UNIDAD', 'CAJA')",
+            name="ck_detalle_factura_tipo_empaque_valido",
+        ),
     )
 
     factura: Mapped["Factura"] = relationship("Factura", back_populates="detalles")

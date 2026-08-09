@@ -7,7 +7,7 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.supplier import Supplier
 from app.models.product import Product
 from app.models.user import User
-from app.models.invoice import Factura, DetalleFactura, MonedaEnum
+from app.models.invoice import Factura, DetalleFactura, MonedaEnum, TipoEmpaqueFactura
 from app.schemas.invoice import FacturaCreate, DetalleFacturaCreate
 from app.services.invoice_service import create_invoice, get_invoice, get_invoices
 
@@ -57,9 +57,10 @@ def _factura_data(sup, prod, num, cajas=1, costo_usd=Decimal("50")):
         tasa_bs=Decimal("1"),
         detalles=[DetalleFacturaCreate(
             producto_id=prod.id,
-            cantidad_cajas=cajas,
-            costo_caja_usd=costo_usd,
-            costo_caja_bs=costo_usd,
+            tipo_empaque="CAJA",
+            cantidad=cajas,
+            costo_unitario_usd=costo_usd,
+            costo_unitario_bs=costo_usd,
         )],
     )
 
@@ -100,9 +101,9 @@ class TestCreateInvoice:
             moneda_principal=MonedaEnum.USD,
             tasa_bs=Decimal("1"),
             detalles=[DetalleFacturaCreate(
-                producto_id=prod.id, cantidad_cajas=cajas_nuevas,
-                costo_caja_usd=precio_caja_nuevo,
-                costo_caja_bs=precio_caja_nuevo,
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=cajas_nuevas,
+                costo_unitario_usd=precio_caja_nuevo,
+                costo_unitario_bs=precio_caja_nuevo,
             )],
         )
         create_invoice(db, data, usuario_id=user.id)
@@ -148,8 +149,8 @@ class TestCreateInvoice:
             moneda_principal=MonedaEnum.USD,
             tasa_bs=Decimal("1"),
             detalles=[DetalleFacturaCreate(
-                producto_id=999, cantidad_cajas=1,
-                costo_caja_usd=Decimal("50"), costo_caja_bs=Decimal("50"),
+                producto_id=999, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"), costo_unitario_bs=Decimal("50"),
             )],
         )
         with pytest.raises(EntityNotFoundError, match="Producto ID 999 no encontrado"):
@@ -211,8 +212,8 @@ class TestGetInvoice:
             moneda_principal=MonedaEnum.USD,
             tasa_bs=Decimal("1"),
             detalles=[DetalleFacturaCreate(
-                producto_id=prod.id, cantidad_cajas=2,
-                costo_caja_usd=Decimal("55"), costo_caja_bs=Decimal("55"),
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=2,
+                costo_unitario_usd=Decimal("55"), costo_unitario_bs=Decimal("55"),
             )],
         )
         factura = create_invoice(db, data, usuario_id=user.id)

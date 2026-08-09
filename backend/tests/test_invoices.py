@@ -33,9 +33,10 @@ def _invoice_payload(sup_id, prod_id, num, cajas=1, costo_usd=50, costo_bs=50):
         "tasa_bs": 1,
         "detalles": [{
             "producto_id": prod_id,
-            "cantidad_cajas": cajas,
-            "costo_caja_usd": costo_usd,
-            "costo_caja_bs": costo_bs,
+            "tipo_empaque": "CAJA",
+            "cantidad": cajas,
+            "costo_unitario_usd": costo_usd,
+            "costo_unitario_bs": costo_bs,
         }],
     }
 
@@ -58,7 +59,7 @@ class TestCreateInvoice:
         assert data["total_usd"] == "120.00"
         assert data["total_bs"] == "120.00"
         assert len(data["detalles"]) == 1
-        assert data["detalles"][0]["costo_caja_bs"] == "60.00"
+        assert data["detalles"][0]["costo_unitario_bs"] == "60.00"
         assert "supplier" in data
 
     def test_create_unauthenticated(self, client):
@@ -89,7 +90,7 @@ class TestCreateInvoice:
             "numero_factura": "F-NF",
             "moneda_principal": "USD",
             "tasa_bs": 1,
-            "detalles": [{"producto_id": 999, "cantidad_cajas": 1, "costo_caja_usd": 50, "costo_caja_bs": 50}],
+            "detalles": [{"producto_id": 999, "tipo_empaque": "CAJA", "cantidad": 1, "costo_unitario_usd": 50, "costo_unitario_bs": 50}],
         }
         response = client.post("/api/invoices", data={"data": json.dumps(payload)})
         assert response.status_code == 404
@@ -154,7 +155,7 @@ class TestGetInvoice:
         assert data["supplier"]["nombre"] == "Proveedor Test"
         assert len(data["detalles"]) == 1
         assert data["detalles"][0]["product"]["nombre"] == "Producto Test"
-        assert data["detalles"][0]["costo_caja_bs"] == "55.00"
+        assert data["detalles"][0]["costo_unitario_bs"] == "55.00"
 
     def test_get_by_id_not_found(self, client):
         _login(client)
