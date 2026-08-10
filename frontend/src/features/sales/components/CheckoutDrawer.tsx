@@ -194,16 +194,30 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
         monto_exento_usd: totals.monto_exento_usd,
         base_imponible_usd: totals.base_imponible_usd,
         monto_iva_usd: totals.monto_iva_usd,
-        items: Object.values(items).map((item) => ({
-          producto_id: item.producto_id,
-          tipo_empaque: item.tipo_empaque,
-          cantidad: item.cantidad,
-          unidades_descontadas: item.unidades_descontadas,
-          precio_unitario_usd: Math.round(item.precio_unitario_usd * 100) / 100,
-          iva_porcentaje: item.iva_porcentaje,
-          usa_precio_divisas: item.usaPrecioDivisas,
-          combo_id: item.comboBlockId ? Number(item.comboBlockId.split("_")[1]) : null,
-        })),
+        items: Object.values(items).flatMap((item) => {
+          if (item.combo_id && item.comboDetalle) {
+            return item.comboDetalle.productos.map((p) => ({
+              producto_id: p.producto_id,
+              tipo_empaque: "UNIDAD" as const,
+              cantidad: item.cantidad * p.cantidad,
+              unidades_descontadas: item.cantidad * p.cantidad,
+              precio_unitario_usd: Math.round(p.precio_unitario * 100) / 100,
+              iva_porcentaje: 0,
+              usa_precio_divisas: true,
+              combo_id: item.combo_id,
+            }));
+          }
+          return [{
+            producto_id: item.producto_id,
+            tipo_empaque: item.tipo_empaque,
+            cantidad: item.cantidad,
+            unidades_descontadas: item.unidades_descontadas,
+            precio_unitario_usd: Math.round(item.precio_unitario_usd * 100) / 100,
+            iva_porcentaje: item.iva_porcentaje,
+            usa_precio_divisas: item.usaPrecioDivisas,
+            combo_id: null,
+          }];
+        }),
         pagos,
       });
       toast("Venta registrada", "success");

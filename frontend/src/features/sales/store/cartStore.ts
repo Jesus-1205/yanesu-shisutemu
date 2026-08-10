@@ -4,6 +4,20 @@ import type { ComboActiveOut, CalculateResponseItem } from "@/types/api";
 import { api } from "@/services/api";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 
+export interface ComboDetalle {
+  nombre: string;
+  productos: ComboDetalleProducto[];
+  metodo_pago_ids: number[];
+}
+
+export interface ComboDetalleProducto {
+  producto_id: number;
+  nombre: string;
+  tipo_iva: "GRAVADO" | "EXENTO";
+  cantidad: number;
+  precio_unitario: number;
+}
+
 export interface CartItem {
   cartItemId: string;
   producto_id: number;
@@ -20,21 +34,14 @@ export interface CartItem {
   usaPrecioDivisas: boolean;
   precioDivisasUnidad: number | null;
   precioDivisasCaja: number | null;
-  comboBlockId: string | null;
-  comboNombre: string | null;
+  combo_id: number | null;
+  comboDetalle: ComboDetalle | null;
 }
 
 export interface CartTotals {
   monto_exento_usd: number;
   base_imponible_usd: number;
   monto_iva_usd: number;
-}
-
-export interface ComboBlock {
-  blockId: string;
-  comboNombre: string;
-  items: CartItem[];
-  total: number;
 }
 
 interface CartState {
@@ -47,7 +54,6 @@ interface CartState {
   updateEmpaque: (cartItemId: string, nuevoEmpaque: "UNIDAD" | "CAJA") => void;
   toggleDivisas: (cartItemId: string) => void;
   removeItem: (cartItemId: string) => void;
-  removeComboBlock: (comboBlockId: string) => void;
   clearCart: () => void;
 }
 
@@ -75,85 +81,106 @@ export function getDivisasTotal(items: Record<string, CartItem>): number {
     .reduce((sum, i) => sum + i.cantidad * i.precio_unitario_usd, 0);
 }
 
-export function getComboBlocks(items: Record<string, CartItem>): ComboBlock[] {
-  const blocks: Record<string, ComboBlock> = {};
-  for (const item of Object.values(items)) {
-    if (!item.comboBlockId) continue;
-    if (!blocks[item.comboBlockId]) {
-      blocks[item.comboBlockId] = {
-        blockId: item.comboBlockId,
-        comboNombre: item.comboNombre || "Combo",
-        items: [],
-        total: 0,
-      };
+function _defaultDistribute(combo: ComboActiveOut) {
+  const allProducts: { producto_id: number; cantidad: number }[] = [];
+  for (const group of combo.groups) {
+    const products = group.productos;
+    const totalNeeded = group.max_cantidad;
+    const perVariant = Math.floor(totalNeeded / products.length);
+    const remainder = totalNeeded % products.length;
+    for (let i = 0; i < products.length; i++) {
+      const qty = perVariant + (i < remainder ? 1 : 0);
+      if (qty > 0) {
+        allProducts.push({ producto_id: products[i].producto_id, cantidad: qty });
+      }
     }
-    blocks[item.comboBlockId].items.push(item);
-    blocks[item.comboBlockId].total += item.cantidad * item.precio_unitario_usd;
   }
-  return Object.values(blocks);
+  return allProducts;
 }
 
-export function isFirstInComboBlock(items: Record<string, CartItem>, item: CartItem): boolean {
-  if (!item.comboBlockId) return false;
-  const blockItems = Object.values(items).filter((i) => i.comboBlockId === item.comboBlockId);
-  if (blockItems.length === 0) return false;
-  return blockItems[0].cartItemId === item.cartItemId;
+function _buildComboDetalle(combo: ComboActiveOut, comboItems: CalculateResponseItem[]): ComboDetalle {
+  const productos: ComboDetalleProducto[] = [];
+  const tipoIvaMap = new Map<number, "GRAVADO" | "EXENTO">();
+  for (const group of combo.groups) {
+    for (const p of group.productos) {
+      tipoIvaMap.set(p.producto_id, "GRAVADO");
+    }
+  }
+  for (const ci of comboItems) {
+    productos.push({
+      producto_id: ci.producto_id,
+      nombre: ci.producto_nombre,
+      tipo_iva: "GRAVADO",
+      cantidad: ci.cantidad,
+      precio_unitario: ci.precio_unitario_usd,
+    });
+  }
+  return {
+    nombre: combo.nombre,
+    productos,
+    metodo_pago_ids: combo.metodo_pago_ids,
+  };
 }
 
-export function getComboBlockTotal(items: Record<string, CartItem>, comboBlockId: string): number {
-  return Object.values(items)
-    .filter((i) => i.comboBlockId === comboBlockId)
-    .reduce((sum, i) => sum + i.cantidad * i.precio_unitario_usd, 0);
+async function _fetchComboPrices(
+  combo: ComboActiveOut,
+  selecciones: { grupo_id: number; productos: number[]; cantidades: number[] },
+): Promise<CalculateResponseItem[]> {
+  const response = await api.calculateSale({
+    items: [],
+    combos: [{
+      combo_id: combo.id,
+      cantidad: 1,
+      selecciones: [selecciones],
+    }],
+    metodo_pago_ids: combo.metodo_pago_ids,
+  });
+  return response.combo_items;
 }
 
-function _addComboItems(
+function _createComboItem(
   state: CartState,
   combo: ComboActiveOut,
   comboItems: CalculateResponseItem[],
-  comboBlockId: string,
-) {
-  const newItems = { ...state.items };
-  let lastTasa = state.snapshotTasa;
+  isNew: boolean,
+): { items: Record<string, CartItem>; snapshotTasa: number } {
+  const cartItemId = `combo_${combo.id}`;
+  const existing = state.items[cartItemId];
 
-  for (const ci of comboItems) {
-    const cartItemId = `${ci.producto_id}_${ci.tipo_empaque}_${comboBlockId}`;
-    const subtotal = ci.cantidad * ci.precio_unitario_usd;
+  const newCantidad = isNew
+    ? (existing ? existing.cantidad + 1 : 1)
+    : 1;
 
-    const existing = newItems[cartItemId];
-    if (existing) {
-      newItems[cartItemId] = {
-        ...existing,
-        cantidad: existing.cantidad + ci.cantidad,
-        unidades_descontadas: existing.unidades_descontadas + ci.cantidad,
-      };
-    } else {
-      newItems[cartItemId] = {
-        cartItemId,
-        producto_id: ci.producto_id,
-        nombre: `Lata ${ci.producto_id}`,
-        tipo_empaque: "UNIDAD",
-        cantidad: ci.cantidad,
-        unidades_por_caja: 1,
-        unidades_descontadas: ci.cantidad,
-        precio_unidad_usd: ci.precio_original_usd,
-        precio_caja_usd: ci.precio_original_usd * 24,
-        precio_unitario_usd: ci.precio_unitario_usd,
-        iva_porcentaje: 16,
-        tipo_iva: "GRAVADO",
-        usaPrecioDivisas: true,
-        precioDivisasUnidad: null,
-        precioDivisasCaja: null,
-        comboBlockId,
-        comboNombre: combo.nombre,
-      };
-    }
-  }
+  const newComboDetalle = existing?.comboDetalle ?? _buildComboDetalle(combo, comboItems);
+
+  const newItem: CartItem = {
+    cartItemId,
+    producto_id: 0,
+    nombre: combo.nombre,
+    tipo_empaque: "UNIDAD",
+    cantidad: newCantidad,
+    unidades_por_caja: 1,
+    unidades_descontadas: newCantidad,
+    precio_unidad_usd: combo.precio_total_usd,
+    precio_caja_usd: 0,
+    precio_unitario_usd: combo.precio_total_usd,
+    iva_porcentaje: 0,
+    tipo_iva: "EXENTO",
+    usaPrecioDivisas: true,
+    precioDivisasUnidad: null,
+    precioDivisasCaja: null,
+    combo_id: combo.id,
+    comboDetalle: newComboDetalle,
+  };
 
   const currentTasa = useExchangeRateStore.getState().tasa;
-  const snapshotTasa =
-    lastTasa <= 0 && currentTasa > 0 ? currentTasa : lastTasa;
+  const snapshotTasa = state.snapshotTasa <= 0 && currentTasa > 0
+    ? currentTasa : state.snapshotTasa;
 
-  return { items: newItems, snapshotTasa };
+  return {
+    items: { ...state.items, [cartItemId]: newItem },
+    snapshotTasa,
+  };
 }
 
 export const useCartStore = create<CartState>((set, get) => {
@@ -186,11 +213,7 @@ export const useCartStore = create<CartState>((set, get) => {
 
     const usaDivisas = usaPrecioDivisas && precioDivisas !== null;
 
-    const precio =
-      usaDivisas
-        ? Number(precioDivisas)
-        : precioNormal;
-
+    const precio = usaDivisas ? Number(precioDivisas) : precioNormal;
     const iva = product.tipo_iva === "GRAVADO" ? 16 : 0;
 
     const existing = state.items[cartItemId];
@@ -226,15 +249,13 @@ export const useCartStore = create<CartState>((set, get) => {
         usaPrecioDivisas: usaDivisas,
         precioDivisasUnidad: product.precio_divisas_unidad ?? null,
         precioDivisasCaja: product.precio_divisas_caja ?? null,
-        comboBlockId: null,
-        comboNombre: null,
+        combo_id: null,
+        comboDetalle: null,
       };
 
       const currentTasa = useExchangeRateStore.getState().tasa;
       const snapshotTasa =
-        state.snapshotTasa <= 0 && currentTasa > 0
-          ? currentTasa
-          : state.snapshotTasa;
+        state.snapshotTasa <= 0 && currentTasa > 0 ? currentTasa : state.snapshotTasa;
 
       set({
         items: { ...state.items, [cartItemId]: newItem },
@@ -244,40 +265,29 @@ export const useCartStore = create<CartState>((set, get) => {
   },
 
   addCombo: async (combo) => {
-    const allProducts: { producto_id: number; cantidad: number }[] = [];
-    for (const group of combo.groups) {
-      const products = group.productos;
-      const totalNeeded = group.max_cantidad;
-      const perVariant = Math.floor(totalNeeded / products.length);
-      const remainder = totalNeeded % products.length;
-      for (let i = 0; i < products.length; i++) {
-        const qty = perVariant + (i < remainder ? 1 : 0);
-        if (qty > 0) {
-          allProducts.push({ producto_id: products[i].producto_id, cantidad: qty });
-        }
-      }
+    const state = get();
+    const cartItemId = `combo_${combo.id}`;
+
+    if (state.items[cartItemId]) {
+      const existing = state.items[cartItemId];
+      set({
+        items: {
+          ...state.items,
+          [cartItemId]: { ...existing, cantidad: existing.cantidad + 1 },
+        },
+      });
+      return;
     }
 
-    const selection: { grupo_id: number; productos: number[]; cantidades: number[] } = {
-      grupo_id: combo.groups[0].id,
-      productos: allProducts.map((p) => p.producto_id),
-      cantidades: allProducts.map((p) => p.cantidad),
-    };
-
     try {
-      const response = await api.calculateSale({
-        items: [],
-        combos: [{
-          combo_id: combo.id,
-          cantidad: 1,
-          selecciones: [selection],
-        }],
-        metodo_pago_ids: combo.metodo_pago_ids,
-      });
-
-      const state = get();
-      const comboBlockId = `combo_${combo.id}_${Date.now()}`;
-      const result = _addComboItems(state, combo, response.combo_items, comboBlockId);
+      const dist = _defaultDistribute(combo);
+      const seleccion = {
+        grupo_id: combo.groups[0].id,
+        productos: dist.map((p) => p.producto_id),
+        cantidades: dist.map((p) => p.cantidad),
+      };
+      const comboItems = await _fetchComboPrices(combo, seleccion);
+      const result = _createComboItem(state, combo, comboItems, true);
       set(result);
     } catch {
       // silently ignore
@@ -285,6 +295,8 @@ export const useCartStore = create<CartState>((set, get) => {
   },
 
   addComboWithSelections: async (combo, selections) => {
+    const state = get();
+    const cartItemId = `combo_${combo.id}`;
     const grupoId = combo.groups[0].id;
     const productos: number[] = [];
     const cantidades: number[] = [];
@@ -296,20 +308,28 @@ export const useCartStore = create<CartState>((set, get) => {
     });
 
     try {
-      const response = await api.calculateSale({
-        items: [],
-        combos: [{
-          combo_id: combo.id,
-          cantidad: 1,
-          selecciones: [{ grupo_id: grupoId, productos, cantidades }],
-        }],
-        metodo_pago_ids: combo.metodo_pago_ids,
+      const comboItems = await _fetchComboPrices(combo, {
+        grupo_id: grupoId,
+        productos,
+        cantidades,
       });
 
-      const state = get();
-      const comboBlockId = `combo_${combo.id}_${Date.now()}`;
-      const result = _addComboItems(state, combo, response.combo_items, comboBlockId);
-      set(result);
+      if (state.items[cartItemId]) {
+        const existing = state.items[cartItemId];
+        set({
+          items: {
+            ...state.items,
+            [cartItemId]: {
+              ...existing,
+              cantidad: existing.cantidad + 1,
+              comboDetalle: _buildComboDetalle(combo, comboItems),
+            },
+          },
+        });
+      } else {
+        const result = _createComboItem(state, combo, comboItems, true);
+        set(result);
+      }
     } catch {
       // silently ignore
     }
@@ -317,18 +337,23 @@ export const useCartStore = create<CartState>((set, get) => {
 
   updateQuantity: (cartItemId, cantidad) => {
     if (cantidad <= 0) {
-      const item = get().items[cartItemId];
-      if (item?.comboBlockId) {
-        get().removeComboBlock(item.comboBlockId);
-      } else {
-        get().removeItem(cartItemId);
-      }
+      get().removeItem(cartItemId);
       return;
     }
     const state = get();
     const item = state.items[cartItemId];
     if (!item) return;
-    if (item.comboBlockId) return;
+
+    if (item.combo_id) {
+      set({
+        items: {
+          ...state.items,
+          [cartItemId]: { ...item, cantidad },
+        },
+      });
+      return;
+    }
+
     const unidades =
       item.tipo_empaque === "CAJA" ? cantidad * item.unidades_por_caja : cantidad;
     set({
@@ -342,7 +367,7 @@ export const useCartStore = create<CartState>((set, get) => {
   updateEmpaque: (cartItemId, nuevoEmpaque) => {
     const state = get();
     const item = state.items[cartItemId];
-    if (!item || item.tipo_empaque === nuevoEmpaque || item.comboBlockId) return;
+    if (!item || item.tipo_empaque === nuevoEmpaque || item.combo_id) return;
 
     const newId = `${item.producto_id}_${nuevoEmpaque}`;
 
@@ -389,7 +414,7 @@ export const useCartStore = create<CartState>((set, get) => {
   toggleDivisas: (cartItemId) => {
     const state = get();
     const item = state.items[cartItemId];
-    if (!item || item.comboBlockId) return;
+    if (!item || item.combo_id) return;
 
     const precioDivisasActual =
       item.tipo_empaque === "UNIDAD"
@@ -420,17 +445,6 @@ export const useCartStore = create<CartState>((set, get) => {
   removeItem: (cartItemId) => {
     const { [cartItemId]: _, ...rest } = get().items;
     set({ items: rest });
-  },
-
-  removeComboBlock: (comboBlockId) => {
-    const state = get();
-    const newItems = { ...state.items };
-    for (const key of Object.keys(newItems)) {
-      if (newItems[key].comboBlockId === comboBlockId) {
-        delete newItems[key];
-      }
-    }
-    set({ items: newItems });
   },
 
   clearCart: () => {

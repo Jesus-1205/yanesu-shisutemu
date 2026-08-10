@@ -144,6 +144,7 @@ class CalculateComboRequest(BaseModel):
 
 class CalculateResponseItem(BaseModel):
     producto_id: int
+    producto_nombre: str = ""
     tipo_empaque: str
     cantidad: int
     precio_unitario_usd: Decimal

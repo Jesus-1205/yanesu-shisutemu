@@ -307,7 +307,7 @@ export default function CombosPage() {
         title={editingCombo ? "Editar Combo" : "Nuevo Combo"}
         className="max-w-2xl"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[75vh] overflow-y-auto">
           <Input
             label="Nombre del combo"
             value={formName}

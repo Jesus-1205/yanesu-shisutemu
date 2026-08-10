@@ -131,7 +131,7 @@ export default function AsyncCombobox({
           }}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full h-10 rounded-lg border bg-surface px-3 pr-8 text-sm text-text-main outline-none transition-all duration-200
+          className={`w-full h-9 rounded-lg border bg-surface px-3 pr-8 text-sm text-text-main outline-none transition-all duration-200
             ${disabled ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed" : ""}
             ${error ? "border-danger bg-red-50" : "border-slate-300 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"}
           `}

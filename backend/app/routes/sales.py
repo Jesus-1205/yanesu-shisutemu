@@ -211,6 +211,7 @@ def calculate(
 
                 combo_items.append(CalculateResponseItem(
                     producto_id=producto_id,
+                    producto_nombre=d.get("producto_nombre", ""),
                     tipo_empaque="UNIDAD",
                     cantidad=cantidad,
                     precio_unitario_usd=precio_final,
@@ -253,6 +254,7 @@ def calculate(
 
         response_items.append(CalculateResponseItem(
             producto_id=item.producto_id,
+            producto_nombre=product.nombre,
             tipo_empaque=item.tipo_empaque,
             cantidad=item.cantidad,
             precio_unitario_usd=precio_final,

@@ -632,6 +632,7 @@ export interface CalculateComboRequest {
 
 export interface CalculateResponseItem {
   producto_id: number;
+  producto_nombre: string;
   tipo_empaque: string;
   cantidad: number;
   precio_unitario_usd: number;

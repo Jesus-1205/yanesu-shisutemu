@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
-import { Search, ShoppingCart, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Search, ShoppingCart } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
 import type { ComboActiveOut } from "@/types/api";
@@ -19,6 +19,7 @@ import SplitAddButton from "../components/SplitAddButton";
 import ComboCard from "../components/ComboCard";
 import ComboSelectorModal from "../components/ComboSelectorModal";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
+import { memo } from "react";
 
 const ProductRow = memo(function ProductRow({
   product,
@@ -93,7 +94,6 @@ export default function POSPage() {
   const addItem = useCartStore((s) => s.addItem);
   const addCombo = useCartStore((s) => s.addCombo);
   const addComboWithSelections = useCartStore((s) => s.addComboWithSelections);
-  const removeComboBlock = useCartStore((s) => s.removeComboBlock);
   const snapshotTasa = useCartStore((s) => s.snapshotTasa);
 
   const totals = useMemo(() => computeTotals(items), [items]);
@@ -429,53 +429,9 @@ export default function POSPage() {
             </p>
           ) : (
             <div className="space-y-3">
-              {(() => {
-                const allItems = Object.values(items);
-                const processedBlockIds = new Set<string>();
-                const rendered: React.ReactNode[] = [];
-
-                for (const item of allItems) {
-                  if (item.comboBlockId) {
-                    if (processedBlockIds.has(item.comboBlockId)) continue;
-                    processedBlockIds.add(item.comboBlockId);
-                    const blockItems = allItems.filter((i) => i.comboBlockId === item.comboBlockId);
-                    const blockTotal = blockItems.reduce((s, i) => s + i.cantidad * i.precio_unitario_usd, 0);
-                    rendered.push(
-                      <div key={item.comboBlockId} className="bg-emerald-50 border border-emerald-200 rounded-xl overflow-hidden">
-                        <div className="flex items-center justify-between px-3 py-2 bg-emerald-100">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="success" className="!text-[10px] !px-1 !py-0">COMBO</Badge>
-                            <span className="text-xs font-semibold text-emerald-800">{item.comboNombre}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-emerald-700">{formatCurrency(blockTotal)}</span>
-                            <button
-                              onClick={() => removeComboBlock(item.comboBlockId!)}
-                              className="text-danger hover:text-red-700 cursor-pointer"
-                              title="Quitar combo"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="px-2 py-1 space-y-1">
-                          {blockItems.map((bi) => (
-                            <div key={bi.cartItemId} className="flex justify-between text-xs px-1">
-                              <span className="text-slate-600 truncate">{bi.nombre}</span>
-                              <span className="text-slate-500 shrink-0 ml-2">
-                                {bi.cantidad} × {formatCurrency(bi.precio_unitario_usd)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  } else {
-                    rendered.push(<CartItemRow key={item.cartItemId} item={item} />);
-                  }
-                }
-                return rendered;
-              })()}
+              {Object.values(items).map((item) => (
+                <CartItemRow key={item.cartItemId} item={item} />
+              ))}
             </div>
           )}
 
