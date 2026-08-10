@@ -283,7 +283,7 @@ export default function PriceRulesPage() {
                 Agregar producto
               </Button>
             </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2">
               {formProductEntries.map((entry, idx) => (
                 <div key={idx} className="flex items-start gap-2 bg-slate-50 rounded-lg p-2">
                   <div className="flex-1 min-w-0">
