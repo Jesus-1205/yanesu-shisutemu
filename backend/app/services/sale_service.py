@@ -99,22 +99,6 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
         combo_pm_ids = {pm.metodo_pago_id for pm in combo.payment_methods}
         divisas_method_ids |= combo_pm_ids
 
-        combo_items = [
-            (item_data, sale_item)
-            for item_data, sale_item in zip(data.items, items)
-            if item_data.combo_id == combo_id
-        ]
-        combo_total = sum(
-            Decimal(item_data.cantidad) * item_data.precio_unitario_usd
-            for item_data, _ in combo_items
-        )
-        diff = abs(combo_total - combo.precio_total_usd)
-        if diff > Decimal("0.05"):
-            raise ConflictError(
-                f"El total del combo '{combo.nombre}' no coincide: "
-                f"esperado {combo.precio_total_usd}, recibido {combo_total}"
-            )
-
         allowed_product_ids: set[int] = set()
         for group in combo.groups:
             for gp in group.products:
