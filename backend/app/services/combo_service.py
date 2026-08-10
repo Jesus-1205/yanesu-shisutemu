@@ -94,9 +94,9 @@ def update_combo(db: Session, combo_id: int, data: ComboUpdate) -> Combo:
     if "grupos" in update_data:
         for grupo in update_data["grupos"]:
             for entry in grupo["productos"]:
-                stmt = select(Product).where(Product.id == entry.producto_id)
+                stmt = select(Product).where(Product.id == entry["producto_id"])
                 if not db.execute(stmt).scalars().first():
-                    raise EntityNotFoundError(f"Producto ID {entry.producto_id} no encontrado")
+                    raise EntityNotFoundError(f"Producto ID {entry['producto_id']} no encontrado")
 
         for old in list(combo.groups):
             db.delete(old)
