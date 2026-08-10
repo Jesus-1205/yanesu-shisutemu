@@ -188,8 +188,9 @@ def distribute_combo_price(
 
     all_items.sort(key=lambda x: x["remainder"], reverse=True)
 
-    for i in range(min(remaining_cents, len(all_items))):
-        all_items[i]["floor_subtotal"] += Decimal("0.01")
+    for i in range(remaining_cents):
+        idx = i % len(all_items)
+        all_items[idx]["floor_subtotal"] += Decimal("0.01")
 
     for item in all_items:
         item["precio_unitario"] = (item["floor_subtotal"] / Decimal(item["cantidad"])).quantize(Decimal("0.01"))
