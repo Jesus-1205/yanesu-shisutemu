@@ -13,6 +13,7 @@ class SaleItemCreate(BaseModel):
     precio_unitario_usd: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     iva_porcentaje: Decimal = Field(default=Decimal("16.00"), ge=0)
     usa_precio_divisas: bool = False
+    combo_id: int | None = None
 
 
 class SaleItemOut(BaseModel):
@@ -29,6 +30,8 @@ class SaleItemOut(BaseModel):
     subtotal_usd: Decimal
     iva_porcentaje: Decimal
     usa_precio_divisas: bool = False
+    combo_id: int | None = None
+    combo_nombre: str | None = None
 
 
 class SalePaymentCreate(BaseModel):
@@ -122,8 +125,21 @@ class CalculateRequestItem(BaseModel):
 
 
 class CalculateRequest(BaseModel):
-    items: list[CalculateRequestItem] = Field(min_length=1)
+    items: list[CalculateRequestItem] = []
+    combos: list["CalculateComboRequest"] = []
     metodo_pago_ids: list[int] = Field(min_length=1)
+
+
+class CalculateComboSelection(BaseModel):
+    grupo_id: int
+    productos: list[int] = []
+    cantidades: list[int] = []
+
+
+class CalculateComboRequest(BaseModel):
+    combo_id: int
+    cantidad: int = Field(gt=0, default=1)
+    selecciones: list[CalculateComboSelection] = []
 
 
 class CalculateResponseItem(BaseModel):
@@ -142,3 +158,4 @@ class CalculateResponse(BaseModel):
     total_normal_usd: Decimal = Decimal("0")
     ahorro_usd: Decimal = Decimal("0")
     metodos_divisas_disponibles: list[int] = []
+    combo_items: list[CalculateResponseItem] = []

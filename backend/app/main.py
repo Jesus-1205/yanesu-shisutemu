@@ -11,9 +11,10 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.core.config import Config
 from app.core.database import Base, engine
 from app.core.error_handler import register_error_handlers
-from app.models import Role, User, Supplier, Category, producto_categoria, Product, ExchangeRate, Sale, SaleItem, PaymentMethod, SalePayment, Factura, DetalleFactura, PriceRule, PriceRuleProduct, PriceRulePaymentMethod  # noqa: F401
+from app.models import Role, User, Supplier, Category, producto_categoria, Combo, ComboGroup, ComboGroupProduct, ComboPaymentMethod, Product, ExchangeRate, Sale, SaleItem, PaymentMethod, SalePayment, Factura, DetalleFactura, PriceRule, PriceRuleProduct, PriceRulePaymentMethod  # noqa: F401
 from app.routes.auth import router as auth_router
 from app.routes.categories import router as categories_router
+from app.routes.combos import router as combos_router
 from app.routes.exchange_rates import router as exchange_rates_router
 from app.routes.health import router as health_router
 from app.routes.invoices import router as invoices_router
@@ -62,6 +63,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(categories_router, prefix="/api")
+app.include_router(combos_router, prefix="/api")
 app.include_router(exchange_rates_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(roles_router, prefix="/api")

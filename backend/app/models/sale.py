@@ -88,6 +88,9 @@ class SaleItem(Base):
     )
     iva_porcentaje: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), nullable=False, default=16.00)
     usa_precio_divisas: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    combo_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("combos.id", ondelete="SET NULL"), nullable=True
+    )
 
     __table_args__ = (
         CheckConstraint("cantidad > 0", name="ck_detalle_cantidad_positivo"),
@@ -98,5 +101,10 @@ class SaleItem(Base):
     def producto_nombre(self) -> str:
         return self.product.nombre if self.product else ""
 
+    @property
+    def combo_nombre(self) -> str | None:
+        return self.combo.nombre if self.combo else None
+
     sale: Mapped["Sale"] = relationship("Sale", back_populates="items")
     product: Mapped["Product"] = relationship("Product", back_populates="sale_items")
+    combo: Mapped["Combo | None"] = relationship("Combo")

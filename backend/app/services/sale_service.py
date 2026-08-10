@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import VE_TZ
 from app.core.exceptions import ConflictError, EntityNotFoundError
+from app.models.combo import Combo, ComboGroup
 from app.models.payment_method import PaymentMethod
 from app.models.product import Product
 from app.models.sale import Sale, SaleItem
@@ -60,6 +61,7 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             precio_unitario_usd=item_data.precio_unitario_usd,
             iva_porcentaje=item_data.iva_porcentaje,
             usa_precio_divisas=item_data.usa_precio_divisas,
+            combo_id=item_data.combo_id,
         ))
 
     pagos: list[SalePayment] = []
@@ -109,6 +111,48 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             raise ConflictError(
                 f"Faltan ${faltante:.2f} en divisas para cubrir los productos con descuento"
             )
+
+    combo_ids_in_sale = {item_data.combo_id for item_data in data.items if item_data.combo_id}
+    for combo_id in combo_ids_in_sale:
+        combo = db.execute(
+            select(Combo).options(
+                selectinload(Combo.groups).selectinload(ComboGroup.products),
+                selectinload(Combo.payment_methods),
+            ).where(Combo.id == combo_id)
+        ).scalars().first()
+        if not combo:
+            raise EntityNotFoundError(f"Combo ID {combo_id} no encontrado")
+        if not combo.activo:
+            raise ConflictError(f"El combo '{combo.nombre}' no está activo")
+
+        combo_pm_ids = {pm.metodo_pago_id for pm in combo.payment_methods}
+        divisas_method_ids |= combo_pm_ids
+
+        combo_items = [
+            (item_data, sale_item)
+            for item_data, sale_item in zip(data.items, items)
+            if item_data.combo_id == combo_id
+        ]
+        combo_total = sum(
+            Decimal(item_data.cantidad) * item_data.precio_unitario_usd
+            for item_data, _ in combo_items
+        )
+        diff = abs(combo_total - combo.precio_total_usd)
+        if diff > Decimal("0.02"):
+            raise ConflictError(
+                f"El total del combo '{combo.nombre}' no coincide: "
+                f"esperado {combo.precio_total_usd}, recibido {combo_total}"
+            )
+
+        allowed_product_ids: set[int] = set()
+        for group in combo.groups:
+            for gp in group.products:
+                allowed_product_ids.add(gp.producto_id)
+        for item_data, _ in combo_items:
+            if item_data.producto_id not in allowed_product_ids:
+                raise ConflictError(
+                    f"Producto ID {item_data.producto_id} no pertenece al combo '{combo.nombre}'"
+                )
 
     sale = Sale(
         usuario_id=usuario_id,
