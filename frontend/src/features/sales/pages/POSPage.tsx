@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { Search, ShoppingCart, Trash2 } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
@@ -12,16 +12,13 @@ import { useToast } from "@/ui-components/Toast";
 import { formatCurrency, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
-import { useCartStore, computeTotals, getComboBlocks } from "../store/cartStore";
-import type { CartItem } from "../store/cartStore";
-import type { CartItem } from "../store/cartStore";
+import { useCartStore, computeTotals } from "../store/cartStore";
 import CartItemRow from "../components/CartItemRow";
 import CheckoutDrawer from "../components/CheckoutDrawer";
 import SplitAddButton from "../components/SplitAddButton";
 import ComboCard from "../components/ComboCard";
 import ComboSelectorModal from "../components/ComboSelectorModal";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
-import { memo } from "react";
 
 const ProductRow = memo(function ProductRow({
   product,
