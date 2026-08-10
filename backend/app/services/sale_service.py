@@ -99,6 +99,12 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
         combo_pm_ids = {pm.metodo_pago_id for pm in combo.payment_methods}
         divisas_method_ids |= combo_pm_ids
 
+        combo_items = [
+            (item_data, sale_item)
+            for item_data, sale_item in zip(data.items, items)
+            if item_data.combo_id == combo_id
+        ]
+
         allowed_product_ids: set[int] = set()
         for group in combo.groups:
             for gp in group.products:
