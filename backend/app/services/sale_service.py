@@ -12,6 +12,7 @@ from app.models.sale import Sale, SaleItem
 
 from app.models.sale_payment import SalePayment
 from app.schemas.sale import PaymentMethodSummaryOut, SaleCreate, TopWeekOut
+from app.services.price_rule_service import get_active_divisas_prices, get_divisas_payment_method_ids
 
 
 def _to_ve_boundary(
@@ -75,6 +76,38 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             monto_usd=pago_data.monto_usd,
             monto_ves=pago_data.monto_ves,
         ))
+
+    divisas_prices = get_active_divisas_prices(db)
+    divisas_method_ids = get_divisas_payment_method_ids(db)
+
+    total_divisas_items = Decimal("0")
+    for item_data, sale_item in zip(data.items, items):
+        if item_data.usa_precio_divisas:
+            expected_prices = divisas_prices.get(item_data.producto_id, {})
+            expected_price = expected_prices.get(item_data.tipo_empaque)
+            if expected_price is None:
+                raise ConflictError(
+                    f"Producto ID {item_data.producto_id} no tiene precio divisas "
+                    f"activo para empaque {item_data.tipo_empaque}"
+                )
+            if expected_price != item_data.precio_unitario_usd:
+                raise ConflictError(
+                    f"Precio divisas inválido para producto ID {item_data.producto_id}: "
+                    f"esperado {expected_price}, recibido {item_data.precio_unitario_usd}"
+                )
+            total_divisas_items += Decimal(item_data.cantidad) * item_data.precio_unitario_usd
+
+    if total_divisas_items > 0 and divisas_method_ids:
+        total_divisas_pagado = sum(
+            (p.monto_usd or Decimal("0"))
+            for p in pagos
+            if p.metodo_pago_id in divisas_method_ids
+        )
+        if total_divisas_pagado < total_divisas_items:
+            faltante = total_divisas_items - total_divisas_pagado
+            raise ConflictError(
+                f"Faltan ${faltante:.2f} en divisas para cubrir los productos con descuento"
+            )
 
     sale = Sale(
         usuario_id=usuario_id,

@@ -12,6 +12,7 @@ class SaleItemCreate(BaseModel):
     unidades_descontadas: int = Field(gt=0)
     precio_unitario_usd: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     iva_porcentaje: Decimal = Field(default=Decimal("16.00"), ge=0)
+    usa_precio_divisas: bool = False
 
 
 class SaleItemOut(BaseModel):
@@ -110,3 +111,33 @@ class PaymentMethodSummaryOut(BaseModel):
     total_usd: Decimal
     total_ves: Decimal
     total_equivalente_usd: Decimal
+
+
+class CalculateRequestItem(BaseModel):
+    producto_id: int
+    tipo_empaque: Literal["UNIDAD", "CAJA"]
+    cantidad: int = Field(gt=0)
+    usa_precio_divisas: bool = False
+
+
+class CalculateRequest(BaseModel):
+    items: list[CalculateRequestItem] = Field(min_length=1)
+    metodo_pago_ids: list[int] = Field(min_length=1)
+
+
+class CalculateResponseItem(BaseModel):
+    producto_id: int
+    tipo_empaque: str
+    cantidad: int
+    precio_unitario_usd: Decimal
+    precio_original_usd: Decimal
+    usa_precio_divisas: bool
+
+
+class CalculateResponse(BaseModel):
+    items: list[CalculateResponseItem]
+    total_usd: Decimal
+    total_divisas_usd: Decimal = Decimal("0")
+    total_normal_usd: Decimal = Decimal("0")
+    ahorro_usd: Decimal = Decimal("0")
+    metodos_divisas_disponibles: list[int] = []

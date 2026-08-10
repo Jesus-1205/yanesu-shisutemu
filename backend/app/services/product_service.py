@@ -9,6 +9,15 @@ from app.models.category import Category, producto_categoria
 from app.models.product import Product
 from app.models.sale import Sale, SaleItem
 from app.schemas.product import ProductCreate, ProductUpdate
+from app.services.price_rule_service import get_active_divisas_prices
+
+
+def _enrich_with_divisas(db: Session, products: list) -> None:
+    divisas_prices = get_active_divisas_prices(db)
+    for product in products:
+        dp = divisas_prices.get(product.id, {})
+        product.precio_divisas_unidad = dp.get("UNIDAD")
+        product.precio_divisas_caja = dp.get("CAJA")
 
 
 def get_products(
@@ -94,6 +103,8 @@ def get_products(
     import math
     pages = math.ceil(total / page_size) if page_size > 0 else 0
 
+    _enrich_with_divisas(db, items)
+
     return {
         "items": items,
         "total": total,
@@ -109,6 +120,7 @@ def get_product(db: Session, product_id: int) -> Product:
     product = db.execute(stmt).scalars().first()
     if not product:
         raise EntityNotFoundError("Producto no encontrado")
+    _enrich_with_divisas(db, [product])
     return product
 
 
@@ -261,6 +273,7 @@ def get_favorites(db: Session, limit: int = 10) -> dict:
     items = list(db.execute(stmt).scalars().all())
     count_stmt = select(func.count()).select_from(Product).where(Product.es_favorito == True)
     total = db.execute(count_stmt).scalar() or 0
+    _enrich_with_divisas(db, items)
     return {"items": items, "total": total}
 
 

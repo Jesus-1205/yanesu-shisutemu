@@ -1,13 +1,25 @@
 from datetime import datetime
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import require_role
+from app.models.product import Product
 from app.models.user import User
-from app.schemas.sale import SaleCreate, SaleOut, SalePaginationOut, TopWeekOut
+from app.schemas.sale import (
+    CalculateRequest,
+    CalculateResponse,
+    CalculateResponseItem,
+    SaleCreate,
+    SaleOut,
+    SalePaginationOut,
+    TopWeekOut,
+)
 from app.services.audit_service import log_action
+from app.services.price_rule_service import get_active_divisas_prices, get_divisas_payment_method_ids
 from app.services.sale_service import (
     create_sale,
     current_day_range,
@@ -146,3 +158,70 @@ def get_by_id(
     """
     sale = get_sale(db, sale_id)
     return SaleOut.model_validate(sale)
+
+
+@router.post("/calculate", status_code=status.HTTP_200_OK)
+def calculate(
+    data: CalculateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    divisas_prices = get_active_divisas_prices(db)
+    divisas_method_ids = get_divisas_payment_method_ids(db)
+
+    response_items: list[CalculateResponseItem] = []
+    total_usd = Decimal("0")
+    total_divisas_usd = Decimal("0")
+    total_normal_usd = Decimal("0")
+    ahorro_usd = Decimal("0")
+
+    for item in data.items:
+        stmt = select(Product).where(Product.id == item.producto_id)
+        product = db.execute(stmt).scalars().first()
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Producto ID {item.producto_id} no encontrado",
+            )
+
+        precio_normal = (
+            product.precio_unidad_usd
+            if item.tipo_empaque == "UNIDAD"
+            else product.precio_caja_usd
+        )
+
+        if item.usa_precio_divisas:
+            dp = divisas_prices.get(item.producto_id, {})
+            precio_divisas = dp.get(item.tipo_empaque)
+            if precio_divisas is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Producto ID {item.producto_id} no tiene precio divisas activo para {item.tipo_empaque}",
+                )
+            precio_final = precio_divisas
+            ahorro_item = (precio_normal - precio_divisas) * Decimal(item.cantidad)
+            total_divisas_usd += precio_final * Decimal(item.cantidad)
+            ahorro_usd += ahorro_item
+        else:
+            precio_final = precio_normal
+            total_normal_usd += precio_final * Decimal(item.cantidad)
+
+        total_usd += precio_final * Decimal(item.cantidad)
+
+        response_items.append(CalculateResponseItem(
+            producto_id=item.producto_id,
+            tipo_empaque=item.tipo_empaque,
+            cantidad=item.cantidad,
+            precio_unitario_usd=precio_final,
+            precio_original_usd=precio_normal,
+            usa_precio_divisas=item.usa_precio_divisas,
+        ))
+
+    return CalculateResponse(
+        items=response_items,
+        total_usd=total_usd,
+        total_divisas_usd=total_divisas_usd,
+        total_normal_usd=total_normal_usd,
+        ahorro_usd=ahorro_usd,
+        metodos_divisas_disponibles=list(divisas_method_ids),
+    )

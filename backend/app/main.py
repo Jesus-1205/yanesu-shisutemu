@@ -11,12 +11,13 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.core.config import Config
 from app.core.database import Base, engine
 from app.core.error_handler import register_error_handlers
-from app.models import Role, User, Supplier, Category, producto_categoria, Product, ExchangeRate, Sale, SaleItem, PaymentMethod, SalePayment, Factura, DetalleFactura  # noqa: F401
+from app.models import Role, User, Supplier, Category, producto_categoria, Product, ExchangeRate, Sale, SaleItem, PaymentMethod, SalePayment, Factura, DetalleFactura, PriceRule, PriceRuleProduct, PriceRulePaymentMethod  # noqa: F401
 from app.routes.auth import router as auth_router
 from app.routes.categories import router as categories_router
 from app.routes.exchange_rates import router as exchange_rates_router
 from app.routes.health import router as health_router
 from app.routes.invoices import router as invoices_router
+from app.routes.price_rules import router as price_rules_router
 from app.routes.products import router as products_router
 from app.routes.reports import router as reports_router
 from app.routes.roles import router as roles_router
@@ -66,6 +67,7 @@ app.include_router(users_router, prefix="/api")
 app.include_router(roles_router, prefix="/api")
 app.include_router(suppliers_router, prefix="/api")
 app.include_router(payment_methods_router, prefix="/api")
+app.include_router(price_rules_router, prefix="/api")
 app.include_router(products_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(sales_router, prefix="/api")

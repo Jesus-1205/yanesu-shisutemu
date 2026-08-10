@@ -39,6 +39,8 @@ class ProductOut(BaseModel):
     proveedor_id: int | None
     tipo_iva: str
     es_favorito: bool
+    precio_divisas_unidad: Decimal | None = None
+    precio_divisas_caja: Decimal | None = None
 
     @computed_field
     @property
