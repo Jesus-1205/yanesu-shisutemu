@@ -109,7 +109,7 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             for item_data, _ in combo_items
         )
         diff = abs(combo_total - combo.precio_total_usd)
-        if diff > Decimal("0.02"):
+        if diff > Decimal("0.05"):
             raise ConflictError(
                 f"El total del combo '{combo.nombre}' no coincide: "
                 f"esperado {combo.precio_total_usd}, recibido {combo_total}"

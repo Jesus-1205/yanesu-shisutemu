@@ -201,7 +201,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
               tipo_empaque: "UNIDAD" as const,
               cantidad: item.cantidad * p.cantidad,
               unidades_descontadas: item.cantidad * p.cantidad,
-              precio_unitario_usd: Math.round(p.precio_unitario * 100) / 100,
+              precio_unitario_usd: p.precio_unitario,
               iva_porcentaje: 0,
               usa_precio_divisas: true,
               combo_id: item.combo_id,
