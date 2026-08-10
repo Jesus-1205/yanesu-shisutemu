@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { api } from "@/services/api";
-import type { PriceRuleOut, PriceRuleCreate, PriceRuleUpdate, ProductOut, PaymentMethodOut, PriceRuleProductEntry } from "@/types/api";
+import type { PriceRuleOut, PriceRuleCreate, PriceRuleUpdate, PaymentMethodOut, PriceRuleProductEntry } from "@/types/api";
 import Table from "@/ui-components/Table";
 import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import Modal from "@/ui-components/Modal";
 import Input from "@/ui-components/Input";
+import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import ConfirmDialog from "@/ui-components/ConfirmDialog";
 import ErrorBanner from "@/ui-components/ErrorBanner";
 import { useToast } from "@/ui-components/Toast";
 import { formatCurrency } from "@/lib/utils";
+
+interface FormProductEntry extends PriceRuleProductEntry {
+  _nombre?: string;
+}
 
 export default function PriceRulesPage() {
   const { toast } = useToast();
@@ -18,14 +23,13 @@ export default function PriceRulesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [products, setProducts] = useState<ProductOut[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOut[]>([]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<PriceRuleOut | null>(null);
   const [formName, setFormName] = useState("");
   const [formDesc, setFormDesc] = useState("");
-  const [formProductEntries, setFormProductEntries] = useState<PriceRuleProductEntry[]>([]);
+  const [formProductEntries, setFormProductEntries] = useState<FormProductEntry[]>([]);
   const [formMethodIds, setFormMethodIds] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -45,16 +49,12 @@ export default function PriceRulesPage() {
     }
   }, []);
 
-  const loadFormData = useCallback(async () => {
+  const loadPaymentMethods = useCallback(async () => {
     try {
-      const [prods, methods] = await Promise.all([
-        api.getProducts(),
-        api.getPaymentMethods(true),
-      ]);
-      setProducts(prods.items);
+      const methods = await api.getPaymentMethods(true);
       setPaymentMethods(methods);
     } catch {
-      toast("Error al cargar datos del formulario", "error");
+      toast("Error al cargar métodos de pago", "error");
     }
   }, [toast]);
 
@@ -63,7 +63,7 @@ export default function PriceRulesPage() {
   }, [fetchRules]);
 
   const openCreate = async () => {
-    await loadFormData();
+    await loadPaymentMethods();
     setEditingRule(null);
     setFormName("");
     setFormDesc("");
@@ -73,7 +73,7 @@ export default function PriceRulesPage() {
   };
 
   const openEdit = async (rule: PriceRuleOut) => {
-    await loadFormData();
+    await loadPaymentMethods();
     setEditingRule(rule);
     setFormName(rule.nombre);
     setFormDesc(rule.descripcion ?? "");
@@ -82,17 +82,30 @@ export default function PriceRulesPage() {
         producto_id: p.producto_id,
         tipo_empaque: p.tipo_empaque as "UNIDAD" | "CAJA",
         precio_usd: p.precio_usd,
+        _nombre: p.producto_nombre,
       }))
     );
     setFormMethodIds(rule.payment_methods.map((pm) => pm.metodo_pago_id));
     setModalOpen(true);
   };
 
+  const handleProductSearch = useCallback(async (query: string) => {
+    const data = await api.getProducts({ search: query || undefined });
+    return data.items.map((p) => ({
+      value: p.id,
+      label: p.nombre,
+      subtitle: p.codigo_barra || undefined,
+    }));
+  }, []);
+
   const addProductEntry = () => {
-    setFormProductEntries([...formProductEntries, { producto_id: 0, tipo_empaque: "UNIDAD", precio_usd: 0 }]);
+    setFormProductEntries([
+      ...formProductEntries,
+      { producto_id: 0, tipo_empaque: "UNIDAD", precio_usd: 0, _nombre: undefined },
+    ]);
   };
 
-  const updateProductEntry = (index: number, field: keyof PriceRuleProductEntry, value: unknown) => {
+  const updateProductEntry = (index: number, field: string, value: unknown) => {
     setFormProductEntries((prev) =>
       prev.map((e, i) => (i === index ? { ...e, [field]: value } : e))
     );
@@ -116,11 +129,12 @@ export default function PriceRulesPage() {
 
     setSaving(true);
     try {
+      const productos = formProductEntries.map(({ _nombre, ...rest }) => rest);
       if (editingRule) {
         const data: PriceRuleUpdate = {
           nombre: formName.trim(),
           descripcion: formDesc.trim() || null,
-          productos: formProductEntries,
+          productos,
           metodo_pago_ids: formMethodIds,
         };
         await api.updatePriceRule(editingRule.id, data);
@@ -129,7 +143,7 @@ export default function PriceRulesPage() {
         const data: PriceRuleCreate = {
           nombre: formName.trim(),
           descripcion: formDesc.trim() || null,
-          productos: formProductEntries,
+          productos,
           metodo_pago_ids: formMethodIds,
         };
         await api.createPriceRule(data);
@@ -271,17 +285,21 @@ export default function PriceRulesPage() {
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {formProductEntries.map((entry, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-lg p-2">
-                  <select
-                    value={entry.producto_id}
-                    onChange={(e) => updateProductEntry(idx, "producto_id", Number(e.target.value))}
-                    className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
-                  >
-                    <option value={0}>Seleccionar producto...</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.nombre}</option>
-                    ))}
-                  </select>
+                <div key={idx} className="flex items-start gap-2 bg-slate-50 rounded-lg p-2">
+                  <div className="flex-1 min-w-0">
+                    <AsyncCombobox
+                      value={entry.producto_id || null}
+                      onChange={(val) => updateProductEntry(idx, "producto_id", val ? Number(val) : 0)}
+                      onSearch={handleProductSearch}
+                      placeholder="Buscar producto..."
+                      allowClear
+                      initialOptions={
+                        entry._nombre
+                          ? [{ value: entry.producto_id, label: entry._nombre }]
+                          : []
+                      }
+                    />
+                  </div>
                   <select
                     value={entry.tipo_empaque}
                     onChange={(e) => updateProductEntry(idx, "tipo_empaque", e.target.value)}
@@ -290,20 +308,19 @@ export default function PriceRulesPage() {
                     <option value="UNIDAD">Unidad</option>
                     <option value="CAJA">Caja</option>
                   </select>
-                  <Input
+                  <input
                     type="number"
                     step="0.01"
                     min="0.01"
                     value={entry.precio_usd || ""}
                     onChange={(e) => updateProductEntry(idx, "precio_usd", Number(e.target.value))}
                     placeholder="$ 0.00"
-                    className="!w-24 pt-3 pb-1 text-xs"
-                    label=""
+                    className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-brand-blue focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
                     onClick={() => removeProductEntry(idx)}
-                    className="text-danger hover:text-red-700 shrink-0"
+                    className="text-danger hover:text-red-700 shrink-0 mt-1"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -339,9 +356,9 @@ export default function PriceRulesPage() {
                 </label>
               ))}
             </div>
-            {formMethodIds.length === 0 && (
-              <p className="text-xs text-slate-400 mt-1">Selecciona al menos un método de pago</p>
-            )}
+            <p className={`text-xs mt-1 transition-opacity ${formMethodIds.length > 0 ? "opacity-0" : "text-slate-400 opacity-100"}`}>
+              Selecciona al menos un método de pago
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
