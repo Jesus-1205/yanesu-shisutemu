@@ -209,6 +209,8 @@ export interface ProductOut {
   proveedor_id: number | null;
   tipo_iva: "GRAVADO" | "EXENTO";
   es_favorito: boolean;
+  precio_divisas_unidad: number | null;
+  precio_divisas_caja: number | null;
 }
 
 export interface ProductMatrixItem {
@@ -331,6 +333,7 @@ export interface SaleItemCreate {
   unidades_descontadas: number;
   precio_unitario_usd: number;
   iva_porcentaje?: number;
+  usa_precio_divisas?: boolean;
 }
 
 export interface SalePaymentCreate {
@@ -551,5 +554,80 @@ export interface TestConnectionResponse {
   success: boolean;
   message: string;
   models: string[] | null;
+}
+
+// ─── Reglas de Precio (Divisas) ─────────────────────────────
+export interface PriceRuleProductEntry {
+  producto_id: number;
+  tipo_empaque: TipoEmpaque;
+  precio_usd: number;
+}
+
+export interface PriceRuleProductOut {
+  id: number;
+  producto_id: number;
+  producto_nombre: string;
+  tipo_empaque: string;
+  precio_usd: number;
+}
+
+export interface PriceRulePaymentMethodOut {
+  id: number;
+  metodo_pago_id: number;
+  metodo_pago_nombre: string;
+}
+
+export interface PriceRuleOut {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  activo: boolean;
+  products: PriceRuleProductOut[];
+  payment_methods: PriceRulePaymentMethodOut[];
+}
+
+export interface PriceRuleCreate {
+  nombre: string;
+  descripcion?: string | null;
+  productos: PriceRuleProductEntry[];
+  metodo_pago_ids: number[];
+}
+
+export interface PriceRuleUpdate {
+  nombre?: string | null;
+  descripcion?: string | null;
+  activo?: boolean;
+  productos?: PriceRuleProductEntry[] | null;
+  metodo_pago_ids?: number[] | null;
+}
+
+export interface CalculateRequestItem {
+  producto_id: number;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  usa_precio_divisas: boolean;
+}
+
+export interface CalculateRequest {
+  items: CalculateRequestItem[];
+  metodo_pago_ids: number[];
+}
+
+export interface CalculateResponseItem {
+  producto_id: number;
+  tipo_empaque: string;
+  cantidad: number;
+  precio_unitario_usd: number;
+  precio_original_usd: number;
+  usa_precio_divisas: boolean;
+}
+
+export interface CalculateResponse {
+  items: CalculateResponseItem[];
+  total_usd: number;
+  total_divisas_usd: number;
+  total_normal_usd: number;
+  ahorro_usd: number;
+  metodos_divisas_disponibles: number[];
 }
 

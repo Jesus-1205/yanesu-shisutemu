@@ -1,6 +1,8 @@
 import type {
   ApiKeyPayload,
   ApiKeyStatusResponse,
+  CalculateRequest,
+  CalculateResponse,
   CategoryAnalyticsResponse,
   CategoryCreate,
   CategoryDetailAnalytics,
@@ -20,6 +22,9 @@ import type {
   PaymentMethodOut,
   PaymentMethodUpdate,
   PaymentMethodSummaryItem,
+  PriceRuleCreate,
+  PriceRuleOut,
+  PriceRuleUpdate,
   ProductCreate,
   ProductMatrixItem,
   ProductOut,
@@ -228,6 +233,30 @@ export const api = {
   deletePaymentMethod: (id: number) =>
     request<void>(`/payment-methods/${id}`, { method: "DELETE" }),
 
+  // ── Reglas de Precio (Divisas) ──
+  getPriceRules: (params?: { activo?: boolean }) => {
+    const qs = params?.activo !== undefined ? `?activo=${params.activo}` : "";
+    return request<PriceRuleOut[]>(`/price-rules${qs}`);
+  },
+
+  getPriceRule: (id: number) =>
+    request<PriceRuleOut>(`/price-rules/${id}`),
+
+  createPriceRule: (data: PriceRuleCreate) =>
+    request<PriceRuleOut>("/price-rules", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updatePriceRule: (id: number, data: PriceRuleUpdate) =>
+    request<PriceRuleOut>(`/price-rules/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deletePriceRule: (id: number) =>
+    request<void>(`/price-rules/${id}`, { method: "DELETE" }),
+
   // ── Tasas de Cambio ──
   getLatestRates: () =>
     request<ExchangeRatesResponse>("/exchange-rates/latest"),
@@ -349,6 +378,12 @@ export const api = {
 
   createSale: (data: SaleCreate) =>
     request<SaleOut>("/sales", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  calculateSale: (data: CalculateRequest) =>
+    request<CalculateResponse>("/sales/calculate", {
       method: "POST",
       body: JSON.stringify(data),
     }),

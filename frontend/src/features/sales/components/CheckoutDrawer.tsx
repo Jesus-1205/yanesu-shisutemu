@@ -3,7 +3,7 @@ import Drawer from "@/ui-components/Drawer";
 import Button from "@/ui-components/Button";
 import Input from "@/ui-components/Input";
 import { useToast } from "@/ui-components/Toast";
-import { useCartStore, computeTotals } from "../store/cartStore";
+import { useCartStore, computeTotals, getDivisasTotal } from "../store/cartStore";
 import { api } from "@/services/api";
 import { formatCurrency, formatRate, formatPaymentMethodName } from "@/lib/utils";
 import type { PaymentMethodOut as PaymentMethod } from "@/types/api";
@@ -26,13 +26,22 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
   const [references, setReferences] = useState<Record<number, string>>({});
   const [isSplit, setIsSplit] = useState(false);
   const [observaciones, setObservaciones] = useState("");
+  const [divisasMethodIds, setDivisasMethodIds] = useState<Set<number>>(new Set());
 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (open) {
-      api.getPaymentMethods(true).then(setMethods).catch(() => {
+      Promise.all([
+        api.getPaymentMethods(true),
+        api.getPriceRules({ activo: true }),
+      ]).then(([methodsData, rulesData]) => {
+        setMethods(methodsData);
+        const divisasIds = new Set<number>();
+        rulesData.forEach((r) => r.payment_methods.forEach((pm) => divisasIds.add(pm.metodo_pago_id)));
+        setDivisasMethodIds(divisasIds);
+      }).catch(() => {
         toast("Error al cargar métodos de pago", "error");
         onCloseRef.current();
       });
@@ -43,6 +52,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
       setSaving(false);
       setIsSplit(false);
       setObservaciones("");
+      setDivisasMethodIds(new Set());
     }
   }, [open, toast]);
 
@@ -120,6 +130,20 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
     };
   }, [methods, amounts, tasaNum, totalUsd, totalVes]);
 
+  const totalDivisasItems = useMemo(() => getDivisasTotal(items), [items]);
+
+  const divisasSummary = useMemo(() => {
+    if (totalDivisasItems <= 0) return null;
+    const pagadoDivisas = methods
+      .filter((m) => divisasMethodIds.has(m.id))
+      .reduce((sum, m) => {
+        const val = Number(amounts[m.id]) || 0;
+        return sum + (m.moneda_default === "VES" ? val / (tasaNum || 1) : val);
+      }, 0);
+    const faltante = Math.max(0, Math.round((totalDivisasItems - pagadoDivisas) * 100) / 100);
+    return { pagadoDivisas, faltante, cubierto: faltante < 0.01 };
+  }, [items, methods, amounts, divisasMethodIds, totalDivisasItems, tasaNum]);
+
   const handleExpressClick = useCallback(
     (m: PaymentMethod) => {
       setAmounts({
@@ -142,6 +166,13 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
       setSaving(false);
       return;
     }
+
+    if (divisasSummary && !divisasSummary.cubierto) {
+      toast(`Faltan ${formatCurrency(divisasSummary.faltante, "$ ")} en divisas para cubrir los productos con descuento`, "error");
+      setSaving(false);
+      return;
+    }
+
     try {
       const pagos = methods
         .map((m) => {
@@ -170,6 +201,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
           unidades_descontadas: item.unidades_descontadas,
           precio_unitario_usd: Math.round(item.precio_unitario_usd * 100) / 100,
           iva_porcentaje: item.iva_porcentaje,
+          usa_precio_divisas: item.usaPrecioDivisas,
         })),
         pagos,
       });
@@ -184,7 +216,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
     } finally {
       setSaving(false);
     }
-  }, [suficiente, saving, tasaNum, totals, items, methods, amounts, observaciones, toast, clearCart, onSuccess]);
+  }, [suficiente, saving, tasaNum, totals, items, methods, amounts, observaciones, divisasSummary, toast, clearCart, onSuccess]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -213,6 +245,23 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
             Tasa: {formatRate(tasaNum)} | Exento: {formatCurrency(totals.monto_exento_usd)} | Base:{" "}
             {formatCurrency(totals.base_imponible_usd)} | IVA: {formatCurrency(totals.monto_iva_usd)}
           </div>
+          {totalDivisasItems > 0 && (
+            <div className="mt-2 pt-2 border-t border-slate-200">
+              <div className="text-xs font-semibold text-emerald-700">
+                Productos Divisas: {formatCurrency(totalDivisasItems)}
+              </div>
+              {divisasSummary && !divisasSummary.cubierto && (
+                <div className="text-[10px] text-danger font-semibold mt-0.5">
+                  Falta cubrir: {formatCurrency(divisasSummary.faltante)} en divisas
+                </div>
+              )}
+              {divisasSummary && divisasSummary.cubierto && (
+                <div className="text-[10px] text-success mt-0.5">
+                  Cubierto con divisas
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Cuerpo scrolleable */}

@@ -12,6 +12,7 @@ import { formatCurrency, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useCartStore, computeTotals } from "../store/cartStore";
+import type { CartItem } from "../store/cartStore";
 import CartItemRow from "../components/CartItemRow";
 import CheckoutDrawer from "../components/CheckoutDrawer";
 import SplitAddButton from "../components/SplitAddButton";
@@ -259,17 +260,67 @@ export default function POSPage() {
         render: (p: ProductOut) => formatCurrency(p.precio_caja_usd),
       },
       {
+        key: "precio_divisas",
+        header: "Precio Div.",
+        render: (p: ProductOut) => {
+          if (!p.precio_divisas_unidad && !p.precio_divisas_caja) {
+            return <span className="text-slate-300">-</span>;
+          }
+          return (
+            <div className="text-xs space-y-0.5">
+              {p.precio_divisas_unidad && (
+                <div className="text-success font-semibold">Ud: {formatCurrency(p.precio_divisas_unidad)}</div>
+              )}
+              {p.precio_divisas_caja && (
+                <div className="text-success font-semibold">Cj: {formatCurrency(p.precio_divisas_caja)}</div>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         key: "acciones",
         header: "",
         exportable: false,
         className: "w-16",
-        render: (p: ProductOut) => (
-          <SplitAddButton
-            onAddUnit={() => addItem(p, "UNIDAD")}
-            onAddBox={() => addItem(p, "CAJA")}
-            disabled={p.stock_unidades === 0 || (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)}
-          />
-        ),
+        render: (p: ProductOut) => {
+          const hasDivisas = p.precio_divisas_unidad || p.precio_divisas_caja;
+          return (
+            <div className="flex flex-col gap-1">
+              <SplitAddButton
+                onAddUnit={() => addItem(p, "UNIDAD")}
+                onAddBox={() => addItem(p, "CAJA")}
+                disabled={p.stock_unidades === 0 || (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)}
+              />
+              {hasDivisas && (
+                <div className="inline-flex">
+                  {p.precio_divisas_unidad && (
+                    <button
+                      type="button"
+                      disabled={p.stock_unidades === 0}
+                      onClick={() => addItem(p, "UNIDAD", 1, true)}
+                      className="px-1.5 py-0.5 text-[10px] font-semibold rounded-l bg-success text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      title={`Agregar unidad a ${formatCurrency(p.precio_divisas_unidad)} (divisas)`}
+                    >
+                      $Ud
+                    </button>
+                  )}
+                  {p.precio_divisas_caja && (
+                    <button
+                      type="button"
+                      disabled={p.stock_unidades === 0}
+                      onClick={() => addItem(p, "CAJA", 1, true)}
+                      className={`px-1.5 py-0.5 text-[10px] font-semibold ${p.precio_divisas_unidad ? "rounded-r" : "rounded"} bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
+                      title={`Agregar caja a ${formatCurrency(p.precio_divisas_caja)} (divisas)`}
+                    >
+                      $Cj
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        },
       },
     ],
     [isOperator, addItem],

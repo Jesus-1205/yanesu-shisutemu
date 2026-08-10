@@ -15,6 +15,9 @@ export interface CartItem {
   precio_unitario_usd: number;
   iva_porcentaje: number;
   tipo_iva: "GRAVADO" | "EXENTO";
+  usaPrecioDivisas: boolean;
+  precioDivisasUnidad: number | null;
+  precioDivisasCaja: number | null;
 }
 
 export interface CartTotals {
@@ -26,9 +29,10 @@ export interface CartTotals {
 interface CartState {
   items: Record<string, CartItem>;
   snapshotTasa: number;
-  addItem: (product: ProductOut, tipo_empaque: "UNIDAD" | "CAJA", cantidad?: number) => void;
+  addItem: (product: ProductOut, tipo_empaque: "UNIDAD" | "CAJA", cantidad?: number, usaPrecioDivisas?: boolean) => void;
   updateQuantity: (cartItemId: string, cantidad: number) => void;
   updateEmpaque: (cartItemId: string, nuevoEmpaque: "UNIDAD" | "CAJA") => void;
+  toggleDivisas: (cartItemId: string) => void;
   removeItem: (cartItemId: string) => void;
   clearCart: () => void;
 }
@@ -51,6 +55,12 @@ export function computeTotals(items: Record<string, CartItem>): CartTotals {
   };
 }
 
+export function getDivisasTotal(items: Record<string, CartItem>): number {
+  return Object.values(items)
+    .filter((i) => i.usaPrecioDivisas)
+    .reduce((sum, i) => sum + i.cantidad * i.precio_unitario_usd, 0);
+}
+
 export const useCartStore = create<CartState>((set, get) => {
   useExchangeRateStore.subscribe((state) => {
     if (state.tasa > 0) {
@@ -65,13 +75,27 @@ export const useCartStore = create<CartState>((set, get) => {
   items: {},
   snapshotTasa: 0,
 
-  addItem: (product, tipo_empaque, cantidad = 1) => {
+  addItem: (product, tipo_empaque, cantidad = 1, usaPrecioDivisas = false) => {
     const state = get();
     const cartItemId = `${product.id}_${tipo_empaque}`;
-    const precio =
+
+    const precioNormal =
       tipo_empaque === "UNIDAD"
         ? Number(product.precio_unidad_usd)
         : Number(product.precio_caja_usd);
+
+    const precioDivisas =
+      tipo_empaque === "UNIDAD"
+        ? product.precio_divisas_unidad ?? null
+        : product.precio_divisas_caja ?? null;
+
+    const usaDivisas = usaPrecioDivisas && precioDivisas !== null;
+
+    const precio =
+      usaDivisas
+        ? Number(precioDivisas)
+        : precioNormal;
+
     const iva = product.tipo_iva === "GRAVADO" ? 16 : 0;
 
     const existing = state.items[cartItemId];
@@ -104,10 +128,11 @@ export const useCartStore = create<CartState>((set, get) => {
         precio_unitario_usd: precio,
         iva_porcentaje: iva,
         tipo_iva: product.tipo_iva,
+        usaPrecioDivisas: usaDivisas,
+        precioDivisasUnidad: product.precio_divisas_unidad ?? null,
+        precioDivisasCaja: product.precio_divisas_caja ?? null,
       };
 
-      // Si el snapshot quedó en 0 (la tasa aun no estaba cargada al crear el
-      // carrito) pero el store ya tiene una tasa valida, capturarla ahora.
       const currentTasa = useExchangeRateStore.getState().tasa;
       const snapshotTasa =
         state.snapshotTasa <= 0 && currentTasa > 0
@@ -145,8 +170,20 @@ export const useCartStore = create<CartState>((set, get) => {
     if (!item || item.tipo_empaque === nuevoEmpaque) return;
 
     const newId = `${item.producto_id}_${nuevoEmpaque}`;
-    const newPrecio =
+
+    const precioNormal =
       nuevoEmpaque === "UNIDAD" ? item.precio_unidad_usd : item.precio_caja_usd;
+
+    const precioDivisas =
+      nuevoEmpaque === "UNIDAD"
+        ? item.precioDivisasUnidad
+        : item.precioDivisasCaja;
+
+    const newPrecio =
+      item.usaPrecioDivisas && precioDivisas !== null
+        ? precioDivisas
+        : precioNormal;
+
     const newUnidades =
       nuevoEmpaque === "CAJA"
         ? item.cantidad * item.unidades_por_caja
@@ -172,6 +209,37 @@ export const useCartStore = create<CartState>((set, get) => {
     }
 
     set({ items: rest });
+  },
+
+  toggleDivisas: (cartItemId) => {
+    const state = get();
+    const item = state.items[cartItemId];
+    if (!item) return;
+
+    const precioDivisasActual =
+      item.tipo_empaque === "UNIDAD"
+        ? item.precioDivisasUnidad
+        : item.precioDivisasCaja;
+
+    if (precioDivisasActual === null) return;
+
+    const nuevoValor = !item.usaPrecioDivisas;
+    const nuevoPrecio = nuevoValor
+      ? precioDivisasActual
+      : item.tipo_empaque === "UNIDAD"
+        ? item.precio_unidad_usd
+        : item.precio_caja_usd;
+
+    set({
+      items: {
+        ...state.items,
+        [cartItemId]: {
+          ...item,
+          usaPrecioDivisas: nuevoValor,
+          precio_unitario_usd: nuevoPrecio,
+        },
+      },
+    });
   },
 
   removeItem: (cartItemId) => {

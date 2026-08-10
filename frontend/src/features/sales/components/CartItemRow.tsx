@@ -3,6 +3,7 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "../store/cartStore";
 import { useCartStore } from "../store/cartStore";
 import { formatCurrency } from "@/lib/utils";
+import Badge from "@/ui-components/Badge";
 
 interface CartItemRowProps {
   item: CartItem;
@@ -12,13 +13,25 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const updateEmpaque = useCartStore((s) => s.updateEmpaque);
   const removeItem = useCartStore((s) => s.removeItem);
+  const toggleDivisas = useCartStore((s) => s.toggleDivisas);
+
+  const hasDivisas = item.precioDivisasUnidad !== null || item.precioDivisasCaja !== null;
+  const precioDivisasActual =
+    item.tipo_empaque === "UNIDAD"
+      ? item.precioDivisasUnidad
+      : item.precioDivisasCaja;
 
   return (
     <div className="bg-surface rounded-xl border border-slate-200 p-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-text-main truncate min-w-0">
-          {item.nombre}
-        </p>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p className="text-sm font-medium text-text-main truncate">
+            {item.nombre}
+          </p>
+          {item.usaPrecioDivisas && (
+            <Badge variant="success" className="!text-[10px] !px-1 !py-0">DIV</Badge>
+          )}
+        </div>
         <button
           onClick={() => removeItem(item.cartItemId)}
           className="shrink-0 text-slate-400 hover:text-danger transition-colors cursor-pointer"
@@ -76,6 +89,24 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
           IVA {item.iva_porcentaje}%
         </span>
       </div>
+
+      {hasDivisas && precioDivisasActual !== null && (
+        <div className="pt-1 border-t border-slate-100">
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={item.usaPrecioDivisas}
+              onChange={() => toggleDivisas(item.cartItemId)}
+              className="w-3.5 h-3.5 rounded accent-emerald-600"
+            />
+            <span className={item.usaPrecioDivisas ? "text-emerald-700 font-semibold" : "text-slate-500"}>
+              {item.usaPrecioDivisas
+                ? `Divisas (${formatCurrency(item.precio_unitario_usd)} c/u)`
+                : `Precio divisas (${formatCurrency(precioDivisasActual)} c/u)`}
+            </span>
+          </label>
+        </div>
+      )}
     </div>
   );
 });
