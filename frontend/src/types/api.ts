@@ -334,6 +334,7 @@ export interface SaleItemCreate {
   precio_unitario_usd: number;
   iva_porcentaje?: number;
   usa_precio_divisas?: boolean;
+  combo_id?: number | null;
 }
 
 export interface SalePaymentCreate {
@@ -366,6 +367,8 @@ export interface SaleItemOut {
   subtotal_usd: number;
   iva_porcentaje: number;
   usa_precio_divisas?: boolean;
+  combo_id?: number | null;
+  combo_nombre?: string | null;
 }
 
 export interface SalePaymentOut {
@@ -611,7 +614,20 @@ export interface CalculateRequestItem {
 
 export interface CalculateRequest {
   items: CalculateRequestItem[];
+  combos?: CalculateComboRequest[];
   metodo_pago_ids: number[];
+}
+
+export interface CalculateComboSelection {
+  grupo_id: number;
+  productos: number[];
+  cantidades: number[];
+}
+
+export interface CalculateComboRequest {
+  combo_id: number;
+  cantidad: number;
+  selecciones: CalculateComboSelection[];
 }
 
 export interface CalculateResponseItem {
@@ -630,5 +646,81 @@ export interface CalculateResponse {
   total_normal_usd: number;
   ahorro_usd: number;
   metodos_divisas_disponibles: number[];
+  combo_items: CalculateResponseItem[];
+}
+
+// ─── Combos ──────────────────────────────────────────────────
+export interface ComboGroupProductOut {
+  id: number;
+  producto_id: number;
+  producto_nombre: string;
+}
+
+export interface ComboGroupOut {
+  id: number;
+  nombre: string;
+  min_cantidad: number;
+  max_cantidad: number;
+  products: ComboGroupProductOut[];
+}
+
+export interface ComboActiveProduct {
+  producto_id: number;
+  nombre: string;
+  precio_unidad_usd: number;
+}
+
+export interface ComboActiveGroup {
+  id: number;
+  nombre: string;
+  min_cantidad: number;
+  max_cantidad: number;
+  productos: ComboActiveProduct[];
+}
+
+export interface ComboActiveOut {
+  id: number;
+  nombre: string;
+  precio_total_usd: number;
+  groups: ComboActiveGroup[];
+  metodo_pago_ids: number[];
+}
+
+export interface ComboOut {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  precio_total_usd: number;
+  activo: boolean;
+  groups: ComboGroupOut[];
+  metodo_pago_ids: number[];
+}
+
+export interface ComboGroupProductEntry {
+  producto_id: number;
+}
+
+export interface ComboGroupEntry {
+  nombre: string;
+  min_cantidad: number;
+  max_cantidad: number;
+  productos: ComboGroupProductEntry[];
+}
+
+export interface ComboCreate {
+  nombre: string;
+  descripcion?: string | null;
+  precio_total_usd: number;
+  grupos: ComboGroupEntry[];
+  metodo_pago_ids: number[];
+}
+
+export interface ComboUpdate {
+  nombre?: string | null;
+  descripcion?: string | null;
+  precio_total_usd?: number;
+  activo?: boolean;
+  grupos?: ComboGroupEntry[] | null;
+  metodo_pago_ids?: number[] | null;
 }
 

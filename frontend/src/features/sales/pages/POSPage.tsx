@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, ShoppingCart } from "lucide-react";
+import { Search, ShoppingCart, Trash2 } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
+import type { ComboActiveOut } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Badge from "@/ui-components/Badge";
 import PageHeader from "@/ui-components/PageHeader";
@@ -11,11 +12,14 @@ import { useToast } from "@/ui-components/Toast";
 import { formatCurrency, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
-import { useCartStore, computeTotals } from "../store/cartStore";
+import { useCartStore, computeTotals, getComboBlocks } from "../store/cartStore";
+import type { CartItem } from "../store/cartStore";
 import type { CartItem } from "../store/cartStore";
 import CartItemRow from "../components/CartItemRow";
 import CheckoutDrawer from "../components/CheckoutDrawer";
 import SplitAddButton from "../components/SplitAddButton";
+import ComboCard from "../components/ComboCard";
+import ComboSelectorModal from "../components/ComboSelectorModal";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
 import { memo } from "react";
 
@@ -82,11 +86,17 @@ export default function POSPage() {
   const [showAllFavorites, setShowAllFavorites] = useState(false);
   const [totalFavorites, setTotalFavorites] = useState(0);
 
+  const [combos, setCombos] = useState<ComboActiveOut[]>([]);
+  const [customizingCombo, setCustomizingCombo] = useState<ComboActiveOut | null>(null);
+
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
+  const addCombo = useCartStore((s) => s.addCombo);
+  const addComboWithSelections = useCartStore((s) => s.addComboWithSelections);
+  const removeComboBlock = useCartStore((s) => s.removeComboBlock);
   const snapshotTasa = useCartStore((s) => s.snapshotTasa);
 
   const totals = useMemo(() => computeTotals(items), [items]);
@@ -128,6 +138,7 @@ export default function POSPage() {
 
   useEffect(() => {
     loadFavorites(false);
+    api.getActiveCombos().then(setCombos).catch(() => {});
   }, [loadFavorites]);
 
   useEffect(() => {
@@ -377,6 +388,19 @@ export default function POSPage() {
             </div>
           </div>
 
+          {combos.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {combos.map((combo) => (
+                <ComboCard
+                  key={combo.id}
+                  combo={combo}
+                  onQuickAdd={() => addCombo(combo)}
+                  onCustomize={() => setCustomizingCombo(combo)}
+                />
+              ))}
+            </div>
+          )}
+
           <Table
             columns={columns}
             data={filteredProducts}
@@ -408,9 +432,53 @@ export default function POSPage() {
             </p>
           ) : (
             <div className="space-y-3">
-              {Object.values(items).map((item) => (
-                <CartItemRow key={item.cartItemId} item={item} />
-              ))}
+              {(() => {
+                const allItems = Object.values(items);
+                const processedBlockIds = new Set<string>();
+                const rendered: React.ReactNode[] = [];
+
+                for (const item of allItems) {
+                  if (item.comboBlockId) {
+                    if (processedBlockIds.has(item.comboBlockId)) continue;
+                    processedBlockIds.add(item.comboBlockId);
+                    const blockItems = allItems.filter((i) => i.comboBlockId === item.comboBlockId);
+                    const blockTotal = blockItems.reduce((s, i) => s + i.cantidad * i.precio_unitario_usd, 0);
+                    rendered.push(
+                      <div key={item.comboBlockId} className="bg-emerald-50 border border-emerald-200 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2 bg-emerald-100">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="success" className="!text-[10px] !px-1 !py-0">COMBO</Badge>
+                            <span className="text-xs font-semibold text-emerald-800">{item.comboNombre}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-emerald-700">{formatCurrency(blockTotal)}</span>
+                            <button
+                              onClick={() => removeComboBlock(item.comboBlockId!)}
+                              className="text-danger hover:text-red-700 cursor-pointer"
+                              title="Quitar combo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="px-2 py-1 space-y-1">
+                          {blockItems.map((bi) => (
+                            <div key={bi.cartItemId} className="flex justify-between text-xs px-1">
+                              <span className="text-slate-600 truncate">{bi.nombre}</span>
+                              <span className="text-slate-500 shrink-0 ml-2">
+                                {bi.cantidad} × {formatCurrency(bi.precio_unitario_usd)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    rendered.push(<CartItemRow key={item.cartItemId} item={item} />);
+                  }
+                }
+                return rendered;
+              })()}
             </div>
           )}
 
@@ -463,6 +531,14 @@ export default function POSPage() {
         onClose={handleCloseCheckout}
         onSuccess={handleSuccess}
       />
+
+      {customizingCombo && (
+        <ComboSelectorModal
+          combo={customizingCombo}
+          onConfirm={(selections) => addComboWithSelections(customizingCombo, selections)}
+          onClose={() => setCustomizingCombo(null)}
+        />
+      )}
     </div>
   );
 }

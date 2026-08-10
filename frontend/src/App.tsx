@@ -35,6 +35,7 @@ const adminSidebarItems: SidebarItem[] = [
       { label: "Productos", to: "/products" },
       { label: "Categorías", to: "/categories" },
       { label: "Precios Div.", to: "/price-rules" },
+      { label: "Combos", to: "/combos" },
     ],
   },
   {
@@ -82,6 +83,7 @@ const breadcrumbMap: Record<string, string> = {
   invoices: "Facturas de Compra",
   "payment-methods": "Métodos de Pago",
   "price-rules": "Precios Div.",
+  "combos": "Combos",
   settings: "Configuración",
   system: "API Keys",
   new: "Nuevo",

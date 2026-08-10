@@ -9,6 +9,10 @@ import type {
   CategoryOut,
   CategoryPaginationOut,
   CategoryUpdate,
+  ComboActiveOut,
+  ComboCreate,
+  ComboOut,
+  ComboUpdate,
   DailyStatusResponse,
   ExchangeRateCreate,
   ExchangeRateOut,
@@ -256,6 +260,33 @@ export const api = {
 
   deletePriceRule: (id: number) =>
     request<void>(`/price-rules/${id}`, { method: "DELETE" }),
+
+  // ── Combos ──
+  getActiveCombos: () =>
+    request<ComboActiveOut[]>("/combos/active"),
+
+  getCombos: (params?: { activo?: boolean }) => {
+    const qs = params?.activo !== undefined ? `?activo=${params.activo}` : "";
+    return request<ComboOut[]>(`/combos${qs}`);
+  },
+
+  getCombo: (id: number) =>
+    request<ComboOut>(`/combos/${id}`),
+
+  createCombo: (data: ComboCreate) =>
+    request<ComboOut>("/combos", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateCombo: (id: number, data: ComboUpdate) =>
+    request<ComboOut>(`/combos/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteCombo: (id: number) =>
+    request<void>(`/combos/${id}`, { method: "DELETE" }),
 
   // ── Tasas de Cambio ──
   getLatestRates: () =>

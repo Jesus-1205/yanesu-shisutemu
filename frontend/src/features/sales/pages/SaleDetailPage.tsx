@@ -97,6 +97,11 @@ export default function SaleDetailPage() {
                 {i.usa_precio_divisas && (
                   <Badge variant="success" className="!text-[10px] !px-1 !py-0">DIV</Badge>
                 )}
+                {i.combo_id && i.combo_nombre && (
+                  <Badge variant="warning" className="!text-[10px] !px-1 !py-0 !bg-amber-100 !text-amber-700">
+                    {i.combo_nombre}
+                  </Badge>
+                )}
               </div>
             ),
           },

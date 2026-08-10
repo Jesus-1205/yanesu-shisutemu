@@ -117,6 +117,10 @@ export const router = createBrowserRouter([
             lazy: adminOnly(() => import("./features/price-rules/pages/PriceRulesPage")),
           },
           {
+            path: "combos",
+            lazy: adminOnly(() => import("./features/combos/pages/CombosPage")),
+          },
+          {
             path: "exchange-rates",
             lazy: lazyRoute(() => import("./features/exchange-rates/pages/ExchangeRatesPage")),
           },

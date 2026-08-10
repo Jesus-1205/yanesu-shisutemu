@@ -202,6 +202,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
           precio_unitario_usd: Math.round(item.precio_unitario_usd * 100) / 100,
           iva_porcentaje: item.iva_porcentaje,
           usa_precio_divisas: item.usaPrecioDivisas,
+          combo_id: item.comboBlockId ? Number(item.comboBlockId.split("_")[1]) : null,
         })),
         pagos,
       });
