@@ -663,8 +663,8 @@ def create_invoice(
             unidades_por_caja = product.unidades_por_caja
             unidades_ingresadas = item.cantidad
 
-        subtotal_usd = Decimal(unidades_ingresadas) * costo_usd
-        subtotal_bs = Decimal(unidades_ingresadas) * costo_bs
+        subtotal_usd = Decimal(item.cantidad) * costo_usd
+        subtotal_bs = Decimal(item.cantidad) * costo_bs
         total_usd += subtotal_usd
         total_bs += subtotal_bs
 
@@ -676,7 +676,7 @@ def create_invoice(
         if total_unidades > 0:
             nuevo_costo_unidad = (
                 (stock_unidades_actual * product.precio_costo_usd)
-                + (Decimal(unidades_ingresadas) * costo_usd)
+                + (Decimal(item.cantidad) * costo_usd)
             ) / total_unidades
             nuevo_costo_unidad = nuevo_costo_unidad.quantize(Decimal("0.01"))
         else:
