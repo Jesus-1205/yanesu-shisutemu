@@ -28,6 +28,7 @@ class SaleItemOut(BaseModel):
     precio_unitario_usd: Decimal
     subtotal_usd: Decimal
     iva_porcentaje: Decimal
+    usa_precio_divisas: bool = False
 
 
 class SalePaymentCreate(BaseModel):

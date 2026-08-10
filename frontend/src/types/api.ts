@@ -365,6 +365,7 @@ export interface SaleItemOut {
   precio_unitario_usd: number;
   subtotal_usd: number;
   iva_porcentaje: number;
+  usa_precio_divisas?: boolean;
 }
 
 export interface SalePaymentOut {

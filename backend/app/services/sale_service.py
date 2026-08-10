@@ -59,6 +59,7 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             unidades_descontadas=unidades,
             precio_unitario_usd=item_data.precio_unitario_usd,
             iva_porcentaje=item_data.iva_porcentaje,
+            usa_precio_divisas=item_data.usa_precio_divisas,
         ))
 
     pagos: list[SalePayment] = []

@@ -7,6 +7,7 @@ import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import Table from "@/ui-components/Table";
 import Spinner from "@/ui-components/Spinner";
+import Badge from "@/ui-components/Badge";
 import { useToast } from "@/ui-components/Toast";
 import { formatCurrency, formatPaymentMethodName, formatRate } from "@/lib/utils";
 
@@ -90,7 +91,14 @@ export default function SaleDetailPage() {
           {
             key: "producto_nombre",
             header: "Producto",
-            render: (i: SaleItem) => i.producto_nombre || `Producto #${i.producto_id}`,
+            render: (i: SaleItem) => (
+              <div className="flex items-center gap-1.5">
+                <span>{i.producto_nombre || `Producto #${i.producto_id}`}</span>
+                {i.usa_precio_divisas && (
+                  <Badge variant="success" className="!text-[10px] !px-1 !py-0">DIV</Badge>
+                )}
+              </div>
+            ),
           },
           { key: "tipo_empaque", header: "Empaque" },
           { key: "cantidad", header: "Cantidad" },

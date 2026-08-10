@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Integer, DECIMAL, DateTime, ForeignKey, Computed, CheckConstraint, Index, Enum as SAEnum, Text
+from sqlalchemy import Integer, DECIMAL, DateTime, ForeignKey, Computed, CheckConstraint, Index, Enum as SAEnum, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -87,6 +87,7 @@ class SaleItem(Base):
         Computed("ROUND(cantidad * precio_unitario_usd, 2)", persisted=True),
     )
     iva_porcentaje: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), nullable=False, default=16.00)
+    usa_precio_divisas: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     __table_args__ = (
         CheckConstraint("cantidad > 0", name="ck_detalle_cantidad_positivo"),
