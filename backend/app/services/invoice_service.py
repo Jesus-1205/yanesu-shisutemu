@@ -329,22 +329,7 @@ def fuzzy_match_productos_batch(
             suggestions = []
             for match_nombre, match_score, _ in matches:
                 p = catalogo[match_nombre]
-                suggestions.append(ProductOutSchema(
-                    id=p.id,
-                    codigo_barra=p.codigo_barra,
-                    nombre=p.nombre,
-                    categories=[],
-                    unidades_por_caja=p.unidades_por_caja,
-                    stock_unidades=p.stock_unidades,
-                    stock_minimo=p.stock_minimo,
-                    precio_costo_caja_usd=p.precio_costo_caja_usd,
-                    precio_costo_usd=p.precio_costo_usd,
-                    precio_unidad_usd=p.precio_unidad_usd,
-                    precio_caja_usd=p.precio_caja_usd,
-                    proveedor_id=p.proveedor_id,
-                    tipo_iva=p.tipo_iva,
-                    es_favorito=p.es_favorito,
-                ))
+                suggestions.append(ProductOutSchema.model_validate(p))
 
             resultados.append(MatchedProduct(
                 producto_id=None,
@@ -659,11 +644,9 @@ def create_invoice(
         if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
             unidades_por_caja = item.unidades_por_caja or product.unidades_por_caja
             unidades_ingresadas = item.cantidad * unidades_por_caja
-            product.stock_cajas += item.cantidad
         else:
             unidades_por_caja = product.unidades_por_caja
             unidades_ingresadas = item.cantidad
-            product.stock_unidades += item.cantidad
 
         subtotal_usd = Decimal(item.cantidad) * costo_usd
         subtotal_bs = Decimal(item.cantidad) * costo_bs
@@ -676,17 +659,33 @@ def create_invoice(
         total_unidades = stock_total_actual + Decimal(unidades_ingresadas)
 
         if total_unidades > 0:
-            nuevo_costo_unidad = (
-                (stock_total_actual * product.precio_costo_usd)
-                + (Decimal(item.cantidad) * costo_usd)
-            ) / total_unidades
-            nuevo_costo_unidad = nuevo_costo_unidad.quantize(Decimal("0.01"))
+            if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
+                cajas_equivalentes = stock_total_actual / Decimal(product.unidades_por_caja)
+                nuevo_costo_caja = (
+                    (cajas_equivalentes * product.precio_costo_caja_usd)
+                    + (Decimal(item.cantidad) * costo_usd)
+                ) / (cajas_equivalentes + Decimal(item.cantidad))
+                nuevo_costo_caja = nuevo_costo_caja.quantize(Decimal("0.01"))
+                nuevo_costo_unidad = (nuevo_costo_caja / Decimal(unidades_por_caja)).quantize(
+                    Decimal("0.01")
+                )
+            else:
+                nuevo_costo_unidad = (
+                    (stock_total_actual * product.precio_costo_usd)
+                    + (Decimal(item.cantidad) * costo_usd)
+                ) / total_unidades
+                nuevo_costo_unidad = nuevo_costo_unidad.quantize(Decimal("0.01"))
+                nuevo_costo_caja = (nuevo_costo_unidad * Decimal(unidades_por_caja)).quantize(
+                    Decimal("0.01")
+                )
         else:
             nuevo_costo_unidad = product.precio_costo_usd
+            nuevo_costo_caja = product.precio_costo_caja_usd
 
-        nuevo_costo_caja = (nuevo_costo_unidad * Decimal(unidades_por_caja)).quantize(
-            Decimal("0.01")
-        )
+        if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
+            product.stock_cajas += item.cantidad
+        else:
+            product.stock_unidades += item.cantidad
 
         if item.unidades_por_caja and item.unidades_por_caja != product.unidades_por_caja:
             product.unidades_por_caja = item.unidades_por_caja

@@ -23,12 +23,12 @@ from app.services.sale_service import (
 )
 
 
-def _product(db, nombre="Test", stock=100, caja=12):
+def _product(db, nombre="Test", stock=100, caja=12, cajas=0):
     return create_product(db, ProductCreate(
         nombre=nombre,
         precio_costo_caja_usd=Decimal(str(caja)), precio_unidad_usd=Decimal("10"),
         precio_caja_usd=Decimal("240"), stock_unidades=stock,
-        unidades_por_caja=caja,
+        stock_cajas=cajas, unidades_por_caja=caja,
     ))
 
 
@@ -86,7 +86,7 @@ def test_create_sale_success_unidad(db):
 
 
 def test_create_sale_success_caja(db):
-    p = _product(db, caja=12)
+    p = _product(db, caja=12, cajas=10)
     u = _user(db)
     pm = _payment_method(db)
     data = SaleCreate(tasa_bcv_aplicada=Decimal("50"), items=[_item(p.id, tipo="CAJA", cantidad=3)], pagos=[_pago(pm.id)])
@@ -98,6 +98,8 @@ def test_create_sale_success_caja(db):
     assert item.tipo_empaque == "CAJA"
     assert item.cantidad == 3
     assert item.unidades_descontadas == 36
+    db.refresh(p)
+    assert p.stock_cajas == 7
 
 
 def test_create_sale_deducts_stock(db):
@@ -113,7 +115,7 @@ def test_create_sale_deducts_stock(db):
 
 def test_create_sale_mixed_items(db):
     p1 = _product(db, nombre="A", stock=100, caja=10)
-    p2 = _product(db, nombre="B", stock=100, caja=24)
+    p2 = _product(db, nombre="B", stock=100, caja=24, cajas=10)
     u = _user(db)
     pm = _payment_method(db)
     data = SaleCreate(
@@ -131,7 +133,7 @@ def test_create_sale_mixed_items(db):
     db.refresh(p1)
     db.refresh(p2)
     assert p1.stock_unidades == 97
-    assert p2.stock_unidades == 52
+    assert p2.stock_cajas == 8
 
 
 def test_create_sale_empty_items_rejected(db):

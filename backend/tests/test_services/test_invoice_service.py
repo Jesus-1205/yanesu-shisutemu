@@ -77,7 +77,8 @@ class TestCreateInvoice:
 
         assert factura.numero_factura == "F001"
         assert len(factura.detalles) == 1
-        assert prod.stock_unidades == (5 * 12) + (2 * 12)
+        assert prod.stock_cajas == 2
+        assert prod.stock_unidades == 5 * 12
         assert factura.moneda_principal == MonedaEnum.USD
         assert factura.tasa_bs == Decimal("1")
         assert factura.total_usd == Decimal("100.00")
