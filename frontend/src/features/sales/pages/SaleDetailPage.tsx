@@ -94,14 +94,13 @@ export default function SaleDetailPage() {
             render: (i: SaleItem) => (
               <div className="flex items-center gap-1.5">
                 <span>{i.producto_nombre || `Producto #${i.producto_id}`}</span>
-                {i.usa_precio_divisas && (
-                  <Badge variant="success" className="!text-[10px] !px-1 !py-0">DIV</Badge>
-                )}
-                {i.combo_id && i.combo_nombre && (
+                {i.combo_id && i.combo_nombre ? (
                   <Badge variant="warning" className="!text-[10px] !px-1 !py-0 !bg-amber-100 !text-amber-700">
                     {i.combo_nombre}
                   </Badge>
-                )}
+                ) : i.usa_precio_divisas ? (
+                  <Badge variant="success" className="!text-[10px] !px-1 !py-0">DIV</Badge>
+                ) : null}
               </div>
             ),
           },
