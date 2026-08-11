@@ -245,13 +245,21 @@ export default function POSPage() {
         key: "stock_unidades",
         header: "Stock",
         render: (p: ProductOut) => {
+          const isAgotado = p.stock_cajas === 0 && p.stock_unidades === 0;
           if (isOperator) {
-            return p.stock_unidades > 0
-              ? <Badge variant="success">Disponible</Badge>
-              : <Badge variant="danger">Agotado</Badge>;
+            return isAgotado
+              ? <Badge variant="danger">Agotado</Badge>
+              : <Badge variant="success">Disponible</Badge>;
+          }
+          if (p.unidades_por_caja > 1) {
+            return (
+              <span className={isAgotado ? "text-danger font-semibold text-xs" : "text-xs"}>
+                {p.stock_cajas} cj | {p.stock_unidades} und
+              </span>
+            );
           }
           return (
-            <span className={p.stock_unidades === 0 ? "text-danger font-semibold" : ""}>
+            <span className={isAgotado ? "text-danger font-semibold" : ""}>
               {p.stock_unidades}
             </span>
           );
@@ -298,7 +306,10 @@ export default function POSPage() {
               <SplitAddButton
                 onAddUnit={() => addItem(p, "UNIDAD")}
                 onAddBox={() => addItem(p, "CAJA")}
-                disabled={p.stock_unidades === 0 || (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)}
+                disabled={
+                  (p.stock_cajas === 0 && p.stock_unidades === 0) ||
+                  (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)
+                }
               />
               {hasDivisas && (
                 <div className="inline-flex">

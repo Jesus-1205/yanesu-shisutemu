@@ -13,6 +13,7 @@ class ProductCreate(BaseModel):
     nombre: str
     categoria_ids: list[int] = []
     unidades_por_caja: int = 1
+    stock_cajas: int = 0
     stock_unidades: int = 0
     stock_minimo: int = 5
     precio_costo_caja_usd: Decimal = Field(default=Decimal("0"), max_digits=10, decimal_places=2)
@@ -30,6 +31,7 @@ class ProductOut(BaseModel):
     nombre: str
     categories: list[CategoryOut]
     unidades_por_caja: int
+    stock_cajas: int
     stock_unidades: int
     stock_minimo: int
     precio_costo_caja_usd: Decimal
@@ -64,6 +66,7 @@ class ProductUpdate(BaseModel):
     nombre: str | None = None
     categoria_ids: list[int] | None = None
     unidades_por_caja: int | None = None
+    stock_cajas: int | None = None
     stock_unidades: int | None = None
     stock_minimo: int | None = None
     precio_costo_caja_usd: Decimal | None = None

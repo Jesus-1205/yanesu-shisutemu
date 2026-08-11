@@ -140,6 +140,7 @@ def create_product(db: Session, data: ProductCreate) -> Product:
         codigo_barra=codigo_barra,
         nombre=data.nombre,
         unidades_por_caja=data.unidades_por_caja,
+        stock_cajas=data.stock_cajas,
         stock_unidades=data.stock_unidades,
         stock_minimo=data.stock_minimo,
         precio_costo_caja_usd=data.precio_costo_caja_usd,

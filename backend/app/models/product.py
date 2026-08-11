@@ -14,6 +14,7 @@ class Product(Base):
     codigo_barra: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
     nombre: Mapped[str] = mapped_column(String(150), nullable=False)
     unidades_por_caja: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    stock_cajas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     stock_unidades: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     stock_minimo: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
     precio_costo_caja_usd: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)

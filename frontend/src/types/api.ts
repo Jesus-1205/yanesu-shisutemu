@@ -198,6 +198,7 @@ export interface ProductOut {
   nombre: string;
   categories: CategoryOut[];
   unidades_por_caja: number;
+  stock_cajas: number;
   stock_unidades: number;
   stock_minimo: number;
   precio_costo_caja_usd: number;
