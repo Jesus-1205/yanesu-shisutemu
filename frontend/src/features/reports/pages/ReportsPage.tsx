@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart3, Package, ShoppingBag, Building2, TrendingUp, DollarSign, Wallet, Banknote } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut, ProductMatrixItem, CategoryOut, CategoryAnalyticsResponse, SupplierAnalyticsResponse, CategoryAnalyticsOut, SupplierAnalyticsOut, PaymentMethodSummaryItem } from "@/types/api";
@@ -166,7 +166,10 @@ export default function ReportsPage() {
     if (activeTab === "pagos") fetchPaymentSummary();
   }, [activeTab, categoryAnalytics, supplierAnalytics, loadingCategories, loadingSuppliers, fetchCategoryAnalytics, fetchSupplierAnalytics, fetchPaymentSummary]);
 
-  const categoriesTotal = Math.round(salesSummary.reduce((sum, s) => sum + Number(s.total_usd), 0) * 100) / 100;
+  const categoriesTotal = useMemo(
+    () => Math.round(salesSummary.reduce((sum, s) => sum + Number(s.total_usd), 0) * 100) / 100,
+    [salesSummary],
+  );
   const categoriesCount = salesSummary.length;
 
   return (
@@ -251,7 +254,7 @@ function SortableSalesTable({ data, rango }: { data: SalesSummaryItem[]; rango: 
   const { toast } = useToast();
   const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [limit, setLimit] = useState(5);
-  const visible = data.slice(0, limit);
+  const visible = useMemo(() => data.slice(0, limit), [data, limit]);
   const { sorted, sortConfig, requestSort } = useSortableData<SalesSummaryItem & Record<string, unknown>>(visible as (SalesSummaryItem & Record<string, unknown>)[], "periodo");
   const columns = [
     {
@@ -322,7 +325,7 @@ function ResumenTab({
   const { toast } = useToast();
   const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [limitTopSelling, setLimitTopSelling] = useState(5);
-  const visibleTopSelling = topSelling.slice(0, limitTopSelling);
+  const visibleTopSelling = useMemo(() => topSelling.slice(0, limitTopSelling), [topSelling, limitTopSelling]);
 
   const periodLabel: Record<string, string> = {
     semanal: "Mejor Semana",
@@ -331,7 +334,7 @@ function ResumenTab({
   };
   const bestPeriodLabel = periodLabel[rango] ?? "Mejor Período";
 
-  const getTrend = () => {
+  const getTrend = useCallback(() => {
     if (!salesSummary || salesSummary.length < 2) return undefined;
     const anterior = salesSummary[salesSummary.length - 2]?.total_usd || 0;
     const actual = salesSummary[salesSummary.length - 1]?.total_usd || 0;
@@ -341,7 +344,7 @@ function ResumenTab({
       direction: delta >= 0 ? ("up" as const) : ("down" as const),
       value: `${delta > 0 ? "+" : ""}${delta.toFixed(1)}% vs período anterior`,
     };
-  };
+  }, [salesSummary]);
 
   return (
     <div className="space-y-6">
@@ -428,46 +431,58 @@ function ProductosTab({
   const [limitLowMargin, setLimitLowMargin] = useState(5);
   const [limitLowRot, setLimitLowRot] = useState(5);
 
-  const visibleSelling = topSelling.slice(0, limitSelling);
-  const visibleTopMargin = topMargin.slice(0, limitTopMargin);
-  const visibleLowMargin = lowestMargin.slice(0, limitLowMargin);
-  const visibleLowRotation = lowRotation.slice(0, limitLowRot);
+  const visibleSelling = useMemo(() => topSelling.slice(0, limitSelling), [topSelling, limitSelling]);
+  const visibleTopMargin = useMemo(() => topMargin.slice(0, limitTopMargin), [topMargin, limitTopMargin]);
+  const visibleLowMargin = useMemo(() => lowestMargin.slice(0, limitLowMargin), [lowestMargin, limitLowMargin]);
+  const visibleLowRotation = useMemo(() => lowRotation.slice(0, limitLowRot), [lowRotation, limitLowRot]);
 
-  const sellingFlat = visibleSelling.map((r) => ({
-    nombre: r.producto.nombre,
-    total_vendido: r.total_vendido,
-    ingresos: r.total_vendido * r.producto.precio_unidad_usd,
-  }));
+  const sellingFlat = useMemo(
+    () => visibleSelling.map((r) => ({
+      nombre: r.producto.nombre,
+      total_vendido: r.total_vendido,
+      ingresos: r.total_vendido * r.producto.precio_unidad_usd,
+    })),
+    [visibleSelling],
+  );
   const { sorted: sortedSelling, sortConfig: sortSelling, requestSort: reqSortSelling } = useSortableData(
     sellingFlat as ({ nombre: string; total_vendido: number; ingresos: number } & Record<string, unknown>)[],
     "total_vendido" as keyof ({ nombre: string; total_vendido: number; ingresos: number } & Record<string, unknown>),
     "desc",
   );
 
-  const marginCalc = (p: ProductOut) => {
+  const marginCalc = useCallback((p: ProductOut) => {
     const costo = Number(p.precio_costo_usd) || 0;
     const venta = Number(p.precio_unidad_usd) || 0;
     return costo > 0 ? ((venta - costo) / costo) * 100 : 0;
-  };
-  const topMarginFlat = visibleTopMargin.map((p) => ({ ...p, margen_pct: marginCalc(p) }));
+  }, []);
+  const topMarginFlat = useMemo(
+    () => visibleTopMargin.map((p) => ({ ...p, margen_pct: marginCalc(p) })),
+    [visibleTopMargin, marginCalc],
+  );
   const { sorted: sortedTopMargin, sortConfig: sortTopMargin, requestSort: reqSortTopMargin } = useSortableData(
     topMarginFlat as (ProductOut & { margen_pct: number } & Record<string, unknown>)[],
     "margen_pct" as keyof (ProductOut & { margen_pct: number } & Record<string, unknown>),
     "desc",
   );
 
-  const lowMarginFlat = visibleLowMargin.map((p) => ({ ...p, margen_pct: marginCalc(p) }));
+  const lowMarginFlat = useMemo(
+    () => visibleLowMargin.map((p) => ({ ...p, margen_pct: marginCalc(p) })),
+    [visibleLowMargin, marginCalc],
+  );
   const { sorted: sortedLowMargin, sortConfig: sortLowMargin, requestSort: reqSortLowMargin } = useSortableData(
     lowMarginFlat as (ProductOut & { margen_pct: number } & Record<string, unknown>)[],
     "margen_pct" as keyof (ProductOut & { margen_pct: number } & Record<string, unknown>),
     "asc",
   );
 
-  const lowRotFlat = visibleLowRotation.map((r) => ({
-    nombre: r.producto.nombre,
-    total_vendido: r.total_vendido,
-    stock: r.producto.stock_unidades,
-  }));
+  const lowRotFlat = useMemo(
+    () => visibleLowRotation.map((r) => ({
+      nombre: r.producto.nombre,
+      total_vendido: r.total_vendido,
+      stock: r.producto.stock_unidades,
+    })),
+    [visibleLowRotation],
+  );
   const { sorted: sortedLowRot, sortConfig: sortLowRot, requestSort: reqSortLowRot } = useSortableData(
     lowRotFlat as ({ nombre: string; total_vendido: number; stock: number } & Record<string, unknown>)[],
     "total_vendido" as keyof ({ nombre: string; total_vendido: number; stock: number } & Record<string, unknown>),
@@ -612,18 +627,27 @@ function CategoriasTab({
 
   if (!data) return <p className="text-sm text-slate-400 text-center py-10">Sin datos de categorías</p>;
 
-  const sortedByMargin = [...data.categorias].sort((a, b) => b.margen_promedio - a.margen_promedio);
-  const topByMargin = sortedByMargin.slice(0, limitTopMargin);
-  const lowestByMargin = sortedByMargin.slice(-limitLowMargin).reverse();
+  const sortedByMargin = useMemo(
+    () => [...data.categorias].sort((a, b) => b.margen_promedio - a.margen_promedio),
+    [data],
+  );
+  const topByMargin = useMemo(() => sortedByMargin.slice(0, limitTopMargin), [sortedByMargin, limitTopMargin]);
+  const lowestByMargin = useMemo(() => sortedByMargin.slice(-limitLowMargin).reverse(), [sortedByMargin, limitLowMargin]);
 
-  const topSellingFlat = topSelling.slice(0, limitTopSelling).map((t) => ({
-    nombre: toTitleCase(t.categoria.nombre),
-    total_vendido: t.total_vendido,
-  }));
-  const lowRotFlat = lowRotation.slice(0, limitLowRot).map((r) => ({
-    nombre: toTitleCase(r.categoria.nombre),
-    total_vendido: r.total_vendido,
-  }));
+  const topSellingFlat = useMemo(
+    () => topSelling.slice(0, limitTopSelling).map((t) => ({
+      nombre: toTitleCase(t.categoria.nombre),
+      total_vendido: t.total_vendido,
+    })),
+    [topSelling, limitTopSelling],
+  );
+  const lowRotFlat = useMemo(
+    () => lowRotation.slice(0, limitLowRot).map((r) => ({
+      nombre: toTitleCase(r.categoria.nombre),
+      total_vendido: r.total_vendido,
+    })),
+    [lowRotation, limitLowRot],
+  );
 
   const { sorted: sortedTopSelling, sortConfig: sortTopSelling, requestSort: reqSortTopSelling } =
     useSortableData<{ nombre: string; total_vendido: number } & Record<string, unknown>>(topSellingFlat, "total_vendido", "desc");
@@ -635,7 +659,7 @@ function CategoriasTab({
   const { sorted: sortedLowMargin, sortConfig: sortLowMargin, requestSort: reqSortLowMargin } =
     useSortableData(lowestByMargin as (CategoryAnalyticsOut & Record<string, unknown>)[], "margen_promedio");
 
-  const visibleDetalle = data.categorias.slice(0, limitDetalle);
+  const visibleDetalle = useMemo(() => data.categorias.slice(0, limitDetalle), [data, limitDetalle]);
   const { sorted: sortedDetalle, sortConfig: sortDetalle, requestSort: reqSortDetalle } =
     useSortableData(visibleDetalle as (CategoryAnalyticsOut & Record<string, unknown>)[], "nombre");
 
@@ -779,22 +803,36 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
 
   if (!data) return <p className="text-sm text-slate-400 text-center py-10">Sin datos de proveedores</p>;
 
-  const isActive = (s: SupplierAnalyticsOut) =>
-    s.total_productos > 0 || s.stock_total > 0 || s.ingresos_usd > 0;
+  const isActive = useCallback(
+    (s: SupplierAnalyticsOut) =>
+      s.total_productos > 0 || s.stock_total > 0 || s.ingresos_usd > 0,
+    [],
+  );
 
-  const activeSuppliers = data.proveedores.filter(isActive);
-  const visibleSuppliers = showInactives ? data.proveedores : activeSuppliers;
+  const activeSuppliers = useMemo(() => data.proveedores.filter(isActive), [data, isActive]);
+  const visibleSuppliers = useMemo(
+    () => (showInactives ? data.proveedores : activeSuppliers),
+    [showInactives, data, activeSuppliers],
+  );
 
-  const withSales = [...visibleSuppliers].filter((s) => s.unidades_vendidas > 0)
-    .sort((a, b) => b.unidades_vendidas - a.unidades_vendidas);
-  const sortedBySales = withSales.slice(0, limitTopSales);
-  const lowSales = [...withSales].reverse().slice(0, limitLowSales);
+  const withSales = useMemo(
+    () =>
+      [...visibleSuppliers]
+        .filter((s) => s.unidades_vendidas > 0)
+        .sort((a, b) => b.unidades_vendidas - a.unidades_vendidas),
+    [visibleSuppliers],
+  );
+  const sortedBySales = useMemo(() => withSales.slice(0, limitTopSales), [withSales, limitTopSales]);
+  const lowSales = useMemo(() => [...withSales].reverse().slice(0, limitLowSales), [withSales, limitLowSales]);
 
-  const sortedByMargin = [...visibleSuppliers].sort((a, b) => b.margen_promedio - a.margen_promedio);
-  const topByMargin = sortedByMargin.slice(0, limitTopMargin);
-  const lowestByMargin = sortedByMargin.slice(-limitLowMargin).reverse();
+  const sortedByMargin = useMemo(
+    () => [...visibleSuppliers].sort((a, b) => b.margen_promedio - a.margen_promedio),
+    [visibleSuppliers],
+  );
+  const topByMargin = useMemo(() => sortedByMargin.slice(0, limitTopMargin), [sortedByMargin, limitTopMargin]);
+  const lowestByMargin = useMemo(() => sortedByMargin.slice(-limitLowMargin).reverse(), [sortedByMargin, limitLowMargin]);
 
-  const visibleDetalle = visibleSuppliers.slice(0, limitDetalle);
+  const visibleDetalle = useMemo(() => visibleSuppliers.slice(0, limitDetalle), [visibleSuppliers, limitDetalle]);
   const { sorted: sortedDetalle, sortConfig: sortDetalle, requestSort: reqSortDetalle } =
     useSortableData(visibleDetalle as (SupplierAnalyticsOut & Record<string, unknown>)[], "ingresos_usd", "desc");
 
@@ -958,10 +996,20 @@ function PagosTab({
     "desc",
   );
 
-  const totalUsd = data.reduce((sum, m) => sum + (Number(m.total_usd) || 0), 0);
-  const totalVes = data.reduce((sum, m) => sum + (Number(m.total_ves) || 0), 0);
-  const totalPagos = data.reduce((sum, m) => sum + (m.cantidad_pagos || 0), 0);
-  const totalEquivUsd = data.reduce((sum, m) => sum + (Number(m.total_equivalente_usd) || 0), 0);
+  const totals = useMemo(() => {
+    let totalUsd = 0;
+    let totalVes = 0;
+    let totalPagos = 0;
+    let totalEquivUsd = 0;
+    for (const m of data) {
+      totalUsd += Number(m.total_usd) || 0;
+      totalVes += Number(m.total_ves) || 0;
+      totalPagos += m.cantidad_pagos || 0;
+      totalEquivUsd += Number(m.total_equivalente_usd) || 0;
+    }
+    return { totalUsd, totalVes, totalPagos, totalEquivUsd };
+  }, [data]);
+  const { totalUsd, totalVes, totalPagos, totalEquivUsd } = totals;
 
   return (
     <div className="space-y-6">

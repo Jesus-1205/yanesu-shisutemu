@@ -99,13 +99,13 @@ export default function ProductsPage() {
     navigate("/products/new");
   };
 
-  const openEdit = (p: Product) => {
+  const openEdit = useCallback((p: Product) => {
     setQuickEditProduct(p);
-  };
+  }, []);
 
-  const closeQuickEdit = () => {
+  const closeQuickEdit = useCallback(() => {
     setQuickEditProduct(null);
-  };
+  }, []);
 
   const exportColumns: Column<Product>[] = [
     { key: "id", header: "ID" },
@@ -148,7 +148,7 @@ export default function ProductsPage() {
 
   const sortValue = `${filters.sortField}_${filters.sortOrder}`;
 
-  const handleTableSort = (field: SortField) => {
+  const handleTableSort = useCallback((field: SortField) => {
     setFilters((prev) => {
       if (prev.sortField === field) {
         const nextOrder = prev.sortOrder === "asc" ? "desc" : "asc";
@@ -156,7 +156,7 @@ export default function ProductsPage() {
       }
       return { ...prev, sortField: field, sortOrder: "asc" };
     });
-  };
+  }, []);
 
   const fetchProducts = useCallback(async (params?: Record<string, unknown>) => {
     const mergedParams = { ...params, page: Number(params?.page || 1), page_size: Number(params?.page_size || PAGE_SIZE) };

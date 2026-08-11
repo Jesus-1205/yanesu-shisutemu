@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react";
 import { Pencil, Trash2, Star } from "lucide-react";
 import Badge from "@/ui-components/Badge";
 import Table, { type Column } from "@/ui-components/Table";
@@ -25,13 +26,13 @@ export default function ProductTable({
 }: ProductTableProps) {
   const tasa = useExchangeRateStore((s) => s.tasa);
 
-  const sortable = (field: SortField) => ({
+  const sortable = useCallback((field: SortField) => ({
     sortable: true,
     onSort: () => onSortColumn?.(field),
     sortDirection: (sortField === field ? sortOrder : null) as "asc" | "desc" | null,
-  });
+  }), [onSortColumn, sortField, sortOrder]);
 
-  const columns: Column<Product>[] = [
+  const columns: Column<Product>[] = useMemo(() => [
     {
       key: "favorito",
       header: "★",
@@ -142,7 +143,7 @@ export default function ProductTable({
         </div>
       ),
     },
-  ];
+  ], [sortable, onEdit, onDelete, onToggleFavorite, role, tasa, sortField, sortOrder]);
 
   return (
     <Table

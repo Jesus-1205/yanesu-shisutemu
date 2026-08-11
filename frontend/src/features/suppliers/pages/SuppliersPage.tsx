@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2, Download } from "lucide-react";
 import { api } from "@/services/api";
@@ -73,11 +73,11 @@ export default function SuppliersPage() {
     }
   };
 
-  const handleRowClick = (supplier: Supplier) => {
+  const handleRowClick = useCallback((supplier: Supplier) => {
     setSelectedSupplierId(supplier.id);
     setSelectedSupplierName(supplier.nombre);
     setDrawerOpen(true);
-  };
+  }, []);
 
   const handleSupplierCreated = () => {
     toast(`Proveedor creado`, "success");
@@ -101,6 +101,36 @@ export default function SuppliersPage() {
       toast("Error al exportar proveedores", "error");
     }
   };
+
+  const columns: Column<Supplier>[] = useMemo(() => [
+    { key: "id", header: "ID" },
+    { key: "nombre", header: "Nombre" },
+    { key: "telefono", header: "Teléfono", render: (s: Supplier) => s.telefono || "—" },
+    { key: "email", header: "Email", render: (s: Supplier) => s.email || "—" },
+    {
+      key: "acciones",
+      header: "Acciones",
+      render: (s: Supplier) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Editar proveedor"
+            onClick={(e) => { e.stopPropagation(); navigate(`/suppliers/${s.id}`); }}
+          >
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); setDeleteTarget(s); }}
+          >
+            <Trash2 className="w-4 h-4 text-danger" />
+          </Button>
+        </div>
+      ),
+    },
+  ], [navigate, setDeleteTarget]);
 
   return (
     <div>
@@ -132,35 +162,7 @@ export default function SuppliersPage() {
       )}
 
       <Table
-        columns={[
-          { key: "id", header: "ID" },
-          { key: "nombre", header: "Nombre" },
-          { key: "telefono", header: "Teléfono", render: (s: Supplier) => s.telefono || "—" },
-          { key: "email", header: "Email", render: (s: Supplier) => s.email || "—" },
-          {
-            key: "acciones",
-            header: "Acciones",
-            render: (s: Supplier) => (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Editar proveedor"
-                  onClick={(e) => { e.stopPropagation(); navigate(`/suppliers/${s.id}`); }}
-                >
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(s); }}
-                >
-                  <Trash2 className="w-4 h-4 text-danger" />
-                </Button>
-              </div>
-            ),
-          },
-        ]}
+        columns={columns}
         data={suppliers}
         keyExtractor={(s) => s.id}
         loading={loading}
