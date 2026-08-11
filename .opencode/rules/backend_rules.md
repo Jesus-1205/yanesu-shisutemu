@@ -1,4 +1,4 @@
-# Backend: Python 3.12 / FastAPI 0.115 / PostgreSQL
+# Backend: Python 3.12 / FastAPI 0.115 / SQLite
 
 ## 1. SQLAlchemy 2.0 (Estándar Obligatorio)
 
@@ -175,21 +175,27 @@ Producción:
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-## 6. Resiliencia de Base de Datos
+## 6. Base de Datos SQLite
 
-Para mitigar microcortes de red, `create_engine` debe incluir parámetros de reciclaje y verificación previa:
+La aplicación usa **SQLite** (archivo `yanesu.db` en `%LOCALAPPDATA%/YanesuShisutemu/data/`), no PostgreSQL. La migración desde PostgreSQL está documentada en `docs/MIGRATION_SQLITE.md`.
+
+- Motor configurado en `app/core/database.py` con `connect_args={"check_same_thread": False}`.
+- Habilitar foreign keys en cada conexión:
 
 ```python
-engine = create_engine(
-    Config.SQLALCHEMY_DATABASE_URL,
-    pool_recycle=3600,
-    pool_pre_ping=True,
-)
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 ```
+
+- No usar dialecto PostgreSQL (tipos `SERIAL`, `JSONB`, `ILIKE`, etc.) ni drivers psycopg.
+- La ruta de la DB se resuelve con `app.core.config.get_db_path()`.
 
 ## 7. Testing Backend (pytest)
 
-Ejecutar tests desde `src/backend/`:
+Ejecutar tests desde `backend/`:
 
 ```bash
 pytest -v                       # Todos los tests

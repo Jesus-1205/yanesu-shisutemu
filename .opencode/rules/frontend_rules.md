@@ -21,6 +21,7 @@ export type CreateProductDTO = Omit<Product, 'id'>;
 
 - Utilizar Componentes Funcionales con destructuración limpia de props.
 - Mantener la separación entre lógica de consumo de API (custom hooks o servicios) y componentes de UI.
+- Estado global con **Zustand** en `src/stores/` (ej. `exchangeRateStore.ts`).
 - Las llamadas al backend de FastAPI deben configurarse con URLs relativas o usando el proxy de Vite (`vite.config.ts`) para evitar problemas de CORS en desarrollo.
 
 ## Tailwind CSS v4
@@ -68,7 +69,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({ product, onEdit }) => {
 
 ## Testing Frontend (vitest)
 
-Ejecutar tests desde `src/frontend/`:
+Ejecutar tests desde `frontend/`:
 
 ```bash
 npm test                           # vitest run (una vez)
@@ -79,8 +80,8 @@ npm run test:watch                 # Modo watch
 - Usar `@testing-library/react` para tests de componentes.
 - Usar `@testing-library/jest-dom` para matchers DOM.
 - Usar `jsdom` como entorno DOM simulado.
-- Configuración en `vitest.config.ts` o dentro de `vite.config.ts`.
-- Nombrar archivos: `*.test.tsx` dentro de `src/__tests__/`.
+- Configuración en `vitest.config.ts` (setup en `src/__tests__/setup.ts`).
+- Nombrar archivos: `*.test.tsx` dentro de `src/__tests__/` (agrupados en `features/`, `hooks/`, `lib/`, `services/`, `stores/`, `ui-components/`).
 
 ```typescript
 import { render, screen } from "@testing-library/react";

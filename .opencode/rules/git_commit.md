@@ -22,7 +22,7 @@ Utilizamos el estándar Conventional Commits 1.0.0 para garantizar un historial 
 
 ## Alcances (`<alcance>`) Válidos
 
-`auth`, `inventory`, `products`, `database`, `ui`, `api`, `config`.
+`auth`, `inventory`, `products`, `sales`, `combos`, `invoices`, `reports`, `database`, `ui`, `api`, `config`, `docs`.
 
 ## Ejemplos Correctos
 
@@ -30,5 +30,5 @@ Utilizamos el estándar Conventional Commits 1.0.0 para garantizar un historial 
 feat(inventory): agregar endpoint para ajuste manual de stock
 fix(auth): corregir expiracion de token JWT en python-jose
 refactor(database): migrar consultas de usuarios a select() de SQLAlchemy 2.0
-chore(deps): actualizar driver psycopg a la version 3.3.4
+chore(deps): actualizar dependencia de FastAPI a la version 0.115.6
 ```
