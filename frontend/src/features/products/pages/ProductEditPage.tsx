@@ -21,6 +21,7 @@ interface FormState {
   precio_costo_caja_usd: number | "";
   precio_unidad_usd: number | "";
   tipo_iva: "GRAVADO" | "EXENTO";
+  stock_cajas: number | "";
   stock_unidades: number | "";
   stock_minimo: number | "";
   unidades_por_caja: number | "";
@@ -76,6 +77,7 @@ export default function ProductEditPage() {
           precio_costo_caja_usd: Number(prod.precio_costo_caja_usd) || 0,
           precio_unidad_usd: Number(prod.precio_unidad_usd) || 0,
           tipo_iva: prod.tipo_iva,
+          stock_cajas: prod.stock_cajas ?? 0,
           stock_unidades: prod.stock_unidades ?? 0,
           stock_minimo: prod.stock_minimo ?? 0,
           unidades_por_caja: prod.unidades_por_caja ?? 1,
@@ -148,6 +150,7 @@ export default function ProductEditPage() {
         precio_caja_usd: n(form.precio_caja_usd),
         proveedor_id: form.proveedor_id,
         tipo_iva: form.tipo_iva,
+        stock_cajas: n(form.stock_cajas),
         stock_unidades: n(form.stock_unidades),
         stock_minimo: n(form.stock_minimo),
       };
@@ -260,9 +263,25 @@ export default function ProductEditPage() {
               />
             </div>
             {!isOperator && (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                  <label htmlFor={fieldId("stock")} className={labelBase}>Stock (uds)</label>
+                  <label htmlFor={fieldId("stock-cajas")} className={labelBase}>Stock cajas</label>
+                  <input
+                    id={fieldId("stock-cajas")}
+                    type="number"
+                    min="0"
+                    value={form.stock_cajas}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setForm((prev) =>
+                        prev ? { ...prev, stock_cajas: raw === "" ? "" : e.target.valueAsNumber } : prev,
+                      );
+                    }}
+                    className={inputBase}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={fieldId("stock")} className={labelBase}>Stock unidades</label>
                   <input
                     id={fieldId("stock")}
                     type="number"
