@@ -9,11 +9,13 @@ import type { ProductOut } from "../../../types/api";
 import type { ReactNode } from "react";
 
 const mockGetPaymentMethods = vi.fn();
+const mockGetPriceRules = vi.fn();
 const mockCreateSale = vi.fn();
 
 vi.mock("../../../services/api", () => ({
   api: {
     getPaymentMethods: (...args: unknown[]) => mockGetPaymentMethods(...args),
+    getPriceRules: (...args: unknown[]) => mockGetPriceRules(...args),
     createSale: (...args: unknown[]) => mockCreateSale(...args),
   },
 }));
@@ -24,6 +26,7 @@ const mockProduct: ProductOut = {
   nombre: "Whisky",
   categories: [],
   unidades_por_caja: 12,
+  stock_cajas: 0,
   stock_unidades: 50,
   stock_minimo: 5,
   precio_costo_caja_usd: 96,
@@ -35,6 +38,8 @@ const mockProduct: ProductOut = {
   proveedor_id: null,
   tipo_iva: "GRAVADO",
   es_favorito: false,
+  precio_divisas_unidad: null,
+  precio_divisas_caja: null,
 };
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -46,9 +51,10 @@ beforeEach(() => {
   useCartStore.setState({ items: {}, snapshotTasa: 0 });
   useExchangeRateStore.setState({ tasa: 45.5, loading: false });
   mockGetPaymentMethods.mockResolvedValue([
-    { id: 1, nombre: "EFECTIVO", activo: true },
-    { id: 2, nombre: "PAGO_MOVIL", activo: true },
+    { id: 1, nombre: "EFECTIVO", moneda_default: "VES", acepta_referencia: false, activo: true },
+    { id: 2, nombre: "PAGO_MOVIL", moneda_default: "VES", acepta_referencia: false, activo: true },
   ]);
+  mockGetPriceRules.mockResolvedValue([]);
   mockCreateSale.mockResolvedValue({ id: 1 });
 });
 
@@ -101,7 +107,7 @@ describe("CheckoutDrawer - with cart items", () => {
   it("shows split mode when clicking link", async () => {
     render(<CheckoutDrawer open onClose={vi.fn()} onSuccess={vi.fn()} />, { wrapper });
     await waitFor(() => {
-      expect(screen.getByText("¿Pago dividido / monto exacto?")).toBeInTheDocument();
+      expect(screen.getByText("Pago dividido / monto exacto?")).toBeInTheDocument();
     });
   });
 

@@ -11,7 +11,11 @@ vi.mock("@/ui-components/Toast", () => ({
 }));
 
 vi.mock("@/services/api", () => ({
-  api: { login: vi.fn(), me: vi.fn().mockRejectedValue(new Error("not called")) },
+  api: {
+    login: vi.fn(),
+    me: vi.fn().mockRejectedValue(new Error("not called")),
+    getSetupStatus: vi.fn().mockResolvedValue({ needs_setup: false }),
+  },
 }));
 
 import { api } from "@/services/api";

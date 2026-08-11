@@ -10,7 +10,7 @@ const { mockMe } = vi.hoisted(() => ({
 }));
 
 vi.mock("../../../services/api", () => ({
-  api: { me: mockMe },
+  api: { me: mockMe, getSetupStatus: vi.fn().mockResolvedValue({ needs_setup: false }) },
 }));
 
 beforeEach(() => {

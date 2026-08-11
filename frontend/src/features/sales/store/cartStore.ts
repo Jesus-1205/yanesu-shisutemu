@@ -55,6 +55,9 @@ interface CartState {
   toggleDivisas: (cartItemId: string) => void;
   removeItem: (cartItemId: string) => void;
   clearCart: () => void;
+  getTotals: () => CartTotals;
+  getTotalUsd: () => number;
+  getTotalVes: () => number;
 }
 
 export function computeTotals(items: Record<string, CartItem>): CartTotals {
@@ -449,6 +452,18 @@ export const useCartStore = create<CartState>((set, get) => {
 
   clearCart: () => {
     set({ items: {}, snapshotTasa: 0 });
+  },
+
+  getTotals: () => computeTotals(get().items),
+
+  getTotalUsd: () => {
+    const t = computeTotals(get().items);
+    return Math.round((t.monto_exento_usd + t.base_imponible_usd + t.monto_iva_usd) * 100) / 100;
+  },
+
+  getTotalVes: () => {
+    const tasa = get().snapshotTasa;
+    return tasa > 0 ? Math.round(get().getTotalUsd() * tasa * 100) / 100 : 0;
   },
 };
 });

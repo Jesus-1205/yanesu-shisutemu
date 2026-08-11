@@ -229,6 +229,7 @@ export interface ProductCreate {
   nombre: string;
   categoria_ids?: number[];
   unidades_por_caja?: number;
+  stock_cajas?: number;
   stock_unidades?: number;
   stock_minimo?: number;
   precio_costo_caja_usd: number;
@@ -448,7 +449,6 @@ export interface ValidationErrorDetail {
 
 // ─── Facturas de Proveedor ────────────────────────────────────
 export type MonedaEnum = "USD" | "BS";
-export type TipoEmpaque = "UNIDAD" | "CAJA";
 
 export interface DetalleFacturaCreate {
   producto_id: number;

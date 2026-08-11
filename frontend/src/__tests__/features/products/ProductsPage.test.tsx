@@ -27,11 +27,12 @@ const mockProducts: ProductOut[] = [
   {
     id: 1, codigo_barra: "001", nombre: "Whisky A",
     categories: [{ id: 1, nombre: "Licores", descripcion: null }],
-    unidades_por_caja: 12, stock_unidades: 50, stock_minimo: 5,
+    unidades_por_caja: 12, stock_cajas: 0, stock_unidades: 50, stock_minimo: 5,
     precio_costo_caja_usd: 96, precio_costo_usd: 8,
     precio_unidad_usd: 15, precio_caja_usd: 150,
     precio_sugerido_unidad_usd: 11.43, precio_sugerido_caja_usd: 137.14,
     proveedor_id: null, tipo_iva: "GRAVADO", es_favorito: false,
+    precio_divisas_unidad: null, precio_divisas_caja: null,
   },
 ];
 

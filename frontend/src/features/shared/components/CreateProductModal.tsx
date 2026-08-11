@@ -72,6 +72,9 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
     api.getCategories()
       .then(setCategories)
       .catch(() => {});
+    api.getSuppliers()
+      .then(setSuppliers)
+      .catch(() => {});
 
     // Pre-llenar campos si vienen de IA
     if (initialNombre) {
@@ -218,6 +221,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
                 placeholder="Buscar proveedor..."
                 allowClear
                 clearLabel="Sin proveedor"
+                initialOptions={suppliers.map((s) => ({ value: s.id, label: s.nombre }))}
               />
               <div>
                 <Select

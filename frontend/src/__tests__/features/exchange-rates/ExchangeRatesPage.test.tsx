@@ -56,8 +56,7 @@ function renderPage() {
 
 describe("ExchangeRatesPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockToast.mockClear();
+    vi.resetAllMocks();
     mockApi.getLatestRates.mockResolvedValue({ rates: mockLatestRates });
     mockApi.getRateHistory.mockResolvedValue({ history: mockHistory });
     mockApi.getRateHistoryPaginated.mockResolvedValue({ items: mockHistory, pages: 1, total: 2, page: 1, page_size: 20 });

@@ -19,54 +19,6 @@ import SplitAddButton from "../components/SplitAddButton";
 import ComboCard from "../components/ComboCard";
 import ComboSelectorModal from "../components/ComboSelectorModal";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
-import { memo } from "react";
-
-const ProductRow = memo(function ProductRow({
-  product,
-  isOperator,
-  onAddUnit,
-  onAddBox,
-}: {
-  product: ProductOut;
-  isOperator: boolean;
-  onAddUnit: () => void;
-  onAddBox: () => void;
-}) {
-  return (
-    <tr className="border-b border-slate-100 last:border-b-0 transition-colors duration-150 hover:bg-blue-50/40">
-      {!isOperator && (
-        <td className="px-4 py-3 text-text-main whitespace-nowrap">{product.id}</td>
-      )}
-      <td className="px-4 py-3 text-text-main whitespace-nowrap">{product.nombre}</td>
-      <td className="px-4 py-3 text-text-main whitespace-nowrap">
-        {isOperator ? (
-          product.stock_unidades > 0 ? (
-            <Badge variant="success">Disponible</Badge>
-          ) : (
-            <Badge variant="danger">Agotado</Badge>
-          )
-        ) : (
-          <span className={product.stock_unidades === 0 ? "text-danger font-semibold" : ""}>
-            {product.stock_unidades}
-          </span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-text-main whitespace-nowrap">
-        {formatCurrency(product.precio_unidad_usd)}
-      </td>
-      <td className="px-4 py-3 text-text-main whitespace-nowrap">
-        {formatCurrency(product.precio_caja_usd)}
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap w-16">
-        <SplitAddButton
-          onAddUnit={onAddUnit}
-          onAddBox={onAddBox}
-          disabled={product.stock_unidades === 0 || (product.precio_unidad_usd <= 0 && product.precio_caja_usd <= 0)}
-        />
-      </td>
-    </tr>
-  );
-});
 
 export default function POSPage() {
   const { toast } = useToast();
@@ -180,11 +132,6 @@ export default function POSPage() {
     [products, hideNoStock],
   );
 
-  const clearSearch = useCallback(() => {
-    setSearch("");
-    setDebouncedSearch("");
-  }, []);
-
   const handleCheckout = useCallback(() => {
     if (itemCount === 0) {
       toastRef.current("Agrega al menos un producto", "error");
@@ -197,7 +144,7 @@ export default function POSPage() {
     setCheckoutOpen(false);
   }, []);
 
-  usePosKeyboard(searchRef, handleCheckout, checkoutOpen, handleCloseCheckout, clearSearch);
+  usePosKeyboard(searchRef, handleCheckout, checkoutOpen, handleCloseCheckout);
 
   const handleBarcode = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -226,16 +173,6 @@ export default function POSPage() {
     setDebouncedSearch("");
     loadFavorites(false);
   }, [loadFavorites]);
-
-  const handleAddUnit = useCallback(
-    (p: ProductOut) => () => addItem(p, "UNIDAD"),
-    [addItem],
-  );
-
-  const handleAddBox = useCallback(
-    (p: ProductOut) => () => addItem(p, "CAJA"),
-    [addItem],
-  );
 
   const columns = useMemo(
     () => [

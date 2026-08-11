@@ -46,6 +46,8 @@ describe("usePosKeyboard", () => {
           tipo_empaque: "UNIDAD", cantidad: 1, unidades_por_caja: 12,
           unidades_descontadas: 1, precio_unidad_usd: 10, precio_caja_usd: 100,
           precio_unitario_usd: 10, iva_porcentaje: 16, tipo_iva: "GRAVADO",
+          usaPrecioDivisas: false, precioDivisasUnidad: null, precioDivisasCaja: null,
+          combo_id: null, comboDetalle: null,
         },
       },
     });

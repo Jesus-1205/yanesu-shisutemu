@@ -20,6 +20,11 @@ const baseItem: CartItem = {
   precio_unitario_usd: 15,
   iva_porcentaje: 16,
   tipo_iva: "GRAVADO",
+  usaPrecioDivisas: false,
+  precioDivisasUnidad: null,
+  precioDivisasCaja: null,
+  combo_id: null,
+  comboDetalle: null,
 };
 
 beforeEach(() => {

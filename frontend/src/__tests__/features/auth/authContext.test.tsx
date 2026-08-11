@@ -7,8 +7,9 @@ vi.mock("../../../services/api", () => {
   const me = vi.fn().mockRejectedValue(new Error("not-called"));
   const login = vi.fn();
   const logout = vi.fn();
+  const getSetupStatus = vi.fn().mockResolvedValue({ needs_setup: false });
   return {
-    api: { me, login, logout },
+    api: { me, login, logout, getSetupStatus },
   };
 });
 

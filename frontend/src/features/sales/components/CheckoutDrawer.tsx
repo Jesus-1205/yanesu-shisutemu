@@ -6,7 +6,7 @@ import { useToast } from "@/ui-components/Toast";
 import { useCartStore, computeTotals, getDivisasTotal } from "../store/cartStore";
 import { api } from "@/services/api";
 import { formatCurrency, formatRate, formatPaymentMethodName } from "@/lib/utils";
-import type { PaymentMethodOut as PaymentMethod } from "@/types/api";
+import type { PaymentMethodOut as PaymentMethod, SaleItemCreate } from "@/types/api";
 
 interface CheckoutDrawerProps {
   open: boolean;
@@ -75,7 +75,6 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
     pagadoUSD,
     pagadoVES,
     isPayingVES,
-    totalEnMonedaPago,
     pagadoEnMonedaPago,
     restanteEnMonedaPago,
     restanteUSD,
@@ -117,7 +116,6 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
       pagadoUSD: pUSD,
       pagadoVES: pVES,
       isPayingVES: payingVES,
-      totalEnMonedaPago: totalMoneda,
       pagadoEnMonedaPago: pagadoMoneda,
       restanteEnMonedaPago: restanteMoneda,
       restanteUSD: restUSD,
@@ -194,7 +192,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
         monto_exento_usd: totals.monto_exento_usd,
         base_imponible_usd: totals.base_imponible_usd,
         monto_iva_usd: totals.monto_iva_usd,
-        items: Object.values(items).flatMap((item) => {
+        items: Object.values(items).flatMap<SaleItemCreate>((item) => {
           if (item.combo_id && item.comboDetalle) {
             return item.comboDetalle.productos.map((p) => ({
               producto_id: p.producto_id,
