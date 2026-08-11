@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2, Download } from "lucide-react";
 import { api } from "@/services/api";
@@ -73,11 +73,11 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleRowClick = (cat: Category) => {
+  const handleRowClick = useCallback((cat: Category) => {
     setSelectedCategoryId(cat.id);
     setSelectedCategoryName(cat.nombre);
     setDrawerOpen(true);
-  };
+  }, []);
 
   const handleCategoryCreated = () => {
     toast(`Categoría creada`, "success");
@@ -100,6 +100,39 @@ export default function CategoriesPage() {
       toast("Error al exportar categorias", "error");
     }
   };
+
+  const columns: Column<Category>[] = useMemo(() => [
+    { key: "id", header: "ID", hideOnMobile: true },
+    { key: "nombre", header: "Nombre" },
+    {
+      key: "descripcion",
+      header: "Descripción",
+      hideOnMobile: true,
+      render: (cat: Category) => cat.descripcion || "—",
+    },
+    {
+      key: "acciones",
+      header: "Acciones",
+      render: (cat: Category) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); navigate(`/categories/${cat.id}`); }}
+          >
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); setDeleteTarget(cat); }}
+          >
+            <Trash2 className="w-4 h-4 text-danger" />
+          </Button>
+        </div>
+      ),
+    },
+  ], [navigate, setDeleteTarget]);
 
   return (
     <div>
@@ -131,38 +164,7 @@ export default function CategoriesPage() {
       )}
 
       <Table
-        columns={[
-          { key: "id", header: "ID", hideOnMobile: true },
-          { key: "nombre", header: "Nombre" },
-          {
-            key: "descripcion",
-            header: "Descripción",
-            hideOnMobile: true,
-            render: (cat: Category) => cat.descripcion || "—",
-          },
-          {
-            key: "acciones",
-            header: "Acciones",
-            render: (cat: Category) => (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); navigate(`/categories/${cat.id}`); }}
-                >
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(cat); }}
-                >
-                  <Trash2 className="w-4 h-4 text-danger" />
-                </Button>
-              </div>
-            ),
-          },
-        ]}
+        columns={columns}
         data={categories}
         keyExtractor={(c) => c.id}
         loading={loading}

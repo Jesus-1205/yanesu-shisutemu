@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import type { ReactNode } from "react";
 import { ArrowUpDown, ArrowUp, ArrowDown, Download, ChevronDown, Loader2 } from "lucide-react";
 import { exportToExcel } from "@/lib/exportToExcel";
@@ -45,7 +45,7 @@ function SkeletonRow({ cols }: { cols: number }) {
   );
 }
 
-export default function Table<T>({
+function Table<T>({
   columns,
   data,
   keyExtractor,
@@ -273,3 +273,6 @@ export default function Table<T>({
     </div>
   );
 }
+
+const MemoizedTable = memo(Table) as typeof Table;
+export default MemoizedTable;

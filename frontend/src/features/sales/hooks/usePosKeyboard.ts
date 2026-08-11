@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { useCartStore } from "../store/cartStore";
 import { useToast } from "@/ui-components/Toast";
 
@@ -10,6 +10,13 @@ export function usePosKeyboard(
 ) {
   const clearCart = useCartStore((s) => s.clearCart);
   const { toast } = useToast();
+
+  const onCheckoutRef = useRef(onCheckout);
+  onCheckoutRef.current = onCheckout;
+  const onCloseCheckoutRef = useRef(onCloseCheckout);
+  onCloseCheckoutRef.current = onCloseCheckout;
+  const checkoutOpenRef = useRef(checkoutOpen);
+  checkoutOpenRef.current = checkoutOpen;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -29,13 +36,13 @@ export function usePosKeyboard(
 
       if (e.key === "F10") {
         e.preventDefault();
-        onCheckout();
+        onCheckoutRef.current();
         return;
       }
 
       if (e.key === "Escape") {
-        if (checkoutOpen) {
-          onCloseCheckout();
+        if (checkoutOpenRef.current) {
+          onCloseCheckoutRef.current();
           return;
         }
         if (document.activeElement === searchRef.current) {
@@ -53,5 +60,5 @@ export function usePosKeyboard(
 
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [searchRef, onCheckout, checkoutOpen, onCloseCheckout, clearCart, toast]);
+  }, [searchRef, clearCart, toast]);
 }

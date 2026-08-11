@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -62,8 +63,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const value = useMemo(() => ({ toast: addToast }), [addToast]);
+
   return (
-    <ToastContext.Provider value={{ toast: addToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <div
         className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"
