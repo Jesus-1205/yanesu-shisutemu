@@ -121,6 +121,7 @@ def update_combo(db: Session, combo_id: int, data: ComboUpdate) -> Combo:
 
         for old in list(combo.payment_methods):
             db.delete(old)
+        db.flush()
         combo.payment_methods = [
             ComboPaymentMethod(metodo_pago_id=pm_id)
             for pm_id in update_data["metodo_pago_ids"]

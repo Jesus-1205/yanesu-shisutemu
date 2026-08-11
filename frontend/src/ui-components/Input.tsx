@@ -4,12 +4,14 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  variant?: "md" | "sm";
 }
 
 export default function Input({
   label,
   error,
   hint,
+  variant = "md",
   className = "",
   disabled,
   id,
@@ -20,6 +22,9 @@ export default function Input({
   const generatedId = useId();
   const inputId = id ?? generatedId;
 
+  const padding = variant === "sm" ? "px-3 pt-4 pb-1.5 text-sm" : "px-4 pt-5 pb-2 text-sm";
+  const labelPos = variant === "sm" ? "left-3" : "left-4";
+
   return (
     <div className="flex w-full flex-col gap-1.5">
       <div className="relative">
@@ -27,7 +32,7 @@ export default function Input({
           id={inputId}
           placeholder={placeholder ?? " "}
           className={`
-            peer w-full rounded-xl border bg-surface px-4 pt-5 pb-2 text-sm text-text-main
+            peer w-full rounded-xl border bg-surface ${padding} text-text-main
             transition-all duration-200 outline-none
             ${label && placeholder ? "placeholder-transparent focus:placeholder-slate-400" : ""}
             ${
@@ -50,13 +55,13 @@ export default function Input({
           <label
             htmlFor={inputId}
             className={`
-              absolute left-4 text-sm pointer-events-none
+              absolute ${labelPos} text-sm pointer-events-none z-10 whitespace-nowrap
               transition-all duration-200 origin-left
               top-1/2 -translate-y-1/2
-              peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:scale-[0.75]
+              peer-focus:top-1.5 peer-focus:translate-y-0 peer-focus:scale-[0.75]
               peer-focus:bg-surface peer-focus:px-1.5
-              peer-not-placeholder-shown:top-0
-              peer-not-placeholder-shown:-translate-y-1/2
+              peer-not-placeholder-shown:top-1.5
+              peer-not-placeholder-shown:translate-y-0
               peer-not-placeholder-shown:scale-[0.75]
               peer-not-placeholder-shown:bg-surface
               peer-not-placeholder-shown:px-1.5

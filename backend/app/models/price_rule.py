@@ -43,6 +43,10 @@ class PriceRuleProduct(Base):
     rule: Mapped["PriceRule"] = relationship("PriceRule", back_populates="products")
     product: Mapped["Product"] = relationship("Product", lazy="joined")
 
+    @property
+    def producto_nombre(self) -> str:
+        return self.product.nombre if self.product else ""
+
 
 class PriceRulePaymentMethod(Base):
     __tablename__ = "price_rule_payment_methods"
@@ -60,3 +64,7 @@ class PriceRulePaymentMethod(Base):
 
     rule: Mapped["PriceRule"] = relationship("PriceRule", back_populates="payment_methods")
     payment_method: Mapped["PaymentMethod"] = relationship("PaymentMethod", lazy="joined")
+
+    @property
+    def metodo_pago_nombre(self) -> str:
+        return self.payment_method.nombre if self.payment_method else ""

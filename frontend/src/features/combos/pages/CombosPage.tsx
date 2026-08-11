@@ -69,7 +69,8 @@ export default function CombosPage() {
 
   useEffect(() => {
     fetchCombos();
-  }, [fetchCombos]);
+    loadPaymentMethods();
+  }, [fetchCombos, loadPaymentMethods]);
 
   const openCreate = async () => {
     await loadPaymentMethods();
@@ -254,9 +255,9 @@ export default function CombosPage() {
           },
           {
             key: "grupos",
-            header: "Grupos",
+            header: "Opciones",
             render: (c: ComboOut) => (
-              <span className="text-xs">
+              <span className="text-xs block max-w-sm truncate" title={c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad}: ${g.products.length} prods.)`).join(", ")}>
                 {c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad}: ${g.products.length} prods.)`).join(", ")}
               </span>
             ),
@@ -265,7 +266,9 @@ export default function CombosPage() {
             key: "metodos",
             header: "Métodos",
             render: (c: ComboOut) => (
-              <span className="text-xs">{c.metodo_pago_ids.join(", ")}</span>
+              <span className="text-xs block max-w-[120px] truncate" title={c.metodo_pago_ids.map((id) => paymentMethods.find((pm) => pm.id === id)?.nombre ?? `#${id}`).join(", ")}>
+                {c.metodo_pago_ids.map((id) => paymentMethods.find((pm) => pm.id === id)?.nombre ?? `#${id}`).join(", ")}
+              </span>
             ),
           },
           {
@@ -308,73 +311,97 @@ export default function CombosPage() {
         className="max-w-2xl"
       >
         <div className="space-y-4 max-h-[75vh] overflow-y-auto">
-          <Input
-            label="Nombre del combo"
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            placeholder="Ej: 8 Latas Mix x $5"
-          />
-          <Input
-            label="Descripción"
-            value={formDesc}
-            onChange={(e) => setFormDesc(e.target.value)}
-            placeholder="Opcional"
-          />
-          <Input
-            label="Precio total USD"
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={formPrecio}
-            onChange={(e) => setFormPrecio(e.target.value)}
-            placeholder="$ 5.00"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Nombre del combo</label>
+              <Input
+                label=""
+                variant="sm"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Ej: 8 Latas Mix x $5"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Precio total (USD)</label>
+              <Input
+                label=""
+                variant="sm"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={formPrecio}
+                onChange={(e) => setFormPrecio(e.target.value)}
+                placeholder="5.00"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Descripción</label>
+            <Input
+              label=""
+              variant="sm"
+              value={formDesc}
+              onChange={(e) => setFormDesc(e.target.value)}
+              placeholder="Opcional"
+            />
+          </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-text-main">Grupos de productos</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-text-main">Opciones del combo</label>
               <button
                 type="button"
                 onClick={addGroup}
                 className="flex items-center gap-1 px-2 py-1 text-xs text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Agregar grupo
+                Agregar opción
               </button>
             </div>
-            <div className="space-y-3">
+            <p className="text-xs text-slate-400 mb-2">
+              Cada opción agrupa productos del mismo tipo. Mín. y máx. indican cuántos productos de esa opción puede elegir el cliente.
+            </p>
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
               {formGroups.map((group, gIdx) => (
                 <div key={gIdx} className="border border-slate-200 rounded-lg p-3 space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <Input
                       label=""
+                      variant="sm"
                       value={group.nombre}
                       onChange={(e) => updateGroup(gIdx, "nombre", e.target.value)}
-                      placeholder="Nombre del grupo"
-                      className="flex-1 pt-3 pb-1 text-xs"
+                      placeholder="Nombre de la opción (Ej: Cervezas)"
+                      className="flex-1"
                     />
-                    <div className="flex items-center gap-1 shrink-0">
-                      <input
-                        type="number"
-                        min="0"
-                        value={group.min_cantidad}
-                        onChange={(e) => updateGroup(gIdx, "min_cantidad", Number(e.target.value))}
-                        className="w-14 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
-                        placeholder="Min"
-                      />
-                      <span className="text-xs text-slate-400">a</span>
-                      <input
-                        type="number"
-                        min="1"
-                        value={group.max_cantidad}
-                        onChange={(e) => updateGroup(gIdx, "max_cantidad", Number(e.target.value))}
-                        className="w-14 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
-                        placeholder="Max"
-                      />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="flex flex-col">
+                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Mín.</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={group.min_cantidad}
+                          onChange={(e) => updateGroup(gIdx, "min_cantidad", Number(e.target.value))}
+                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
+                          title="Cantidad mínima de productos que el cliente debe elegir"
+                        />
+                      </label>
+                      <label className="flex flex-col">
+                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Máx.</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={group.max_cantidad}
+                          onChange={(e) => updateGroup(gIdx, "max_cantidad", Number(e.target.value))}
+                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
+                          title="Cantidad máxima de productos que el cliente puede elegir"
+                        />
+                      </label>
                       <button
                         type="button"
                         onClick={() => removeGroup(gIdx)}
-                        className="text-danger hover:text-red-700"
+                        className="text-danger hover:text-red-700 mt-3.5"
+                        title="Eliminar opción"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -385,7 +412,7 @@ export default function CombosPage() {
                       <div key={pIdx} className="flex items-center gap-2">
                         <div className="flex-1">
                           <AsyncCombobox
-                            value={prod.producto_id || null}
+                            value={prod.producto_id > 0 ? prod.producto_id : null}
                             onChange={(val) => updateProductInGroup(gIdx, pIdx, val ? Number(val) : 0)}
                             onSearch={handleProductSearch}
                             placeholder="Buscar producto..."
@@ -397,6 +424,7 @@ export default function CombosPage() {
                           type="button"
                           onClick={() => removeProductFromGroup(gIdx, pIdx)}
                           className="text-danger hover:text-red-700 shrink-0 mt-1"
+                          title="Quitar producto"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -408,21 +436,24 @@ export default function CombosPage() {
                       className="flex items-center gap-1 px-2 py-1 text-xs text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-colors cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
-                      Producto
+                      Agregar producto
                     </button>
                   </div>
                 </div>
               ))}
               {formGroups.length === 0 && (
                 <p className="text-xs text-slate-400 text-center py-3">
-                  Agrega al menos un grupo de productos
+                  Agrega al menos una opción de productos
                 </p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-text-main mb-2 block">Métodos de pago</label>
+            <label className="text-sm font-medium text-text-main mb-1 block">Métodos de pago</label>
+            <p className="text-xs text-slate-400 mb-2">
+              Métodos de pago con los que se puede comprar este combo.
+            </p>
             <div className="flex flex-wrap gap-2">
               {paymentMethods.map((pm) => (
                 <label

@@ -85,17 +85,18 @@ def update_price_rule(db: Session, rule_id: int, data: PriceRuleUpdate) -> Price
 
     if "productos" in update_data:
         for entry in update_data["productos"]:
-            stmt = select(Product).where(Product.id == entry.producto_id)
+            stmt = select(Product).where(Product.id == entry["producto_id"])
             if not db.execute(stmt).scalars().first():
-                raise EntityNotFoundError(f"Producto ID {entry.producto_id} no encontrado")
+                raise EntityNotFoundError(f"Producto ID {entry['producto_id']} no encontrado")
 
         for old in list(rule.products):
             db.delete(old)
+        db.flush()
         rule.products = [
             PriceRuleProduct(
-                producto_id=e.producto_id,
-                tipo_empaque=e.tipo_empaque,
-                precio_usd=e.precio_usd,
+                producto_id=e["producto_id"],
+                tipo_empaque=e["tipo_empaque"],
+                precio_usd=e["precio_usd"],
             )
             for e in update_data["productos"]
         ]
@@ -108,6 +109,7 @@ def update_price_rule(db: Session, rule_id: int, data: PriceRuleUpdate) -> Price
 
         for old in list(rule.payment_methods):
             db.delete(old)
+        db.flush()
         rule.payment_methods = [
             PriceRulePaymentMethod(metodo_pago_id=pm_id)
             for pm_id in update_data["metodo_pago_ids"]

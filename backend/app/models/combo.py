@@ -22,6 +22,10 @@ class Combo(Base):
         "ComboPaymentMethod", back_populates="combo", cascade="all, delete-orphan"
     )
 
+    @property
+    def metodo_pago_ids(self) -> list[int]:
+        return [pm.metodo_pago_id for pm in self.payment_methods]
+
 
 class ComboGroup(Base):
     __tablename__ = "combo_groups"
@@ -61,6 +65,10 @@ class ComboGroupProduct(Base):
 
     group: Mapped["ComboGroup"] = relationship("ComboGroup", back_populates="products")
     product: Mapped["Product"] = relationship("Product", lazy="joined")
+
+    @property
+    def producto_nombre(self) -> str:
+        return self.product.nombre if self.product else ""
 
 
 class ComboPaymentMethod(Base):

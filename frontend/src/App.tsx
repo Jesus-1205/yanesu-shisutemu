@@ -9,6 +9,7 @@ import {
   Settings,
   DollarSign,
   BarChart3,
+  Tags,
 } from "lucide-react";
 import Sidebar, { type SidebarItem } from "./ui-components/Sidebar";
 import Breadcrumbs, { type Crumb } from "./ui-components/Breadcrumbs";
@@ -33,9 +34,15 @@ const adminSidebarItems: SidebarItem[] = [
     icon: <Package size={18} />,
     items: [
       { label: "Productos", to: "/products" },
+      { label: "Combos", to: "/combos" },
+    ],
+  },
+  {
+    label: "CATÁLOGO",
+    icon: <Tags size={18} />,
+    items: [
       { label: "Categorías", to: "/categories" },
       { label: "Precios Div.", to: "/price-rules" },
-      { label: "Combos", to: "/combos" },
     ],
   },
   {

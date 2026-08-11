@@ -208,7 +208,7 @@ export default function PriceRulesPage() {
             key: "productos",
             header: "Productos",
             render: (r: PriceRuleOut) => (
-              <span className="text-xs">
+              <span className="text-xs block max-w-md truncate" title={r.products.map((p) => `${p.producto_nombre} (${p.tipo_empaque}: ${formatCurrency(p.precio_usd)})`).join(", ")}>
                 {r.products.map((p) => `${p.producto_nombre} (${p.tipo_empaque}: ${formatCurrency(p.precio_usd)})`).join(", ")}
               </span>
             ),
@@ -262,18 +262,26 @@ export default function PriceRulesPage() {
         className="max-w-2xl"
       >
         <div className="space-y-4">
-          <Input
-            label="Nombre de la regla"
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            placeholder="Ej: Divisas Cerveza"
-          />
-          <Input
-            label="Descripción"
-            value={formDesc}
-            onChange={(e) => setFormDesc(e.target.value)}
-            placeholder="Opcional"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Nombre de la regla</label>
+              <Input
+                label=""
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Ej: Divisas Cerveza"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Descripción</label>
+              <Input
+                label=""
+                value={formDesc}
+                onChange={(e) => setFormDesc(e.target.value)}
+                placeholder="Opcional"
+              />
+            </div>
+          </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -283,12 +291,12 @@ export default function PriceRulesPage() {
                 Agregar producto
               </Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {formProductEntries.map((entry, idx) => (
                 <div key={idx} className="flex items-start gap-2 bg-slate-50 rounded-lg p-2">
                   <div className="flex-1 min-w-0">
                     <AsyncCombobox
-                      value={entry.producto_id || null}
+                      value={entry.producto_id > 0 ? entry.producto_id : null}
                       onChange={(val) => updateProductEntry(idx, "producto_id", val ? Number(val) : 0)}
                       onSearch={handleProductSearch}
                       placeholder="Buscar producto..."

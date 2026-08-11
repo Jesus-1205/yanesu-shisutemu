@@ -43,7 +43,9 @@ export default function AsyncCombobox({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const abortRef = useRef<AbortController | null>(null);
 
-  const selected = options.find((o) => o.value === value);
+  const selected =
+    options.find((o) => o.value === value) ??
+    initialOptions.find((o) => o.value === value);
 
   useEffect(() => {
     if (selected) {
@@ -52,6 +54,15 @@ export default function AsyncCombobox({
       setQuery("");
     }
   }, [selected, value]);
+
+  useEffect(() => {
+    if (value == null) return;
+    const initial = initialOptions.find((o) => o.value === value);
+    if (!initial) return;
+    setOptions((prev) =>
+      prev.some((o) => o.value === initial.value) ? prev : [initial, ...prev],
+    );
+  }, [value, initialOptions]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
