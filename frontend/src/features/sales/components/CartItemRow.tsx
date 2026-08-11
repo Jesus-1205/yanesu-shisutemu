@@ -14,6 +14,7 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
   const updateEmpaque = useCartStore((s) => s.updateEmpaque);
   const removeItem = useCartStore((s) => s.removeItem);
   const toggleDivisas = useCartStore((s) => s.toggleDivisas);
+  const snapshotTasa = useCartStore((s) => s.snapshotTasa);
 
   const hasDivisas = item.precioDivisasUnidad !== null || item.precioDivisasCaja !== null;
   const precioDivisasActual =
@@ -21,9 +22,15 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
       ? item.precioDivisasUnidad
       : item.precioDivisasCaja;
 
+  const subtotalUsd = item.cantidad * item.precio_unitario_usd;
+  const precioUnitarioVes = snapshotTasa > 0 ? item.precio_unitario_usd * snapshotTasa : 0;
+  const subtotalVes = snapshotTasa > 0 ? subtotalUsd * snapshotTasa : 0;
+
   if (item.combo_id && item.comboDetalle) {
     const subtotal = Math.round(item.cantidad * item.precio_unitario_usd * 100) / 100;
     const variantNames = item.comboDetalle.productos.map((p) => p.nombre).join(" + ");
+    const precioUnitarioVes = snapshotTasa > 0 ? item.precio_unitario_usd * snapshotTasa : 0;
+    const subtotalVes = snapshotTasa > 0 ? subtotal * snapshotTasa : 0;
 
     return (
       <div className="bg-surface rounded-xl border border-emerald-200 p-3 space-y-2">
@@ -78,6 +85,12 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
           <span>{item.cantidad} × {formatCurrency(item.precio_unitario_usd)}</span>
           <span>IVA 0%</span>
         </div>
+        {snapshotTasa > 0 && (
+          <div className="flex justify-between text-xs text-emerald-600">
+            <span>{formatCurrency(precioUnitarioVes, "Bs")} c/u</span>
+            <span>{formatCurrency(subtotalVes, "Bs")}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -142,7 +155,7 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
 
       <div className="flex justify-between text-sm">
         <span className="text-slate-500"
-          >{formatCurrency(item.cantidad * item.precio_unitario_usd)}</span
+          >{formatCurrency(subtotalUsd)}</span
         >
         <span className="text-xs text-slate-400">
           {item.tipo_empaque === "CAJA" &&
@@ -150,6 +163,12 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
           IVA {item.iva_porcentaje}%
         </span>
       </div>
+      {snapshotTasa > 0 && (
+        <div className="flex justify-between text-xs text-emerald-600">
+          <span>{formatCurrency(precioUnitarioVes, "Bs")} c/u</span>
+          <span>{formatCurrency(subtotalVes, "Bs")}</span>
+        </div>
+      )}
 
       {hasDivisas && precioDivisasActual !== null && (
         <div className="pt-1 border-t border-slate-100">

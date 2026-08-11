@@ -40,6 +40,8 @@ export default function ExchangeRatesPage() {
   const [saving, setSaving] = useState(false);
   const [formUsd, setFormUsd] = useState("");
   const [formEur, setFormEur] = useState("");
+  const [oldUsd, setOldUsd] = useState<string | null>(null);
+  const [oldEur, setOldEur] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -64,11 +66,20 @@ export default function ExchangeRatesPage() {
     fetchData();
   }, [fetchData]);
 
+  const usdActual = latest.USD ? Number(latest.USD).toFixed(4) : null;
+  const eurActual = latest.EUR ? Number(latest.EUR).toFixed(4) : null;
+
+  const usdIguales = usdActual !== null && formUsd !== "" && usdActual === Number(formUsd).toFixed(4);
+  const eurIguales = eurActual !== null && formEur !== "" && eurActual === Number(formEur).toFixed(4);
+  const ambosSinCambios = usdIguales && eurIguales;
+
   const handleOpenModal = async () => {
     setModalOpen(true);
     setScraping(true);
     setFormUsd("");
     setFormEur("");
+    setOldUsd(usdActual);
+    setOldEur(eurActual);
     try {
       const data = await api.getBcvRates();
       setFormUsd(data.rates.USD ? Number(data.rates.USD).toFixed(4) : "");
@@ -89,6 +100,10 @@ export default function ExchangeRatesPage() {
     const eur = parseFloat(formEur);
     if (isNaN(usd) || isNaN(eur) || usd <= 0 || eur <= 0) {
       toast("Ingrese valores válidos para ambas tasas", "error");
+      return;
+    }
+    if (ambosSinCambios) {
+      toast("Las tasas no han cambiado respecto a las actuales", "info");
       return;
     }
     setSaving(true);
@@ -231,6 +246,26 @@ export default function ExchangeRatesPage() {
               placeholder="ej: 45.1234"
               required
             />
+            {oldUsd !== null && formUsd !== "" && (
+              <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg ${
+                usdIguales
+                  ? "bg-slate-50 text-slate-500 border border-slate-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
+              }`}>
+                <span className="font-medium">
+                  {usdIguales ? "USD sin cambios" : "USD actualizado"}
+                </span>
+                <span>
+                  {oldUsd} → {Number(formUsd).toFixed(4)}
+                </span>
+                {!usdIguales && oldUsd !== null && (
+                  <span className="ml-auto">
+                    {Number(formUsd) > Number(oldUsd) ? "▲" : "▼"}{" "}
+                    {Math.abs(Number(formUsd) - Number(oldUsd)).toFixed(4)}
+                  </span>
+                )}
+              </div>
+            )}
             <Input
               label="EUR / VES"
               type="number"
@@ -241,6 +276,31 @@ export default function ExchangeRatesPage() {
               placeholder="ej: 48.5678"
               required
             />
+            {oldEur !== null && formEur !== "" && (
+              <div className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg ${
+                eurIguales
+                  ? "bg-slate-50 text-slate-500 border border-slate-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
+              }`}>
+                <span className="font-medium">
+                  {eurIguales ? "EUR sin cambios" : "EUR actualizado"}
+                </span>
+                <span>
+                  {oldEur} → {Number(formEur).toFixed(4)}
+                </span>
+                {!eurIguales && oldEur !== null && (
+                  <span className="ml-auto">
+                    {Number(formEur) > Number(oldEur) ? "▲" : "▼"}{" "}
+                    {Math.abs(Number(formEur) - Number(oldEur)).toFixed(4)}
+                  </span>
+                )}
+              </div>
+            )}
+            {ambosSinCambios && (
+              <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                <span>Las tasas del BCV no han cambiado. No es necesario actualizar.</span>
+              </div>
+            )}
             <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
@@ -254,6 +314,7 @@ export default function ExchangeRatesPage() {
                 variant="accent"
                 loading={saving}
                 onClick={handleSave}
+                disabled={ambosSinCambios}
               >
                 Guardar
               </Button>
