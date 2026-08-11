@@ -90,7 +90,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const isFirstRender = useRef(true);
+  const prevFiltersRef = useRef("");
 
   const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -208,10 +208,9 @@ export default function ProductsPage() {
 
   const filtersKey = JSON.stringify(filters);
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    const current = `${filtersKey}|${showFavoritesOnly}`;
+    if (prevFiltersRef.current === current) return;
+    prevFiltersRef.current = current;
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setPage(1);

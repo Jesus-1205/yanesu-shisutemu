@@ -41,7 +41,7 @@ export default function POSPage() {
 
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const isFirstRender = useRef(true);
+  const prevSearchRef = useRef(`${debouncedSearch}|${showAllFavorites}`);
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
@@ -96,10 +96,9 @@ export default function POSPage() {
   }, []);
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    const current = `${debouncedSearch}|${showAllFavorites}`;
+    if (prevSearchRef.current === current) return;
+    prevSearchRef.current = current;
     clearTimeout(debounceRef.current);
     if (!debouncedSearch.trim()) {
       loadFavorites(showAllFavorites);
