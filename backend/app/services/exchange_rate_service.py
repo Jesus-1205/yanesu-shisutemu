@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select, desc
@@ -11,9 +11,12 @@ from app.schemas.exchange_rate import ExchangeRateBulkSave
 
 SCRAPE_HOUR = 17
 
+_BCV_CACHE_TTL_SECONDS = 300  # 5 minutos
+_bcv_cache: dict = {"ts": 0.0, "rates": None}
+
 
 def fetch_bcv_rates() -> dict[str, Decimal]:
-    """Obtiene las tasas del BCV redondeadas a 4 decimales.
+    """Obtiene las tasas del BCV redondeadas a 4 decimales, con caché de 5 min.
 
     Returns:
         dict con 'USD' y 'EUR' y sus valores Decimal.
@@ -22,7 +25,15 @@ def fetch_bcv_rates() -> dict[str, Decimal]:
         ConnectionError: si no puede conectar con el sitio.
         RuntimeError: si no encuentra las tasas.
     """
-    return _scrape_bcv()
+    import time
+
+    now = time.monotonic()
+    if _bcv_cache["rates"] is not None and now - _bcv_cache["ts"] < _BCV_CACHE_TTL_SECONDS:
+        return _bcv_cache["rates"]
+    rates = _scrape_bcv()
+    _bcv_cache["rates"] = rates
+    _bcv_cache["ts"] = now
+    return rates
 
 
 def get_latest_rate(db: Session) -> ExchangeRate | None:
@@ -44,8 +55,14 @@ def get_latest_rate_info(db: Session) -> dict:
     }
 
 
-def get_rate_history(db: Session, limit: int = 50) -> list[ExchangeRate]:
-    stmt = select(ExchangeRate).order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id)).limit(limit)
+def get_rate_history(db: Session, days: int | None = None, limit: int | None = None) -> list[ExchangeRate]:
+    stmt = select(ExchangeRate)
+    if days is not None and days > 0:
+        since = (datetime.now(VE_TZ) - timedelta(days=days)).replace(tzinfo=None)
+        stmt = stmt.where(ExchangeRate.fecha_registro >= since)
+    stmt = stmt.order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id))
+    if limit is not None:
+        stmt = stmt.limit(limit)
     return list(db.execute(stmt).scalars().all())
 
 

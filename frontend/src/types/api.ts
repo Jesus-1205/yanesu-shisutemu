@@ -275,6 +275,7 @@ export interface ExchangeRateOut {
   tasa_eur: number;
   fecha_registro: string;
   registrado_por: number | null;
+  registrado_por_nombre?: string | null;
 }
 
 export interface ExchangeRatePaginationOut {
@@ -286,7 +287,7 @@ export interface ExchangeRatePaginationOut {
 }
 
 export interface ExchangeRatesResponse {
-  rates: Record<string, string>;
+  rates: { USD?: string; EUR?: string };
   fecha_ultima_actualizacion?: string | null;
 }
 

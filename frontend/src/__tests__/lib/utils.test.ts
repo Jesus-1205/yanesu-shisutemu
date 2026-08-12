@@ -4,6 +4,10 @@ import {
   formatCurrency,
   formatRate,
   formatPaymentMethodName,
+  formatDateTimeVE,
+  formatDateVE,
+  parseVETime,
+  isTodayInCaracas,
 } from "../../lib/utils";
 
 describe("cn", () => {
@@ -88,5 +92,69 @@ describe("formatPaymentMethodName", () => {
   it("handles already formatted names gracefully", () => {
     const result = formatPaymentMethodName("TRANSFERENCIA");
     expect(result).toBe("Transferencia");
+  });
+});
+
+describe("parseVETime", () => {
+  it("interpreta un timestamp naive como hora de Caracas (UTC-4)", () => {
+    const d = parseVETime("2026-08-11T23:44:17");
+    expect(d).not.toBeNull();
+    expect(d!.toISOString()).toBe("2026-08-12T03:44:17.000Z");
+  });
+
+  it("respeta offsets explícitos", () => {
+    const d = parseVETime("2026-08-12T03:44:17Z");
+    expect(d!.toISOString()).toBe("2026-08-12T03:44:17.000Z");
+  });
+
+  it("devuelve null para valores inválidos", () => {
+    expect(parseVETime(null)).toBeNull();
+    expect(parseVETime("no-una-fecha")).toBeNull();
+  });
+});
+
+describe("formatDateTimeVE", () => {
+  it("formatea en es-VE con la fecha del timestamp naive", () => {
+    const result = formatDateTimeVE("2026-08-11T23:44:17");
+    expect(result).toContain("2026");
+    expect(result).toContain("ago");
+  });
+
+  it("devuelve guion para valores vacíos", () => {
+    expect(formatDateTimeVE(null)).toBe("—");
+    expect(formatDateTimeVE(undefined)).toBe("—");
+  });
+});
+
+describe("formatDateVE", () => {
+  it("formatea solo la fecha en es-VE", () => {
+    const result = formatDateVE("2026-08-11T23:44:17");
+    expect(result).toContain("2026");
+    expect(result).toContain("ago");
+  });
+
+  it("devuelve guion para valores vacíos", () => {
+    expect(formatDateVE("")).toBe("—");
+  });
+});
+
+describe("isTodayInCaracas", () => {
+  it("detecta un timestamp del día actual en Caracas", () => {
+    const nowKey = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Caracas",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    expect(isTodayInCaracas(`${nowKey}T10:00:00`)).toBe(true);
+  });
+
+  it("rechaza timestamps de otro día", () => {
+    expect(isTodayInCaracas("2000-01-01T10:00:00")).toBe(false);
+  });
+
+  it("rechaza valores vacíos", () => {
+    expect(isTodayInCaracas(null)).toBe(false);
+    expect(isTodayInCaracas(undefined)).toBe(false);
   });
 });

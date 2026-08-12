@@ -17,6 +17,7 @@ class ExchangeRateOut(BaseModel):
     tasa_eur: Decimal
     fecha_registro: datetime
     registrado_por: int | None
+    registrado_por_nombre: str | None = None
 
 
 class ExchangeRatePaginationOut(BaseModel):
