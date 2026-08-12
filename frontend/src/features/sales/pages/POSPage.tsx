@@ -19,6 +19,7 @@ import SplitAddButton from "../components/SplitAddButton";
 import ComboCard from "../components/ComboCard";
 import ComboSelectorModal from "../components/ComboSelectorModal";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
+import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
 
 export default function POSPage() {
   const { toast } = useToast();
@@ -149,21 +150,7 @@ export default function POSPage() {
   }, []);
 
   usePosKeyboard(searchRef, handleCheckout, checkoutOpen, handleCloseCheckout);
-
-  const handleBarcode = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key !== "Enter") return;
-      const trimmed = searchRef.current?.value?.trim() ?? "";
-      if (!trimmed) return;
-      const match = products.find((p) => p.codigo_barra === trimmed);
-      if (!match) return;
-      e.preventDefault();
-      addItem(match, "UNIDAD");
-      setSearch("");
-      setDebouncedSearch("");
-    },
-    [products, addItem],
-  );
+  useBarcodeScanner(addItem, searchRef, checkoutOpen);
 
   const handleShowMore = useCallback(() => {
     setShowAllFavorites(true);
@@ -322,7 +309,6 @@ export default function POSPage() {
                 placeholder="Buscar productos o escanear código de barras..."
                 value={search}
                 onChange={handleSearchChange}
-                onKeyDown={handleBarcode}
                 onFocus={(e) => e.target.select()}
                 className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
                 autoFocus
