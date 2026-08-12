@@ -60,7 +60,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
 
   const totals = useMemo(() => computeTotals(items), [items]);
   const totalUsd = useMemo(
-    () => totals.monto_exento_usd + totals.base_imponible_usd + totals.monto_iva_usd,
+    () => Math.round((totals.monto_exento_usd + totals.base_imponible_usd + totals.monto_iva_usd) * 100) / 100,
     [totals],
   );
   const totalVes = useMemo(
@@ -132,12 +132,14 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
 
   const divisasSummary = useMemo(() => {
     if (totalDivisasItems <= 0) return null;
-    const pagadoDivisas = methods
-      .filter((m) => divisasMethodIds.has(m.id))
-      .reduce((sum, m) => {
-        const val = Number(amounts[m.id]) || 0;
-        return sum + (m.moneda_default === "VES" ? val / (tasaNum || 1) : val);
-      }, 0);
+    const pagadoDivisas = Math.round(
+      methods
+        .filter((m) => divisasMethodIds.has(m.id))
+        .reduce((sum, m) => {
+          const val = Number(amounts[m.id]) || 0;
+          return sum + (m.moneda_default === "VES" ? val / (tasaNum || 1) : val);
+        }, 0) * 100,
+    ) / 100;
     const faltante = Math.max(0, Math.round((totalDivisasItems - pagadoDivisas) * 100) / 100);
     return { pagadoDivisas, faltante, cubierto: faltante < 0.01 };
   }, [items, methods, amounts, divisasMethodIds, totalDivisasItems, tasaNum]);

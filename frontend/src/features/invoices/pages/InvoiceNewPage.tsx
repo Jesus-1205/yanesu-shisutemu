@@ -433,10 +433,10 @@ export default function InvoiceNewPage() {
         : item.cantidad;
       totalUnidades += unidades;
       if (aplicaIva && item.tipo_iva === "GRAVADO") {
-        base += item.subtotal_usd;
+        base += Math.round(item.subtotal_usd * 100) / 100;
         iva += Math.round(item.subtotal_usd * 0.16 * 100) / 100;
       } else {
-        exento += item.subtotal_usd;
+        exento += Math.round(item.subtotal_usd * 100) / 100;
       }
     }
     return {

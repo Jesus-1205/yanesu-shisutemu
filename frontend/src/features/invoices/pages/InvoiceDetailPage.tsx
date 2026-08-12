@@ -236,9 +236,9 @@ export default function InvoiceDetailPage() {
             const unidades = d.tipo_empaque === "CAJA"
               ? d.cantidad * (d.product?.unidades_por_caja ?? 1)
               : d.cantidad;
-            return sum + unidades * Number(d.costo_unitario_bs);
+            return Math.round((sum + unidades * Number(d.costo_unitario_bs)) * 100) / 100;
           }, 0);
-        const iva = invoice.moneda_principal === "BS" ? baseImponible * 0.16 : 0;
+        const iva = invoice.moneda_principal === "BS" ? Math.round(baseImponible * 0.16 * 100) / 100 : 0;
         const exento = invoice.moneda_principal === "USD"
           ? Number(invoice.total_usd)
           : 0;
@@ -246,7 +246,7 @@ export default function InvoiceDetailPage() {
           ? Number(invoice.total_usd)
           : 0;
         const totalBs = invoice.moneda_principal === "BS"
-          ? baseImponible + iva
+          ? Math.round((baseImponible + iva) * 100) / 100
           : 0;
 
         return (

@@ -91,7 +91,7 @@ def test_get_products_filter_precio_min(db):
         precio_costo_caja_usd=Decimal("1"), precio_unidad_usd=Decimal("10"),
         precio_caja_usd=Decimal("72"),
     ))
-    result = get_products(db, precio_min=7.0)["items"]
+    result = get_products(db, precio_min=Decimal("7"))["items"]
     assert len(result) == 1
     assert result[0].nombre == "B"
 
@@ -107,7 +107,7 @@ def test_get_products_filter_precio_max(db):
         precio_costo_caja_usd=Decimal("1"), precio_unidad_usd=Decimal("10"),
         precio_caja_usd=Decimal("72"),
     ))
-    result = get_products(db, precio_max=7.0)["items"]
+    result = get_products(db, precio_max=Decimal("7"))["items"]
     assert len(result) == 1
     assert result[0].nombre == "A"
 

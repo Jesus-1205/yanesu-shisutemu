@@ -1002,10 +1002,10 @@ function PagosTab({
     let totalPagos = 0;
     let totalEquivUsd = 0;
     for (const m of data) {
-      totalUsd += Number(m.total_usd) || 0;
-      totalVes += Number(m.total_ves) || 0;
+      totalUsd = Math.round((totalUsd + (Number(m.total_usd) || 0)) * 100) / 100;
+      totalVes = Math.round((totalVes + (Number(m.total_ves) || 0)) * 100) / 100;
       totalPagos += m.cantidad_pagos || 0;
-      totalEquivUsd += Number(m.total_equivalente_usd) || 0;
+      totalEquivUsd = Math.round((totalEquivUsd + (Number(m.total_equivalente_usd) || 0)) * 100) / 100;
     }
     return { totalUsd, totalVes, totalPagos, totalEquivUsd };
   }, [data]);

@@ -79,9 +79,11 @@ export function computeTotals(items: Record<string, CartItem>): CartTotals {
 }
 
 export function getDivisasTotal(items: Record<string, CartItem>): number {
-  return Object.values(items)
-    .filter((i) => i.usaPrecioDivisas)
-    .reduce((sum, i) => sum + i.cantidad * i.precio_unitario_usd, 0);
+  return Math.round(
+    Object.values(items)
+      .filter((i) => i.usaPrecioDivisas)
+      .reduce((sum, i) => sum + i.cantidad * i.precio_unitario_usd, 0) * 100,
+  ) / 100;
 }
 
 function _defaultDistribute(combo: ComboActiveOut) {

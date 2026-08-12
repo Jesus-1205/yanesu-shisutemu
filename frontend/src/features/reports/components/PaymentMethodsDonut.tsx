@@ -51,7 +51,7 @@ export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) 
   const sorted = [...withValue].sort(
     (a, b) => (Number(b.total_equivalente_usd) || 0) - (Number(a.total_equivalente_usd) || 0),
   );
-  const total = sorted.reduce((sum, m) => sum + (Number(m.total_equivalente_usd) || 0), 0);
+  const total = Math.round(sorted.reduce((sum, m) => sum + (Number(m.total_equivalente_usd) || 0), 0) * 100) / 100;
 
   const chartData: ChartDatum[] = sorted.map((m, index) => {
     const value = Number(m.total_equivalente_usd) || 0;
