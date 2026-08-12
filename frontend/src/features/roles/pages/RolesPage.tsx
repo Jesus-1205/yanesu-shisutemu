@@ -119,7 +119,6 @@ export default function RolesPage() {
 
       <Table
         columns={[
-          { key: "id", header: "ID" },
           { key: "nombre", header: "Nombre" },
           {
             key: "acciones",

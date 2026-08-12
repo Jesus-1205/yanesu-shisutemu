@@ -73,7 +73,6 @@ export default function SalesPage() {
   };
 
   const exportColumns: Column<Sale>[] = [
-    { key: "id", header: "ID", exportValue: (s: Sale) => s.id },
     {
       key: "fecha_venta",
       header: "Fecha",
@@ -219,7 +218,6 @@ export default function SalesPage() {
 
       <Table
         columns={[
-          ...(!isOperator ? [{ key: "id", header: "ID", hideOnMobile: true }] : []),
           {
             key: "fecha_venta",
             header: "Fecha",

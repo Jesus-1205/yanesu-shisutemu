@@ -83,7 +83,6 @@ describe("ProductsPage", () => {
       expect(exportToExcel).toHaveBeenCalledWith({
         data: mockProducts,
         columns: expect.arrayContaining([
-          expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
           expect.objectContaining({ header: "Código de Barra" }),
           expect.objectContaining({ header: "Categorías" }),
@@ -130,7 +129,7 @@ describe("ProductsPage", () => {
       expect(mockApi.getProducts).toHaveBeenCalledWith(expect.objectContaining({ page: 2, page_size: 200 }));
       expect(exportToExcel).toHaveBeenCalledWith({
         data: [...mockProducts, productB],
-        columns: expect.arrayContaining([expect.objectContaining({ header: "ID" })]),
+        columns: expect.arrayContaining([expect.objectContaining({ header: "Nombre" })]),
         filename: "Productos",
       });
     });

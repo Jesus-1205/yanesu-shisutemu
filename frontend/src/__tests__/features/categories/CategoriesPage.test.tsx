@@ -37,7 +37,7 @@ describe("CategoriesPage", () => {
     (api.getCategoriesPaginated as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
     render(<CategoriesPage />, { wrapper });
     // Table shows skeleton rows when loading
-    expect(screen.getByText("ID")).toBeInTheDocument();
+    expect(screen.getByText("Nombre")).toBeInTheDocument();
     expect(screen.queryByText("Licores")).not.toBeInTheDocument();
   });
 
@@ -143,7 +143,6 @@ describe("CategoriesPage", () => {
       expect(exportToExcel).toHaveBeenCalledWith({
         data: mockCategories,
         columns: expect.arrayContaining([
-          expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
           expect.objectContaining({ header: "Descripción" }),
         ]),

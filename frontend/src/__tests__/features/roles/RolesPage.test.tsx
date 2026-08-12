@@ -44,7 +44,6 @@ describe("RolesPage", () => {
   it("muestra loading inicial", () => {
     mockApi.getRoles.mockImplementation(() => new Promise(() => {}));
     renderPage();
-    expect(screen.getByText("ID")).toBeInTheDocument();
     expect(screen.getByText("Nombre")).toBeInTheDocument();
     expect(screen.getByText("Acciones")).toBeInTheDocument();
     expect(screen.queryByText("ADMIN")).not.toBeInTheDocument();

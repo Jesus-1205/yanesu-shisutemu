@@ -202,7 +202,6 @@ export default function PriceRulesPage() {
 
       <Table
         columns={[
-          { key: "id", header: "ID" },
           { key: "nombre", header: "Nombre" },
           {
             key: "productos",

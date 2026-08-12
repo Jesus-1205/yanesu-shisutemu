@@ -78,7 +78,6 @@ describe("SalesPage", () => {
       expect(exportToExcel).toHaveBeenCalledWith({
         data: mockSales,
         columns: expect.arrayContaining([
-          expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Fecha" }),
           expect.objectContaining({ header: "Total USD" }),
           expect.objectContaining({ header: "Total VES" }),
@@ -102,7 +101,7 @@ describe("SalesPage", () => {
       expect(mockGetSalesPaginated).toHaveBeenCalledWith(expect.objectContaining({ page: 2, page_size: 200 }));
       expect(exportToExcel).toHaveBeenCalledWith({
         data: [saleA, saleB],
-        columns: expect.arrayContaining([expect.objectContaining({ header: "ID" })]),
+        columns: expect.arrayContaining([expect.objectContaining({ header: "Fecha" })]),
         filename: "Ventas",
       });
     });
