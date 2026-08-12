@@ -26,6 +26,7 @@ import type { ProductFiltersState, ViewMode, SortField, SortOrder } from "../typ
 import { FILTERS_DEFAULT } from "../types";
 
 const PAGE_SIZE = 20;
+const EXPORT_PAGE_SIZE = 200;
 
 const sortOptions = [
   { value: "nombre_asc", label: "Nombre (A-Z)" },
@@ -133,8 +134,16 @@ export default function ProductsPage() {
 
   const handleExportAll = async () => {
     try {
-      const result = await api.getProducts({ page_size: 999999 });
-      const name = exportToExcel({ data: result.items, columns: exportColumns, filename: "Productos" });
+      const allProducts: Product[] = [];
+      let currentPage = 1;
+      let pages = 1;
+      do {
+        const result = await api.getProducts({ page: currentPage, page_size: EXPORT_PAGE_SIZE });
+        allProducts.push(...result.items);
+        pages = result.pages;
+        currentPage += 1;
+      } while (currentPage <= pages);
+      const name = exportToExcel({ data: allProducts, columns: exportColumns, filename: "Productos" });
       toast(`Archivo descargado: ${name}`, "success");
     } catch {
       toast("Error al exportar productos", "error");

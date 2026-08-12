@@ -17,6 +17,7 @@ import { exportToExcel } from "@/lib/exportToExcel";
 import type { PaymentMethodOut } from "@/types/api";
 
 const PAGE_SIZE = 20;
+const EXPORT_PAGE_SIZE = 200;
 
 export default function SalesPage() {
   const navigate = useNavigate();
@@ -121,12 +122,21 @@ export default function SalesPage() {
 
   const handleExportAll = async () => {
     try {
-      const allSales = await api.getSales({
-        ...(fechaDesde && { fecha_desde: fechaDesde }),
-        ...(fechaHasta && { fecha_hasta: fechaHasta }),
-        ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
-        limit: 999999,
-      });
+      const allSales: Sale[] = [];
+      let currentPage = 1;
+      let pages = 1;
+      do {
+        const res = await api.getSalesPaginated({
+          ...(fechaDesde && { fecha_desde: fechaDesde }),
+          ...(fechaHasta && { fecha_hasta: fechaHasta }),
+          ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
+          page: currentPage,
+          page_size: EXPORT_PAGE_SIZE,
+        });
+        allSales.push(...res.items);
+        pages = res.pages;
+        currentPage += 1;
+      } while (currentPage <= pages);
       const name = exportToExcel({ data: allSales, columns: exportColumns, filename: "Ventas" });
       toast(`Archivo descargado: ${name}`, "success");
     } catch {
