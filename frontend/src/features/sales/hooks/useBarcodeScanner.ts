@@ -25,17 +25,16 @@ export function useBarcodeScanner(
     let lastKeyTime = 0;
 
     const clearSearchInput = () => {
-      if (document.activeElement === searchRef.current && searchRef.current) {
-        searchRef.current.value = "";
-        const setter = Object.getOwnPropertyDescriptor(
-          window.HTMLInputElement.prototype,
-          "value",
-        )?.set;
-        setter?.call(searchRef.current, "");
-        searchRef.current.dispatchEvent(
-          new Event("input", { bubbles: true }),
-        );
-      }
+      if (!searchRef.current) return;
+      searchRef.current.value = "";
+      const setter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      setter?.call(searchRef.current, "");
+      searchRef.current.dispatchEvent(
+        new Event("input", { bubbles: true }),
+      );
     };
 
     const processBarcode = async (code: string) => {
