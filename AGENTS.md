@@ -71,3 +71,7 @@ Sistema_inventario/
 3. Carga el archivo de reglas adecuado de `.opencode/rules/`.
 4. Inspecciona si el módulo cuenta con tests existentes antes de escribir código.
 5. Ejecuta los tests existentes para verificar que no rompes nada, luego presenta los cambios.
+
+## Agentes
+
+Ver `.opencode/agents/` para agentes especializados (auditoría, testing, security, etc.). Usa `@nombre-del-agente` para invocar subagentes o **Tab** para cambiar de agente principal.
