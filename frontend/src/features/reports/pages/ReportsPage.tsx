@@ -272,6 +272,7 @@ function SortableSalesTable({ data, rango }: { data: SalesSummaryItem[]; rango: 
       onSort: () => requestSort("total_ventas"),
       sortDirection: sortConfig?.key === "total_ventas" ? sortConfig.direction : null,
       render: (s: SalesSummaryItem) => String(s.total_ventas),
+      exportValue: (s: SalesSummaryItem) => Number(s.total_ventas),
     },
     {
       key: "total_usd",
@@ -280,6 +281,7 @@ function SortableSalesTable({ data, rango }: { data: SalesSummaryItem[]; rango: 
       onSort: () => requestSort("total_usd"),
       sortDirection: sortConfig?.key === "total_usd" ? sortConfig.direction : null,
       render: (s: SalesSummaryItem) => formatCurrency(s.total_usd),
+      exportValue: (s: SalesSummaryItem) => Number(s.total_usd),
     },
     {
       key: "total_ves",
@@ -288,6 +290,7 @@ function SortableSalesTable({ data, rango }: { data: SalesSummaryItem[]; rango: 
       onSort: () => requestSort("total_ves"),
       sortDirection: sortConfig?.key === "total_ves" ? sortConfig.direction : null,
       render: (s: SalesSummaryItem) => formatCurrency(s.total_ves, "Bs "),
+      exportValue: (s: SalesSummaryItem) => Number(s.total_ves),
     },
   ];
   return (
@@ -388,8 +391,8 @@ function ResumenTab({
               headerLeft={<Select value={String(limitTopSelling)} onChange={(e) => setLimitTopSelling(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Producto", render: (r: { producto: ProductOut }) => <span className="truncate max-w-[150px] block" title={r.producto.nombre}>{r.producto.nombre}</span> },
-                { key: "total", header: "Vendidos", render: (r: { total_vendido: number }) => String(r.total_vendido) },
-                { key: "ingresos", header: "Ingresos ($)", render: (r: { producto: ProductOut; total_vendido: number }) => formatCurrency(Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100) },
+                { key: "total", header: "Vendidos", render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
+                { key: "ingresos", header: "Ingresos ($)", render: (r: { producto: ProductOut; total_vendido: number }) => formatCurrency(Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100), exportValue: (r: { producto: ProductOut; total_vendido: number }) => Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100 },
               ]}
               data={visibleTopSelling}
               keyExtractor={(_, i) => i}
@@ -508,8 +511,8 @@ function ProductosTab({
             headerLeft={<Select value={String(limitSelling)} onChange={(e) => setLimitSelling(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
               { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortSelling("nombre"), sortDirection: sortSelling?.key === "nombre" ? sortSelling.direction : null, render: (r: { nombre: string }) => <span className="truncate max-w-[150px] block" title={r.nombre}>{r.nombre}</span> },
-              { key: "total_vendido", header: "Vendidos", sortable: true, onSort: () => reqSortSelling("total_vendido"), sortDirection: sortSelling?.key === "total_vendido" ? sortSelling.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido) },
-              { key: "ingresos", header: "Ingresos ($)", sortable: true, onSort: () => reqSortSelling("ingresos"), sortDirection: sortSelling?.key === "ingresos" ? sortSelling.direction : null, render: (r: { ingresos: number }) => formatCurrency(r.ingresos) },
+              { key: "total_vendido", header: "Vendidos", sortable: true, onSort: () => reqSortSelling("total_vendido"), sortDirection: sortSelling?.key === "total_vendido" ? sortSelling.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
+              { key: "ingresos", header: "Ingresos ($)", sortable: true, onSort: () => reqSortSelling("ingresos"), sortDirection: sortSelling?.key === "ingresos" ? sortSelling.direction : null, render: (r: { ingresos: number }) => formatCurrency(r.ingresos), exportValue: (r: { ingresos: number }) => r.ingresos },
             ]}
             data={sortedSelling}
             keyExtractor={(_, i) => i}
@@ -532,9 +535,9 @@ function ProductosTab({
             headerLeft={<Select value={String(limitTopMargin)} onChange={(e) => setLimitTopMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
               { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortTopMargin("nombre"), sortDirection: sortTopMargin?.key === "nombre" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="truncate max-w-[150px] block" title={p.nombre}>{p.nombre}</span> },
-              { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortTopMargin("precio_costo_usd"), sortDirection: sortTopMargin?.key === "precio_costo_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd) },
-              { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortTopMargin("precio_unidad_usd"), sortDirection: sortTopMargin?.key === "precio_unidad_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd) },
-              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortTopMargin("margen_pct"), sortDirection: sortTopMargin?.key === "margen_pct" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; } },
+              { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortTopMargin("precio_costo_usd"), sortDirection: sortTopMargin?.key === "precio_costo_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_costo_usd) },
+              { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortTopMargin("precio_unidad_usd"), sortDirection: sortTopMargin?.key === "precio_unidad_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_unidad_usd) },
+              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortTopMargin("margen_pct"), sortDirection: sortTopMargin?.key === "margen_pct" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; }, exportValue: (p: ProductOut & { margen_pct: number }) => Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100 },
             ]}
             data={sortedTopMargin}
             keyExtractor={(p) => p.id}
@@ -557,9 +560,9 @@ function ProductosTab({
             headerLeft={<Select value={String(limitLowMargin)} onChange={(e) => setLimitLowMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
               { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortLowMargin("nombre"), sortDirection: sortLowMargin?.key === "nombre" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="truncate max-w-[150px] block" title={p.nombre}>{p.nombre}</span> },
-              { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortLowMargin("precio_costo_usd"), sortDirection: sortLowMargin?.key === "precio_costo_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd) },
-              { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortLowMargin("precio_unidad_usd"), sortDirection: sortLowMargin?.key === "precio_unidad_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd) },
-              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortLowMargin("margen_pct"), sortDirection: sortLowMargin?.key === "margen_pct" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; } },
+              { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortLowMargin("precio_costo_usd"), sortDirection: sortLowMargin?.key === "precio_costo_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_costo_usd) },
+              { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortLowMargin("precio_unidad_usd"), sortDirection: sortLowMargin?.key === "precio_unidad_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_unidad_usd) },
+              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortLowMargin("margen_pct"), sortDirection: sortLowMargin?.key === "margen_pct" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; }, exportValue: (p: ProductOut & { margen_pct: number }) => Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100 },
             ]}
             data={sortedLowMargin}
             keyExtractor={(p) => p.id}
@@ -582,8 +585,8 @@ function ProductosTab({
             headerLeft={<Select value={String(limitLowRot)} onChange={(e) => setLimitLowRot(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
               { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortLowRot("nombre"), sortDirection: sortLowRot?.key === "nombre" ? sortLowRot.direction : null, render: (r: { nombre: string }) => <span className="truncate max-w-[150px] block" title={r.nombre}>{r.nombre}</span> },
-              { key: "total_vendido", header: "Vendidos", sortable: true, onSort: () => reqSortLowRot("total_vendido"), sortDirection: sortLowRot?.key === "total_vendido" ? sortLowRot.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido) },
-              { key: "stock", header: "Stock", sortable: true, onSort: () => reqSortLowRot("stock"), sortDirection: sortLowRot?.key === "stock" ? sortLowRot.direction : null, render: (r: { stock: number }) => String(r.stock) },
+              { key: "total_vendido", header: "Vendidos", sortable: true, onSort: () => reqSortLowRot("total_vendido"), sortDirection: sortLowRot?.key === "total_vendido" ? sortLowRot.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
+              { key: "stock", header: "Stock", sortable: true, onSort: () => reqSortLowRot("stock"), sortDirection: sortLowRot?.key === "stock" ? sortLowRot.direction : null, render: (r: { stock: number }) => String(r.stock), exportValue: (r: { stock: number }) => r.stock },
             ]}
             data={sortedLowRot}
             keyExtractor={(_, i) => i}
@@ -633,6 +636,7 @@ function CategoriasTab({
   );
   const topByMargin = useMemo(() => sortedByMargin.slice(0, limitTopMargin), [sortedByMargin, limitTopMargin]);
   const lowestByMargin = useMemo(() => sortedByMargin.slice(-limitLowMargin).reverse(), [sortedByMargin, limitLowMargin]);
+  const lowestByMarginAll = useMemo(() => [...sortedByMargin].reverse(), [sortedByMargin]);
 
   const topSellingFlat = useMemo(
     () => topSelling.slice(0, limitTopSelling).map((t) => ({
@@ -687,7 +691,7 @@ function CategoriasTab({
               headerLeft={<Select value={String(limitTopSelling)} onChange={(e) => setLimitTopSelling(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Categoría", sortable: true, onSort: () => reqSortTopSelling("nombre"), sortDirection: sortTopSelling?.key === "nombre" ? sortTopSelling.direction : null, render: (r: { nombre: string }) => r.nombre },
-                { key: "total_vendido", header: "Ventas", sortable: true, onSort: () => reqSortTopSelling("total_vendido"), sortDirection: sortTopSelling?.key === "total_vendido" ? sortTopSelling.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido) },
+                { key: "total_vendido", header: "Ventas", sortable: true, onSort: () => reqSortTopSelling("total_vendido"), sortDirection: sortTopSelling?.key === "total_vendido" ? sortTopSelling.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
               ]}
               data={sortedTopSelling}
               keyExtractor={(_, i) => i}
@@ -698,7 +702,7 @@ function CategoriasTab({
               allData={topSellingFlat as ({ nombre: string; total_vendido: number } & Record<string, unknown>)[]}
               fetchAllData={async () => {
                 const all = await api.getTopSellingCategories(9999);
-                return all.map((t) => ({ nombre: t.categoria.nombre, total_vendido: t.total_vendido }));
+                return all.map((t) => ({ nombre: toTitleCase(t.categoria.nombre), total_vendido: t.total_vendido }));
               }}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -710,7 +714,7 @@ function CategoriasTab({
               headerLeft={<Select value={String(limitLowRot)} onChange={(e) => setLimitLowRot(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Categoría", sortable: true, onSort: () => reqSortLowRot("nombre"), sortDirection: sortLowRot?.key === "nombre" ? sortLowRot.direction : null, render: (r: { nombre: string }) => r.nombre },
-                { key: "total_vendido", header: "Ventas", sortable: true, onSort: () => reqSortLowRot("total_vendido"), sortDirection: sortLowRot?.key === "total_vendido" ? sortLowRot.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido) },
+                { key: "total_vendido", header: "Ventas", sortable: true, onSort: () => reqSortLowRot("total_vendido"), sortDirection: sortLowRot?.key === "total_vendido" ? sortLowRot.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
               ]}
               data={sortedLowRot}
               keyExtractor={(_, i) => i}
@@ -721,7 +725,7 @@ function CategoriasTab({
               allData={lowRotFlat as ({ nombre: string; total_vendido: number } & Record<string, unknown>)[]}
               fetchAllData={async () => {
                 const all = await api.getLowRotationCategories(9999);
-                return all.map((r) => ({ nombre: r.categoria.nombre, total_vendido: r.total_vendido }));
+                return all.map((r) => ({ nombre: toTitleCase(r.categoria.nombre), total_vendido: r.total_vendido }));
               }}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -733,7 +737,7 @@ function CategoriasTab({
               headerLeft={<Select value={String(limitTopMargin)} onChange={(e) => setLimitTopMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Categoría", sortable: true, onSort: () => reqSortTopMargin("nombre"), sortDirection: sortTopMargin?.key === "nombre" ? sortTopMargin.direction : null, render: (c: CategoryAnalyticsOut) => toTitleCase(c.nombre) },
-                { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortTopMargin("margen_promedio"), sortDirection: sortTopMargin?.key === "margen_promedio" ? sortTopMargin.direction : null, render: (c: CategoryAnalyticsOut) => `${Number(c.margen_promedio).toFixed(1)}%` },
+                { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortTopMargin("margen_promedio"), sortDirection: sortTopMargin?.key === "margen_promedio" ? sortTopMargin.direction : null, render: (c: CategoryAnalyticsOut) => `${Number(c.margen_promedio).toFixed(1)}%`, exportValue: (c: CategoryAnalyticsOut) => Number(c.margen_promedio) },
               ]}
               data={sortedTopMargin}
               keyExtractor={(c) => c.id}
@@ -741,7 +745,7 @@ function CategoriasTab({
               exportable
               exportFilename="Categorias_mayor_margen"
                 onExported={notifyExport}
-              allData={data.categorias as (CategoryAnalyticsOut & Record<string, unknown>)[]}
+              allData={sortedByMargin as (CategoryAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
@@ -752,7 +756,7 @@ function CategoriasTab({
               headerLeft={<Select value={String(limitLowMargin)} onChange={(e) => setLimitLowMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Categoría", sortable: true, onSort: () => reqSortLowMargin("nombre"), sortDirection: sortLowMargin?.key === "nombre" ? sortLowMargin.direction : null, render: (c: CategoryAnalyticsOut) => toTitleCase(c.nombre) },
-                { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortLowMargin("margen_promedio"), sortDirection: sortLowMargin?.key === "margen_promedio" ? sortLowMargin.direction : null, render: (c: CategoryAnalyticsOut) => `${Number(c.margen_promedio).toFixed(1)}%` },
+                { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortLowMargin("margen_promedio"), sortDirection: sortLowMargin?.key === "margen_promedio" ? sortLowMargin.direction : null, render: (c: CategoryAnalyticsOut) => `${Number(c.margen_promedio).toFixed(1)}%`, exportValue: (c: CategoryAnalyticsOut) => Number(c.margen_promedio) },
               ]}
               data={sortedLowMargin}
               keyExtractor={(c) => c.id}
@@ -760,7 +764,7 @@ function CategoriasTab({
               exportable
               exportFilename="Categorias_menor_margen"
                 onExported={notifyExport}
-              allData={data.categorias as (CategoryAnalyticsOut & Record<string, unknown>)[]}
+              allData={lowestByMarginAll as (CategoryAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
@@ -772,11 +776,11 @@ function CategoriasTab({
           headerLeft={<Select value={String(limitDetalle)} onChange={(e) => setLimitDetalle(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
           columns={[
             { key: "nombre", header: "Categoría", sortable: true, onSort: () => reqSortDetalle("nombre"), sortDirection: sortDetalle?.key === "nombre" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => toTitleCase(c.nombre) },
-            { key: "total_productos", header: "Productos", sortable: true, onSort: () => reqSortDetalle("total_productos"), sortDirection: sortDetalle?.key === "total_productos" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => String(c.total_productos) },
-            { key: "stock_total", header: "Stock", sortable: true, onSort: () => reqSortDetalle("stock_total"), sortDirection: sortDetalle?.key === "stock_total" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => String(c.stock_total) },
-            { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortDetalle("margen_promedio"), sortDirection: sortDetalle?.key === "margen_promedio" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => `${Number(c.margen_promedio).toFixed(1)}%` },
-            { key: "unidades_vendidas", header: "Vendidos", sortable: true, onSort: () => reqSortDetalle("unidades_vendidas"), sortDirection: sortDetalle?.key === "unidades_vendidas" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => String(c.unidades_vendidas) },
-            { key: "ingresos_usd", header: "Ingresos", sortable: true, onSort: () => reqSortDetalle("ingresos_usd"), sortDirection: sortDetalle?.key === "ingresos_usd" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => formatCurrency(c.ingresos_usd) },
+            { key: "total_productos", header: "Productos", sortable: true, onSort: () => reqSortDetalle("total_productos"), sortDirection: sortDetalle?.key === "total_productos" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => String(c.total_productos), exportValue: (c: CategoryAnalyticsOut) => c.total_productos },
+            { key: "stock_total", header: "Stock", sortable: true, onSort: () => reqSortDetalle("stock_total"), sortDirection: sortDetalle?.key === "stock_total" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => String(c.stock_total), exportValue: (c: CategoryAnalyticsOut) => c.stock_total },
+            { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortDetalle("margen_promedio"), sortDirection: sortDetalle?.key === "margen_promedio" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => `${Number(c.margen_promedio).toFixed(1)}%`, exportValue: (c: CategoryAnalyticsOut) => Number(c.margen_promedio) },
+            { key: "unidades_vendidas", header: "Vendidos", sortable: true, onSort: () => reqSortDetalle("unidades_vendidas"), sortDirection: sortDetalle?.key === "unidades_vendidas" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => String(c.unidades_vendidas), exportValue: (c: CategoryAnalyticsOut) => c.unidades_vendidas },
+            { key: "ingresos_usd", header: "Ingresos", sortable: true, onSort: () => reqSortDetalle("ingresos_usd"), sortDirection: sortDetalle?.key === "ingresos_usd" ? sortDetalle.direction : null, render: (c: CategoryAnalyticsOut) => formatCurrency(c.ingresos_usd), exportValue: (c: CategoryAnalyticsOut) => Number(c.ingresos_usd) },
           ]}
           data={sortedDetalle}
           keyExtractor={(c) => c.id}
@@ -824,6 +828,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
   );
   const sortedBySales = useMemo(() => withSales.slice(0, limitTopSales), [withSales, limitTopSales]);
   const lowSales = useMemo(() => [...withSales].reverse().slice(0, limitLowSales), [withSales, limitLowSales]);
+  const lowSalesAll = useMemo(() => [...withSales].reverse(), [withSales]);
 
   const sortedByMargin = useMemo(
     () => [...visibleSuppliers].sort((a, b) => b.margen_promedio - a.margen_promedio),
@@ -831,6 +836,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
   );
   const topByMargin = useMemo(() => sortedByMargin.slice(0, limitTopMargin), [sortedByMargin, limitTopMargin]);
   const lowestByMargin = useMemo(() => sortedByMargin.slice(-limitLowMargin).reverse(), [sortedByMargin, limitLowMargin]);
+  const lowestByMarginAll = useMemo(() => [...sortedByMargin].reverse(), [sortedByMargin]);
 
   const visibleDetalle = useMemo(() => visibleSuppliers.slice(0, limitDetalle), [visibleSuppliers, limitDetalle]);
   const { sorted: sortedDetalle, sortConfig: sortDetalle, requestSort: reqSortDetalle } =
@@ -875,7 +881,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               headerLeft={<Select value={String(limitTopSales)} onChange={(e) => setLimitTopSales(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Proveedor", render: (s: SupplierAnalyticsOut) => toTitleCase(s.nombre) },
-                { key: "unidades_vendidas", header: "Ventas", render: (s: SupplierAnalyticsOut) => String(s.unidades_vendidas) },
+                { key: "unidades_vendidas", header: "Ventas", render: (s: SupplierAnalyticsOut) => String(s.unidades_vendidas), exportValue: (s: SupplierAnalyticsOut) => s.unidades_vendidas },
               ]}
               data={sortedBySales}
               keyExtractor={(s) => s.id}
@@ -883,7 +889,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               exportable
               exportFilename="Proveedores_top_ventas"
                 onExported={notifyExport}
-              allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
+              allData={withSales as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
@@ -894,7 +900,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               headerLeft={<Select value={String(limitLowSales)} onChange={(e) => setLimitLowSales(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Proveedor", render: (s: SupplierAnalyticsOut) => toTitleCase(s.nombre) },
-                { key: "unidades_vendidas", header: "Ventas", render: (s: SupplierAnalyticsOut) => String(s.unidades_vendidas) },
+                { key: "unidades_vendidas", header: "Ventas", render: (s: SupplierAnalyticsOut) => String(s.unidades_vendidas), exportValue: (s: SupplierAnalyticsOut) => s.unidades_vendidas },
               ]}
               data={lowSales}
               keyExtractor={(s) => s.id}
@@ -902,7 +908,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               exportable
               exportFilename="Proveedores_bajas_ventas"
                 onExported={notifyExport}
-              allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
+              allData={lowSalesAll as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
@@ -913,7 +919,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               headerLeft={<Select value={String(limitTopMargin)} onChange={(e) => setLimitTopMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Proveedor", render: (s: SupplierAnalyticsOut) => toTitleCase(s.nombre) },
-                { key: "margen_promedio", header: "Margen Prom.", render: (s: SupplierAnalyticsOut) => `${Number(s.margen_promedio).toFixed(1)}%` },
+                { key: "margen_promedio", header: "Margen Prom.", render: (s: SupplierAnalyticsOut) => `${Number(s.margen_promedio).toFixed(1)}%`, exportValue: (s: SupplierAnalyticsOut) => Number(s.margen_promedio) },
               ]}
               data={topByMargin}
               keyExtractor={(s) => s.id}
@@ -921,7 +927,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               exportable
               exportFilename="Proveedores_mayor_margen"
                 onExported={notifyExport}
-              allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
+              allData={sortedByMargin as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
@@ -932,7 +938,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               headerLeft={<Select value={String(limitLowMargin)} onChange={(e) => setLimitLowMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
                 { key: "nombre", header: "Proveedor", render: (s: SupplierAnalyticsOut) => toTitleCase(s.nombre) },
-                { key: "margen_promedio", header: "Margen Prom.", render: (s: SupplierAnalyticsOut) => `${Number(s.margen_promedio).toFixed(1)}%` },
+                { key: "margen_promedio", header: "Margen Prom.", render: (s: SupplierAnalyticsOut) => `${Number(s.margen_promedio).toFixed(1)}%`, exportValue: (s: SupplierAnalyticsOut) => Number(s.margen_promedio) },
               ]}
               data={lowestByMargin}
               keyExtractor={(s) => s.id}
@@ -940,7 +946,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
               exportable
               exportFilename="Proveedores_menor_margen"
                 onExported={notifyExport}
-              allData={visibleSuppliers as (SupplierAnalyticsOut & Record<string, unknown>)[]}
+              allData={lowestByMarginAll as (SupplierAnalyticsOut & Record<string, unknown>)[]}
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
@@ -952,11 +958,11 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
           headerLeft={<Select value={String(limitDetalle)} onChange={(e) => setLimitDetalle(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
           columns={[
             { key: "nombre", header: "Proveedor", sortable: true, onSort: () => reqSortDetalle("nombre"), sortDirection: sortDetalle?.key === "nombre" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => toTitleCase(s.nombre) },
-            { key: "total_productos", header: "Productos", sortable: true, onSort: () => reqSortDetalle("total_productos"), sortDirection: sortDetalle?.key === "total_productos" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => String(s.total_productos) },
-            { key: "stock_total", header: "Stock", sortable: true, onSort: () => reqSortDetalle("stock_total"), sortDirection: sortDetalle?.key === "stock_total" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => String(s.stock_total) },
-            { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortDetalle("margen_promedio"), sortDirection: sortDetalle?.key === "margen_promedio" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => `${Number(s.margen_promedio).toFixed(1)}%` },
-            { key: "unidades_vendidas", header: "Vendidos", sortable: true, onSort: () => reqSortDetalle("unidades_vendidas"), sortDirection: sortDetalle?.key === "unidades_vendidas" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => String(s.unidades_vendidas) },
-            { key: "ingresos_usd", header: "Ingresos", sortable: true, onSort: () => reqSortDetalle("ingresos_usd"), sortDirection: sortDetalle?.key === "ingresos_usd" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => formatCurrency(s.ingresos_usd) },
+            { key: "total_productos", header: "Productos", sortable: true, onSort: () => reqSortDetalle("total_productos"), sortDirection: sortDetalle?.key === "total_productos" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => String(s.total_productos), exportValue: (s: SupplierAnalyticsOut) => s.total_productos },
+            { key: "stock_total", header: "Stock", sortable: true, onSort: () => reqSortDetalle("stock_total"), sortDirection: sortDetalle?.key === "stock_total" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => String(s.stock_total), exportValue: (s: SupplierAnalyticsOut) => s.stock_total },
+            { key: "margen_promedio", header: "Margen Prom.", sortable: true, onSort: () => reqSortDetalle("margen_promedio"), sortDirection: sortDetalle?.key === "margen_promedio" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => `${Number(s.margen_promedio).toFixed(1)}%`, exportValue: (s: SupplierAnalyticsOut) => Number(s.margen_promedio) },
+            { key: "unidades_vendidas", header: "Vendidos", sortable: true, onSort: () => reqSortDetalle("unidades_vendidas"), sortDirection: sortDetalle?.key === "unidades_vendidas" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => String(s.unidades_vendidas), exportValue: (s: SupplierAnalyticsOut) => s.unidades_vendidas },
+            { key: "ingresos_usd", header: "Ingresos", sortable: true, onSort: () => reqSortDetalle("ingresos_usd"), sortDirection: sortDetalle?.key === "ingresos_usd" ? sortDetalle.direction : null, render: (s: SupplierAnalyticsOut) => formatCurrency(s.ingresos_usd), exportValue: (s: SupplierAnalyticsOut) => Number(s.ingresos_usd) },
           ]}
           data={sortedDetalle}
           keyExtractor={(s) => s.id}
@@ -1082,6 +1088,7 @@ function PagosTab({
                   onSort: () => requestSort("cantidad_pagos"),
                   sortDirection: sortConfig?.key === "cantidad_pagos" ? sortConfig.direction : null,
                   render: (m: PaymentMethodSummaryItem) => String(m.cantidad_pagos),
+                  exportValue: (m: PaymentMethodSummaryItem) => m.cantidad_pagos,
                 },
                 {
                   key: "total_usd",
@@ -1090,6 +1097,7 @@ function PagosTab({
                   onSort: () => requestSort("total_usd"),
                   sortDirection: sortConfig?.key === "total_usd" ? sortConfig.direction : null,
                   render: (m: PaymentMethodSummaryItem) => formatCurrency(m.total_usd),
+                  exportValue: (m: PaymentMethodSummaryItem) => Number(m.total_usd),
                 },
                 {
                   key: "total_ves",
@@ -1098,6 +1106,7 @@ function PagosTab({
                   onSort: () => requestSort("total_ves"),
                   sortDirection: sortConfig?.key === "total_ves" ? sortConfig.direction : null,
                   render: (m: PaymentMethodSummaryItem) => formatCurrency(m.total_ves, "Bs "),
+                  exportValue: (m: PaymentMethodSummaryItem) => Number(m.total_ves),
                 },
                 {
                   key: "total_equivalente_usd",
@@ -1106,6 +1115,7 @@ function PagosTab({
                   onSort: () => requestSort("total_equivalente_usd"),
                   sortDirection: sortConfig?.key === "total_equivalente_usd" ? sortConfig.direction : null,
                   render: (m: PaymentMethodSummaryItem) => formatCurrency(m.total_equivalente_usd),
+                  exportValue: (m: PaymentMethodSummaryItem) => Number(m.total_equivalente_usd),
                 },
               ]}
               data={sorted}
@@ -1114,7 +1124,7 @@ function PagosTab({
               exportable
               exportFilename="Metodos_pago_estadisticas"
               onExported={notifyExport}
-              allData={data as (PaymentMethodSummaryItem & Record<string, unknown>)[]}
+              allData={sorted as (PaymentMethodSummaryItem & Record<string, unknown>)[]}
             />
           </div>
         </>
