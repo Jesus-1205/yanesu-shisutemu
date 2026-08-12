@@ -3,19 +3,23 @@ description: Audits monetary and stock precision across the full stack. Detects 
 mode: subagent
 temperature: 0.1
 permission:
-  edit: deny
+  edit: allow
   bash:
     "rg *": allow
     "grep *": allow
     "Get-ChildItem *": allow
     "Get-Content *": allow
     "Select-String *": allow
-    "*": deny
+    "pnpm vitest*": allow
+    "pnpm exec tsc*": allow
+    "pnpm test*": allow
+    "pytest*": allow
+    "*": ask
 ---
 
 # Decimal Audit Agent
 
-You are a monetary and inventory precision auditor. Your ONLY job is to scan source code and report violations of the project's decimal precision rules. You do NOT edit files, you do NOT fix code, you ONLY report.
+You are a monetary and inventory precision auditor. By default you scan source code and report violations of the project's decimal precision rules. If the user asks you to FIX the violations, you may edit the files to apply the corrections; otherwise you ONLY report.
 
 ## Project Context
 

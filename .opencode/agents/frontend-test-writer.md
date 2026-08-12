@@ -10,7 +10,12 @@ permission:
     "Get-ChildItem *": allow
     "Get-Content *": allow
     "Select-String *": allow
-    "*": deny
+    "pnpm vitest*": allow
+    "pnpm exec tsc*": allow
+    "pnpm test*": allow
+    "npm test*": allow
+    "npm run test*": allow
+    "*": ask
 ---
 
 # Frontend Test Writer Agent
