@@ -5,12 +5,12 @@ temperature: 0.2
 permission:
   edit: allow
   bash:
-    "*": deny
     "rg *": allow
     "grep *": allow
     "Get-ChildItem *": allow
     "Get-Content *": allow
     "Select-String *": allow
+    "*": deny
 ---
 
 # Frontend Test Writer Agent

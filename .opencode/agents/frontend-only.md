@@ -10,7 +10,6 @@ permission:
     "licoreria-desktop/**": deny
     "*.md": deny
   bash:
-    "*": ask
     "rg *": allow
     "grep *": allow
     "Get-ChildItem *": allow
@@ -23,6 +22,7 @@ permission:
     "git log*": allow
     "pytest*": deny
     "cd backend*": deny
+    "*": ask
 ---
 
 # Frontend-Only Agent

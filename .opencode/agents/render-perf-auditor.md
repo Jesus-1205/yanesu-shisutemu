@@ -5,12 +5,12 @@ temperature: 0.1
 permission:
   edit: deny
   bash:
-    "*": deny
     "rg *": allow
     "grep *": allow
     "Get-ChildItem *": allow
     "Get-Content *": allow
     "Select-String *": allow
+    "*": deny
 ---
 
 # React Render Performance Auditor Agent
