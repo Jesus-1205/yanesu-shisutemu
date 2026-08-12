@@ -14,7 +14,6 @@ import type {
   ComboOut,
   ComboUpdate,
   DailyStatusResponse,
-  ExchangeRateCreate,
   ExchangeRateOut,
   ExchangeRatePaginationOut,
   ExchangeRatesResponse,
@@ -295,27 +294,20 @@ export const api = {
   getBcvRates: () =>
     request<ExchangeRatesResponse>("/exchange-rates/bcv"),
 
-  getRateHistory: (moneda?: string) =>
+  getRateHistory: () =>
     request<{ history: ExchangeRateOut[] }>(
-      `/exchange-rates/history${moneda ? `?moneda=${moneda}` : ""}`,
+      `/exchange-rates/history`,
     ),
 
-  getRateHistoryPaginated: (params: { moneda?: string; page: number; page_size: number }) => {
+  getRateHistoryPaginated: (params: { page: number; page_size: number }) => {
     const qs = new URLSearchParams();
-    if (params.moneda) qs.set("moneda", params.moneda);
     qs.set("page", String(params.page));
     qs.set("page_size", String(params.page_size));
     return request<ExchangeRatePaginationOut>(`/exchange-rates/history?${qs.toString()}`);
   },
 
-  createExchangeRate: (data: ExchangeRateCreate) =>
-    request<ExchangeRateOut>("/exchange-rates", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-
   saveBulkRates: (data: { usd: number; eur: number }) =>
-    request<ExchangeRateOut[]>("/exchange-rates/save-rates", {
+    request<ExchangeRateOut>("/exchange-rates/save-rates", {
       method: "POST",
       body: JSON.stringify(data),
     }),

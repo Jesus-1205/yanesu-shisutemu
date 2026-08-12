@@ -1,4 +1,4 @@
-from datetime import datetime, time, timezone
+from datetime import datetime, time
 from decimal import Decimal
 
 from sqlalchemy import func, select, desc
@@ -6,15 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.core.bcv_scraper import fetch_bcv_rates as _scrape_bcv
 from app.core.config import VE_TZ
-from app.core.exceptions import ConflictError
 from app.models.exchange_rate import ExchangeRate
-from app.schemas.exchange_rate import ExchangeRateBulkSave, ExchangeRateCreate
+from app.schemas.exchange_rate import ExchangeRateBulkSave
 
 SCRAPE_HOUR = 17
 
 
 def fetch_bcv_rates() -> dict[str, Decimal]:
-    """Obtiene las tasas del BCV redondeadas a 3 decimales.
+    """Obtiene las tasas del BCV redondeadas a 4 decimales.
 
     Returns:
         dict con 'USD' y 'EUR' y sus valores Decimal.
@@ -26,89 +25,49 @@ def fetch_bcv_rates() -> dict[str, Decimal]:
     return _scrape_bcv()
 
 
-def create_rate(db: Session, data: ExchangeRateCreate, user_id: int) -> ExchangeRate:
-    rate = ExchangeRate(
-        moneda=data.moneda,
-        tasa_ves=data.tasa_ves,
-        registrado_por=user_id,
-    )
-    db.add(rate)
-    db.commit()
-    db.refresh(rate)
-    return rate
-
-
-def get_latest_rate(db: Session, moneda: str) -> ExchangeRate | None:
+def get_latest_rate(db: Session) -> ExchangeRate | None:
     stmt = (
         select(ExchangeRate)
-        .where(ExchangeRate.moneda == moneda)
         .order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id))
         .limit(1)
     )
     return db.execute(stmt).scalars().first()
 
 
-def get_all_latest_rates(db: Session) -> dict[str, Decimal]:
-    monedas = ["USD", "EUR"]
-    result = {}
-    for m in monedas:
-        rate = get_latest_rate(db, m)
-        if rate:
-            result[m] = rate.tasa_ves
-    return result
-
-
 def get_latest_rate_info(db: Session) -> dict:
-    monedas = ["USD", "EUR"]
-    rates: dict[str, Decimal] = {}
-    latest_date = None
-    for m in monedas:
-        rate = get_latest_rate(db, m)
-        if rate:
-            rates[m] = rate.tasa_ves
-            if latest_date is None or rate.fecha_registro > latest_date:
-                latest_date = rate.fecha_registro
-    return {"rates": rates, "fecha_ultima_actualizacion": latest_date}
+    rate = get_latest_rate(db)
+    if not rate:
+        return {"rates": {}, "fecha_ultima_actualizacion": None}
+    return {
+        "rates": {"USD": rate.tasa_usd, "EUR": rate.tasa_eur},
+        "fecha_ultima_actualizacion": rate.fecha_registro,
+    }
 
 
-def get_rate_history(db: Session, moneda: str | None = None, limit: int = 50) -> list[ExchangeRate]:
-    if moneda and moneda not in ("USD", "EUR"):
-        raise ConflictError("Moneda inválida. Use USD o EUR")
-    stmt = select(ExchangeRate)
-    if moneda:
-        stmt = stmt.where(ExchangeRate.moneda == moneda)
-    stmt = stmt.order_by(desc(ExchangeRate.fecha_registro)).limit(limit)
+def get_rate_history(db: Session, limit: int = 50) -> list[ExchangeRate]:
+    stmt = select(ExchangeRate).order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id)).limit(limit)
     return list(db.execute(stmt).scalars().all())
 
 
-def get_rate_history_paginated(db: Session, moneda: str | None = None, page: int = 1, page_size: int = 20) -> dict:
-    if moneda and moneda not in ("USD", "EUR"):
-        raise ConflictError("Moneda inválida. Use USD o EUR")
-    base = select(ExchangeRate)
-    if moneda:
-        base = base.where(ExchangeRate.moneda == moneda)
-    total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
+def get_rate_history_paginated(db: Session, page: int = 1, page_size: int = 20) -> dict:
+    total = db.execute(select(func.count()).select_from(ExchangeRate)).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)
     offset = (page - 1) * page_size
-    stmt = base.order_by(desc(ExchangeRate.fecha_registro)).offset(offset).limit(page_size)
+    stmt = select(ExchangeRate).order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id)).offset(offset).limit(page_size)
     items = list(db.execute(stmt).scalars().all())
     return {"items": items, "total": total, "page": page, "page_size": page_size, "pages": pages}
 
 
-def save_rates(db: Session, data: ExchangeRateBulkSave, user_id: int) -> list[ExchangeRate]:
-    rates = []
-    for moneda, valor in [("USD", data.usd), ("EUR", data.eur)]:
-        rate = ExchangeRate(
-            moneda=moneda,
-            tasa_ves=valor,
-            registrado_por=user_id,
-        )
-        db.add(rate)
-        rates.append(rate)
+def save_rates(db: Session, data: ExchangeRateBulkSave, user_id: int) -> ExchangeRate:
+    rate = ExchangeRate(
+        tasa_usd=data.usd,
+        tasa_eur=data.eur,
+        registrado_por=user_id,
+    )
+    db.add(rate)
     db.commit()
-    for r in rates:
-        db.refresh(r)
-    return rates
+    db.refresh(rate)
+    return rate
 
 
 def get_daily_rate_status(db: Session) -> dict:

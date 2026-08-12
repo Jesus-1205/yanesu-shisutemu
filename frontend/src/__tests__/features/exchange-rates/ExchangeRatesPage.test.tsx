@@ -27,12 +27,12 @@ import { exportToExcel } from "@/lib/exportToExcel";
 
 const mockLatestRates = { USD: "45.123", EUR: "49.500" };
 const mockHistory = [
-  { id: 1, moneda: "USD", tasa_ves: 45.123, fecha_registro: "2025-01-15T10:30:00", registrado_por: 1 },
-  { id: 2, moneda: "EUR", tasa_ves: 49.5, fecha_registro: "2025-01-14T09:15:00", registrado_por: 1 },
+  { id: 1, tasa_usd: 45.123, tasa_eur: 49.5, fecha_registro: "2025-01-15T10:30:00", registrado_por: 1 },
+  { id: 2, tasa_usd: 46.0, tasa_eur: 50.25, fecha_registro: "2025-01-14T09:15:00", registrado_por: 1 },
 ];
 
 const mockBcvRates = { rates: { USD: "45.500", EUR: "49.800" } };
-const mockCreatedRate = { id: 3, moneda: "USD", tasa_ves: 46.0, fecha_registro: "2025-01-16T12:00:00", registrado_por: 1 };
+const mockCreatedRate = { id: 3, tasa_usd: 46.0, tasa_eur: 50.0, fecha_registro: "2025-01-16T12:00:00", registrado_por: 1 };
 
 vi.mock("@/services/api", () => ({
   api: {
@@ -75,7 +75,6 @@ describe("ExchangeRatesPage", () => {
       expect(screen.getByText("USD / VES")).toBeInTheDocument();
       expect(screen.getByText("EUR / VES")).toBeInTheDocument();
     });
-    // formatRate uses comma as decimal separator in Spanish locale, shows 2 decimals
     await waitFor(() => {
       expect(screen.getByText("Bs 45,12")).toBeInTheDocument();
       expect(screen.getByText("Bs 49,50")).toBeInTheDocument();
@@ -86,19 +85,17 @@ describe("ExchangeRatesPage", () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getByText("ID")).toBeInTheDocument();
-      // "Moneda" appears only in table header (modal not open yet)
-      expect(screen.getByText("Moneda")).toBeInTheDocument();
-      expect(screen.getByText("Tasa (Bs)")).toBeInTheDocument();
+      expect(screen.getByText("USD (Bs)")).toBeInTheDocument();
+      expect(screen.getByText("EUR (Bs)")).toBeInTheDocument();
       expect(screen.getByText("Registrado")).toBeInTheDocument();
     });
     await waitFor(() => {
       expect(screen.getByText("1")).toBeInTheDocument();
-      expect(screen.getByText("USD")).toBeInTheDocument();
-      // History table uses 4 decimals for precision
       expect(screen.getByText("45,1230")).toBeInTheDocument();
-      expect(screen.getByText("2")).toBeInTheDocument();
-      expect(screen.getByText("EUR")).toBeInTheDocument();
       expect(screen.getByText("49,5000")).toBeInTheDocument();
+      expect(screen.getByText("2")).toBeInTheDocument();
+      expect(screen.getByText("46,0000")).toBeInTheDocument();
+      expect(screen.getByText("50,2500")).toBeInTheDocument();
     });
   });
 
@@ -119,7 +116,7 @@ describe("ExchangeRatesPage", () => {
 
   it("guarda tasas correctamente", async () => {
     mockApi.getBcvRates.mockResolvedValue(mockBcvRates);
-    mockApi.saveBulkRates.mockResolvedValue([mockCreatedRate]);
+    mockApi.saveBulkRates.mockResolvedValue(mockCreatedRate);
     renderPage();
     await waitFor(() => expect(screen.getByText("Tasas de Cambio")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Actualizar Tasas"));
@@ -173,7 +170,6 @@ describe("ExchangeRatesPage", () => {
     mockApi.getRateHistory.mockResolvedValue({ history: mockHistory });
     mockApi.getRateHistoryPaginated.mockResolvedValue({ items: mockHistory, pages: 1, total: 2, page: 1, page_size: 20 });
     await userEvent.click(screen.getByText("Reintentar"));
-    // The formatted rate uses comma as decimal separator in Spanish locale with 2 decimals
     await waitFor(() => {
       expect(screen.getByText("Bs 45,12")).toBeInTheDocument();
     });
@@ -196,8 +192,8 @@ describe("ExchangeRatesPage", () => {
         data: mockHistory,
         columns: expect.arrayContaining([
           expect.objectContaining({ header: "ID" }),
-          expect.objectContaining({ header: "Moneda" }),
-          expect.objectContaining({ header: "Tasa (VES)" }),
+          expect.objectContaining({ header: "Tasa USD" }),
+          expect.objectContaining({ header: "Tasa EUR" }),
           expect.objectContaining({ header: "Fecha Registro" }),
         ]),
         filename: "Tasas_cambio",

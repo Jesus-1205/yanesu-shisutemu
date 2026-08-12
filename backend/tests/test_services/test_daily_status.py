@@ -21,8 +21,8 @@ def _make_ve_now(hour, weekday=2):
 
 def _insert_rate(db, fecha):
     rate = ExchangeRate(
-        moneda="USD",
-        tasa_ves=Decimal("727.500"),
+        tasa_usd=Decimal("727.500"),
+        tasa_eur=Decimal("790.000"),
         fecha_registro=fecha,
         registrado_por=1,
     )

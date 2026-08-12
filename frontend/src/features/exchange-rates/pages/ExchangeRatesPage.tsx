@@ -126,8 +126,8 @@ export default function ExchangeRatesPage() {
 
   const exportColumns: Column<ExchangeRate>[] = [
     { key: "id", header: "ID" },
-    { key: "moneda", header: "Moneda" },
-    { key: "tasa_ves", header: "Tasa (VES)" },
+    { key: "tasa_usd", header: "Tasa USD" },
+    { key: "tasa_eur", header: "Tasa EUR" },
     { key: "fecha_registro", header: "Fecha Registro" },
   ];
 
@@ -196,14 +196,14 @@ export default function ExchangeRatesPage() {
             columns={[
               { key: "id", header: "ID" },
               {
-                key: "moneda",
-                header: "Moneda",
-                render: (r: ExchangeRate) => r.moneda,
+                key: "tasa_usd",
+                header: "USD (Bs)",
+                render: (r: ExchangeRate) => formatRateFull(r.tasa_usd),
               },
               {
-                key: "tasa_ves",
-                header: "Tasa (Bs)",
-                render: (r: ExchangeRate) => formatRateFull(r.tasa_ves),
+                key: "tasa_eur",
+                header: "EUR (Bs)",
+                render: (r: ExchangeRate) => formatRateFull(r.tasa_eur),
               },
               {
                 key: "fecha_registro",

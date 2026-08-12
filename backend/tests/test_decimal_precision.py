@@ -142,16 +142,16 @@ class TestExchangeRateDecimals:
 
     def test_tasa_ves_four_decimals(self, client):
         _login(client, _ADMIN)
-        resp = client.post("/api/exchange-rates", json={
-            "moneda": "USD", "tasa_ves": 90.50,
+        resp = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 90.50, "eur": 98.00,
         })
         assert resp.status_code == 201
-        assert resp.json()["tasa_ves"] == "90.5000"
+        assert resp.json()["tasa_usd"] == "90.5000"
 
     def test_tasa_ves_preserves_precision(self, client):
         _login(client, _ADMIN)
-        resp = client.post("/api/exchange-rates", json={
-            "moneda": "USD", "tasa_ves": 36.1234,
+        resp = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 36.1234, "eur": 39.5678,
         })
         assert resp.status_code == 201
-        assert resp.json()["tasa_ves"] == "36.1234"
+        assert resp.json()["tasa_usd"] == "36.1234"

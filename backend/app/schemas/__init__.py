@@ -7,7 +7,7 @@ from app.schemas.user import (
 )
 from app.schemas.supplier import SupplierCreate, SupplierOut
 from app.schemas.product import ProductCreate, ProductOut, ProductUpdate
-from app.schemas.exchange_rate import ExchangeRateCreate, ExchangeRateOut
+from app.schemas.exchange_rate import ExchangeRateBulkSave, ExchangeRateOut
 from app.schemas.sale import SaleCreate, SaleItemCreate, SaleItemOut, SaleOut, SalePaymentCreate, SalePaymentOut
 from app.schemas.payment_method import PaymentMethodCreate, PaymentMethodUpdate, PaymentMethodOut
 from app.schemas.system_setting import ApiKeyPayload, ApiKeyStatusResponse, TestConnectionResponse
@@ -24,7 +24,7 @@ __all__ = [
     "ProductCreate",
     "ProductOut",
     "ProductUpdate",
-    "ExchangeRateCreate",
+    "ExchangeRateBulkSave",
     "ExchangeRateOut",
     "SaleCreate",
     "SaleItemCreate",
