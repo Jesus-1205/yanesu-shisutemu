@@ -1,23 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, ShoppingCart } from "lucide-react";
+import { Search } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
 import type { ComboActiveOut } from "@/types/api";
-import Button from "@/ui-components/Button";
-import Badge from "@/ui-components/Badge";
 import PageHeader from "@/ui-components/PageHeader";
-import Table from "@/ui-components/Table";
 import ToggleSwitch from "@/ui-components/ToggleSwitch";
 import { useToast } from "@/ui-components/Toast";
-import { formatCurrency, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useCartStore, computeTotals } from "../store/cartStore";
-import CartItemRow from "../components/CartItemRow";
 import CheckoutDrawer from "../components/CheckoutDrawer";
-import SplitAddButton from "../components/SplitAddButton";
 import ComboCard from "../components/ComboCard";
 import ComboSelectorModal from "../components/ComboSelectorModal";
+import ProductGrid from "../components/ProductGrid";
+import CartPanel from "../components/CartPanel";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
 import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
 
@@ -122,6 +118,7 @@ export default function POSPage() {
   }, [search]);
 
   const tasaNum = snapshotTasa;
+  const tasaBCV = useExchangeRateStore((s) => s.tasa);
 
   const filteredProducts = useMemo(
     () =>
@@ -142,8 +139,12 @@ export default function POSPage() {
       toastRef.current("Agrega al menos un producto", "error");
       return;
     }
+    if (tasaNum <= 0) {
+      toastRef.current("Registra la tasa BCV antes de vender", "error");
+      return;
+    }
     setCheckoutOpen(true);
-  }, [itemCount]);
+  }, [itemCount, tasaNum]);
 
   const handleCloseCheckout = useCallback(() => {
     setCheckoutOpen(false);
@@ -171,127 +172,13 @@ export default function POSPage() {
     loadFavorites(false);
   }, [loadFavorites]);
 
-  const columns = useMemo(
-    () => [
-      ...(!isOperator ? [{ key: "id", header: "ID" }] : []),
-      { key: "nombre", header: "Nombre" },
-      {
-        key: "stock_unidades",
-        header: "Stock",
-        render: (p: ProductOut) => {
-          const isAgotado = p.stock_cajas === 0 && p.stock_unidades === 0;
-          if (isOperator) {
-            return isAgotado
-              ? <Badge variant="danger">Agotado</Badge>
-              : <Badge variant="success">Disponible</Badge>;
-          }
-          if (p.unidades_por_caja > 1) {
-            return (
-              <span className={isAgotado ? "text-danger font-semibold text-xs" : "text-xs"}>
-                {p.stock_cajas} cj | {p.stock_unidades} und
-              </span>
-            );
-          }
-          return (
-            <span className={isAgotado ? "text-danger font-semibold" : ""}>
-              {p.stock_unidades}
-            </span>
-          );
-        },
-      },
-      {
-        key: "precio_unidad_usd",
-        header: "Precio Ud.",
-        render: (p: ProductOut) => formatCurrency(p.precio_unidad_usd),
-      },
-      {
-        key: "precio_caja_usd",
-        header: "Precio Caja",
-        render: (p: ProductOut) => formatCurrency(p.precio_caja_usd),
-      },
-      {
-        key: "precio_divisas",
-        header: "Precio Div.",
-        render: (p: ProductOut) => {
-          if (!p.precio_divisas_unidad && !p.precio_divisas_caja) {
-            return <span className="text-slate-300">-</span>;
-          }
-          return (
-            <div className="text-xs space-y-0.5">
-              {p.precio_divisas_unidad && (
-                <div className="text-success font-semibold">Ud: {formatCurrency(p.precio_divisas_unidad)}</div>
-              )}
-              {p.precio_divisas_caja && (
-                <div className="text-success font-semibold">Cj: {formatCurrency(p.precio_divisas_caja)}</div>
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        key: "acciones",
-        header: "",
-        exportable: false,
-        className: "w-16",
-        render: (p: ProductOut) => {
-          const hasDivisas = p.precio_divisas_unidad || p.precio_divisas_caja;
-          return (
-            <div className="flex flex-col gap-1">
-              <SplitAddButton
-                onAddUnit={() => addItem(p, "UNIDAD")}
-                onAddBox={() => addItem(p, "CAJA")}
-                disabled={
-                  (p.stock_cajas === 0 && p.stock_unidades === 0) ||
-                  (p.precio_unidad_usd <= 0 && p.precio_caja_usd <= 0)
-                }
-              />
-              {hasDivisas && (
-                <div className="inline-flex">
-                  {p.precio_divisas_unidad && (
-                    <button
-                      type="button"
-                      disabled={p.stock_unidades === 0}
-                      onClick={() => addItem(p, "UNIDAD", 1, true)}
-                      className="px-1.5 py-0.5 text-[10px] font-semibold rounded-l bg-success text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                      title={`Agregar unidad a ${formatCurrency(p.precio_divisas_unidad)} (divisas)`}
-                    >
-                      $Ud
-                    </button>
-                  )}
-                  {p.precio_divisas_caja && (
-                    <button
-                      type="button"
-                      disabled={p.stock_unidades === 0}
-                      onClick={() => addItem(p, "CAJA", 1, true)}
-                      className={`px-1.5 py-0.5 text-[10px] font-semibold ${p.precio_divisas_unidad ? "rounded-r" : "rounded"} bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
-                      title={`Agregar caja a ${formatCurrency(p.precio_divisas_caja)} (divisas)`}
-                    >
-                      $Cj
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        },
-      },
-    ],
-    [isOperator, addItem],
-  );
+  const handleAddUnit = useCallback((product: ProductOut) => {
+    addItem(product, "UNIDAD");
+  }, [addItem]);
 
-  const keyExtractor = useCallback((p: ProductOut) => p.id, []);
-
-  const handleOpenCheckout = useCallback(() => {
-    if (itemCount === 0) {
-      toastRef.current("Agrega al menos un producto", "error");
-      return;
-    }
-    if (tasaNum <= 0) {
-      toastRef.current("Registra la tasa BCV antes de vender", "error");
-      return;
-    }
-    setCheckoutOpen(true);
-  }, [itemCount, tasaNum]);
+  const handleAddBox = useCallback((product: ProductOut) => {
+    addItem(product, "CAJA");
+  }, [addItem]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -329,25 +216,31 @@ export default function POSPage() {
             </div>
           </div>
 
-          {combos.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {combos.map((combo) => (
-                <ComboCard
-                  key={combo.id}
-                  combo={combo}
-                  onQuickAdd={() => addCombo(combo)}
-                  onCustomize={() => setCustomizingCombo(combo)}
-                />
-              ))}
+          {combos.length > 0 && !debouncedSearch.trim() && (
+            <div className="space-y-2">
+              <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide">
+                Promociones
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {combos.map((combo) => (
+                  <ComboCard
+                    key={combo.id}
+                    combo={combo}
+                    onQuickAdd={() => addCombo(combo)}
+                    onCustomize={() => setCustomizingCombo(combo)}
+                  />
+                ))}
+              </div>
             </div>
           )}
 
-          <Table
-            columns={columns}
-            data={filteredProducts}
-            keyExtractor={keyExtractor}
+          <ProductGrid
+            products={filteredProducts}
+            tasa={tasaBCV}
+            isOperator={isOperator}
             loading={loadingProducts}
-            emptyMessage="No se encontraron productos"
+            onAddUnit={handleAddUnit}
+            onAddBox={handleAddBox}
           />
 
           {hasMoreFavorites && (
@@ -361,66 +254,15 @@ export default function POSPage() {
         </div>
 
         {/* Right panel: cart */}
-        <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          <div className="flex items-center gap-2 text-lg font-semibold text-text-main">
-            <ShoppingCart className="w-5 h-5" />
-            Carrito ({itemCount})
-          </div>
-
-          {itemCount === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">
-              Selecciona productos para agregar
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {Object.values(items).map((item) => (
-                <CartItemRow key={item.cartItemId} item={item} />
-              ))}
-            </div>
-          )}
-
-          <div className="bg-surface rounded-xl border border-slate-200 p-4 space-y-3">
-            {tasaNum > 0 && (
-              <p className="text-xs text-slate-400 text-right">
-                Tasa aplicada: {formatRate(tasaNum)}
-              </p>
-            )}
-
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between text-slate-500">
-                <span>Exento USD</span>
-                <span>{formatCurrency(totals.monto_exento_usd)}</span>
-              </div>
-              <div className="flex justify-between text-slate-500">
-                <span>Base imponible USD</span>
-                <span>{formatCurrency(totals.base_imponible_usd)}</span>
-              </div>
-              <div className="flex justify-between text-slate-500">
-                <span>IVA USD</span>
-                <span>{formatCurrency(totals.monto_iva_usd)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-text-main border-t border-slate-200 pt-2">
-                <span>Total USD</span>
-                <span className="text-info">{formatCurrency(totalUsd)}</span>
-              </div>
-              {tasaNum > 0 && (
-                <div className="flex justify-between font-bold text-text-main">
-                  <span>Total VES</span>
-                  <span className="text-success">{formatCurrency(totalVes, "Bs ")}</span>
-                </div>
-              )}
-            </div>
-
-            <Button
-              variant="accent"
-              className="w-full"
-              disabled={itemCount === 0}
-              onClick={handleOpenCheckout}
-            >
-              Cobrar
-            </Button>
-          </div>
-        </div>
+        <CartPanel
+          items={items}
+          totals={totals}
+          totalUsd={totalUsd}
+          totalVes={totalVes}
+          snapshotTasa={snapshotTasa}
+          itemCount={itemCount}
+          onCheckout={handleCheckout}
+        />
       </div>
 
       <CheckoutDrawer

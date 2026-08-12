@@ -71,7 +71,7 @@ export function useBarcodeScanner(
         const now = Date.now();
         if (now - lastKeyTime > SCANNER_THRESHOLD_MS) {
           buffer = "";
-        } else if (lastKeyTime > 0) {
+        } else if (lastKeyTime > 0 && document.activeElement !== searchRef.current) {
           e.preventDefault();
         }
         buffer += e.key;
