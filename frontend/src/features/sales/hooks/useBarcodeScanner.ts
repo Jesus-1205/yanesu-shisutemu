@@ -82,6 +82,8 @@ export function useBarcodeScanner(
         const now = Date.now();
         if (now - lastKeyTime > SCANNER_THRESHOLD_MS) {
           buffer = "";
+        } else if (lastKeyTime > 0) {
+          e.preventDefault();
         }
         buffer += e.key;
         lastKeyTime = now;
@@ -93,6 +95,7 @@ export function useBarcodeScanner(
         const elapsed = now - lastKeyTime;
         const code = buffer.trim();
         buffer = "";
+        lastKeyTime = 0;
 
         if (code && elapsed <= SCANNER_THRESHOLD_MS && !checkoutOpenRef.current) {
           e.preventDefault();
