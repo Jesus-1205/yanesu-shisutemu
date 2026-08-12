@@ -108,7 +108,7 @@ export default function ProductsPage() {
   }, []);
 
   const exportColumns: Column<Product>[] = [
-    { key: "id", header: "ID" },
+    { key: "id", header: "ID", exportValue: (p: Product) => p.id },
     { key: "codigo_barra", header: "Código de Barra" },
     { key: "nombre", header: "Nombre" },
     {
@@ -116,13 +116,13 @@ export default function ProductsPage() {
       header: "Categorías",
       render: (p: Product) => p.categories.map((c) => c.nombre).join(", "),
     },
-    { key: "unidades_por_caja", header: "Unidades/Caja" },
-    { key: "stock_unidades", header: "Stock (uds)" },
-    { key: "stock_minimo", header: "Stock Mínimo" },
-    { key: "precio_costo_caja_usd", header: "Costo Caja USD" },
-    { key: "precio_costo_usd", header: "Costo Unidad USD" },
-    { key: "precio_unidad_usd", header: "Precio Unidad USD" },
-    { key: "precio_caja_usd", header: "Precio Caja USD" },
+    { key: "unidades_por_caja", header: "Unidades/Caja", exportValue: (p: Product) => p.unidades_por_caja },
+    { key: "stock_unidades", header: "Stock (uds)", exportValue: (p: Product) => p.stock_unidades },
+    { key: "stock_minimo", header: "Stock Mínimo", exportValue: (p: Product) => p.stock_minimo },
+    { key: "precio_costo_caja_usd", header: "Costo Caja USD", exportValue: (p: Product) => Number(p.precio_costo_caja_usd) },
+    { key: "precio_costo_usd", header: "Costo Unidad USD", exportValue: (p: Product) => Number(p.precio_costo_usd) },
+    { key: "precio_unidad_usd", header: "Precio Unidad USD", exportValue: (p: Product) => Number(p.precio_unidad_usd) },
+    { key: "precio_caja_usd", header: "Precio Caja USD", exportValue: (p: Product) => Number(p.precio_caja_usd) },
     {
       key: "proveedor_id",
       header: "Proveedor",

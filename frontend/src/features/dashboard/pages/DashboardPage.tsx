@@ -149,17 +149,21 @@ export default function DashboardPage() {
                   key: "precio_costo_usd",
                   header: "Costo",
                   render: (p: ProductOut) => formatCurrency(p.precio_costo_usd),
+                  exportValue: (p: ProductOut) => Number(p.precio_costo_usd),
                 },
                 {
                   key: "precio_unidad_usd",
                   header: "Venta",
                   render: (p: ProductOut) => formatCurrency(p.precio_unidad_usd),
+                  exportValue: (p: ProductOut) => Number(p.precio_unidad_usd),
                 },
                 {
                   key: "margen",
                   header: "Margen",
                   render: (p: ProductOut) =>
                     formatCurrency(Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100),
+                  exportValue: (p: ProductOut) =>
+                    Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100,
                 },
               ]}
               data={topMargin}
@@ -181,7 +185,7 @@ export default function DashboardPage() {
             <Table
               columns={[
                 { key: "nombre", header: "Producto", render: (r: { producto: ProductOut }) => r.producto.nombre },
-                { key: "total", header: "Vendidos", render: (r: { total_vendido: number }) => String(r.total_vendido) },
+                { key: "total", header: "Vendidos", render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
               ]}
               data={lowRotation}
               keyExtractor={(_, i) => i}

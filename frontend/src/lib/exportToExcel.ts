@@ -17,11 +17,23 @@ function extractText(node: ReactNode): string {
 
 /**
  * Genera nombre de archivo con formato: {prefijo}_{YYYY-MM-DD}.xlsx
+ * La fecha se calcula en la zona horaria de Caracas (no UTC) y se conservan
+ * los caracteres acentuados/ñ del prefijo.
  */
 function generateFilename(prefix: string): string {
   const today = new Date();
-  const dateStr = today.toISOString().split('T')[0];
-  const sanitized = prefix.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(today);
+  const partMap: Record<string, string> = {};
+  for (const p of parts) {
+    if (p.type !== "literal") partMap[p.type] = p.value;
+  }
+  const dateStr = `${partMap.year}-${partMap.month}-${partMap.day}`;
+  const sanitized = prefix.replace(/[^\w\u00C0-\u024F-]/g, "_");
   return `${sanitized}_${dateStr}`;
 }
 
@@ -41,7 +53,9 @@ export function exportToExcel<T extends object>({
   const worksheetData = data.map(item => {
     const row: Record<string, unknown> = {};
     columns.forEach(col => {
-      if (col.render) {
+      if (col.exportValue) {
+        row[col.header] = col.exportValue(item);
+      } else if (col.render) {
         row[col.header] = extractText(col.render(item));
       } else {
         row[col.header] = (item as Record<string, unknown>)[col.key];

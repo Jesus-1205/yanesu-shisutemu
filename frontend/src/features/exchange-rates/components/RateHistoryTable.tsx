@@ -47,6 +47,11 @@ function variationBadge(current: number, previous: number | undefined) {
   );
 }
 
+function variationValue(current: number, previous: number | undefined): number | null {
+  if (previous === undefined || previous === 0) return null;
+  return Math.round(((current - previous) / previous) * 10000) / 100;
+}
+
 export default function RateHistoryTable({
   data,
   loading,
@@ -69,21 +74,25 @@ export default function RateHistoryTable({
       key: "tasa_usd",
       header: "USD (Bs)",
       render: (r) => formatRateFull(r.tasa_usd),
+      exportValue: (r) => Number(r.tasa_usd),
     },
     {
       key: "tasa_eur",
       header: "EUR (Bs)",
       render: (r) => formatRateFull(r.tasa_eur),
+      exportValue: (r) => Number(r.tasa_eur),
     },
     {
       key: "variacion_usd",
       header: "Var. USD",
       render: (r) => variationBadge(Number(r.tasa_usd), r.previousUsd),
+      exportValue: (r) => variationValue(Number(r.tasa_usd), r.previousUsd),
     },
     {
       key: "variacion_eur",
       header: "Var. EUR",
       render: (r) => variationBadge(Number(r.tasa_eur), r.previousEur),
+      exportValue: (r) => variationValue(Number(r.tasa_eur), r.previousEur),
     },
     {
       key: "registrado_por_nombre",

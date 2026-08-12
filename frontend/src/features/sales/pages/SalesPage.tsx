@@ -72,7 +72,7 @@ export default function SalesPage() {
   };
 
   const exportColumns: Column<Sale>[] = [
-    { key: "id", header: "ID" },
+    { key: "id", header: "ID", exportValue: (s: Sale) => s.id },
     {
       key: "fecha_venta",
       header: "Fecha",
@@ -82,11 +82,13 @@ export default function SalesPage() {
       key: "total_usd",
       header: "Total USD",
       render: (s: Sale) => formatCurrency(s.total_usd),
+      exportValue: (s: Sale) => Number(s.total_usd),
     },
     {
       key: "total_ves",
       header: "Total VES",
       render: (s: Sale) => formatCurrency(s.total_ves, "Bs "),
+      exportValue: (s: Sale) => Number(s.total_ves),
     },
     {
       key: "metodo_pago",
@@ -97,11 +99,13 @@ export default function SalesPage() {
       key: "tasa_bcv_aplicada",
       header: "Tasa BCV",
       render: (s: Sale) => formatRate(s.tasa_bcv_aplicada),
+      exportValue: (s: Sale) => Number(s.tasa_bcv_aplicada),
     },
     {
       key: "items_count",
       header: "Items",
       render: (s: Sale) => s.items.length,
+      exportValue: (s: Sale) => s.items.length,
     },
     {
       key: "usuario_nombre",

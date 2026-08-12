@@ -52,6 +52,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
                 ) : (
                   <span>{p.stock_unidades}</span>
                 ),
+              exportValue: (p: CategoryDetailProduct) => p.stock_unidades,
             },
             {
               key: "precio_unidad_usd",
@@ -60,6 +61,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               onSort: () => requestSort("precio_unidad_usd"),
               sortDirection: sortConfig?.key === "precio_unidad_usd" ? sortConfig.direction : null,
               render: (p: CategoryDetailProduct) => formatCurrency(Number(p.precio_unidad_usd)),
+              exportValue: (p: CategoryDetailProduct) => Number(p.precio_unidad_usd),
             },
             {
               key: "margen_porcentaje",
@@ -68,6 +70,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               onSort: () => requestSort("margen_porcentaje"),
               sortDirection: sortConfig?.key === "margen_porcentaje" ? sortConfig.direction : null,
               render: (p: CategoryDetailProduct) => `${Number(p.margen_porcentaje).toFixed(1)}%`,
+              exportValue: (p: CategoryDetailProduct) => Number(p.margen_porcentaje),
             },
           ]}
           data={sorted}

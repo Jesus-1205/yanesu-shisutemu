@@ -86,7 +86,7 @@ export default function CategoriesPage() {
   };
 
   const exportColumns: Column<Category>[] = [
-    { key: "id", header: "ID" },
+    { key: "id", header: "ID", exportValue: (c: Category) => c.id },
     { key: "nombre", header: "Nombre" },
     { key: "descripcion", header: "Descripción" },
   ];
