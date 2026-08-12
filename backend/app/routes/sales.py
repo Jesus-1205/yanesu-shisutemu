@@ -45,8 +45,10 @@ def create(
     """POST /sales - Registrar nueva venta
 
     Recibe: JSON body con tasa_bcv, items y montos, cookie access_token
-    Hace:   valida stock de cada item, descuenta inventario, persiste venta
-    Devuelve: 201 + venta creada | 422 validación | 404 producto | 409 stock | 401/403
+    Hace:   valida stock de cada item, descuenta inventario, recalcula y valida
+            montos (exento/base/IVA) y cobertura de pagos, persiste venta
+    Devuelve: 201 + venta creada | 422 validación | 404 producto | 409 stock |
+              400 montos/pagos inconsistentes | 401/403
     """
     sale = create_sale(db, data, usuario_id=current_user.id)
     ip = request.client.host if request.client else "local"

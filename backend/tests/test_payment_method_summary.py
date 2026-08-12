@@ -28,6 +28,9 @@ def _create_product(client):
 def _create_sale(client, product_id, metodo_pago_id, monto_usd=0, monto_ves=0):
     return client.post("/api/sales", json={
         "tasa_bcv_aplicada": 50,
+        "monto_exento_usd": 0,
+        "base_imponible_usd": 20,
+        "monto_iva_usd": 3.2,
         "items": [{
             "producto_id": product_id,
             "tipo_empaque": "UNIDAD",

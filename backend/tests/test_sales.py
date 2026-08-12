@@ -28,8 +28,13 @@ def _get_punto_venta_id(client):
 
 def _create_sale(client, product_id, cantidad=2, unidades=2, observaciones=None):
     pv_id = _get_punto_venta_id(client)
+    base = 10 * cantidad
+    iva = round(base * 16) / 100
     payload = {
         "tasa_bcv_aplicada": 50,
+        "monto_exento_usd": 0,
+        "base_imponible_usd": base,
+        "monto_iva_usd": iva,
         "items": [{
             "producto_id": product_id,
             "tipo_empaque": "UNIDAD",
@@ -37,7 +42,7 @@ def _create_sale(client, product_id, cantidad=2, unidades=2, observaciones=None)
             "unidades_descontadas": unidades,
             "precio_unitario_usd": 10,
         }],
-        "pagos": [{"metodo_pago_id": pv_id, "monto_usd": 20, "monto_ves": 0}],
+        "pagos": [{"metodo_pago_id": pv_id, "monto_usd": base + iva, "monto_ves": 0}],
     }
     if observaciones is not None:
         payload["observaciones"] = observaciones
@@ -244,6 +249,9 @@ def _get_method_ids(client):
 def _create_sale_with_method(client, product_id, method_id):
     payload = {
         "tasa_bcv_aplicada": 50,
+        "monto_exento_usd": 0,
+        "base_imponible_usd": 10,
+        "monto_iva_usd": 1.6,
         "items": [{
             "producto_id": product_id,
             "tipo_empaque": "UNIDAD",
@@ -251,7 +259,7 @@ def _create_sale_with_method(client, product_id, method_id):
             "unidades_descontadas": 1,
             "precio_unitario_usd": 10,
         }],
-        "pagos": [{"metodo_pago_id": method_id, "monto_usd": 10, "monto_ves": 0}],
+        "pagos": [{"metodo_pago_id": method_id, "monto_usd": 11.6, "monto_ves": 0}],
     }
     return client.post("/api/sales", json=payload)
 
@@ -287,6 +295,9 @@ class TestListSalesPaymentMethodFilter:
         methods = _get_method_ids(client)
         payload = {
             "tasa_bcv_aplicada": 50,
+            "monto_exento_usd": 0,
+            "base_imponible_usd": 20,
+            "monto_iva_usd": 3.2,
             "items": [{
                 "producto_id": prod["id"],
                 "tipo_empaque": "UNIDAD",
@@ -295,8 +306,8 @@ class TestListSalesPaymentMethodFilter:
                 "precio_unitario_usd": 10,
             }],
             "pagos": [
-                {"metodo_pago_id": methods["DIVISAS"], "monto_usd": 10, "monto_ves": 0},
-                {"metodo_pago_id": methods["EFECTIVO"], "monto_usd": 10, "monto_ves": 0},
+                {"metodo_pago_id": methods["DIVISAS"], "monto_usd": 11.6, "monto_ves": 0},
+                {"metodo_pago_id": methods["EFECTIVO"], "monto_usd": 11.6, "monto_ves": 0},
             ],
         }
         client.post("/api/sales", json=payload)
@@ -347,3 +358,158 @@ class TestListSalesPaymentMethodFilter:
         data = resp.json()
         assert data["total"] == 1
         assert len(data["items"]) == 1
+
+
+class TestCreateSaleAmountValidation:
+    """El backend recalcula montos como fuente de verdad y rechaza desajustes con 400."""
+
+    def _payload(self, client, prod_id, base=20, iva=3.2, pago_usd=23.2):
+        pv_id = _get_punto_venta_id(client)
+        return {
+            "tasa_bcv_aplicada": 50,
+            "monto_exento_usd": 0,
+            "base_imponible_usd": base,
+            "monto_iva_usd": iva,
+            "items": [{
+                "producto_id": prod_id,
+                "tipo_empaque": "UNIDAD",
+                "cantidad": 2,
+                "unidades_descontadas": 2,
+                "precio_unitario_usd": 10,
+            }],
+            "pagos": [{"metodo_pago_id": pv_id, "monto_usd": pago_usd, "monto_ves": 0}],
+        }
+
+    def test_valid_sale_persists_canonical_amounts(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        resp = client.post("/api/sales", json=self._payload(client, prod["id"]))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["monto_exento_usd"] == "0.00"
+        assert data["base_imponible_usd"] == "20.00"
+        assert data["monto_iva_usd"] == "3.20"
+        assert data["total_usd"] == "23.20"
+
+    def test_iva_tampered_returns_400(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        resp = client.post("/api/sales", json=self._payload(client, prod["id"], iva=0, pago_usd=20))
+        assert resp.status_code == 400
+        assert "monto_iva_usd: esperado 3.20, recibido 0" in resp.json()["detail"]
+
+    def test_base_tampered_returns_400(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        resp = client.post("/api/sales", json=self._payload(client, prod["id"], base=19.98, pago_usd=23.2))
+        assert resp.status_code == 400
+        assert "base_imponible_usd: esperado 20.00, recibido 19.98" in resp.json()["detail"]
+
+    def test_insufficient_payment_returns_400(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        resp = client.post("/api/sales", json=self._payload(client, prod["id"], pago_usd=20))
+        assert resp.status_code == 400
+        assert "Pagos insuficientes" in resp.json()["detail"]
+
+    def test_nothing_saved_after_rejection(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        client.post("/api/sales", json=self._payload(client, prod["id"], iva=0, pago_usd=20))
+        resp = client.get("/api/sales")
+        assert resp.json() == []
+
+
+class TestCreateSaleCombo:
+    """Los combos se cobran por su precio total aunque el reparto por
+    producto no sume exacto (p. ej. 8 latas por $5 → 8 × $0.62 = $4.96)."""
+
+    def _create_combo(self, client, product_id, method_id):
+        return client.post("/api/combos", json={
+            "nombre": "8 Latas Mix x $5",
+            "descripcion": "Combo de prueba",
+            "precio_total_usd": 5.00,
+            "grupos": [{
+                "nombre": "Latas",
+                "min_cantidad": 8,
+                "max_cantidad": 8,
+                "productos": [{"producto_id": product_id}],
+            }],
+            "metodo_pago_ids": [method_id],
+        }).json()
+
+    def _distributed_price(self, client, combo, product_id, method_id):
+        calc = client.post("/api/sales/calculate", json={
+            "items": [],
+            "combos": [{
+                "combo_id": combo["id"],
+                "cantidad": 1,
+                "selecciones": [{
+                    "grupo_id": combo["groups"][0]["id"],
+                    "productos": [product_id],
+                    "cantidades": [8],
+                }],
+            }],
+            "metodo_pago_ids": [method_id],
+        }).json()
+        return calc["combo_items"][0]
+
+    def test_sell_combo_persists_combo_total(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        methods = _get_method_ids(client)
+        combo = self._create_combo(client, prod["id"], methods["DIVISAS"])
+        combo_item = self._distributed_price(client, combo, prod["id"], methods["DIVISAS"])
+
+        resp = client.post("/api/sales", json={
+            "tasa_bcv_aplicada": 50,
+            "monto_exento_usd": 5.0,
+            "base_imponible_usd": 0,
+            "monto_iva_usd": 0,
+            "items": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "UNIDAD",
+                "cantidad": combo_item["cantidad"],
+                "unidades_descontadas": combo_item["cantidad"],
+                "precio_unitario_usd": combo_item["precio_unitario_usd"],
+                "iva_porcentaje": 0,
+                "usa_precio_divisas": True,
+                "combo_id": combo["id"],
+                "combo_cantidad": 1,
+            }],
+            "pagos": [{"metodo_pago_id": methods["DIVISAS"], "monto_usd": 5.0, "monto_ves": 0}],
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["monto_exento_usd"] == "5.00"
+        assert data["base_imponible_usd"] == "0.00"
+        assert data["monto_iva_usd"] == "0.00"
+        assert data["total_usd"] == "5.00"
+
+    def test_sell_combo_rejects_tampered_total(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        methods = _get_method_ids(client)
+        combo = self._create_combo(client, prod["id"], methods["DIVISAS"])
+        combo_item = self._distributed_price(client, combo, prod["id"], methods["DIVISAS"])
+
+        resp = client.post("/api/sales", json={
+            "tasa_bcv_aplicada": 50,
+            "monto_exento_usd": 4.0,  # se intenta cobrar menos que el combo
+            "base_imponible_usd": 0,
+            "monto_iva_usd": 0,
+            "items": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "UNIDAD",
+                "cantidad": combo_item["cantidad"],
+                "unidades_descontadas": combo_item["cantidad"],
+                "precio_unitario_usd": combo_item["precio_unitario_usd"],
+                "iva_porcentaje": 0,
+                "usa_precio_divisas": True,
+                "combo_id": combo["id"],
+                "combo_cantidad": 1,
+            }],
+            "pagos": [{"metodo_pago_id": methods["DIVISAS"], "monto_usd": 5.0, "monto_ves": 0}],
+        })
+        assert resp.status_code == 400
+        assert "monto_exento_usd: esperado 5.00, recibido 4.0" in resp.json()["detail"]

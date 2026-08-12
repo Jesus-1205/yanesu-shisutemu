@@ -28,8 +28,14 @@ def _get_pv_id(client):
 
 def _create_sale(client, product_id, precio_unitario=10, cantidad=2, unidades=2):
     pv_id = _get_pv_id(client)
+    base = Decimal(str(precio_unitario)) * cantidad
+    iva = (base * Decimal("16") / Decimal("100")).quantize(Decimal("0.01"))
+    total = base + iva
     return client.post("/api/sales", json={
         "tasa_bcv_aplicada": 50,
+        "monto_exento_usd": 0,
+        "base_imponible_usd": float(base),
+        "monto_iva_usd": float(iva),
         "items": [{
             "producto_id": product_id,
             "tipo_empaque": "UNIDAD",
@@ -37,7 +43,7 @@ def _create_sale(client, product_id, precio_unitario=10, cantidad=2, unidades=2)
             "unidades_descontadas": unidades,
             "precio_unitario_usd": precio_unitario,
         }],
-        "pagos": [{"metodo_pago_id": pv_id, "monto_usd": precio_unitario * cantidad, "monto_ves": 0}],
+        "pagos": [{"metodo_pago_id": pv_id, "monto_usd": float(total), "monto_ves": 0}],
     })
 
 

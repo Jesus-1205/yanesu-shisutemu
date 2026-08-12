@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useCartStore } from "../../../features/sales/store/cartStore";
+import { computeTotals, getDivisasTotal, useCartStore, type CartItem } from "../../../features/sales/store/cartStore";
 import { useExchangeRateStore } from "../../../stores/exchangeRateStore";
 import type { ProductOut } from "../../../types/api";
 
@@ -210,5 +210,56 @@ describe("cartStore - totals", () => {
     const totalVes = useCartStore.getState().getTotalVes();
     // totalUsd = 15 + 2.4 = 17.4. 17.4 * 45.5 = 791.7
     expect(totalVes).toBe(791.7);
+  });
+});
+
+function makeComboItem(overrides: Partial<CartItem> = {}): CartItem {
+  return {
+    cartItemId: "combo_9",
+    producto_id: 0,
+    nombre: "Combo 6-pack",
+    tipo_empaque: "UNIDAD",
+    cantidad: 1,
+    unidades_por_caja: 1,
+    unidades_descontadas: 6,
+    precio_unidad_usd: 10,
+    precio_caja_usd: 0,
+    precio_unitario_usd: 10,
+    iva_porcentaje: 0,
+    tipo_iva: "EXENTO",
+    usaPrecioDivisas: true,
+    precioDivisasUnidad: null,
+    precioDivisasCaja: null,
+    combo_id: 9,
+    comboDetalle: {
+      nombre: "Combo 6-pack",
+      productos: [
+        {
+          producto_id: 3,
+          nombre: "Cerveza",
+          tipo_iva: "GRAVADO",
+          cantidad: 6,
+          precio_unitario: 1.67,
+        },
+      ],
+      metodo_pago_ids: [],
+    },
+    ...overrides,
+  };
+}
+
+describe("cartStore - totals con combos", () => {
+  it("cobra el precio total del combo, no la suma de constituyentes", () => {
+    // El combo se vende como unidad a su precio total ($10), aunque los
+    // constituyentes sumen 6 × 1.67 = 10.02 tras el reparto de precio.
+    const totals = computeTotals({ combo_9: makeComboItem() });
+    expect(totals.monto_exento_usd).toBe(10);
+    expect(totals.base_imponible_usd).toBe(0);
+    expect(totals.monto_iva_usd).toBe(0);
+  });
+
+  it("getDivisasTotal usa el precio total del combo", () => {
+    const total = getDivisasTotal({ combo_9: makeComboItem() });
+    expect(total).toBe(10);
   });
 });

@@ -14,6 +14,7 @@ class SaleItemCreate(BaseModel):
     iva_porcentaje: Decimal = Field(default=Decimal("16.00"), ge=0)
     usa_precio_divisas: bool = False
     combo_id: int | None = None
+    combo_cantidad: int | None = Field(default=None, gt=0)
 
 
 class SaleItemOut(BaseModel):

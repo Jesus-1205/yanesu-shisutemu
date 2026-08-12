@@ -205,6 +205,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
               iva_porcentaje: 0,
               usa_precio_divisas: true,
               combo_id: item.combo_id,
+              combo_cantidad: item.cantidad,
             }));
           }
           return [{

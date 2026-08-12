@@ -52,6 +52,7 @@ import type {
   UserOut,
   UserUpdate,
 } from "@/types/api";
+import { normalizeDecimals } from "@/lib/normalizeDecimals";
 
 const API_BASE = "/api";
 
@@ -72,7 +73,8 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     throw new Error(msg);
   }
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const data: unknown = await res.json();
+  return normalizeDecimals(data) as T;
 }
 
 export const api = {

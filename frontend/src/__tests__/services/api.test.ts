@@ -163,6 +163,26 @@ describe("api - query params", () => {
   });
 });
 
+describe("api - decimal normalization", () => {
+  it("converts decimal-string fields to numbers at the API boundary", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({
+        id: 1,
+        total_usd: "23.20",
+        monto_iva_usd: "3.20",
+        items: [{ precio_unitario_usd: "10.50", subtotal_usd: "21.00" }],
+        observaciones: null,
+      }),
+    );
+    const result = await api.getSale(1);
+    expect(result.total_usd).toBe(23.2);
+    expect(result.monto_iva_usd).toBe(3.2);
+    expect(result.items[0].precio_unitario_usd).toBe(10.5);
+    expect(result.items[0].subtotal_usd).toBe(21);
+    expect(result.observaciones).toBeNull();
+  });
+});
+
 describe("api - invoice with FormData", () => {
   it("createInvoice sends FormData when image provided", async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ id: 1 }));

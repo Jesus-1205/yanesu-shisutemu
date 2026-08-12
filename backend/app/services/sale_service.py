@@ -1,5 +1,5 @@
 from datetime import date, datetime, time, timedelta, timezone
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -12,8 +12,75 @@ from app.models.product import Product
 from app.models.sale import Sale, SaleItem
 
 from app.models.sale_payment import SalePayment
-from app.schemas.sale import PaymentMethodSummaryOut, SaleCreate, TopWeekOut
+from app.schemas.sale import PaymentMethodSummaryOut, SaleCreate, SaleItemCreate, TopWeekOut
 from app.services.price_rule_service import get_active_divisas_prices, get_divisas_payment_method_ids
+
+IVA_RATE = Decimal("16.00")
+_TOLERANCIA_MONTOS = Decimal("0.01")
+
+
+def _iva_rate_for(item_data: SaleItemCreate, product: Product) -> Decimal:
+    """Tasa de IVA canónica de un ítem: combos y productos exentos no pagan IVA."""
+    if item_data.combo_id or product.tipo_iva != "GRAVADO":
+        return Decimal("0")
+    return IVA_RATE
+
+
+def _dentro_tolerancia(valor: Decimal, esperado: Decimal) -> bool:
+    """El frontend redondea con floats; se tolera hasta 1 céntimo de diferencia."""
+    return abs(valor - esperado) <= _TOLERANCIA_MONTOS
+
+
+def _compute_sale_amounts(
+    item_products: list[tuple[SaleItemCreate, Product]],
+    combos_by_id: dict[int, Combo] | None = None,
+) -> tuple[Decimal, Decimal, Decimal]:
+    """Recalcula los montos canónicos (exento, base, IVA) de la venta.
+
+    El backend es la fuente de verdad del dinero: cada subtotal y el IVA por
+    ítem se redondean a céntimos con ROUND_HALF_UP (equivalente al POS).
+
+    Un combo se cobra como unidad a su `precio_total_usd` (los productos
+    constituyentes son una asignación interna que puede no sumar exacto por el
+    redondeo del reparto). Si falta `combo_cantidad`, se usa la suma de los
+    subtotales constituyentes para no rechazar clientes antiguos.
+    """
+    combos_by_id = combos_by_id or {}
+    exento = Decimal("0")
+    base = Decimal("0")
+    iva = Decimal("0")
+    combo_exento: dict[int, Decimal] = {}
+    for item_data, product in item_products:
+        if item_data.combo_id:
+            combo_id = item_data.combo_id
+            subtotal = (Decimal(item_data.cantidad) * item_data.precio_unitario_usd).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            combo_exento[combo_id] = combo_exento.get(combo_id, Decimal("0")) + subtotal
+            combo = combos_by_id.get(combo_id)
+            if combo is not None and item_data.combo_cantidad:
+                combo_exento[combo_id] = (
+                    Decimal(item_data.combo_cantidad) * combo.precio_total_usd
+                ).quantize(Decimal("0.01"))
+            continue
+
+        iva_rate = _iva_rate_for(item_data, product)
+        subtotal = (Decimal(item_data.cantidad) * item_data.precio_unitario_usd).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        if iva_rate > 0:
+            base += subtotal
+            iva += (subtotal * iva_rate / Decimal("100")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+        else:
+            exento += subtotal
+    exento += sum(combo_exento.values())
+    return (
+        exento.quantize(Decimal("0.01")),
+        base.quantize(Decimal("0.01")),
+        iva.quantize(Decimal("0.01")),
+    )
 
 
 def _to_ve_boundary(
@@ -34,6 +101,7 @@ def _to_ve_boundary(
 
 def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
     items: list[SaleItem] = []
+    item_products: list[tuple[SaleItemCreate, Product]] = []
     for item_data in data.items:
         stmt = select(Product).where(Product.id == item_data.producto_id)
         product = db.execute(stmt).scalars().first()
@@ -71,16 +139,18 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
                 )
             unidades = item_data.cantidad
 
+        iva_rate = _iva_rate_for(item_data, product)
         items.append(SaleItem(
             producto_id=item_data.producto_id,
             tipo_empaque=item_data.tipo_empaque,
             cantidad=item_data.cantidad,
             unidades_descontadas=unidades,
             precio_unitario_usd=item_data.precio_unitario_usd,
-            iva_porcentaje=item_data.iva_porcentaje,
+            iva_porcentaje=iva_rate,
             usa_precio_divisas=item_data.usa_precio_divisas,
             combo_id=item_data.combo_id,
         ))
+        item_products.append((item_data, product))
 
     pagos: list[SalePayment] = []
     for pago_data in data.pagos:
@@ -102,6 +172,7 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
     divisas_method_ids = get_divisas_payment_method_ids(db)
 
     combo_ids_in_sale = {item_data.combo_id for item_data in data.items if item_data.combo_id}
+    combos_by_id: dict[int, Combo] = {}
     for combo_id in combo_ids_in_sale:
         combo = db.execute(
             select(Combo).options(
@@ -113,6 +184,7 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             raise EntityNotFoundError(f"Combo ID {combo_id} no encontrado")
         if not combo.activo:
             raise ConflictError(f"El combo '{combo.nombre}' no está activo")
+        combos_by_id[combo.id] = combo
 
         combo_pm_ids = {pm.metodo_pago_id for pm in combo.payment_methods}
         divisas_method_ids |= combo_pm_ids
@@ -165,14 +237,52 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
                 f"Faltan ${faltante:.2f} en divisas para cubrir los productos con descuento"
             )
 
+    # ── Validación de montos: el backend es la fuente de verdad del dinero ──
+    exento, base, iva = _compute_sale_amounts(item_products, combos_by_id)
+    errores: list[str] = []
+    if not _dentro_tolerancia(data.monto_exento_usd, exento):
+        errores.append(f"monto_exento_usd: esperado {exento}, recibido {data.monto_exento_usd}")
+    if not _dentro_tolerancia(data.base_imponible_usd, base):
+        errores.append(f"base_imponible_usd: esperado {base}, recibido {data.base_imponible_usd}")
+    if not _dentro_tolerancia(data.monto_iva_usd, iva):
+        errores.append(f"monto_iva_usd: esperado {iva}, recibido {data.monto_iva_usd}")
+
+    for item_data, product in item_products:
+        iva_esperado = _iva_rate_for(item_data, product)
+        if not _dentro_tolerancia(item_data.iva_porcentaje, iva_esperado):
+            errores.append(
+                f"producto {item_data.producto_id}: iva_porcentaje esperado {iva_esperado}, "
+                f"recibido {item_data.iva_porcentaje}"
+            )
+
+    if errores:
+        raise ValueError(
+            "Montos inválidos en la venta. Recalcula el carrito e inténtalo de nuevo: "
+            + "; ".join(errores)
+        )
+
+    total_usd = (exento + base + iva).quantize(Decimal("0.01"))
+
+    # ── Cobertura de pagos: el cobro debe cubrir el total de la venta ──
+    total_pagado_usd = Decimal("0")
+    for pago in pagos:
+        total_pagado_usd += pago.monto_usd or Decimal("0")
+        if pago.monto_ves:
+            total_pagado_usd += pago.monto_ves / data.tasa_bcv_aplicada
+    total_pagado_usd = total_pagado_usd.quantize(Decimal("0.01"))
+    if total_pagado_usd < total_usd - _TOLERANCIA_MONTOS:
+        raise ValueError(
+            f"Pagos insuficientes: total {total_usd} USD, pagado {total_pagado_usd} USD"
+        )
+
     sale = Sale(
         usuario_id=usuario_id,
         tasa_bcv_aplicada=data.tasa_bcv_aplicada,
         historico_tasa_id=data.historico_tasa_id,
         observaciones=data.observaciones,
-        monto_exento_usd=data.monto_exento_usd,
-        base_imponible_usd=data.base_imponible_usd,
-        monto_iva_usd=data.monto_iva_usd,
+        monto_exento_usd=exento,
+        base_imponible_usd=base,
+        monto_iva_usd=iva,
         items=items,
         payments=pagos,
     )
