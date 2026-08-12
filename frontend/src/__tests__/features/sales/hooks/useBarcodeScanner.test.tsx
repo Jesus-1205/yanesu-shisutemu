@@ -6,6 +6,7 @@ import type { ProductOut } from "../../../../types/api";
 import { api } from "../../../../services/api";
 
 const mockToast = vi.fn();
+const mockOnBarcodeScan = vi.fn();
 
 vi.mock("@/ui-components/Toast", () => ({
   useToast: () => ({ toast: mockToast }),
@@ -120,7 +121,7 @@ describe("useBarcodeScanner", () => {
 
     const { ref } = createRef();
     const addItem = vi.fn();
-    renderHook(() => useBarcodeScanner(addItem, ref, false));
+    renderHook(() => useBarcodeScanner(addItem, ref, false, mockOnBarcodeScan));
 
     scanBarcode("7501234567890");
 
@@ -154,7 +155,7 @@ describe("useBarcodeScanner", () => {
 
     const { ref } = createRef();
     const addItem = vi.fn();
-    renderHook(() => useBarcodeScanner(addItem, ref, false));
+    renderHook(() => useBarcodeScanner(addItem, ref, false, mockOnBarcodeScan));
 
     scanBarcode("9999999999999");
 
@@ -171,7 +172,7 @@ describe("useBarcodeScanner", () => {
   it("does NOT trigger on slow human typing", async () => {
     const { ref } = createRef();
     const addItem = vi.fn();
-    renderHook(() => useBarcodeScanner(addItem, ref, false));
+    renderHook(() => useBarcodeScanner(addItem, ref, false, mockOnBarcodeScan));
 
     typeSlowly("7501234567890");
 
@@ -181,7 +182,7 @@ describe("useBarcodeScanner", () => {
     expect(addItem).not.toHaveBeenCalled();
   });
 
-  it("clears search input after successful scan when focused", async () => {
+  it("calls onBarcodeScan on successful scan", async () => {
     const product = makeProduct();
     vi.mocked(api.getProducts).mockResolvedValue({
       items: [product],
@@ -191,20 +192,19 @@ describe("useBarcodeScanner", () => {
       pages: 1,
     });
 
-    const { input, ref } = createRef();
+    const { ref } = createRef();
     const addItem = vi.fn();
-    renderHook(() => useBarcodeScanner(addItem, ref, false));
-
-    input.focus();
-    input.value = "7501234567890";
+    renderHook(() => useBarcodeScanner(addItem, ref, false, mockOnBarcodeScan));
 
     scanBarcode("7501234567890");
 
     await vi.waitFor(() => {
-      expect(addItem).toHaveBeenCalled();
+      expect(mockOnBarcodeScan).toHaveBeenCalled();
     });
 
-    expect(input.value).toBe("");
+    await vi.waitFor(() => {
+      expect(addItem).toHaveBeenCalledWith(product, "UNIDAD");
+    });
   });
 
   it("does not match product with different barcode", async () => {
@@ -219,7 +219,7 @@ describe("useBarcodeScanner", () => {
 
     const { ref } = createRef();
     const addItem = vi.fn();
-    renderHook(() => useBarcodeScanner(addItem, ref, false));
+    renderHook(() => useBarcodeScanner(addItem, ref, false, mockOnBarcodeScan));
 
     scanBarcode("7501234567890");
 
@@ -245,7 +245,7 @@ describe("useBarcodeScanner", () => {
 
     const { ref } = createRef();
     const addItem = vi.fn();
-    renderHook(() => useBarcodeScanner(addItem, ref, true));
+    renderHook(() => useBarcodeScanner(addItem, ref, true, mockOnBarcodeScan));
 
     scanBarcode("7501234567890");
 
@@ -259,7 +259,7 @@ describe("useBarcodeScanner", () => {
     const { ref } = createRef();
     const addSpy = vi.spyOn(document, "addEventListener");
     const removeSpy = vi.spyOn(document, "removeEventListener");
-    const { unmount } = renderHook(() => useBarcodeScanner(vi.fn(), ref, false));
+    const { unmount } = renderHook(() => useBarcodeScanner(vi.fn(), ref, false, mockOnBarcodeScan));
 
     expect(addSpy).toHaveBeenCalledWith("keydown", expect.any(Function), true);
     unmount();

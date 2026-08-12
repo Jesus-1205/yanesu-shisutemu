@@ -150,7 +150,13 @@ export default function POSPage() {
   }, []);
 
   usePosKeyboard(searchRef, handleCheckout, checkoutOpen, handleCloseCheckout);
-  useBarcodeScanner(addItem, searchRef, checkoutOpen);
+
+  const handleBarcodeScan = useCallback(() => {
+    setSearch("");
+    setDebouncedSearch("");
+  }, []);
+
+  useBarcodeScanner(addItem, searchRef, checkoutOpen, handleBarcodeScan);
 
   const handleShowMore = useCallback(() => {
     setShowAllFavorites(true);

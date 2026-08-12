@@ -9,6 +9,7 @@ export function useBarcodeScanner(
   addItem: (product: ProductOut, tipo: "UNIDAD") => void,
   searchRef: RefObject<HTMLInputElement | null>,
   checkoutOpen: boolean,
+  onBarcodeScan: () => void,
 ) {
   const { toast } = useToast();
   const addItemRef = useRef(addItem);
@@ -19,23 +20,12 @@ export function useBarcodeScanner(
   const abortRef = useRef<AbortController | null>(null);
   const checkoutOpenRef = useRef(checkoutOpen);
   checkoutOpenRef.current = checkoutOpen;
+  const onBarcodeScanRef = useRef(onBarcodeScan);
+  onBarcodeScanRef.current = onBarcodeScan;
 
   useEffect(() => {
     let buffer = "";
     let lastKeyTime = 0;
-
-    const clearSearchInput = () => {
-      if (!searchRef.current) return;
-      searchRef.current.value = "";
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      setter?.call(searchRef.current, "");
-      searchRef.current.dispatchEvent(
-        new Event("input", { bubbles: true }),
-      );
-    };
 
     const processBarcode = async (code: string) => {
       if (scanningRef.current) return;
@@ -99,7 +89,7 @@ export function useBarcodeScanner(
         if (code && elapsed <= SCANNER_THRESHOLD_MS && !checkoutOpenRef.current) {
           e.preventDefault();
           e.stopPropagation();
-          clearSearchInput();
+          onBarcodeScanRef.current();
           processBarcode(code);
         }
         return;
