@@ -41,12 +41,26 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             raise EntityNotFoundError(f"Producto ID {item_data.producto_id} no encontrado")
 
         if item_data.tipo_empaque == "CAJA":
-            if product.stock_cajas < item_data.cantidad:
-                raise ConflictError(
-                    f"Stock insuficiente de cajas para '{product.nombre}': "
-                    f"disponible {product.stock_cajas} cajas, requerido {item_data.cantidad}"
-                )
-            product.stock_cajas -= item_data.cantidad
+            needed = item_data.cantidad
+            tomar_cajas = min(needed, product.stock_cajas)
+            product.stock_cajas -= tomar_cajas
+            needed -= tomar_cajas
+
+            while needed > 0:
+                unidades_necesarias = product.unidades_por_caja
+                if product.stock_unidades >= unidades_necesarias:
+                    product.stock_unidades -= unidades_necesarias
+                    needed -= 1
+                else:
+                    total_disponible = (
+                        product.stock_cajas * product.unidades_por_caja
+                        + product.stock_unidades
+                    )
+                    raise ConflictError(
+                        f"Stock insuficiente para '{product.nombre}': "
+                        f"disponible {total_disponible} unidades, requerido {item_data.cantidad * product.unidades_por_caja}"
+                    )
+
             unidades = item_data.cantidad * product.unidades_por_caja
         else:
             needed = item_data.cantidad
