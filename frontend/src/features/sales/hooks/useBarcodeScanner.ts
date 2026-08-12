@@ -24,6 +24,20 @@ export function useBarcodeScanner(
     let buffer = "";
     let lastKeyTime = 0;
 
+    const clearSearchInput = () => {
+      if (document.activeElement === searchRef.current && searchRef.current) {
+        searchRef.current.value = "";
+        const setter = Object.getOwnPropertyDescriptor(
+          window.HTMLInputElement.prototype,
+          "value",
+        )?.set;
+        setter?.call(searchRef.current, "");
+        searchRef.current.dispatchEvent(
+          new Event("input", { bubbles: true }),
+        );
+      }
+    };
+
     const processBarcode = async (code: string) => {
       if (scanningRef.current) return;
       scanningRef.current = true;
@@ -46,20 +60,6 @@ export function useBarcodeScanner(
             `Producto agregado: ${match.nombre}`,
             "success",
           );
-          if (
-            document.activeElement === searchRef.current &&
-            searchRef.current
-          ) {
-            searchRef.current.value = "";
-            const setter = Object.getOwnPropertyDescriptor(
-              window.HTMLInputElement.prototype,
-              "value",
-            )?.set;
-            setter?.call(searchRef.current, "");
-            searchRef.current.dispatchEvent(
-              new Event("input", { bubbles: true }),
-            );
-          }
         } else {
           toastRef.current(
             `Producto no encontrado: ${code}`,
@@ -100,6 +100,7 @@ export function useBarcodeScanner(
         if (code && elapsed <= SCANNER_THRESHOLD_MS && !checkoutOpenRef.current) {
           e.preventDefault();
           e.stopPropagation();
+          clearSearchInput();
           processBarcode(code);
         }
         return;
