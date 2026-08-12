@@ -211,6 +211,9 @@ export default function ProductNewPage() {
                 id={fieldId("codigo")}
                 value={form.codigo_barra}
                 onChange={(e) => setField("codigo_barra", e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
                 placeholder="Opcional"
                 className={inputBase}
               />
