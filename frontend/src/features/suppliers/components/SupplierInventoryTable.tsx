@@ -57,6 +57,7 @@ export default function SupplierInventoryTable({ data, supplierName }: SupplierI
                 ) : (
                   <span>{p.stock_unidades}</span>
                 ),
+              exportValue: (p: SupplierDetailProduct) => p.stock_unidades,
             },
             {
               key: "precio_unidad_usd",
@@ -65,6 +66,7 @@ export default function SupplierInventoryTable({ data, supplierName }: SupplierI
               onSort: () => requestSort("precio_unidad_usd"),
               sortDirection: sortConfig?.key === "precio_unidad_usd" ? sortConfig.direction : null,
               render: (p: SupplierDetailProduct) => formatCurrency(Number(p.precio_unidad_usd)),
+              exportValue: (p: SupplierDetailProduct) => Number(p.precio_unidad_usd),
             },
             {
               key: "margen_porcentaje",
@@ -73,6 +75,7 @@ export default function SupplierInventoryTable({ data, supplierName }: SupplierI
               onSort: () => requestSort("margen_porcentaje"),
               sortDirection: sortConfig?.key === "margen_porcentaje" ? sortConfig.direction : null,
               render: (p: SupplierDetailProduct) => `${Number(p.margen_porcentaje).toFixed(1)}%`,
+              exportValue: (p: SupplierDetailProduct) => Number(p.margen_porcentaje),
             },
           ]}
           data={sorted}

@@ -197,7 +197,7 @@ describe("SuppliersPage", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
-          expect.objectContaining({ header: "Telefono" }),
+          expect.objectContaining({ header: "Teléfono" }),
           expect.objectContaining({ header: "Email" }),
         ]),
         filename: "Proveedores",

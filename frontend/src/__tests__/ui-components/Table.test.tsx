@@ -172,6 +172,29 @@ describe("Table", () => {
       });
     });
 
+    it("passes columns with exportValue to exportToExcel", async () => {
+      const exportCols: Column<Item>[] = [
+        { key: "id", header: "ID" },
+        { key: "name", header: "Name", render: (item) => <b>{item.name}</b>, exportValue: (item) => item.name.toUpperCase() },
+      ];
+      render(
+        <Table
+          columns={exportCols}
+          data={data}
+          keyExtractor={(item) => item.id}
+          exportable
+          exportFilename="test"
+        />,
+      );
+      await userEvent.click(screen.getByTitle("Exportar a Excel"));
+      await userEvent.click(screen.getByText("Datos visibles"));
+      expect(exportToExcel).toHaveBeenCalledWith({
+        data: data,
+        columns: exportCols,
+        filename: "test",
+      });
+    });
+
     it("exports allData when clicking Todos los datos", async () => {
       const allData = [
         { id: 1, name: "Alice" },

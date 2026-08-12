@@ -69,13 +69,12 @@ describe("SalesPage", () => {
     const mockSales = [
       { id: 1, fecha_venta: "2025-01-15", total_usd: 100, total_ves: 4500, metodo_pago: "Efectivo", tasa_bcv_aplicada: 45, items: [{ id: 1 }], usuario_nombre: "Admin", observaciones: null },
     ];
-    mockGetSalesPaginated.mockResolvedValue({ items: mockSales, pages: 1 });
-    mockGetSales.mockResolvedValue(mockSales);
+    mockGetSalesPaginated.mockResolvedValue({ items: mockSales, total: 1, page: 1, page_size: 200, pages: 1 });
     render(<SalesPage />, { wrapper });
     await waitFor(() => expect(screen.getByText("Descargar Excel")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Descargar Excel"));
     await waitFor(() => {
-      expect(mockGetSales).toHaveBeenCalledWith(expect.objectContaining({ limit: 999999 }));
+      expect(mockGetSales).not.toHaveBeenCalled();
       expect(exportToExcel).toHaveBeenCalledWith({
         data: mockSales,
         columns: expect.arrayContaining([
@@ -84,6 +83,26 @@ describe("SalesPage", () => {
           expect.objectContaining({ header: "Total USD" }),
           expect.objectContaining({ header: "Total VES" }),
         ]),
+        filename: "Ventas",
+      });
+    });
+  });
+
+  it("pagina todas las paginas de ventas al exportar", async () => {
+    const saleA = { id: 1, fecha_venta: "2025-01-15", total_usd: 100, total_ves: 4500, metodo_pago: "Efectivo", tasa_bcv_aplicada: 45, items: [{ id: 1 }], usuario_nombre: "Admin", observaciones: null };
+    const saleB = { id: 2, fecha_venta: "2025-01-16", total_usd: 200, total_ves: 9000, metodo_pago: "Efectivo", tasa_bcv_aplicada: 45, items: [{ id: 2 }], usuario_nombre: "Admin", observaciones: null };
+    mockGetSalesPaginated
+      .mockResolvedValueOnce({ items: [], total: 2, page: 1, page_size: 20, pages: 2 })
+      .mockResolvedValueOnce({ items: [saleA], total: 2, page: 1, page_size: 200, pages: 2 })
+      .mockResolvedValueOnce({ items: [saleB], total: 2, page: 2, page_size: 200, pages: 2 });
+    render(<SalesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Descargar Excel")).toBeInTheDocument());
+    await userEvent.click(screen.getByText("Descargar Excel"));
+    await waitFor(() => {
+      expect(mockGetSalesPaginated).toHaveBeenCalledWith(expect.objectContaining({ page: 2, page_size: 200 }));
+      expect(exportToExcel).toHaveBeenCalledWith({
+        data: [saleA, saleB],
+        columns: expect.arrayContaining([expect.objectContaining({ header: "ID" })]),
         filename: "Ventas",
       });
     });

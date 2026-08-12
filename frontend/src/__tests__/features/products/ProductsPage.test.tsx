@@ -75,7 +75,7 @@ describe("ProductsPage", () => {
   it("exporta todos los productos a excel", async () => {
     mockApi.getProducts
       .mockResolvedValueOnce({ items: mockProducts, total: 1, page: 1, page_size: 20, pages: 1 })
-      .mockResolvedValueOnce({ items: mockProducts, total: 1, page: 1, page_size: 999999, pages: 1 });
+      .mockResolvedValue({ items: mockProducts, total: 1, page: 1, page_size: 200, pages: 1 });
     renderPage();
     await waitFor(() => expect(screen.getByText("Descargar Excel")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Descargar Excel"));
@@ -85,8 +85,8 @@ describe("ProductsPage", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
-          expect.objectContaining({ header: "Codigo de Barra" }),
-          expect.objectContaining({ header: "Categorias" }),
+          expect.objectContaining({ header: "Código de Barra" }),
+          expect.objectContaining({ header: "Categorías" }),
           expect.objectContaining({ header: "Stock (uds)" }),
           expect.objectContaining({ header: "Precio Unidad USD" }),
           expect.objectContaining({ header: "Tipo IVA" }),
@@ -99,7 +99,7 @@ describe("ProductsPage", () => {
   it("no incluye precio sugerido en la exportacion", async () => {
     mockApi.getProducts
       .mockResolvedValueOnce({ items: mockProducts, total: 1, page: 1, page_size: 20, pages: 1 })
-      .mockResolvedValueOnce({ items: mockProducts, total: 1, page: 1, page_size: 999999, pages: 1 });
+      .mockResolvedValue({ items: mockProducts, total: 1, page: 1, page_size: 200, pages: 1 });
     renderPage();
     await waitFor(() => expect(screen.getByText("Descargar Excel")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Descargar Excel"));
@@ -108,6 +108,31 @@ describe("ProductsPage", () => {
       const headers = callArgs.columns.map((c: { header: string }) => c.header);
       expect(headers).not.toContain("Precio Sugerido Unidad USD");
       expect(headers).not.toContain("Precio Sugerido Caja USD");
+    });
+  });
+
+  it("pagina todas las paginas de productos al exportar", async () => {
+    const productB: ProductOut = { ...mockProducts[0], id: 2, nombre: "Whisky B" };
+    mockApi.getProducts.mockImplementation((params) => {
+      if (params?.page_size === 200) {
+        return Promise.resolve(
+          params?.page === 2
+            ? { items: [productB], total: 2, page: 2, page_size: 200, pages: 2 }
+            : { items: mockProducts, total: 2, page: 1, page_size: 200, pages: 2 },
+        );
+      }
+      return Promise.resolve({ items: mockProducts, total: 2, page: 1, page_size: 20, pages: 2 });
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Descargar Excel")).toBeInTheDocument());
+    await userEvent.click(screen.getByText("Descargar Excel"));
+    await waitFor(() => {
+      expect(mockApi.getProducts).toHaveBeenCalledWith(expect.objectContaining({ page: 2, page_size: 200 }));
+      expect(exportToExcel).toHaveBeenCalledWith({
+        data: [...mockProducts, productB],
+        columns: expect.arrayContaining([expect.objectContaining({ header: "ID" })]),
+        filename: "Productos",
+      });
     });
   });
 });

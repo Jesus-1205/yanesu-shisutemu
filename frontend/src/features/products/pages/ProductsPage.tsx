@@ -26,6 +26,7 @@ import type { ProductFiltersState, ViewMode, SortField, SortOrder } from "../typ
 import { FILTERS_DEFAULT } from "../types";
 
 const PAGE_SIZE = 20;
+const EXPORT_PAGE_SIZE = 200;
 
 const sortOptions = [
   { value: "nombre_asc", label: "Nombre (A-Z)" },
@@ -108,21 +109,21 @@ export default function ProductsPage() {
   }, []);
 
   const exportColumns: Column<Product>[] = [
-    { key: "id", header: "ID" },
-    { key: "codigo_barra", header: "Codigo de Barra" },
+    { key: "id", header: "ID", exportValue: (p: Product) => p.id },
+    { key: "codigo_barra", header: "Código de Barra" },
     { key: "nombre", header: "Nombre" },
     {
       key: "categorias",
-      header: "Categorias",
+      header: "Categorías",
       render: (p: Product) => p.categories.map((c) => c.nombre).join(", "),
     },
-    { key: "unidades_por_caja", header: "Unidades/Caja" },
-    { key: "stock_unidades", header: "Stock (uds)" },
-    { key: "stock_minimo", header: "Stock Minimo" },
-    { key: "precio_costo_caja_usd", header: "Costo Caja USD" },
-    { key: "precio_costo_usd", header: "Costo Unidad USD" },
-    { key: "precio_unidad_usd", header: "Precio Unidad USD" },
-    { key: "precio_caja_usd", header: "Precio Caja USD" },
+    { key: "unidades_por_caja", header: "Unidades/Caja", exportValue: (p: Product) => p.unidades_por_caja },
+    { key: "stock_unidades", header: "Stock (uds)", exportValue: (p: Product) => p.stock_unidades },
+    { key: "stock_minimo", header: "Stock Mínimo", exportValue: (p: Product) => p.stock_minimo },
+    { key: "precio_costo_caja_usd", header: "Costo Caja USD", exportValue: (p: Product) => Number(p.precio_costo_caja_usd) },
+    { key: "precio_costo_usd", header: "Costo Unidad USD", exportValue: (p: Product) => Number(p.precio_costo_usd) },
+    { key: "precio_unidad_usd", header: "Precio Unidad USD", exportValue: (p: Product) => Number(p.precio_unidad_usd) },
+    { key: "precio_caja_usd", header: "Precio Caja USD", exportValue: (p: Product) => Number(p.precio_caja_usd) },
     {
       key: "proveedor_id",
       header: "Proveedor",
@@ -133,8 +134,16 @@ export default function ProductsPage() {
 
   const handleExportAll = async () => {
     try {
-      const result = await api.getProducts({ page_size: 999999 });
-      const name = exportToExcel({ data: result.items, columns: exportColumns, filename: "Productos" });
+      const allProducts: Product[] = [];
+      let currentPage = 1;
+      let pages = 1;
+      do {
+        const result = await api.getProducts({ page: currentPage, page_size: EXPORT_PAGE_SIZE });
+        allProducts.push(...result.items);
+        pages = result.pages;
+        currentPage += 1;
+      } while (currentPage <= pages);
+      const name = exportToExcel({ data: allProducts, columns: exportColumns, filename: "Productos" });
       toast(`Archivo descargado: ${name}`, "success");
     } catch {
       toast("Error al exportar productos", "error");

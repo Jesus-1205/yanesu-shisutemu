@@ -86,9 +86,9 @@ export default function SuppliersPage() {
   };
 
   const exportColumns: Column<Supplier>[] = [
-    { key: "id", header: "ID" },
+    { key: "id", header: "ID", exportValue: (s: Supplier) => s.id },
     { key: "nombre", header: "Nombre" },
-    { key: "telefono", header: "Telefono" },
+    { key: "telefono", header: "Teléfono" },
     { key: "email", header: "Email" },
   ];
 

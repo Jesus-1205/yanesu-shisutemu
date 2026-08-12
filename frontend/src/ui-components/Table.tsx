@@ -7,6 +7,12 @@ export interface Column<T> {
   key: string;
   header: string;
   render?: (item: T) => ReactNode;
+  /**
+   * Valor crudo para exportar a Excel (ej. el número en vez del texto
+   * formateado "$1.234,56"). Si no se define, se usa `render` (texto plano)
+   * o el valor directo de `key`.
+   */
+  exportValue?: (item: T) => unknown;
   className?: string;
   sortable?: boolean;
   onSort?: () => void;

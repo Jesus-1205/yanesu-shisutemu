@@ -17,6 +17,7 @@ import { exportToExcel } from "@/lib/exportToExcel";
 import type { PaymentMethodOut } from "@/types/api";
 
 const PAGE_SIZE = 20;
+const EXPORT_PAGE_SIZE = 200;
 
 export default function SalesPage() {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ export default function SalesPage() {
   };
 
   const exportColumns: Column<Sale>[] = [
-    { key: "id", header: "ID" },
+    { key: "id", header: "ID", exportValue: (s: Sale) => s.id },
     {
       key: "fecha_venta",
       header: "Fecha",
@@ -82,26 +83,30 @@ export default function SalesPage() {
       key: "total_usd",
       header: "Total USD",
       render: (s: Sale) => formatCurrency(s.total_usd),
+      exportValue: (s: Sale) => Number(s.total_usd),
     },
     {
       key: "total_ves",
       header: "Total VES",
       render: (s: Sale) => formatCurrency(s.total_ves, "Bs "),
+      exportValue: (s: Sale) => Number(s.total_ves),
     },
     {
       key: "metodo_pago",
-      header: "Metodo de Pago",
+      header: "Método de Pago",
       render: (s: Sale) => s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-",
     },
     {
       key: "tasa_bcv_aplicada",
       header: "Tasa BCV",
       render: (s: Sale) => formatRate(s.tasa_bcv_aplicada),
+      exportValue: (s: Sale) => Number(s.tasa_bcv_aplicada),
     },
     {
       key: "items_count",
       header: "Items",
       render: (s: Sale) => s.items.length,
+      exportValue: (s: Sale) => s.items.length,
     },
     {
       key: "usuario_nombre",
@@ -117,12 +122,21 @@ export default function SalesPage() {
 
   const handleExportAll = async () => {
     try {
-      const allSales = await api.getSales({
-        ...(fechaDesde && { fecha_desde: fechaDesde }),
-        ...(fechaHasta && { fecha_hasta: fechaHasta }),
-        ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
-        limit: 999999,
-      });
+      const allSales: Sale[] = [];
+      let currentPage = 1;
+      let pages = 1;
+      do {
+        const res = await api.getSalesPaginated({
+          ...(fechaDesde && { fecha_desde: fechaDesde }),
+          ...(fechaHasta && { fecha_hasta: fechaHasta }),
+          ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
+          page: currentPage,
+          page_size: EXPORT_PAGE_SIZE,
+        });
+        allSales.push(...res.items);
+        pages = res.pages;
+        currentPage += 1;
+      } while (currentPage <= pages);
       const name = exportToExcel({ data: allSales, columns: exportColumns, filename: "Ventas" });
       toast(`Archivo descargado: ${name}`, "success");
     } catch {

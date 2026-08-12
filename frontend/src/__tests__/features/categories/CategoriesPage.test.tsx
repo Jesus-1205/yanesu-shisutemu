@@ -118,7 +118,7 @@ describe("CategoriesPage", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
-          expect.objectContaining({ header: "Descripcion" }),
+          expect.objectContaining({ header: "Descripción" }),
         ]),
         filename: "Categorias",
       });
