@@ -47,11 +47,12 @@ def create(
 def list_all(
     page: int | None = None,
     page_size: int | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
     if page is not None and page_size is not None:
-        result = get_categories_paginated(db, page=page, page_size=page_size)
+        result = get_categories_paginated(db, page=page, page_size=page_size, search=search)
         return CategoryPaginationOut(
             items=[CategoryOut.model_validate(c) for c in result["items"]],
             total=result["total"],

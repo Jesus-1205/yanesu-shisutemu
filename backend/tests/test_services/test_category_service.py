@@ -13,6 +13,7 @@ from app.services.category_service import (
     create_category,
     delete_category,
     get_categories,
+    get_categories_paginated,
     get_category,
     get_category_analytics,
     get_low_rotation_categories,
@@ -41,6 +42,31 @@ def test_get_categories_returns_all(db):
     result = get_categories(db)
     ids = [r.id for r in result]
     assert c.id in ids
+
+
+# --- get_categories_paginated ---
+
+def test_get_categories_paginated_search_by_name(db):
+    _create_category(db)  # "Nueva Categoria"
+    create_category(db, CategoryCreate(nombre="Licores"))
+    result = get_categories_paginated(db, page=1, page_size=20, search="licor")
+    names = [c.nombre for c in result["items"]]
+    assert "Licores" in names
+    assert all("licor" in n.lower() for n in names)
+
+
+def test_get_categories_paginated_search_by_description(db):
+    create_category(db, CategoryCreate(nombre="Bebidas", descripcion="Productos premium"))
+    result = get_categories_paginated(db, page=1, page_size=20, search="premium")
+    names = [c.nombre for c in result["items"]]
+    assert "Bebidas" in names
+
+
+def test_get_categories_paginated_search_no_match(db):
+    _create_category(db)
+    result = get_categories_paginated(db, page=1, page_size=20, search="zzz_no_existe")
+    assert result["items"] == []
+    assert result["total"] == 0
 
 
 # --- get_category ---

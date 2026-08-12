@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, EntityNotFoundError
@@ -22,11 +22,15 @@ def get_categories(db: Session) -> list[Category]:
     return list(db.execute(stmt).scalars().all())
 
 
-def get_categories_paginated(db: Session, page: int = 1, page_size: int = 20) -> dict:
-    total = db.execute(select(func.count(Category.id))).scalar() or 0
+def get_categories_paginated(db: Session, page: int = 1, page_size: int = 20, search: str | None = None) -> dict:
+    base = select(Category)
+    if search and search.strip():
+        pattern = f"%{search.strip()}%"
+        base = base.where(or_(Category.nombre.ilike(pattern), Category.descripcion.ilike(pattern)))
+    total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)
     offset = (page - 1) * page_size
-    stmt = select(Category).order_by(Category.nombre).offset(offset).limit(page_size)
+    stmt = base.order_by(Category.nombre).offset(offset).limit(page_size)
     items = list(db.execute(stmt).scalars().all())
     return {"items": items, "total": total, "page": page, "page_size": page_size, "pages": pages}
 

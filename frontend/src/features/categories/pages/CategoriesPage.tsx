@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2, Download } from "lucide-react";
 import { api } from "@/services/api";
@@ -10,6 +10,7 @@ import PageHeader from "@/ui-components/PageHeader";
 import Pagination from "@/ui-components/Pagination";
 import ErrorBanner from "@/ui-components/ErrorBanner";
 import ConfirmDialog from "@/ui-components/ConfirmDialog";
+import SearchInput from "@/ui-components/SearchInput";
 import { useToast } from "@/ui-components/Toast";
 import { exportToExcel } from "@/lib/exportToExcel";
 import CategoryMicroKPIs from "../components/CategoryMicroKPIs";
@@ -29,6 +30,9 @@ export default function CategoriesPage() {
   const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const { data: analytics, loading: analyticsLoading } = useCategoryAnalytics();
 
@@ -37,11 +41,15 @@ export default function CategoriesPage() {
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async (q = "") => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getCategoriesPaginated({ page, page_size: PAGE_SIZE });
+      const res = await api.getCategoriesPaginated({
+        page,
+        page_size: PAGE_SIZE,
+        ...(q ? { search: q } : {}),
+      });
       setCategories(res.items);
       setTotalPages(res.pages);
     } catch (err) {
@@ -52,8 +60,18 @@ export default function CategoriesPage() {
   }, [page]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    fetchCategories(debouncedSearch);
+  }, [fetchCategories, debouncedSearch]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -62,7 +80,7 @@ export default function CategoriesPage() {
       await api.deleteCategory(deleteTarget.id);
       toast(`Categoría "${deleteTarget.nombre}" eliminada`, "success");
       setDeleteTarget(null);
-      fetchCategories();
+      fetchCategories(debouncedSearch);
     } catch (err) {
       toast(
         err instanceof Error ? err.message : "Error al eliminar categoría",
@@ -82,7 +100,7 @@ export default function CategoriesPage() {
   const handleCategoryCreated = () => {
     toast(`Categoría creada`, "success");
     setCreateModalOpen(false);
-    fetchCategories();
+    fetchCategories(debouncedSearch);
   };
 
   const exportColumns: Column<Category>[] = [
@@ -157,11 +175,20 @@ export default function CategoriesPage() {
 
       {error && (
         <div className="mb-4">
-          <ErrorBanner onRetry={fetchCategories}>
+          <ErrorBanner onRetry={() => fetchCategories(debouncedSearch)}>
             {error}
           </ErrorBanner>
         </div>
       )}
+
+      <div className="mb-4">
+        <SearchInput
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onClear={() => setSearch("")}
+          placeholder="Buscar categoría por nombre o descripción..."
+        />
+      </div>
 
       <Table
         columns={columns}

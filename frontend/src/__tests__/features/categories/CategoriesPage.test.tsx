@@ -59,6 +59,33 @@ describe("CategoriesPage", () => {
     await waitFor(() => expect(screen.getByText("No hay categorías registradas")).toBeInTheDocument());
   });
 
+  it("filters categories by search input", async () => {
+    const getCategoriesPaginated = api.getCategoriesPaginated as ReturnType<typeof vi.fn>;
+    getCategoriesPaginated.mockResolvedValue({ items: [{ id: 1, nombre: "Licores", descripcion: null }], total: 1, page: 1, page_size: 20, pages: 1 });
+    render(<CategoriesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Licores")).toBeInTheDocument());
+    await userEvent.type(screen.getByPlaceholderText("Buscar categoría por nombre o descripción..."), "vino");
+    await waitFor(() => {
+      expect(getCategoriesPaginated).toHaveBeenLastCalledWith(expect.objectContaining({ search: "vino" }));
+    });
+  });
+
+  it("clears search and refetches all categories", async () => {
+    const getCategoriesPaginated = api.getCategoriesPaginated as ReturnType<typeof vi.fn>;
+    getCategoriesPaginated.mockResolvedValue({ items: [{ id: 1, nombre: "Licores", descripcion: null }], total: 1, page: 1, page_size: 20, pages: 1 });
+    render(<CategoriesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Licores")).toBeInTheDocument());
+    const searchInput = screen.getByPlaceholderText("Buscar categoría por nombre o descripción...");
+    await userEvent.type(searchInput, "vino");
+    await waitFor(() => {
+      expect(getCategoriesPaginated).toHaveBeenLastCalledWith(expect.objectContaining({ search: "vino" }));
+    });
+    await userEvent.clear(searchInput);
+    await waitFor(() => {
+      expect(getCategoriesPaginated).toHaveBeenLastCalledWith(expect.not.objectContaining({ search: "vino" }));
+    });
+  });
+
   it("shows error banner when fetch fails", async () => {
     (api.getCategoriesPaginated as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Error de red"));
     render(<CategoriesPage />, { wrapper });

@@ -158,10 +158,11 @@ export const api = {
   getCategories: () =>
     request<CategoryOut[]>("/categories"),
 
-  getCategoriesPaginated: (params: { page: number; page_size: number }) => {
+  getCategoriesPaginated: (params: { page: number; page_size: number; search?: string }) => {
     const qs = new URLSearchParams();
     qs.set("page", String(params.page));
     qs.set("page_size", String(params.page_size));
+    if (params.search) qs.set("search", params.search);
     return request<CategoryPaginationOut>(`/categories?${qs.toString()}`);
   },
 
