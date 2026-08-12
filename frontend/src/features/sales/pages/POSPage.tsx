@@ -118,6 +118,7 @@ export default function POSPage() {
   }, [search]);
 
   const tasaNum = snapshotTasa;
+  const tasaBCV = useExchangeRateStore((s) => s.tasa);
 
   const filteredProducts = useMemo(
     () =>
@@ -215,10 +216,10 @@ export default function POSPage() {
             </div>
           </div>
 
-          {combos.length > 0 && (
+          {combos.length > 0 && !debouncedSearch.trim() && (
             <div className="space-y-2">
-              <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide flex items-center gap-1.5">
-                <span className="text-base">🎉</span> Promociones
+              <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide">
+                Promociones
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {combos.map((combo) => (
@@ -235,7 +236,7 @@ export default function POSPage() {
 
           <ProductGrid
             products={filteredProducts}
-            tasa={tasaNum}
+            tasa={tasaBCV}
             isOperator={isOperator}
             loading={loadingProducts}
             onAddUnit={handleAddUnit}

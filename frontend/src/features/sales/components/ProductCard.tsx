@@ -20,7 +20,6 @@ export default memo(function ProductCard({
   onAddBox,
 }: ProductCardProps) {
   const isAgotado = product.stock_cajas === 0 && product.stock_unidades === 0;
-  const hasLowStock = !isAgotado && product.stock_unidades <= product.stock_minimo;
   const hasCajas = product.unidades_por_caja > 1;
   const precioBs = tasa > 0 ? product.precio_unidad_usd * tasa : 0;
   const hasDivisas = product.precio_divisas_unidad || product.precio_divisas_caja;
@@ -50,12 +49,10 @@ export default memo(function ProductCard({
     <div
       onClick={handleCardClick}
       className={`
-        relative rounded-xl border p-3.5 transition-all duration-150
+        relative rounded-xl border border-slate-200 bg-surface p-3.5 flex flex-col transition-all duration-150
         ${isAgotado
-          ? "border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"
-          : hasLowStock
-            ? "border-amber-300 bg-amber-50/30 cursor-pointer hover:shadow-md hover:-translate-y-0.5"
-            : "border-slate-200 bg-surface cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+          ? "opacity-60 cursor-not-allowed"
+          : "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
         }
       `}
     >
@@ -71,7 +68,7 @@ export default memo(function ProductCard({
         </div>
       )}
 
-      <div className="space-y-2.5">
+      <div className="flex flex-col flex-1 space-y-2.5">
         <p className="text-base font-semibold text-text-main leading-tight pr-6 line-clamp-2" title={product.nombre}>
           {product.nombre}
         </p>
@@ -79,8 +76,6 @@ export default memo(function ProductCard({
         <div className="flex items-center gap-1.5">
           {isAgotado ? (
             <Badge variant="danger">{stockLabel}</Badge>
-          ) : hasLowStock && !isOperator ? (
-            <Badge variant="warning">{stockLabel}</Badge>
           ) : isOperator ? (
             <Badge variant="success">{stockLabel}</Badge>
           ) : (
@@ -126,7 +121,7 @@ export default memo(function ProductCard({
         )}
 
         {hasCajas && (
-          <div className="flex justify-end pt-1">
+          <div className="flex justify-end mt-auto pt-2">
             <button
               type="button"
               disabled={isAgotado || product.precio_caja_usd <= 0}
