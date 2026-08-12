@@ -268,17 +268,11 @@ export interface ProductPaginationOut {
 }
 
 // ─── Tasas de Cambio ────────────────────────────────────────
-export type Moneda = "USD" | "EUR";
-
-export interface ExchangeRateCreate {
-  moneda: Moneda;
-  tasa_ves: number;
-}
 
 export interface ExchangeRateOut {
   id: number;
-  moneda: string;
-  tasa_ves: number;
+  tasa_usd: number;
+  tasa_eur: number;
   fecha_registro: string;
   registrado_por: number | null;
 }

@@ -23,92 +23,70 @@ def _register_operator(client):
     })
 
 
-class TestCreateRate:
-    def test_admin_creates_rate(self, client):
+class TestSaveRates:
+    def test_admin_save_rates(self, client):
         _register_admin(client)
-        response = client.post("/api/exchange-rates", json={
-            "moneda": "USD",
-            "tasa_ves": 90.50,
+        response = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 90.50,
+            "eur": 98.00,
         })
         assert response.status_code == 201
         data = response.json()
-        assert data["moneda"] == "USD"
-        assert data["tasa_ves"] == "90.5000"
+        assert data["tasa_usd"] == "90.5000"
+        assert data["tasa_eur"] == "98.0000"
+        assert "id" in data
+        assert "fecha_registro" in data
 
-    def test_operator_cannot_create(self, client):
+    def test_operator_can_save(self, client):
         _register_operator(client)
-        response = client.post("/api/exchange-rates", json={
-            "moneda": "USD",
-            "tasa_ves": 90.50,
+        response = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 90.50,
+            "eur": 98.00,
         })
-        assert response.status_code == 403
+        assert response.status_code == 201
 
-    def test_unauthenticated_cannot_create(self, client):
-        response = client.post("/api/exchange-rates", json={
-            "moneda": "USD",
-            "tasa_ves": 90.50,
+    def test_unauthenticated_cannot_save(self, client):
+        response = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 90.50,
+            "eur": 98.00,
         })
         assert response.status_code == 401
 
-    def test_create_rate_invalid_moneda(self, client):
+    def test_save_rates_negative_usd(self, client):
         _register_admin(client)
-        response = client.post("/api/exchange-rates", json={
-            "moneda": "GBP",
-            "tasa_ves": 90.50,
+        response = client.post("/api/exchange-rates/save-rates", json={
+            "usd": -1,
+            "eur": 98.00,
         })
         assert response.status_code == 422
 
-    def test_create_rate_negative_tasa(self, client):
+    def test_save_rates_zero_eur(self, client):
         _register_admin(client)
-        response = client.post("/api/exchange-rates", json={
-            "moneda": "USD",
-            "tasa_ves": -1,
+        response = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 90.50,
+            "eur": 0,
         })
         assert response.status_code == 422
 
-    def test_create_rate_zero_tasa(self, client):
+    def test_save_rates_empty_body(self, client):
         _register_admin(client)
-        response = client.post("/api/exchange-rates", json={
-            "moneda": "USD",
-            "tasa_ves": 0,
-        })
-        assert response.status_code == 422
-
-    def test_create_rate_missing_body(self, client):
-        _register_admin(client)
-        response = client.post("/api/exchange-rates", data="", headers={"content-type": "text/plain"})
-        assert response.status_code == 422
-
-    def test_create_rate_empty_body(self, client):
-        _register_admin(client)
-        response = client.post("/api/exchange-rates", json={})
+        response = client.post("/api/exchange-rates/save-rates", json={})
         assert response.status_code == 422
 
 
 class TestLatestRate:
     def test_latest_rate_returns_most_recent(self, client):
         _register_admin(client)
-        r1 = client.post("/api/exchange-rates", json={"moneda": "USD", "tasa_ves": 90.00})
+        r1 = client.post("/api/exchange-rates/save-rates", json={"usd": 90.00, "eur": 97.00})
         assert r1.status_code == 201
-        r2 = client.post("/api/exchange-rates", json={"moneda": "USD", "tasa_ves": 91.50})
+        r2 = client.post("/api/exchange-rates/save-rates", json={"usd": 91.50, "eur": 98.50})
         assert r2.status_code == 201
 
         response = client.get("/api/exchange-rates/latest")
         assert response.status_code == 200
         data = response.json()
         assert Decimal(data["rates"]["USD"]) == Decimal("91.5000")
-
-    def test_latest_rate_both_currencies(self, client):
-        _register_admin(client)
-        client.post("/api/exchange-rates", json={"moneda": "USD", "tasa_ves": 90.00})
-        client.post("/api/exchange-rates", json={"moneda": "EUR", "tasa_ves": 100.00})
-
-        response = client.get("/api/exchange-rates/latest")
-        data = response.json()
-        assert "USD" in data["rates"]
-        assert "EUR" in data["rates"]
-        assert Decimal(data["rates"]["USD"]) == Decimal("90.0000")
-        assert Decimal(data["rates"]["EUR"]) == Decimal("100.0000")
+        assert Decimal(data["rates"]["EUR"]) == Decimal("98.5000")
 
     def test_latest_rate_empty(self, client):
         _register_admin(client)
@@ -125,30 +103,28 @@ class TestLatestRate:
 class TestRateHistory:
     def test_history_returns_all(self, client):
         _register_admin(client)
-        client.post("/api/exchange-rates", json={"moneda": "USD", "tasa_ves": 90.00})
-        client.post("/api/exchange-rates", json={"moneda": "EUR", "tasa_ves": 100.00})
-        client.post("/api/exchange-rates", json={"moneda": "USD", "tasa_ves": 91.00})
+        client.post("/api/exchange-rates/save-rates", json={"usd": 90.00, "eur": 97.00})
+        client.post("/api/exchange-rates/save-rates", json={"usd": 91.00, "eur": 98.00})
 
         response = client.get("/api/exchange-rates/history")
         assert response.status_code == 200
         data = response.json()
-        assert len(data["history"]) == 3
-
-    def test_history_filter_by_moneda(self, client):
-        _register_admin(client)
-        client.post("/api/exchange-rates", json={"moneda": "USD", "tasa_ves": 90.00})
-        client.post("/api/exchange-rates", json={"moneda": "EUR", "tasa_ves": 100.00})
-
-        response = client.get("/api/exchange-rates/history?moneda=USD")
-        data = response.json()
-        assert len(data["history"]) == 1
-        assert data["history"][0]["moneda"] == "USD"
-
-    def test_history_invalid_moneda(self, client):
-        _register_admin(client)
-        response = client.get("/api/exchange-rates/history?moneda=GBP")
-        assert response.status_code == 409
+        assert len(data["history"]) == 2
+        assert data["history"][0]["tasa_usd"] == "91.0000"
+        assert data["history"][0]["tasa_eur"] == "98.0000"
 
     def test_history_unauthenticated(self, client):
         response = client.get("/api/exchange-rates/history")
         assert response.status_code == 401
+
+    def test_history_paginated(self, client):
+        _register_admin(client)
+        for i in range(5):
+            client.post("/api/exchange-rates/save-rates", json={"usd": 90.00 + i, "eur": 97.00 + i})
+
+        response = client.get("/api/exchange-rates/history?page=1&page_size=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 2
+        assert data["total"] == 5
+        assert data["pages"] == 3
