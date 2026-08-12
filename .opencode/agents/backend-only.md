@@ -1,6 +1,6 @@
 ---
 description: Primary agent focused exclusively on backend development (FastAPI, SQLAlchemy, Pydantic, SQLite). Cannot modify frontend code. Use when working on API routes, services, models, schemas, or backend tests.
-mode: primary
+mode: all
 temperature: 0.2
 permission:
   edit:
