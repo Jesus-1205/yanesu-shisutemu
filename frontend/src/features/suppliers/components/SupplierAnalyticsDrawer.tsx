@@ -48,7 +48,7 @@ export default function SupplierAnalyticsDrawer({
             <div className="rounded-lg bg-purple-50 border border-purple-200 p-3">
               <p className="text-xs text-slate-500 mb-1">Ganancia Bruta</p>
               <p className="text-lg font-bold text-text-main">
-                {formatCurrency(Number(data.ingresos_usd) * (Number(data.margen_promedio) / 100))}
+                {formatCurrency(Math.round(Number(data.ingresos_usd) * (Number(data.margen_promedio) / 100) * 100) / 100)}
               </p>
               <p className="text-xs text-slate-400 mt-0.5">
                 {Number(data.margen_promedio).toFixed(1)}% de margen promedio

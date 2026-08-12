@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
@@ -46,8 +48,8 @@ def create(
 def list_all(
     categoria_ids: str | None = None,
     proveedor_id: int | None = None,
-    precio_min: float | None = None,
-    precio_max: float | None = None,
+    precio_min: Decimal | None = None,
+    precio_max: Decimal | None = None,
     sin_stock: bool = False,
     search: str | None = None,
     stock_status: str | None = None,

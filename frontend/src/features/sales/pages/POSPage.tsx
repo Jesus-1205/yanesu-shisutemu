@@ -52,7 +52,7 @@ export default function POSPage() {
 
   const totals = useMemo(() => computeTotals(items), [items]);
   const totalUsd = useMemo(
-    () => totals.monto_exento_usd + totals.base_imponible_usd + totals.monto_iva_usd,
+    () => Math.round((totals.monto_exento_usd + totals.base_imponible_usd + totals.monto_iva_usd) * 100) / 100,
     [totals],
   );
   const totalVes = useMemo(

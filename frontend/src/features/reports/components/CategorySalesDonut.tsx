@@ -64,7 +64,7 @@ export default function CategorySalesDonut({ data }: CategorySalesDonutProps) {
     );
   }
 
-  const totalIngresos = sorted.reduce((sum, c) => sum + Number(c.ingresos_usd), 0);
+  const totalIngresos = Math.round(sorted.reduce((sum, c) => sum + Number(c.ingresos_usd), 0) * 100) / 100;
 
   const chartData: ChartDatum[] = sorted.map((cat, index) => ({
     name: toTitleCase(cat.nombre),
