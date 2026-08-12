@@ -39,6 +39,22 @@ const mockExento: ProductOut = {
   tipo_iva: "EXENTO",
 };
 
+const mockDivisas: ProductOut = {
+  ...mockProduct,
+  id: 3,
+  nombre: "Ron X 1L",
+  precio_divisas_unidad: 14,
+  precio_divisas_caja: 140,
+};
+
+const mockDivisasUnidadOnly: ProductOut = {
+  ...mockProduct,
+  id: 4,
+  nombre: "Gin X 700ml",
+  precio_divisas_unidad: 9.5,
+  precio_divisas_caja: null,
+};
+
 beforeEach(() => {
   useCartStore.setState({ items: {}, snapshotTasa: 0 });
   useExchangeRateStore.setState({ tasa: 0, loading: false });
@@ -283,5 +299,137 @@ describe("cartStore - totals con combos", () => {
     // 1 × 1.67 = 1.67 y 3 × 1.67 = 5.01 → total 6.68
     const total = getDivisasTotal(items);
     expect(total).toBe(6.68);
+  });
+});
+
+function makePlainItem(overrides: Partial<CartItem> = {}): CartItem {
+  return {
+    cartItemId: "x",
+    producto_id: 1,
+    nombre: "Item",
+    tipo_empaque: "UNIDAD",
+    cantidad: 1,
+    unidades_por_caja: 1,
+    unidades_descontadas: 1,
+    precio_unidad_usd: 1,
+    precio_caja_usd: 1,
+    precio_unitario_usd: 1,
+    iva_porcentaje: 16,
+    tipo_iva: "GRAVADO",
+    usaPrecioDivisas: false,
+    precioDivisasUnidad: null,
+    precioDivisasCaja: null,
+    combo_id: null,
+    comboDetalle: null,
+    ...overrides,
+  };
+}
+
+describe("cartStore - addItem con divisas", () => {
+  it("usa precio divisas cuando se solicita y el producto tiene precio divisas", () => {
+    useCartStore.getState().addItem(mockDivisas, "UNIDAD", 1, true);
+    const item = useCartStore.getState().items["3_UNIDAD"];
+    expect(item.usaPrecioDivisas).toBe(true);
+    expect(item.precio_unitario_usd).toBe(14);
+  });
+
+  it("ignora el flag divisas cuando no existe precio divisas", () => {
+    useCartStore.getState().addItem(mockProduct, "UNIDAD", 1, true);
+    const item = useCartStore.getState().items["1_UNIDAD"];
+    expect(item.usaPrecioDivisas).toBe(false);
+    expect(item.precio_unitario_usd).toBe(15);
+  });
+});
+
+describe("cartStore - updateEmpaque con divisas", () => {
+  it("preserva usaPrecioDivisas si el nuevo empaque tiene precio divisas", () => {
+    useCartStore.getState().addItem(mockDivisas, "UNIDAD", 1, true);
+    useCartStore.getState().updateEmpaque("3_UNIDAD", "CAJA");
+    const item = useCartStore.getState().items["3_CAJA"];
+    expect(item).toBeDefined();
+    expect(item.tipo_empaque).toBe("CAJA");
+    expect(item.usaPrecioDivisas).toBe(true);
+    expect(item.precio_unitario_usd).toBe(140);
+    expect(item.unidades_descontadas).toBe(12);
+  });
+
+  it("cae al precio normal si el nuevo empaque no tiene precio divisas", () => {
+    useCartStore.getState().addItem(mockDivisasUnidadOnly, "UNIDAD", 1, true);
+    useCartStore.getState().updateEmpaque("4_UNIDAD", "CAJA");
+    const item = useCartStore.getState().items["4_CAJA"];
+    expect(item.usaPrecioDivisas).toBe(false);
+    expect(item.precio_unitario_usd).toBe(150);
+    expect(item.unidades_descontadas).toBe(12);
+  });
+});
+
+describe("cartStore - toggleDivisas", () => {
+  it("alterna entre precio normal y precio divisas", () => {
+    useCartStore.getState().addItem(mockDivisas, "UNIDAD");
+    const id = "3_UNIDAD";
+
+    expect(useCartStore.getState().items[id].usaPrecioDivisas).toBe(false);
+    expect(useCartStore.getState().items[id].precio_unitario_usd).toBe(15);
+
+    useCartStore.getState().toggleDivisas(id);
+    expect(useCartStore.getState().items[id].usaPrecioDivisas).toBe(true);
+    expect(useCartStore.getState().items[id].precio_unitario_usd).toBe(14);
+
+    useCartStore.getState().toggleDivisas(id);
+    expect(useCartStore.getState().items[id].usaPrecioDivisas).toBe(false);
+    expect(useCartStore.getState().items[id].precio_unitario_usd).toBe(15);
+  });
+
+  it("alterna empaque CAJA usando el precio divisas de caja", () => {
+    useCartStore.getState().addItem(mockDivisas, "CAJA");
+    const id = "3_CAJA";
+    useCartStore.getState().toggleDivisas(id);
+    expect(useCartStore.getState().items[id].usaPrecioDivisas).toBe(true);
+    expect(useCartStore.getState().items[id].precio_unitario_usd).toBe(140);
+  });
+
+  it("no cambia nada cuando el item no tiene precio divisas", () => {
+    useCartStore.getState().addItem(mockProduct, "UNIDAD");
+    const id = "1_UNIDAD";
+    useCartStore.getState().toggleDivisas(id);
+    const item = useCartStore.getState().items[id];
+    expect(item.usaPrecioDivisas).toBe(false);
+    expect(item.precio_unitario_usd).toBe(15);
+  });
+});
+
+describe("computeTotals - redondeo a 2 decimales", () => {
+  it("redondea 0.1 + 0.2 a 0.3 (evita errores de punto flotante)", () => {
+    const totals = computeTotals({
+      a: makePlainItem({ cartItemId: "a", cantidad: 1, precio_unitario_usd: 0.1 }),
+      b: makePlainItem({ cartItemId: "b", cantidad: 1, precio_unitario_usd: 0.2 }),
+    });
+    expect(totals.base_imponible_usd).toBe(0.3);
+    // IVA por ítem: round(0.1*16)/100 = 0.02 y round(0.2*16)/100 = 0.03 → 0.05
+    expect(totals.monto_iva_usd).toBe(0.05);
+  });
+
+  it("redondea el subtotal por ítem: 3 × 1.67 = 5.01", () => {
+    const totals = computeTotals({
+      a: makePlainItem({ cartItemId: "a", cantidad: 3, precio_unitario_usd: 1.67 }),
+    });
+    expect(totals.base_imponible_usd).toBe(5.01);
+    // IVA: round(5.01 * 16) / 100 = 0.8
+    expect(totals.monto_iva_usd).toBe(0.8);
+  });
+
+  it("redondea montos exentos acumulados con 0.1", () => {
+    const totals = computeTotals({
+      a: makePlainItem({
+        cartItemId: "a",
+        cantidad: 3,
+        precio_unitario_usd: 0.1,
+        tipo_iva: "EXENTO",
+        iva_porcentaje: 0,
+      }),
+    });
+    expect(totals.monto_exento_usd).toBe(0.3);
+    expect(totals.base_imponible_usd).toBe(0);
+    expect(totals.monto_iva_usd).toBe(0);
   });
 });
