@@ -262,4 +262,26 @@ describe("cartStore - totals con combos", () => {
     const total = getDivisasTotal({ combo_9: makeComboItem() });
     expect(total).toBe(10);
   });
+
+  it("getDivisasTotal redondea por ítem", () => {
+    const items = {
+      a: makeComboItem({
+        cartItemId: "a",
+        cantidad: 1,
+        precio_unitario_usd: 1.67,
+        combo_id: null,
+        comboDetalle: null,
+      }),
+      b: makeComboItem({
+        cartItemId: "b",
+        cantidad: 3,
+        precio_unitario_usd: 1.67,
+        combo_id: null,
+        comboDetalle: null,
+      }),
+    };
+    // 1 × 1.67 = 1.67 y 3 × 1.67 = 5.01 → total 6.68
+    const total = getDivisasTotal(items);
+    expect(total).toBe(6.68);
+  });
 });

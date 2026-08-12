@@ -20,9 +20,9 @@ class Sale(Base):
     )
     observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    monto_exento_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=0.00)
-    base_imponible_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=0.00)
-    monto_iva_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=0.00)
+    monto_exento_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
+    base_imponible_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
+    monto_iva_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
     total_usd: Mapped[Decimal] = mapped_column(
         DECIMAL(12, 2),
         Computed("monto_exento_usd + base_imponible_usd + monto_iva_usd", persisted=True),
@@ -86,7 +86,7 @@ class SaleItem(Base):
         DECIMAL(12, 2),
         Computed("ROUND(cantidad * precio_unitario_usd, 2)", persisted=True),
     )
-    iva_porcentaje: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), nullable=False, default=16.00)
+    iva_porcentaje: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), nullable=False, default=Decimal("16.00"))
     usa_precio_divisas: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     combo_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("combos.id", ondelete="SET NULL"), nullable=True

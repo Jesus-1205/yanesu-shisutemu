@@ -3,6 +3,7 @@ import type { ProductOut } from "@/types/api";
 import type { ComboActiveOut, CalculateResponseItem } from "@/types/api";
 import { api } from "@/services/api";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
+import { IVA_RATE } from "@/lib/iva";
 
 export interface ComboDetalle {
   nombre: string;
@@ -82,7 +83,10 @@ export function getDivisasTotal(items: Record<string, CartItem>): number {
   return Math.round(
     Object.values(items)
       .filter((i) => i.usaPrecioDivisas)
-      .reduce((sum, i) => sum + i.cantidad * i.precio_unitario_usd, 0) * 100,
+      .reduce(
+        (sum, i) => sum + Math.round(i.cantidad * i.precio_unitario_usd * 100) / 100,
+        0,
+      ) * 100,
   ) / 100;
 }
 
@@ -219,7 +223,7 @@ export const useCartStore = create<CartState>((set, get) => {
     const usaDivisas = usaPrecioDivisas && precioDivisas !== null;
 
     const precio = usaDivisas ? Number(precioDivisas) : precioNormal;
-    const iva = product.tipo_iva === "GRAVADO" ? 16 : 0;
+    const iva = product.tipo_iva === "GRAVADO" ? IVA_RATE : 0;
 
     const existing = state.items[cartItemId];
     if (existing) {

@@ -16,6 +16,7 @@ import CreateSupplierModal from "@/features/shared/components/CreateSupplierModa
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
 import { formatBs } from "@/lib/text";
+import { calcIva } from "@/lib/iva";
 
 interface LineItem {
   key: string;
@@ -434,7 +435,7 @@ export default function InvoiceNewPage() {
       totalUnidades += unidades;
       if (aplicaIva && item.tipo_iva === "GRAVADO") {
         base += Math.round(item.subtotal_usd * 100) / 100;
-        iva += Math.round(item.subtotal_usd * 0.16 * 100) / 100;
+        iva += calcIva(item.subtotal_usd);
       } else {
         exento += Math.round(item.subtotal_usd * 100) / 100;
       }

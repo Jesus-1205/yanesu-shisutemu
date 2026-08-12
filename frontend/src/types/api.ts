@@ -404,6 +404,8 @@ export interface SalesSummaryItem {
   total_ventas: number;
   total_usd: number;
   total_ves: number;
+  costo_usd: number;
+  margen_usd: number;
 }
 
 export interface TopWeekOut {

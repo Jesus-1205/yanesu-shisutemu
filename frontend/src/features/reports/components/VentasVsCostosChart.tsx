@@ -32,8 +32,8 @@ export default function VentasVsCostosChart({ data }: VentasVsCostosChartProps) 
   const chartData = data.map((s) => ({
     periodo: s.periodo,
     ventas: Number(s.total_usd),
-    costos: Math.round(Number(s.total_usd) * 0.6 * 100) / 100,
-    margen: Math.round(Number(s.total_usd) * 0.4 * 100) / 100,
+    costos: Number(s.costo_usd),
+    margen: Number(s.margen_usd),
   }));
 
   return (

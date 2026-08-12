@@ -1,5 +1,5 @@
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -266,10 +266,10 @@ def calculate(
 
     return CalculateResponse(
         items=response_items,
-        total_usd=total_usd,
-        total_divisas_usd=total_divisas_usd,
-        total_normal_usd=total_normal_usd,
-        ahorro_usd=ahorro_usd,
+        total_usd=total_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_divisas_usd=total_divisas_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_normal_usd=total_normal_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        ahorro_usd=ahorro_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         metodos_divisas_disponibles=list(divisas_method_ids),
         combo_items=combo_items,
     )

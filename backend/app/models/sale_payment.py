@@ -17,8 +17,8 @@ class SalePayment(Base):
         Integer, ForeignKey("metodos_pago.id", ondelete="RESTRICT"), nullable=False
     )
     referencia: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    monto_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=0.00)
-    monto_ves: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=0.00)
+    monto_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
+    monto_ves: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=Decimal("0.00"))
 
     @property
     def metodo_pago_nombre(self) -> str:

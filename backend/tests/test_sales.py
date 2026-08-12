@@ -420,6 +420,31 @@ class TestCreateSaleAmountValidation:
         assert resp.json() == []
 
 
+class TestCalculate:
+    """POST /sales/calculate devuelve totales quantizados a 2 decimales."""
+
+    def test_calculate_returns_two_decimal_totals(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        pv_id = _get_punto_venta_id(client)
+        resp = client.post("/api/sales/calculate", json={
+            "items": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "UNIDAD",
+                "cantidad": 3,
+                "usa_precio_divisas": False,
+            }],
+            "combos": [],
+            "metodo_pago_ids": [pv_id],
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_usd"] == "75.00"  # 3 × 25.00
+        assert data["total_normal_usd"] == "75.00"
+        assert data["total_divisas_usd"] == "0.00"
+        assert data["ahorro_usd"] == "0.00"
+
+
 class TestCreateSaleCombo:
     """Los combos se cobran por su precio total aunque el reparto por
     producto no sume exacto (p. ej. 8 latas por $5 → 8 × $0.62 = $4.96)."""
@@ -513,3 +538,33 @@ class TestCreateSaleCombo:
         })
         assert resp.status_code == 400
         assert "monto_exento_usd: esperado 5.00, recibido 4.0" in resp.json()["detail"]
+
+    def test_sell_combo_divisas_exige_precio_total(self, client):
+        """La cobertura de divisas del combo usa el precio total, no la suma de
+        constituyentes (8×0.62=4.96 < 5.00). Pagar 4.98 en divisas debe fallar."""
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        methods = _get_method_ids(client)
+        combo = self._create_combo(client, prod["id"], methods["DIVISAS"])
+        combo_item = self._distributed_price(client, combo, prod["id"], methods["DIVISAS"])
+
+        resp = client.post("/api/sales", json={
+            "tasa_bcv_aplicada": 50,
+            "monto_exento_usd": 5.0,
+            "base_imponible_usd": 0,
+            "monto_iva_usd": 0,
+            "items": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "UNIDAD",
+                "cantidad": combo_item["cantidad"],
+                "unidades_descontadas": combo_item["cantidad"],
+                "precio_unitario_usd": combo_item["precio_unitario_usd"],
+                "iva_porcentaje": 0,
+                "usa_precio_divisas": True,
+                "combo_id": combo["id"],
+                "combo_cantidad": 1,
+            }],
+            "pagos": [{"metodo_pago_id": methods["DIVISAS"], "monto_usd": 4.98, "monto_ves": 0}],
+        })
+        assert resp.status_code == 409
+        assert "Faltan" in resp.json()["detail"]

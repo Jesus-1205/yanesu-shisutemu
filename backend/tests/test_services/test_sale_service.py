@@ -552,6 +552,21 @@ def test_get_sales_summary_con_montos(db):
     assert result[0]["total_ves"] == Decimal("5000")
 
 
+def test_get_sales_summary_incluye_costo_y_margen(db):
+    u = _user(db)
+    p = _product(db)  # costo unitario 1.00 (precio_costo_caja 12 / 12 uds)
+    pm = _payment_method(db)
+    data = _sale_data(pm, [_item(p.id)])  # 2 unidades a $10 → total 23.20, costo 2.00
+    create_sale(db, data, usuario_id=u.id)
+
+    result = get_sales_summary(db, rango="diario")
+
+    assert len(result) == 1
+    assert result[0]["total_usd"] == Decimal("23.20")
+    assert result[0]["costo_usd"] == Decimal("2.00")
+    assert result[0]["margen_usd"] == Decimal("21.20")
+
+
 # --- get_top_week_sales ---
 
 def test_get_top_week_sales_empty(db):

@@ -12,6 +12,7 @@ import PageHeader from "@/ui-components/PageHeader";
 import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
+import { calcIva } from "@/lib/iva";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -238,7 +239,7 @@ export default function InvoiceDetailPage() {
               : d.cantidad;
             return Math.round((sum + unidades * Number(d.costo_unitario_bs)) * 100) / 100;
           }, 0);
-        const iva = invoice.moneda_principal === "BS" ? Math.round(baseImponible * 0.16 * 100) / 100 : 0;
+        const iva = invoice.moneda_principal === "BS" ? calcIva(baseImponible) : 0;
         const exento = invoice.moneda_principal === "USD"
           ? Number(invoice.total_usd)
           : 0;

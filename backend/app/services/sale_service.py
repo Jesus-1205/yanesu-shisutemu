@@ -206,10 +206,21 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
                 )
 
     total_divisas_items = Decimal("0")
+    combos_divisas_procesados: set[int] = set()
     for item_data, sale_item in zip(data.items, items):
         if item_data.usa_precio_divisas:
             if item_data.combo_id:
-                total_divisas_items += Decimal(item_data.cantidad) * item_data.precio_unitario_usd
+                combo_id = item_data.combo_id
+                if combo_id in combos_divisas_procesados:
+                    continue
+                combos_divisas_procesados.add(combo_id)
+                combo = combos_by_id.get(combo_id)
+                if combo is not None and item_data.combo_cantidad:
+                    # El combo se cobra por su precio total, no por la suma de
+                    # constituyentes (que puede no cuadrar por el reparto).
+                    total_divisas_items += Decimal(item_data.combo_cantidad) * combo.precio_total_usd
+                else:
+                    total_divisas_items += Decimal(item_data.cantidad) * item_data.precio_unitario_usd
             else:
                 expected_prices = divisas_prices.get(item_data.producto_id, {})
                 expected_price = expected_prices.get(item_data.tipo_empaque)
@@ -407,6 +418,19 @@ def _period_key(dt: datetime, rango: str) -> str:
     raise ValueError(f"Rango no válido: {rango}")
 
 
+def _sale_costo_usd(sale: Sale) -> Decimal:
+    """Costo de mercancía vendida de una venta con el costo actual del producto.
+
+    El costo histórico por ítem no se persiste en `detalle_ventas`, por lo que
+    se aproxima con el `precio_costo_usd` actual de cada producto.
+    """
+    total = Decimal("0")
+    for item in sale.items:
+        if item.product and item.product.precio_costo_usd:
+            total += Decimal(item.unidades_descontadas) * item.product.precio_costo_usd
+    return total.quantize(Decimal("0.01"))
+
+
 def get_sales_summary(
     db: Session,
     *,
@@ -414,14 +438,18 @@ def get_sales_summary(
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
 ) -> list[dict]:
-    stmt = select(Sale).order_by(Sale.fecha_venta)
+    stmt = (
+        select(Sale)
+        .options(selectinload(Sale.items).selectinload(SaleItem.product))
+        .order_by(Sale.fecha_venta)
+    )
 
     if fecha_desde:
         stmt = stmt.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
         stmt = stmt.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
 
-    sales = list(db.execute(stmt).scalars().all())
+    sales = list(db.execute(stmt).scalars().unique().all())
 
     groups: dict[str, dict] = {}
     for sale in sales:
@@ -432,12 +460,22 @@ def get_sales_summary(
                 "total_ventas": 0,
                 "total_usd": Decimal("0"),
                 "total_ves": Decimal("0"),
+                "costo_usd": Decimal("0"),
+                "margen_usd": Decimal("0"),
             }
         groups[key]["total_ventas"] += 1
         groups[key]["total_usd"] += sale.total_usd or Decimal("0")
         groups[key]["total_ves"] += sale.total_ves or Decimal("0")
+        costo = _sale_costo_usd(sale)
+        groups[key]["costo_usd"] += costo
+        groups[key]["margen_usd"] += (sale.total_usd or Decimal("0")) - costo
 
-    return sorted(groups.values(), key=lambda x: x["periodo"])
+    result = []
+    for group in groups.values():
+        group["costo_usd"] = group["costo_usd"].quantize(Decimal("0.01"))
+        group["margen_usd"] = group["margen_usd"].quantize(Decimal("0.01"))
+        result.append(group)
+    return sorted(result, key=lambda x: x["periodo"])
 
 
 def current_week_range() -> tuple[datetime, datetime]:
