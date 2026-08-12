@@ -29,7 +29,7 @@ export default memo(function ProductCard({
     ? isAgotado
       ? "Agotado"
       : "Disponible"
-    : hasCajas
+    : product.stock_cajas > 0
       ? `${product.stock_cajas} cj | ${product.stock_unidades} und`
       : `${product.stock_unidades} und`;
 
@@ -43,13 +43,6 @@ export default memo(function ProductCard({
     e.stopPropagation();
     if (!isAgotado && product.precio_caja_usd > 0) {
       onAddBox();
-    }
-  };
-
-  const handleUnitClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isAgotado && product.precio_unidad_usd > 0) {
-      onAddUnit();
     }
   };
 
@@ -132,27 +125,19 @@ export default memo(function ProductCard({
           </div>
         )}
 
-        <div className="flex gap-2 pt-1">
-          <button
-            type="button"
-            disabled={isAgotado || product.precio_unidad_usd <= 0}
-            onClick={handleUnitClick}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg bg-accent-orange text-white hover:bg-orange-700 active:bg-orange-800 transition-all duration-150 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-xs hover:shadow-md disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed"
-          >
-            + UND
-          </button>
-          {hasCajas && (
+        {hasCajas && (
+          <div className="flex justify-end pt-1">
             <button
               type="button"
               disabled={isAgotado || product.precio_caja_usd <= 0}
               onClick={handleBoxClick}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg bg-brand-blue text-white hover:bg-blue-700 active:bg-blue-800 transition-all duration-150 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-xs hover:shadow-md disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-blue text-white hover:bg-blue-700 active:bg-blue-800 transition-all duration-150 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-xs hover:shadow-md disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed"
             >
-              <Package className="w-4 h-4" />
+              <Package className="w-3.5 h-3.5" />
               CAJA
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

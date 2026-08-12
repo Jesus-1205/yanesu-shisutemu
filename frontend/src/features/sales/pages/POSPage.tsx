@@ -216,15 +216,20 @@ export default function POSPage() {
           </div>
 
           {combos.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {combos.map((combo) => (
-                <ComboCard
-                  key={combo.id}
-                  combo={combo}
-                  onQuickAdd={() => addCombo(combo)}
-                  onCustomize={() => setCustomizingCombo(combo)}
-                />
-              ))}
+            <div className="space-y-2">
+              <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide flex items-center gap-1.5">
+                <span className="text-base">🎉</span> Promociones
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {combos.map((combo) => (
+                  <ComboCard
+                    key={combo.id}
+                    combo={combo}
+                    onQuickAdd={() => addCombo(combo)}
+                    onCustomize={() => setCustomizingCombo(combo)}
+                  />
+                ))}
+              </div>
             </div>
           )}
 

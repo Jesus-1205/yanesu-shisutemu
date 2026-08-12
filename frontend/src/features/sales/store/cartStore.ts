@@ -384,10 +384,10 @@ export const useCartStore = create<CartState>((set, get) => {
         ? item.precioDivisasUnidad
         : item.precioDivisasCaja;
 
-    const newPrecio =
-      item.usaPrecioDivisas && precioDivisas !== null
-        ? precioDivisas
-        : precioNormal;
+    // Si el item ya usaba divisas y el nuevo empaque tiene precio divisas, mantenerlo
+    // Si no, usar precio normal
+    const usaDivisas = item.usaPrecioDivisas && precioDivisas !== null;
+    const newPrecio = usaDivisas ? precioDivisas : precioNormal;
 
     const newUnidades =
       nuevoEmpaque === "CAJA"
@@ -409,6 +409,7 @@ export const useCartStore = create<CartState>((set, get) => {
         cartItemId: newId,
         tipo_empaque: nuevoEmpaque,
         precio_unitario_usd: newPrecio,
+        usaPrecioDivisas: usaDivisas,
         unidades_descontadas: newUnidades,
       };
     }
