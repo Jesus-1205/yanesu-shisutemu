@@ -128,3 +128,24 @@ class TestRateHistory:
         assert len(data["items"]) == 2
         assert data["total"] == 5
         assert data["pages"] == 3
+
+    def test_history_by_days_returns_recent(self, client):
+        _register_admin(client)
+        for i in range(3):
+            client.post("/api/exchange-rates/save-rates", json={"usd": 90.00 + i, "eur": 97.00 + i})
+
+        response = client.get("/api/exchange-rates/history?days=30")
+        assert response.status_code == 200
+        data = response.json()
+        assert "history" in data
+        assert len(data["history"]) == 3
+        assert data["history"][0]["tasa_usd"] == "92.0000"
+
+    def test_history_by_days_zero_returns_all(self, client):
+        _register_admin(client)
+        client.post("/api/exchange-rates/save-rates", json={"usd": 90.00, "eur": 97.00})
+
+        response = client.get("/api/exchange-rates/history?days=0")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["history"]) == 1

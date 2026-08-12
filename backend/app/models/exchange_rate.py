@@ -18,3 +18,7 @@ class ExchangeRate(Base):
 
     registered_by: Mapped["User | None"] = relationship("User", back_populates="exchange_rates")
     sales: Mapped[list["Sale"]] = relationship("Sale", back_populates="exchange_rate")
+
+    @property
+    def registrado_por_nombre(self) -> str | None:
+        return self.registered_by.nombre_completo if self.registered_by else None

@@ -294,10 +294,10 @@ export const api = {
   getBcvRates: () =>
     request<ExchangeRatesResponse>("/exchange-rates/bcv"),
 
-  getRateHistory: () =>
-    request<{ history: ExchangeRateOut[] }>(
-      `/exchange-rates/history`,
-    ),
+  getRateHistory: (params?: { days?: number }) => {
+    const qs = params?.days ? `?days=${params.days}` : "";
+    return request<{ history: ExchangeRateOut[] }>(`/exchange-rates/history${qs}`);
+  },
 
   getRateHistoryPaginated: (params: { page: number; page_size: number }) => {
     const qs = new URLSearchParams();
@@ -306,7 +306,7 @@ export const api = {
     return request<ExchangeRatePaginationOut>(`/exchange-rates/history?${qs.toString()}`);
   },
 
-  saveBulkRates: (data: { usd: number; eur: number }) =>
+  saveBulkRates: (data: { usd: string; eur: string }) =>
     request<ExchangeRateOut>("/exchange-rates/save-rates", {
       method: "POST",
       body: JSON.stringify(data),

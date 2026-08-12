@@ -79,9 +79,16 @@ def latest(
 def history(
     page: int | None = None,
     page_size: int | None = None,
+    days: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """GET /exchange-rates/history - Historial de tasas de cambio
+
+    Recibe: opcional page+page_size (paginado) o days (rango en días, sin paginar)
+    Hace:   consulta el historial completo, paginado o filtrado por los últimos N días
+    Devuelve: 200 + {history} | 200 + paginación (items, total, pages) | 401 no autenticado
+    """
     if page is not None and page_size is not None:
         result = get_rate_history_paginated(db, page=page, page_size=page_size)
         return ExchangeRatePaginationOut(
@@ -91,7 +98,7 @@ def history(
             page_size=result["page_size"],
             pages=result["pages"],
         )
-    rates = get_rate_history(db)
+    rates = get_rate_history(db, days=days)
     return {"history": [ExchangeRateOut.model_validate(r) for r in rates]}
 
 
