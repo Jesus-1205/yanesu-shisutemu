@@ -1,4 +1,30 @@
-# Backend: Python 3.12 / FastAPI 0.115 / PostgreSQL
+# Backend: Python 3.12 / FastAPI 0.115 / SQLite
+
+## 0. Decimales y Precisión Monetaria (Crítica del Sistema)
+
+Es un sistema de **inventario y dinero**: un descuadre de centavos o de stock es un fallo grave. La regla es **SIEMPRE `Decimal`, NUNCA `float`** para valores monetarios (precios, costos, IVA, totales, tasas) y para cálculos de inventario.
+
+- **PROHIBIDO** usar `float` o `int` para dinero, stock, tasas o porcentajes. Prohibido también operar con valores que vienen de la BD como `float`.
+- Construir `Decimal` **siempre desde `str`**, nunca desde `float` (evita errores binarios): `Decimal(str(x))`, `Decimal("0.01")`.
+- Operaciones aritméticas siempre con `Decimal`, con redondeo explícito vía `.quantize(Decimal("0.01"))` (o `Decimal("0.1")`/`Decimal("0.0001")` según el caso) y el modo de redondeo adecuado (`ROUND_HALF_UP`, `ROUND_FLOOR`, etc.).
+- En la base de datos, los importes son columnas `DECIMAL(precision, scale)` anotadas como `Mapped[Decimal]`. Nunca `Float`.
+- En Pydantic v2, los importes se declaran `Decimal` con `max_digits` y `decimal_places`.
+- Al convertir a respuesta JSON, serializar como `Decimal` (Pydantic lo maneja); no convertir a `float`.
+- Si detectas `float` operando con dinero/stock, corrígelo de inmediato: **no es negociable**.
+
+```python
+from decimal import Decimal, ROUND_HALF_UP
+
+# CORRECTO
+precio = Decimal(str(item["precio_unitario"]))
+subtotal = (Decimal(cantidad) * precio).quantize(Decimal("0.01"))
+total = total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+# PROHIBIDO
+# precio = float(item["precio_unitario"])
+# subtotal = round(cantidad * precio, 2)
+# total = 0.1 + 0.2  # → 0.30000000000000004
+```
 
 ## 1. SQLAlchemy 2.0 (Estándar Obligatorio)
 
@@ -8,7 +34,7 @@ Prohibido el uso de sintaxis legacy 1.x (`session.query()` o `Model.query`).
 
 - Usar anotaciones de tipo nativas de Python 3.12 con `Mapped[...]` y `mapped_column()`.
 - Todo `ForeignKey` debe incluir `ondelete='RESTRICT'` o `ondelete='CASCADE'`.
-- Valores monetarios: columna `Numeric(precision, scale)` anotada como `Mapped[Decimal]`.
+- Valores monetarios y de stock: columna `DECIMAL(precision, scale)` anotada como `Mapped[Decimal]`. Prohibido `Float` para importes (ver sección 0).
 
 ```python
 from decimal import Decimal
@@ -50,7 +76,7 @@ products = db.execute(stmt).scalars().all()
 
 - Prohibido usar `.dict()`. Usar exclusivamente `.model_dump()` o `.model_validate()`.
 - Usar `ConfigDict` para configuración del esquema.
-- Valores monetarios: `Decimal` con `max_digits` y `decimal_places`.
+- Valores monetarios: `Decimal` con `max_digits` y `decimal_places`. Prohibido `float` (ver sección 0).
 
 ```python
 from decimal import Decimal
@@ -175,21 +201,27 @@ Producción:
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-## 6. Resiliencia de Base de Datos
+## 6. Base de Datos SQLite
 
-Para mitigar microcortes de red, `create_engine` debe incluir parámetros de reciclaje y verificación previa:
+La aplicación usa **SQLite** (archivo `yanesu.db` en `%LOCALAPPDATA%/YanesuShisutemu/data/`), no PostgreSQL. La migración desde PostgreSQL está documentada en `docs/MIGRATION_SQLITE.md`.
+
+- Motor configurado en `app/core/database.py` con `connect_args={"check_same_thread": False}`.
+- Habilitar foreign keys en cada conexión:
 
 ```python
-engine = create_engine(
-    Config.SQLALCHEMY_DATABASE_URL,
-    pool_recycle=3600,
-    pool_pre_ping=True,
-)
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 ```
+
+- No usar dialecto PostgreSQL (tipos `SERIAL`, `JSONB`, `ILIKE`, etc.) ni drivers psycopg.
+- La ruta de la DB se resuelve con `app.core.config.get_db_path()`.
 
 ## 7. Testing Backend (pytest)
 
-Ejecutar tests desde `src/backend/`:
+Ejecutar tests desde `backend/`:
 
 ```bash
 pytest -v                       # Todos los tests
