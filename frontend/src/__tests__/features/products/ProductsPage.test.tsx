@@ -85,8 +85,8 @@ describe("ProductsPage", () => {
         columns: expect.arrayContaining([
           expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
-          expect.objectContaining({ header: "Codigo de Barra" }),
-          expect.objectContaining({ header: "Categorias" }),
+          expect.objectContaining({ header: "Código de Barra" }),
+          expect.objectContaining({ header: "Categorías" }),
           expect.objectContaining({ header: "Stock (uds)" }),
           expect.objectContaining({ header: "Precio Unidad USD" }),
           expect.objectContaining({ header: "Tipo IVA" }),

@@ -389,7 +389,7 @@ function ResumenTab({
               columns={[
                 { key: "nombre", header: "Producto", render: (r: { producto: ProductOut }) => <span className="truncate max-w-[150px] block" title={r.producto.nombre}>{r.producto.nombre}</span> },
                 { key: "total", header: "Vendidos", render: (r: { total_vendido: number }) => String(r.total_vendido) },
-                { key: "ingresos", header: "Ingresos ($)", render: (r: { producto: ProductOut; total_vendido: number }) => formatCurrency(r.total_vendido * r.producto.precio_unidad_usd) },
+                { key: "ingresos", header: "Ingresos ($)", render: (r: { producto: ProductOut; total_vendido: number }) => formatCurrency(Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100) },
               ]}
               data={visibleTopSelling}
               keyExtractor={(_, i) => i}
@@ -440,7 +440,7 @@ function ProductosTab({
     () => visibleSelling.map((r) => ({
       nombre: r.producto.nombre,
       total_vendido: r.total_vendido,
-      ingresos: r.total_vendido * r.producto.precio_unidad_usd,
+      ingresos: Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100,
     })),
     [visibleSelling],
   );
@@ -520,7 +520,7 @@ function ProductosTab({
             allData={sellingFlat as ({ nombre: string; total_vendido: number; ingresos: number } & Record<string, unknown>)[]}
             fetchAllData={async () => {
               const all = await api.getTopSellingProducts(9999);
-              return all.map((r) => ({ nombre: r.producto.nombre, total_vendido: r.total_vendido, ingresos: r.total_vendido * r.producto.precio_unidad_usd }));
+              return all.map((r) => ({ nombre: r.producto.nombre, total_vendido: r.total_vendido, ingresos: Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100 }));
             }}
           />
         ) : <p className="text-sm text-slate-400">Sin datos</p>}
@@ -534,7 +534,7 @@ function ProductosTab({
               { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortTopMargin("nombre"), sortDirection: sortTopMargin?.key === "nombre" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="truncate max-w-[150px] block" title={p.nombre}>{p.nombre}</span> },
               { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortTopMargin("precio_costo_usd"), sortDirection: sortTopMargin?.key === "precio_costo_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd) },
               { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortTopMargin("precio_unidad_usd"), sortDirection: sortTopMargin?.key === "precio_unidad_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd) },
-              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortTopMargin("margen_pct"), sortDirection: sortTopMargin?.key === "margen_pct" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = p.precio_unidad_usd - p.precio_costo_usd; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; } },
+              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortTopMargin("margen_pct"), sortDirection: sortTopMargin?.key === "margen_pct" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; } },
             ]}
             data={sortedTopMargin}
             keyExtractor={(p) => p.id}
@@ -559,7 +559,7 @@ function ProductosTab({
               { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortLowMargin("nombre"), sortDirection: sortLowMargin?.key === "nombre" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="truncate max-w-[150px] block" title={p.nombre}>{p.nombre}</span> },
               { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortLowMargin("precio_costo_usd"), sortDirection: sortLowMargin?.key === "precio_costo_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd) },
               { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortLowMargin("precio_unidad_usd"), sortDirection: sortLowMargin?.key === "precio_unidad_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd) },
-              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortLowMargin("margen_pct"), sortDirection: sortLowMargin?.key === "margen_pct" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = p.precio_unidad_usd - p.precio_costo_usd; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; } },
+              { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortLowMargin("margen_pct"), sortDirection: sortLowMargin?.key === "margen_pct" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; } },
             ]}
             data={sortedLowMargin}
             keyExtractor={(p) => p.id}

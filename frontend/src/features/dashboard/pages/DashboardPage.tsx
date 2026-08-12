@@ -158,7 +158,8 @@ export default function DashboardPage() {
                 {
                   key: "margen",
                   header: "Margen",
-                  render: (p: ProductOut) => formatCurrency(p.precio_unidad_usd - p.precio_costo_usd),
+                  render: (p: ProductOut) =>
+                    formatCurrency(Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100),
                 },
               ]}
               data={topMargin}

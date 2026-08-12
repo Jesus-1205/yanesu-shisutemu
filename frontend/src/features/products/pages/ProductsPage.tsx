@@ -109,16 +109,16 @@ export default function ProductsPage() {
 
   const exportColumns: Column<Product>[] = [
     { key: "id", header: "ID" },
-    { key: "codigo_barra", header: "Codigo de Barra" },
+    { key: "codigo_barra", header: "Código de Barra" },
     { key: "nombre", header: "Nombre" },
     {
       key: "categorias",
-      header: "Categorias",
+      header: "Categorías",
       render: (p: Product) => p.categories.map((c) => c.nombre).join(", "),
     },
     { key: "unidades_por_caja", header: "Unidades/Caja" },
     { key: "stock_unidades", header: "Stock (uds)" },
-    { key: "stock_minimo", header: "Stock Minimo" },
+    { key: "stock_minimo", header: "Stock Mínimo" },
     { key: "precio_costo_caja_usd", header: "Costo Caja USD" },
     { key: "precio_costo_usd", header: "Costo Unidad USD" },
     { key: "precio_unidad_usd", header: "Precio Unidad USD" },

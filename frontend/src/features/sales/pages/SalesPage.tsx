@@ -90,7 +90,7 @@ export default function SalesPage() {
     },
     {
       key: "metodo_pago",
-      header: "Metodo de Pago",
+      header: "Método de Pago",
       render: (s: Sale) => s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-",
     },
     {
