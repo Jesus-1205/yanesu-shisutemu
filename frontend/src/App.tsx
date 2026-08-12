@@ -96,6 +96,9 @@ const breadcrumbMap: Record<string, string> = {
   new: "Nuevo",
 };
 
+/** Ruta del Punto de Venta: al entrar, el sidebar se colapsa para ganar espacio de trabajo. */
+const POS_PATH = "/sales/new";
+
 function useBreadcrumbs(): Crumb[] {
   const { pathname } = useLocation();
   const segments = pathname.split("/").filter(Boolean);
@@ -255,6 +258,23 @@ function AppLayoutInner({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { logout } = useAuth();
+
+  const { pathname } = useLocation();
+  const prevPathRef = useRef<string | null>(null);
+  const prePosCollapsedRef = useRef(false);
+
+  useEffect(() => {
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+    const isPos = pathname === POS_PATH;
+    const wasPos = prev === POS_PATH;
+    if (isPos && !wasPos) {
+      prePosCollapsedRef.current = collapsed;
+      setCollapsed(true);
+    } else if (!isPos && wasPos) {
+      setCollapsed(prePosCollapsedRef.current);
+    }
+  }, [pathname, collapsed, setCollapsed]);
 
   const handleLogout = async () => {
     try {
