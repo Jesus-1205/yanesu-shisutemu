@@ -58,6 +58,7 @@ Sistema_inventario/
 
 - SQLAlchemy 2.0 (`select()`/`scalars()`/`Mapped`), prohibido `session.query()`
 - Pydantic v2 (`model_dump()`/`ConfigDict`), prohibido `.dict()`
+- **Decimales**: dinero, stock y tasas SIEMPRE con `Decimal`/`DECIMAL`, NUNCA `float` (es un sistema de inventario: un centavo o un descuadre es un fallo grave). Ver sección 0 de `backend_rules.md`
 - TypeScript sin `any`, interfaces en `types/` o `features/*/types.ts`
 - Base de datos **SQLite** (no PostgreSQL): no generar SQL de dialecto incompatible
 - Rutas FastAPI delgadas: HTTP en `routes/`, lógica de negocio en `services/`

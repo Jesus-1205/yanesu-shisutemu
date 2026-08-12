@@ -24,6 +24,22 @@ export type CreateProductDTO = Omit<Product, 'id'>;
 - Estado global con **Zustand** en `src/stores/` (ej. `exchangeRateStore.ts`).
 - Las llamadas al backend de FastAPI deben configurarse con URLs relativas o usando el proxy de Vite (`vite.config.ts`) para evitar problemas de CORS en desarrollo.
 
+## Decimales y Dinero en el Frontend
+
+El sistema maneja **dinero y stock**: un descuadre de centavos es un fallo grave. JavaScript usa `number` (flotante binario), por lo que operar precios directamente da errores de precisión.
+
+- Los totales y subtotales del carrito/POS se calculan con `number`, pero SIEMPRE se redondean a 2 decimales tras cada operación acumulada:
+
+```typescript
+const subtotal = Math.round(item.cantidad * item.precio_unitario_usd * 100) / 100;
+const total = Math.round((base + iva) * 100) / 100;
+```
+
+- **NUNCA** acumular decimales sin redondear en cada paso (ej. sumar 100 ítems con `0.1` a la vez). Redondear por operación y por total.
+- Formatear para mostrar con los helpers de `src/lib/`: `formatCurrency()`, `formatBs()`, `formatUsd()` (formato venezolano `es-VE`). No inventar formatos inline.
+- La **fuente de verdad del cálculo** es el backend (Decimal). El frontend solo redondea para presentación y para operaciones locales del carrito.
+- `toFixed()` solo para formato/exhibición, nunca para acumular totales.
+
 ## Tailwind CSS v4
 
 - Se utiliza el nuevo motor v4 integrado vía `@tailwindcss/vite`.
