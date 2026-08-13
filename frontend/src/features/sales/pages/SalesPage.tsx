@@ -29,6 +29,8 @@ export default function SalesPage() {
   const [error, setError] = useState<string | null>(null);
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
+  const [horaDesde, setHoraDesde] = useState("");
+  const [horaHasta, setHoraHasta] = useState("");
   const [metodoPagoIds, setMetodoPagoIds] = useState<number[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOut[]>([]);
   const [page, setPage] = useState(1);
@@ -41,6 +43,8 @@ export default function SalesPage() {
       const res = await api.getSalesPaginated({
         ...(fechaDesde && { fecha_desde: fechaDesde }),
         ...(fechaHasta && { fecha_hasta: fechaHasta }),
+        ...(horaDesde && { hora_desde: horaDesde }),
+        ...(horaHasta && { hora_hasta: horaHasta }),
         ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
         page,
         page_size: PAGE_SIZE,
@@ -52,7 +56,7 @@ export default function SalesPage() {
     } finally {
       setLoading(false);
     }
-  }, [fechaDesde, fechaHasta, metodoPagoIds, page]);
+  }, [fechaDesde, fechaHasta, horaDesde, horaHasta, metodoPagoIds, page]);
 
   useEffect(() => {
     fetchSales();
@@ -73,7 +77,6 @@ export default function SalesPage() {
   };
 
   const exportColumns: Column<Sale>[] = [
-    { key: "id", header: "ID", exportValue: (s: Sale) => s.id },
     {
       key: "fecha_venta",
       header: "Fecha",
@@ -129,6 +132,8 @@ export default function SalesPage() {
         const res = await api.getSalesPaginated({
           ...(fechaDesde && { fecha_desde: fechaDesde }),
           ...(fechaHasta && { fecha_hasta: fechaHasta }),
+          ...(horaDesde && { hora_desde: horaDesde }),
+          ...(horaHasta && { hora_hasta: horaHasta }),
           ...(metodoPagoIds.length > 0 && { metodo_pago_ids: metodoPagoIds }),
           page: currentPage,
           page_size: EXPORT_PAGE_SIZE,
@@ -190,6 +195,24 @@ export default function SalesPage() {
               className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             />
           </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Hora desde</label>
+            <input
+              type="time"
+              value={horaDesde}
+              onChange={(e) => handleFilterChange(setHoraDesde)(e.target.value)}
+              className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Hora hasta</label>
+            <input
+              type="time"
+              value={horaHasta}
+              onChange={(e) => handleFilterChange(setHoraHasta)(e.target.value)}
+              className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            />
+          </div>
           <MultiSelectTags
             label="Método de pago"
             selected={metodoPagoIds}
@@ -198,11 +221,11 @@ export default function SalesPage() {
             placeholder="Todos"
             className="min-w-[200px]"
           />
-          {(fechaDesde || fechaHasta || metodoPagoIds.length > 0) && (
+          {(fechaDesde || fechaHasta || horaDesde || horaHasta || metodoPagoIds.length > 0) && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setFechaDesde(""); setFechaHasta(""); setMetodoPagoIds([]); setPage(1); }}
+              onClick={() => { setFechaDesde(""); setFechaHasta(""); setHoraDesde(""); setHoraHasta(""); setMetodoPagoIds([]); setPage(1); }}
             >
               Limpiar
             </Button>
@@ -219,7 +242,6 @@ export default function SalesPage() {
 
       <Table
         columns={[
-          ...(!isOperator ? [{ key: "id", header: "ID", hideOnMobile: true }] : []),
           {
             key: "fecha_venta",
             header: "Fecha",

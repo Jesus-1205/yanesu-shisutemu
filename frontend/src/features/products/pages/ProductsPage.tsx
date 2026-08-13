@@ -109,7 +109,6 @@ export default function ProductsPage() {
   }, []);
 
   const exportColumns: Column<Product>[] = [
-    { key: "id", header: "ID", exportValue: (p: Product) => p.id },
     { key: "codigo_barra", header: "Código de Barra" },
     { key: "nombre", header: "Nombre" },
     {

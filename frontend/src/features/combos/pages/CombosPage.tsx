@@ -246,7 +246,6 @@ export default function CombosPage() {
 
       <Table
         columns={[
-          { key: "id", header: "ID" },
           { key: "nombre", header: "Nombre" },
           {
             key: "precio_total_usd",

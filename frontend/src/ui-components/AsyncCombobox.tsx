@@ -1,4 +1,5 @@
 import { useId, useRef, useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Loader2 } from "lucide-react";
 
 interface AsyncComboboxOption {
@@ -40,8 +41,18 @@ export default function AsyncCombobox({
   const [options, setOptions] = useState<AsyncComboboxOption[]>(initialOptions);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLUListElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const abortRef = useRef<AbortController | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 0 });
+
+  const updateDropdownPos = useCallback(() => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+  }, []);
 
   const selected =
     options.find((o) => o.value === value) ??
@@ -66,13 +77,27 @@ export default function AsyncCombobox({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (ref.current && ref.current.contains(target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updateDropdownPos();
+    const onScroll = () => updateDropdownPos();
+    const onResize = () => updateDropdownPos();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [open, updateDropdownPos]);
 
   const performSearch = useCallback(async (searchQuery: string) => {
     abortRef.current?.abort();
@@ -125,6 +150,7 @@ export default function AsyncCombobox({
       )}
       <div className="relative">
         <input
+          ref={inputRef}
           id={inputId}
           type="text"
           value={query}
@@ -151,8 +177,12 @@ export default function AsyncCombobox({
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin" />
         )}
       </div>
-      {open && !disabled && (
-        <ul className="absolute z-50 top-full mt-1 w-full bg-surface border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+      {open && !disabled && createPortal(
+        <ul
+          ref={dropdownRef}
+          className="fixed z-[9999] bg-surface border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+          style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
+        >
           {allowClear && (
             <li
               className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 cursor-pointer transition-colors"
@@ -178,7 +208,8 @@ export default function AsyncCombobox({
               )}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body,
       )}
       {error && <span className="text-xs text-danger">{error}</span>}
     </div>

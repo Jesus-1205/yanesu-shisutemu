@@ -7,6 +7,7 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.product import Product
 from app.models.sale import SaleItem
 from app.models.supplier import Supplier
+from app.services.product_service import _accent_fold, _accent_fold_pattern
 from app.schemas.supplier import (
     SupplierCreate,
     SupplierUpdate,
@@ -20,10 +21,10 @@ from app.schemas.supplier import (
 def get_suppliers(db: Session, search: str | None = None) -> list[Supplier]:
     stmt = select(Supplier)
     if search:
-        pattern = f"%{search}%"
+        pattern = f"%{_accent_fold_pattern(search)}%"
         stmt = stmt.where(
             or_(
-                Supplier.nombre.ilike(pattern),
+                _accent_fold(Supplier.nombre).ilike(pattern),
                 Supplier.telefono.ilike(pattern),
                 Supplier.email.ilike(pattern),
             )

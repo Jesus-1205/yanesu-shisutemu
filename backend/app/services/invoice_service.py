@@ -12,6 +12,7 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoEmpaqueFactura
 from app.models.product import Product
 from app.models.supplier import Supplier
+from app.services.product_service import _accent_fold, _accent_fold_pattern
 from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, MatchedProduct, MatchedSupplier
 from app.schemas.product import ProductOut as ProductOutSchema
 
@@ -716,11 +717,11 @@ def get_invoices(
     if proveedor_id is not None:
         stmt = stmt.where(Factura.proveedor_id == proveedor_id)
     if search:
-        pattern = f"%{search}%"
+        pattern = f"%{_accent_fold_pattern(search)}%"
         stmt = stmt.where(
             or_(
                 Factura.numero_factura.ilike(pattern),
-                Factura.observaciones.ilike(pattern),
+                _accent_fold(Factura.observaciones).ilike(pattern),
             )
         )
 

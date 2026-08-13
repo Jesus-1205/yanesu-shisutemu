@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import VE_TZ
@@ -328,12 +328,39 @@ def _payment_method_filter(
     )
 
 
+def _normalize_time(value: str | None) -> str | None:
+    """Normaliza 'HH:MM' o 'HH:MM:SS' a 'HH:MM:SS' para comparar con func.time()."""
+    if not value or not value.strip():
+        return None
+    parts = value.strip().split(":")
+    if len(parts) < 2:
+        return None
+    hh = parts[0].strip().zfill(2)
+    mm = parts[1].strip().zfill(2)
+    ss = parts[2].strip().zfill(2) if len(parts) > 2 else "00"
+    return f"{hh}:{mm}:{ss}"
+
+
+def _time_window_filter(hora_desde: str | None, hora_hasta: str | None):
+    """Filtro por hora del día (hora VE almacenada en fecha_venta)."""
+    desde = _normalize_time(hora_desde)
+    hasta = _normalize_time(hora_hasta)
+    clauses = []
+    if desde:
+        clauses.append(func.time(Sale.fecha_venta) >= desde)
+    if hasta:
+        clauses.append(func.time(Sale.fecha_venta) <= hasta)
+    return and_(*clauses) if clauses else None
+
+
 def get_sales(
     db: Session,
     *,
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
     metodo_pago_ids: list[int] | None = None,
+    hora_desde: str | None = None,
+    hora_hasta: str | None = None,
     limit: int = 50,
 ) -> list[Sale]:
     stmt = (
@@ -354,6 +381,9 @@ def get_sales(
     pm_filter = _payment_method_filter(metodo_pago_ids)
     if pm_filter is not None:
         stmt = stmt.where(pm_filter)
+    time_filter = _time_window_filter(hora_desde, hora_hasta)
+    if time_filter is not None:
+        stmt = stmt.where(time_filter)
 
     return list(db.execute(stmt).scalars().unique().all())
 
@@ -364,6 +394,8 @@ def get_sales_paginated(
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
     metodo_pago_ids: list[int] | None = None,
+    hora_desde: str | None = None,
+    hora_hasta: str | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> dict:
@@ -375,6 +407,9 @@ def get_sales_paginated(
     pm_filter = _payment_method_filter(metodo_pago_ids)
     if pm_filter is not None:
         base = base.where(pm_filter)
+    time_filter = _time_window_filter(hora_desde, hora_hasta)
+    if time_filter is not None:
+        base = base.where(time_filter)
 
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)

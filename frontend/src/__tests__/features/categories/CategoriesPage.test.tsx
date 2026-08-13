@@ -37,7 +37,7 @@ describe("CategoriesPage", () => {
     (api.getCategoriesPaginated as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
     render(<CategoriesPage />, { wrapper });
     // Table shows skeleton rows when loading
-    expect(screen.getByText("ID")).toBeInTheDocument();
+    expect(screen.getByText("Nombre")).toBeInTheDocument();
     expect(screen.queryByText("Licores")).not.toBeInTheDocument();
   });
 
@@ -57,6 +57,33 @@ describe("CategoriesPage", () => {
     (api.getCategoriesPaginated as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ items: [], total: 0, page: 1, page_size: 20, pages: 0 });
     render(<CategoriesPage />, { wrapper });
     await waitFor(() => expect(screen.getByText("No hay categorías registradas")).toBeInTheDocument());
+  });
+
+  it("filters categories by search input", async () => {
+    const getCategoriesPaginated = api.getCategoriesPaginated as ReturnType<typeof vi.fn>;
+    getCategoriesPaginated.mockResolvedValue({ items: [{ id: 1, nombre: "Licores", descripcion: null }], total: 1, page: 1, page_size: 20, pages: 1 });
+    render(<CategoriesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Licores")).toBeInTheDocument());
+    await userEvent.type(screen.getByPlaceholderText("Buscar categoría por nombre o descripción..."), "vino");
+    await waitFor(() => {
+      expect(getCategoriesPaginated).toHaveBeenLastCalledWith(expect.objectContaining({ search: "vino" }));
+    });
+  });
+
+  it("clears search and refetches all categories", async () => {
+    const getCategoriesPaginated = api.getCategoriesPaginated as ReturnType<typeof vi.fn>;
+    getCategoriesPaginated.mockResolvedValue({ items: [{ id: 1, nombre: "Licores", descripcion: null }], total: 1, page: 1, page_size: 20, pages: 1 });
+    render(<CategoriesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Licores")).toBeInTheDocument());
+    const searchInput = screen.getByPlaceholderText("Buscar categoría por nombre o descripción...");
+    await userEvent.type(searchInput, "vino");
+    await waitFor(() => {
+      expect(getCategoriesPaginated).toHaveBeenLastCalledWith(expect.objectContaining({ search: "vino" }));
+    });
+    await userEvent.clear(searchInput);
+    await waitFor(() => {
+      expect(getCategoriesPaginated).toHaveBeenLastCalledWith(expect.not.objectContaining({ search: "vino" }));
+    });
   });
 
   it("shows error banner when fetch fails", async () => {
@@ -116,7 +143,6 @@ describe("CategoriesPage", () => {
       expect(exportToExcel).toHaveBeenCalledWith({
         data: mockCategories,
         columns: expect.arrayContaining([
-          expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
           expect.objectContaining({ header: "Descripción" }),
         ]),

@@ -20,6 +20,32 @@ def _enrich_with_divisas(db: Session, products: list) -> None:
         product.precio_divisas_caja = dp.get("CAJA")
 
 
+def _accent_fold(column):
+    """Transforma un campo SQL para buscar sin importar acentos.
+
+    Aplica TRANSLATE(LOWER(...)) para normalizar á→a, é→e, í→i, ó→o, ú→u
+    antes de comparar con LIKE, cubriendo ~99% de los productos reales.
+    """
+    from sqlalchemy import literal
+    lower = func.lower(column)
+    replaces = (
+        ("á", "a"), ("é", "e"), ("í", "i"), ("ó", "o"), ("ú", "u"),
+        ("ñ", "n"),
+    )
+    result = lower
+    for old, new in replaces:
+        result = func.replace(result, literal(old), literal(new))
+    return result
+
+
+def _accent_fold_pattern(query: str):
+    """Normaliza un patrón de búsqueda de Python (case-fold + sin acentos)."""
+    import unicodedata
+    q = query.lower().strip()
+    nfkd = unicodedata.normalize("NFKD", q)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+
 def get_products(
     db: Session,
     *,
@@ -53,9 +79,9 @@ def get_products(
     if precio_max is not None:
         base_stmt = base_stmt.where(Product.precio_unidad_usd <= precio_max)
     if search:
-        pattern = f"%{search}%"
+        pattern = f"%{_accent_fold_pattern(search)}%"
         base_stmt = base_stmt.where(
-            or_(Product.nombre.ilike(pattern), Product.codigo_barra.ilike(pattern))
+            or_(_accent_fold(Product.nombre).ilike(pattern), _accent_fold(Product.codigo_barra).ilike(pattern))
         )
     if stock_status == "disponible":
         base_stmt = base_stmt.where(

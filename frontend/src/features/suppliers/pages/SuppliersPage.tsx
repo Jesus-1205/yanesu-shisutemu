@@ -86,7 +86,6 @@ export default function SuppliersPage() {
   };
 
   const exportColumns: Column<Supplier>[] = [
-    { key: "id", header: "ID", exportValue: (s: Supplier) => s.id },
     { key: "nombre", header: "Nombre" },
     { key: "telefono", header: "Teléfono" },
     { key: "email", header: "Email" },
@@ -103,7 +102,6 @@ export default function SuppliersPage() {
   };
 
   const columns: Column<Supplier>[] = useMemo(() => [
-    { key: "id", header: "ID" },
     { key: "nombre", header: "Nombre" },
     { key: "telefono", header: "Teléfono", render: (s: Supplier) => s.telefono || "—" },
     { key: "email", header: "Email", render: (s: Supplier) => s.email || "—" },

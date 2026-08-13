@@ -18,6 +18,7 @@ from app.services.sale_service import (
     current_week_range,
     get_sale,
     get_sales,
+    get_sales_paginated,
     get_sales_summary,
     get_top_week_sales,
 )
@@ -444,6 +445,73 @@ def test_get_sales_filtro_rango_completo_ve(db):
     assert dentro.id in ids
     assert anterior.id not in ids
     assert posterior.id not in ids
+
+
+# --- filtro por hora de la venta ---
+
+def test_get_sales_hora_desde(db):
+    # Se usan datetimes naive para replicar el almacenamiento real (VE_NOW sin offset)
+    u = _user(db)
+    temprano = _sale_con_fecha(db, u, datetime(2026, 7, 31, 9, 0))
+    tarde = _sale_con_fecha(db, u, datetime(2026, 7, 31, 18, 0))
+
+    result = get_sales(db, hora_desde="12:00")
+    ids = {s.id for s in result}
+    assert temprano.id not in ids
+    assert tarde.id in ids
+
+
+def test_get_sales_hora_hasta(db):
+    u = _user(db)
+    temprano = _sale_con_fecha(db, u, datetime(2026, 7, 31, 9, 0))
+    tarde = _sale_con_fecha(db, u, datetime(2026, 7, 31, 18, 0))
+
+    result = get_sales(db, hora_hasta="12:00")
+    ids = {s.id for s in result}
+    assert temprano.id in ids
+    assert tarde.id not in ids
+
+
+def test_get_sales_hora_rango(db):
+    u = _user(db)
+    antes = _sale_con_fecha(db, u, datetime(2026, 7, 31, 10, 0))
+    dentro = _sale_con_fecha(db, u, datetime(2026, 7, 31, 15, 0))
+    despues = _sale_con_fecha(db, u, datetime(2026, 7, 31, 20, 0))
+
+    result = get_sales(db, hora_desde="12:00", hora_hasta="18:00")
+    ids = {s.id for s in result}
+    assert antes.id not in ids
+    assert dentro.id in ids
+    assert despues.id not in ids
+
+
+def test_get_sales_hora_boundaries_inclusivos(db):
+    u = _user(db)
+    exacto = _sale_con_fecha(db, u, datetime(2026, 7, 31, 15, 0))
+
+    result = get_sales(db, hora_desde="15:00", hora_hasta="15:00")
+    ids = {s.id for s in result}
+    assert exacto.id in ids
+
+
+def test_get_sales_hora_invalida_ignorada(db):
+    u = _user(db)
+    s = _sale_con_fecha(db, u, datetime(2026, 7, 31, 10, 0))
+
+    result = get_sales(db, hora_desde="abc", hora_hasta="")
+    ids = {s.id for s in result}
+    assert s.id in ids
+
+
+def test_get_sales_paginated_hora(db):
+    u = _user(db)
+    temprano = _sale_con_fecha(db, u, datetime(2026, 7, 31, 9, 0))
+    tarde = _sale_con_fecha(db, u, datetime(2026, 7, 31, 18, 0))
+
+    result = get_sales_paginated(db, hora_desde="12:00", hora_hasta="23:59", page=1, page_size=20)
+    ids = {s.id for s in result["items"]}
+    assert temprano.id not in ids
+    assert tarde.id in ids
 
 
 # --- get_sale ---

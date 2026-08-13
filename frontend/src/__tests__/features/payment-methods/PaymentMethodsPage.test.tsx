@@ -44,7 +44,6 @@ describe("PaymentMethodsPage", () => {
   it("muestra loading inicial", () => {
     mockApi.getPaymentMethods.mockImplementation(() => new Promise(() => {}));
     renderPage();
-    expect(screen.getByText("ID")).toBeInTheDocument();
     expect(screen.getByText("Nombre")).toBeInTheDocument();
     expect(screen.getByText("Estado")).toBeInTheDocument();
     expect(screen.getByText("Acciones")).toBeInTheDocument();

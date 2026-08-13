@@ -195,7 +195,6 @@ describe("SuppliersPage", () => {
       expect(exportToExcel).toHaveBeenCalledWith({
         data: mockSuppliers,
         columns: expect.arrayContaining([
-          expect.objectContaining({ header: "ID" }),
           expect.objectContaining({ header: "Nombre" }),
           expect.objectContaining({ header: "Teléfono" }),
           expect.objectContaining({ header: "Email" }),

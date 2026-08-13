@@ -3,6 +3,7 @@ Entry point para PyInstaller.
 Inicialización DB → puerto libre → uvicorn → serve frontend.
 """
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -12,6 +13,13 @@ else:
     BASE_DIR = Path(__file__).resolve().parent
 
 sys.path.insert(0, str(BASE_DIR))
+
+# PyInstaller onefile con console=False deja sys.stdout/sys.stderr en None.
+# uvicorn dictConfig llama stream.isatty() y revienta con 'NoneType' object.
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 from app.core.config import get_db_path
 from app.core.database import SessionLocal

@@ -115,7 +115,6 @@ export default function InvoicesPage() {
         <>
           <Table
             columns={[
-              { key: "id", header: "ID" },
               { key: "numero_factura", header: "Factura" },
               {
                 key: "supplier",

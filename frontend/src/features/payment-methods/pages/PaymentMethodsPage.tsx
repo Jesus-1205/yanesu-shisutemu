@@ -137,7 +137,6 @@ export default function PaymentMethodsPage() {
 
       <Table
         columns={[
-          { key: "id", header: "ID" },
           { key: "nombre", header: "Nombre" },
           {
             key: "moneda_default",

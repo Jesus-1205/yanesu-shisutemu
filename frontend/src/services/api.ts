@@ -158,10 +158,11 @@ export const api = {
   getCategories: () =>
     request<CategoryOut[]>("/categories"),
 
-  getCategoriesPaginated: (params: { page: number; page_size: number }) => {
+  getCategoriesPaginated: (params: { page: number; page_size: number; search?: string }) => {
     const qs = new URLSearchParams();
     qs.set("page", String(params.page));
     qs.set("page_size", String(params.page_size));
+    if (params.search) qs.set("search", params.search);
     return request<CategoryPaginationOut>(`/categories?${qs.toString()}`);
   },
 
@@ -378,21 +379,25 @@ export const api = {
     request<ProductOut>(`/products/${id}/toggle-favorite`, { method: "PATCH" }),
 
   // ── Ventas ──
-  getSales: (params?: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; limit?: number }) => {
+  getSales: (params?: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; hora_desde?: string; hora_hasta?: string; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params?.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
     if (params?.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
     if (params?.metodo_pago_ids && params.metodo_pago_ids.length > 0) qs.set("metodo_pago_ids", params.metodo_pago_ids.join(","));
+    if (params?.hora_desde) qs.set("hora_desde", params.hora_desde);
+    if (params?.hora_hasta) qs.set("hora_hasta", params.hora_hasta);
     if (params?.limit) qs.set("limit", String(params.limit));
     const q = qs.toString();
     return request<SaleOut[]>(`/sales${q ? `?${q}` : ""}`);
   },
 
-  getSalesPaginated: (params: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; page: number; page_size: number }) => {
+  getSalesPaginated: (params: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; hora_desde?: string; hora_hasta?: string; page: number; page_size: number }) => {
     const qs = new URLSearchParams();
     if (params.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
     if (params.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
     if (params.metodo_pago_ids && params.metodo_pago_ids.length > 0) qs.set("metodo_pago_ids", params.metodo_pago_ids.join(","));
+    if (params.hora_desde) qs.set("hora_desde", params.hora_desde);
+    if (params.hora_hasta) qs.set("hora_hasta", params.hora_hasta);
     qs.set("page", String(params.page));
     qs.set("page_size", String(params.page_size));
     return request<SalePaginationOut>(`/sales?${qs.toString()}`);
