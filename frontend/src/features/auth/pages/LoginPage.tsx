@@ -35,7 +35,7 @@ export default function LoginPage() {
       {/* Left panel — decorative */}
       <div
         className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden"
-        style={{ backgroundImage: "url('/auth-bg_11zon.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
+        style={{ backgroundImage: "url('/auth-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
       >
         <div className="absolute inset-0 bg-slate-950/40" />
         <div className="relative text-center px-12 z-10">
