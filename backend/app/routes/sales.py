@@ -61,6 +61,8 @@ def list_all(
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
     metodo_pago_ids: str | None = None,
+    hora_desde: str | None = None,
+    hora_hasta: str | None = None,
     limit: int = 50,
     page: int | None = None,
     page_size: int | None = None,
@@ -81,6 +83,8 @@ def list_all(
             fecha_desde=fecha_desde,
             fecha_hasta=fecha_hasta,
             metodo_pago_ids=pm_ids,
+            hora_desde=hora_desde,
+            hora_hasta=hora_hasta,
             page=page,
             page_size=page_size,
         )
@@ -97,6 +101,8 @@ def list_all(
         fecha_desde=fecha_desde,
         fecha_hasta=fecha_hasta,
         metodo_pago_ids=pm_ids,
+        hora_desde=hora_desde,
+        hora_hasta=hora_hasta,
         limit=limit,
     )
     return [SaleOut.model_validate(s) for s in sales]

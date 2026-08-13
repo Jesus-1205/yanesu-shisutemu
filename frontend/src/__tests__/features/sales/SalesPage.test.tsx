@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import SalesPage from "../../../features/sales/pages/SalesPage";
@@ -115,6 +115,31 @@ describe("SalesPage", () => {
     render(<SalesPage />, { wrapper });
     await waitFor(() => {
       expect(screen.getByText("Método de pago")).toBeInTheDocument();
+    });
+  });
+
+  it("filters sales by time range and applies it to the export", async () => {
+    mockGetSalesPaginated.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 200, pages: 1 });
+    const { container } = render(<SalesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Hora desde")).toBeInTheDocument());
+
+    const timeInputs = container.querySelectorAll('input[type="time"]');
+    expect(timeInputs.length).toBe(2);
+    fireEvent.change(timeInputs[0], { target: { value: "12:00" } });
+    fireEvent.change(timeInputs[1], { target: { value: "18:00" } });
+
+    await waitFor(() => {
+      expect(mockGetSalesPaginated).toHaveBeenLastCalledWith(
+        expect.objectContaining({ hora_desde: "12:00", hora_hasta: "18:00" }),
+      );
+    });
+
+    mockGetSales.mockClear();
+    await userEvent.click(screen.getByText("Descargar Excel"));
+    await waitFor(() => {
+      expect(mockGetSalesPaginated).toHaveBeenLastCalledWith(
+        expect.objectContaining({ hora_desde: "12:00", hora_hasta: "18:00", page_size: 200 }),
+      );
     });
   });
 });
