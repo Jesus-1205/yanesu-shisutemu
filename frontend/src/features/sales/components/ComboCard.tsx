@@ -1,4 +1,4 @@
-import { ShoppingCart, Settings2, Sparkles } from "lucide-react";
+import { Settings2, Sparkles } from "lucide-react";
 import type { ComboActiveOut } from "@/types/api";
 import { formatCurrency } from "@/lib/utils";
 
@@ -12,7 +12,10 @@ export default function ComboCard({ combo, onQuickAdd, onCustomize }: ComboCardP
   const variantNames = combo.groups.flatMap((g) => g.productos.map((p) => p.nombre)).join(", ");
 
   return (
-    <div className="relative rounded-xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 flex flex-col gap-2.5 transition-all duration-150 hover:shadow-md hover:-translate-y-0.5">
+    <div
+      onClick={onQuickAdd}
+      className="relative rounded-xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-3.5 flex flex-col gap-2.5 transition-all duration-150 cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+    >
       <div className="absolute top-2 right-2">
         <Sparkles className="w-4 h-4 text-amber-500" />
       </div>
@@ -36,18 +39,10 @@ export default function ComboCard({ combo, onQuickAdd, onCustomize }: ComboCardP
         <span className="text-[10px] text-slate-400">combo</span>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex justify-end mt-auto pt-1">
         <button
           type="button"
-          onClick={onQuickAdd}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 transition-all duration-150 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-xs hover:shadow-md"
-        >
-          <ShoppingCart className="w-3.5 h-3.5" />
-          Agregar
-        </button>
-        <button
-          type="button"
-          onClick={onCustomize}
+          onClick={(e) => { e.stopPropagation(); onCustomize(); }}
           className="shrink-0 px-2.5 py-2 rounded-lg bg-white border border-amber-200 text-amber-600 hover:bg-amber-50 text-xs transition-colors cursor-pointer"
           title="Personalizar cantidades"
         >
