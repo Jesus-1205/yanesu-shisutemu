@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
 import type { ComboActiveOut } from "@/types/api";
@@ -32,6 +32,7 @@ export default function POSPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [showAllFavorites, setShowAllFavorites] = useState(false);
   const [totalFavorites, setTotalFavorites] = useState(0);
+  const [showPromos, setShowPromos] = useState(false);
 
   const [combos, setCombos] = useState<ComboActiveOut[]>([]);
   const [customizingCombo, setCustomizingCombo] = useState<ComboActiveOut | null>(null);
@@ -218,19 +219,31 @@ export default function POSPage() {
 
           {combos.length > 0 && !debouncedSearch.trim() && (
             <div className="space-y-2">
-              <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide">
-                Promociones
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {combos.map((combo) => (
-                  <ComboCard
-                    key={combo.id}
-                    combo={combo}
-                    onQuickAdd={() => addCombo(combo)}
-                    onCustomize={() => setCustomizingCombo(combo)}
-                  />
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowPromos(!showPromos)}
+                className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer"
+              >
+                <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide flex-1 text-left">
+                  Promociones ({combos.length})
+                </h2>
+                <ChevronDown
+                  size={16}
+                  className={`text-amber-700 transition-transform duration-200 ${showPromos ? "rotate-180" : ""}`}
+                />
+              </button>
+              {showPromos && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {combos.map((combo) => (
+                    <ComboCard
+                      key={combo.id}
+                      combo={combo}
+                      onQuickAdd={() => addCombo(combo)}
+                      onCustomize={() => setCustomizingCombo(combo)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
