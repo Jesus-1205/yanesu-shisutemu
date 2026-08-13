@@ -7,6 +7,7 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.category import Category, producto_categoria
 from app.models.product import Product
 from app.models.sale import SaleItem
+from app.services.product_service import _accent_fold, _accent_fold_pattern
 from app.schemas.category import (
     CategoryCreate,
     CategoryUpdate,
@@ -25,8 +26,8 @@ def get_categories(db: Session) -> list[Category]:
 def get_categories_paginated(db: Session, page: int = 1, page_size: int = 20, search: str | None = None) -> dict:
     base = select(Category)
     if search and search.strip():
-        pattern = f"%{search.strip()}%"
-        base = base.where(or_(Category.nombre.ilike(pattern), Category.descripcion.ilike(pattern)))
+        pattern = f"%{_accent_fold_pattern(search.strip())}%"
+        base = base.where(or_(_accent_fold(Category.nombre).ilike(pattern), _accent_fold(Category.descripcion).ilike(pattern)))
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)
     offset = (page - 1) * page_size
