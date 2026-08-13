@@ -676,4 +676,7 @@ FROM (
 ) AS v
 JOIN categorias c ON c.nombre = v.categoria_nombre;
 
+UPDATE productos SET nombre = REPLACE(nombre, '├▒', 'ñ')
+WHERE nombre LIKE '%├▒%';
+
 COMMIT;

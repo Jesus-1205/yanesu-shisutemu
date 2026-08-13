@@ -44,7 +44,7 @@ export default function SetupPage() {
   return (
     <div
       className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden"
-      style={{ backgroundImage: "url('/auth-bg.png')", backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{ backgroundImage: "url('/auth-bg_11zon.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
     >
       <div className="absolute inset-0 bg-slate-950/40" />
 
