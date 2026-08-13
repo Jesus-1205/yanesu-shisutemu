@@ -679,4 +679,11 @@ JOIN categorias c ON c.nombre = v.categoria_nombre;
 UPDATE productos SET nombre = REPLACE(nombre, '├▒', 'ñ')
 WHERE nombre LIKE '%├▒%';
 
+-- Corregir acentos de vocales (bytes UTF-8 interpretados como CP437)
+UPDATE productos SET nombre = REPLACE(nombre, '├í', 'á') WHERE nombre LIKE '%├í%';
+UPDATE productos SET nombre = REPLACE(nombre, '├®', 'é') WHERE nombre LIKE '%├®%';
+UPDATE productos SET nombre = REPLACE(nombre, '├¡', 'í') WHERE nombre LIKE '%├¡%';
+UPDATE productos SET nombre = REPLACE(nombre, '├│', 'ó') WHERE nombre LIKE '%├│%';
+UPDATE productos SET nombre = REPLACE(nombre, '├║', 'ú') WHERE nombre LIKE '%├║%';
+
 COMMIT;
