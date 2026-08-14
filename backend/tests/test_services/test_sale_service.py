@@ -182,6 +182,24 @@ def test_create_sale_insufficient_stock(db):
         create_sale(db, data, usuario_id=u.id)
 
 
+def test_create_sale_insufficient_stock_caja_reports_total_available(db):
+    p = _product(db, stock=31, caja=24)
+    u = _user(db)
+    pm = _payment_method(db)
+    data = SaleCreate(
+        tasa_bcv_aplicada=Decimal("50"),
+        items=[_item(p.id, tipo="CAJA", cantidad=4)],
+        pagos=[_pago(pm.id)],
+    )
+
+    with pytest.raises(ConflictError, match="disponible 31 unidades, requerido 96"):
+        create_sale(db, data, usuario_id=u.id)
+
+    db.refresh(p)
+    assert p.stock_unidades == 31
+    assert p.stock_cajas == 0
+
+
 def test_create_sale_stock_edge_zero(db):
     p = _product(db, stock=0)
     u = _user(db)
