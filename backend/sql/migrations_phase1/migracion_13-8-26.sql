@@ -686,4 +686,10 @@ UPDATE productos SET nombre = REPLACE(nombre, '├¡', 'í') WHERE nombre LIKE '
 UPDATE productos SET nombre = REPLACE(nombre, '├│', 'ó') WHERE nombre LIKE '%├│%';
 UPDATE productos SET nombre = REPLACE(nombre, '├║', 'ú') WHERE nombre LIKE '%├║%';
 
+UPDATE categorias SET nombre = REPLACE(nombre, '├í', 'á') WHERE nombre LIKE '%├í%';
+UPDATE categorias SET nombre = REPLACE(nombre, '├®', 'é') WHERE nombre LIKE '%├®%';
+UPDATE categorias SET nombre = REPLACE(nombre, '├¡', 'í') WHERE nombre LIKE '%├¡%';
+UPDATE categorias SET nombre = REPLACE(nombre, '├│', 'ó') WHERE nombre LIKE '%├│%';
+UPDATE categorias SET nombre = REPLACE(nombre, '├║', 'ú') WHERE nombre LIKE '%├║%';
+
 COMMIT;
