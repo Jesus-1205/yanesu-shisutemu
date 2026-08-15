@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import VE_TZ
 from app.core.exceptions import ConflictError, EntityNotFoundError
+from app.core.timezone import HORA_DIA
 from app.models.combo import Combo, ComboGroup
 from app.models.payment_method import PaymentMethod
 from app.models.product import Product
@@ -354,9 +355,9 @@ def _time_window_filter(hora_desde: str | None, hora_hasta: str | None):
     hasta = _normalize_time(hora_hasta)
     clauses = []
     if desde:
-        clauses.append(func.time(Sale.fecha_venta) >= desde)
+        clauses.append(HORA_DIA(Sale.fecha_venta) >= desde)
     if hasta:
-        clauses.append(func.time(Sale.fecha_venta) <= hasta)
+        clauses.append(HORA_DIA(Sale.fecha_venta) <= hasta)
     return and_(*clauses) if clauses else None
 
 

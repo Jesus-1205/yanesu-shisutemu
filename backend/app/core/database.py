@@ -10,6 +10,7 @@ if DATABASE_URL.startswith("postgresql"):
         DATABASE_URL,
         pool_pre_ping=True,
         pool_recycle=3600,
+        connect_args={"options": "-c timezone=America/Caracas"},
     )
 else:
     engine = create_engine(
