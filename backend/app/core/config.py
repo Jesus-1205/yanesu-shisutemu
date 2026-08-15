@@ -84,7 +84,11 @@ class Config:
 
     ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
 
-    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{DATABASE_PATH}"
+    SQLALCHEMY_DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
+
+    @classmethod
+    def is_postgres(cls) -> bool:
+        return cls.SQLALCHEMY_DATABASE_URL.startswith("postgresql")
 
     @classmethod
     def get_fernet_key(cls) -> bytes:
