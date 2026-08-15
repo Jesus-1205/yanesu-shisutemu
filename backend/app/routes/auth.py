@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -25,7 +25,7 @@ def setup_status(db: Session = Depends(get_db)):
 @router.post("/setup")
 def setup_admin(data: UserCreate, response: Response, request: Request, db: Session = Depends(get_db)):
     """Crea el primer usuario administrador. Solo funciona si no hay usuarios."""
-    if db.query(User).count() > 0:
+    if db.execute(select(func.count()).select_from(User)).scalar() > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El sistema ya tiene usuarios configurados",

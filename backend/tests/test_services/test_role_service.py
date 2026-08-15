@@ -1,3 +1,5 @@
+from sqlalchemy import select
+
 from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.role import Role
 from app.models.user import User
@@ -21,7 +23,7 @@ def test_get_roles_returns_all(db):
 
 
 def test_get_role_found(db):
-    role = db.query(Role).filter_by(nombre="ADMINISTRADOR").first()
+    role = db.execute(select(Role).where(Role.nombre == "ADMINISTRADOR")).scalars().first()
     result = get_role(db, role.id)
     assert result is not None
     assert result.nombre == "ADMINISTRADOR"
@@ -48,7 +50,7 @@ def test_create_role_duplicate(db):
 
 
 def test_update_role_success(db):
-    role = db.query(Role).filter_by(nombre="OPERADOR").first()
+    role = db.execute(select(Role).where(Role.nombre == "OPERADOR")).scalars().first()
     data = RoleCreate(nombre="OPERADOR_V2")
     result = update_role(db, role.id, data)
     assert result.nombre == "OPERADOR_V2"
@@ -64,7 +66,7 @@ def test_update_role_not_found(db):
 
 
 def test_update_role_duplicate(db):
-    role = db.query(Role).filter_by(nombre="OPERADOR").first()
+    role = db.execute(select(Role).where(Role.nombre == "OPERADOR")).scalars().first()
     data = RoleCreate(nombre="ADMINISTRADOR")
     try:
         update_role(db, role.id, data)
@@ -74,7 +76,7 @@ def test_update_role_duplicate(db):
 
 
 def test_delete_role_success(db):
-    role = db.query(Role).filter_by(nombre="OPERADOR").first()
+    role = db.execute(select(Role).where(Role.nombre == "OPERADOR")).scalars().first()
     delete_role(db, role.id)
     assert get_role(db, role.id) is None
 
@@ -88,7 +90,7 @@ def test_delete_role_not_found(db):
 
 
 def test_delete_role_with_users(db):
-    role = db.query(Role).filter_by(nombre="ADMINISTRADOR").first()
+    role = db.execute(select(Role).where(Role.nombre == "ADMINISTRADOR")).scalars().first()
     user = User(username="admin_u", email="admin_u@test.com",
                 hashed_password="x", nombre_completo="Admin U", rol_id=role.id)
     db.add(user)
