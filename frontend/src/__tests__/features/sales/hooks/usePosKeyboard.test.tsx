@@ -93,4 +93,29 @@ describe("usePosKeyboard", () => {
     unmount();
     expect(removeSpy).toHaveBeenCalledWith("keydown", expect.any(Function));
   });
+
+  it("F7 calls onHold when provided", async () => {
+    const { ref } = createRef();
+    const onHold = vi.fn();
+    renderHook(() => usePosKeyboard(ref, vi.fn(), false, vi.fn(), onHold));
+    await userEvent.keyboard("{F7}");
+    expect(onHold).toHaveBeenCalledTimes(1);
+  });
+
+  it("F8 calls onOpenQueue when provided", async () => {
+    const { ref } = createRef();
+    const onOpenQueue = vi.fn();
+    renderHook(() => usePosKeyboard(ref, vi.fn(), false, vi.fn(), undefined, onOpenQueue));
+    await userEvent.keyboard("{F8}");
+    expect(onOpenQueue).toHaveBeenCalledTimes(1);
+  });
+
+  it("F7 and F8 do nothing when callbacks are not provided", async () => {
+    const { ref } = createRef();
+    const onCheckout = vi.fn();
+    renderHook(() => usePosKeyboard(ref, onCheckout, false, vi.fn()));
+    await userEvent.keyboard("{F7}");
+    await userEvent.keyboard("{F8}");
+    expect(onCheckout).not.toHaveBeenCalled();
+  });
 });

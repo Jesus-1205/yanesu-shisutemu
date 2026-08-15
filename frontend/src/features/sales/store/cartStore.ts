@@ -56,6 +56,7 @@ interface CartState {
   toggleDivisas: (cartItemId: string) => void;
   removeItem: (cartItemId: string) => void;
   clearCart: () => void;
+  loadCart: (items: Record<string, CartItem>, snapshotTasa: number) => void;
   getTotals: () => CartTotals;
   getTotalUsd: () => number;
   getTotalVes: () => number;
@@ -459,6 +460,10 @@ export const useCartStore = create<CartState>((set, get) => {
 
   clearCart: () => {
     set({ items: {}, snapshotTasa: 0 });
+  },
+
+  loadCart: (items, snapshotTasa) => {
+    set({ items, snapshotTasa });
   },
 
   getTotals: () => computeTotals(get().items),

@@ -1,4 +1,4 @@
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, PauseCircle, Clock } from "lucide-react";
 import type { CartItem, CartTotals } from "../store/cartStore";
 import { formatCurrency, formatRate } from "@/lib/utils";
 import CartItemRow from "./CartItemRow";
@@ -11,7 +11,10 @@ interface CartPanelProps {
   totalVes: number;
   snapshotTasa: number;
   itemCount: number;
+  heldCount: number;
   onCheckout: () => void;
+  onHold: () => void;
+  onOpenQueue: () => void;
 }
 
 export default function CartPanel({
@@ -21,7 +24,10 @@ export default function CartPanel({
   totalVes,
   snapshotTasa,
   itemCount,
+  heldCount,
   onCheckout,
+  onHold,
+  onOpenQueue,
 }: CartPanelProps) {
   return (
     <div className="lg:sticky lg:top-24 lg:self-start space-y-3">
@@ -95,6 +101,28 @@ export default function CartPanel({
       >
         Cobrar ({itemCount})
       </Button>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          size="md"
+          className="w-full"
+          disabled={itemCount === 0}
+          onClick={onHold}
+        >
+          <PauseCircle className="w-4 h-4" />
+          Guardar
+        </Button>
+        <Button
+          variant="ghost"
+          size="md"
+          className="w-full"
+          onClick={onOpenQueue}
+        >
+          <Clock className="w-4 h-4" />
+          En espera ({heldCount})
+        </Button>
+      </div>
     </div>
   );
 }

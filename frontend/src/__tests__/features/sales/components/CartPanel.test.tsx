@@ -45,7 +45,10 @@ function renderPanel(overrides: Partial<Parameters<typeof CartPanel>[0]> = {}) {
     totalVes: 0,
     snapshotTasa: 0,
     itemCount: 0,
+    heldCount: 0,
     onCheckout: vi.fn(),
+    onHold: vi.fn(),
+    onOpenQueue: vi.fn(),
     ...overrides,
   };
   render(<CartPanel {...props} />);
@@ -118,5 +121,32 @@ describe("CartPanel", () => {
     expect(checkoutButton).toBeEnabled();
     await userEvent.click(checkoutButton);
     expect(onCheckout).toHaveBeenCalledTimes(1);
+  });
+
+  it("deshabilita Guardar cuando no hay items", () => {
+    renderPanel();
+    expect(screen.getByRole("button", { name: /guardar/i })).toBeDisabled();
+  });
+
+  it("habilita Guardar cuando hay items", () => {
+    renderPanel({ items: { "1_UNIDAD": makeItem() }, itemCount: 1 });
+    expect(screen.getByRole("button", { name: /guardar/i })).toBeEnabled();
+  });
+
+  it("llama onHold al hacer click en Guardar", async () => {
+    const { onHold } = renderPanel({
+      items: { "1_UNIDAD": makeItem() },
+      itemCount: 1,
+    });
+    await userEvent.click(screen.getByRole("button", { name: /guardar/i }));
+    expect(onHold).toHaveBeenCalledTimes(1);
+  });
+
+  it("muestra el contador de ventas en espera y llama onOpenQueue", async () => {
+    const { onOpenQueue } = renderPanel({ heldCount: 3 });
+    const queueButton = screen.getByRole("button", { name: /en espera \(3\)/i });
+    expect(queueButton).toBeInTheDocument();
+    await userEvent.click(queueButton);
+    expect(onOpenQueue).toHaveBeenCalledTimes(1);
   });
 });

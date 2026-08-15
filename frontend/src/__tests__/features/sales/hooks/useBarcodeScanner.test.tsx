@@ -97,6 +97,34 @@ function typeSlowly(code: string) {
   document.dispatchEvent(enterEvent);
 }
 
+function typeFastInField(code: string, el: HTMLInputElement): boolean[] {
+  el.focus();
+  const chars = code.split("");
+  const startTime = Date.now();
+  const prevented: boolean[] = [];
+
+  for (let i = 0; i < chars.length; i++) {
+    const event = new KeyboardEvent("keydown", {
+      key: chars[i],
+      bubbles: true,
+      cancelable: true,
+    });
+    vi.spyOn(Date, "now").mockReturnValue(startTime + i * 5);
+    document.dispatchEvent(event);
+    prevented.push(event.defaultPrevented);
+  }
+
+  const enterEvent = new KeyboardEvent("keydown", {
+    key: "Enter",
+    bubbles: true,
+    cancelable: true,
+  });
+  vi.spyOn(Date, "now").mockReturnValue(startTime + chars.length * 5);
+  document.dispatchEvent(enterEvent);
+
+  return prevented;
+}
+
 afterEach(() => {
   document.body.querySelectorAll("input").forEach((el) => el.remove());
   vi.restoreAllMocks();
@@ -180,6 +208,33 @@ describe("useBarcodeScanner", () => {
 
     expect(api.getProducts).not.toHaveBeenCalled();
     expect(addItem).not.toHaveBeenCalled();
+  });
+
+  it("does not preventDefault fast typing in a non-search text field", async () => {
+    const { ref } = createRef();
+    const nameInput = document.createElement("input");
+    document.body.appendChild(nameInput);
+
+    renderHook(() => useBarcodeScanner(vi.fn(), ref, false, mockOnBarcodeScan));
+
+    const prevented = typeFastInField("Pedro", nameInput);
+
+    expect(prevented.every((p) => !p)).toBe(true);
+    expect(mockOnBarcodeScan).not.toHaveBeenCalled();
+  });
+
+  it("does not trigger a barcode lookup when pressing Enter after fast typing in a text field", async () => {
+    const { ref } = createRef();
+    const nameInput = document.createElement("input");
+    document.body.appendChild(nameInput);
+
+    renderHook(() => useBarcodeScanner(vi.fn(), ref, false, mockOnBarcodeScan));
+
+    typeFastInField("Ana", nameInput);
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(api.getProducts).not.toHaveBeenCalled();
   });
 
   it("calls onBarcodeScan on successful scan", async () => {

@@ -7,6 +7,8 @@ export function usePosKeyboard(
   onCheckout: () => void,
   checkoutOpen: boolean,
   onCloseCheckout: () => void,
+  onHold?: () => void,
+  onOpenQueue?: () => void,
 ) {
   const clearCart = useCartStore((s) => s.clearCart);
   const { toast } = useToast();
@@ -17,6 +19,10 @@ export function usePosKeyboard(
   onCloseCheckoutRef.current = onCloseCheckout;
   const checkoutOpenRef = useRef(checkoutOpen);
   checkoutOpenRef.current = checkoutOpen;
+  const onHoldRef = useRef(onHold);
+  onHoldRef.current = onHold;
+  const onOpenQueueRef = useRef(onOpenQueue);
+  onOpenQueueRef.current = onOpenQueue;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -31,6 +37,18 @@ export function usePosKeyboard(
         e.preventDefault();
         clearCart();
         toast("Carrito vaciado", "success");
+        return;
+      }
+
+      if (e.key === "F7") {
+        e.preventDefault();
+        onHoldRef.current?.();
+        return;
+      }
+
+      if (e.key === "F8") {
+        e.preventDefault();
+        onOpenQueueRef.current?.();
         return;
       }
 

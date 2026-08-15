@@ -5,15 +5,20 @@ import type { ProductOut } from "@/types/api";
 import type { ComboActiveOut } from "@/types/api";
 import PageHeader from "@/ui-components/PageHeader";
 import ToggleSwitch from "@/ui-components/ToggleSwitch";
+import Modal from "@/ui-components/Modal";
+import Input from "@/ui-components/Input";
+import Button from "@/ui-components/Button";
 import { useToast } from "@/ui-components/Toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useCartStore, computeTotals } from "../store/cartStore";
+import { useHoldQueueStore } from "../store/holdQueueStore";
 import CheckoutDrawer from "../components/CheckoutDrawer";
 import ComboCard from "../components/ComboCard";
 import ComboSelectorModal from "../components/ComboSelectorModal";
 import ProductGrid from "../components/ProductGrid";
 import CartPanel from "../components/CartPanel";
+import HoldQueueDrawer from "../components/HoldQueueDrawer";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
 import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
 
@@ -37,6 +42,10 @@ export default function POSPage() {
   const [combos, setCombos] = useState<ComboActiveOut[]>([]);
   const [customizingCombo, setCustomizingCombo] = useState<ComboActiveOut | null>(null);
 
+  const [holdDrawerOpen, setHoldDrawerOpen] = useState(false);
+  const [holdModalOpen, setHoldModalOpen] = useState(false);
+  const [holdLabel, setHoldLabel] = useState("");
+
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const prevSearchRef = useRef(`${debouncedSearch}|${showAllFavorites}`);
@@ -46,6 +55,7 @@ export default function POSPage() {
   const addCombo = useCartStore((s) => s.addCombo);
   const addComboWithSelections = useCartStore((s) => s.addComboWithSelections);
   const snapshotTasa = useCartStore((s) => s.snapshotTasa);
+  const heldCount = useHoldQueueStore((s) => s.heldCarts.length);
 
   const totals = useMemo(() => computeTotals(items), [items]);
   const totalUsd = useMemo(
@@ -151,7 +161,29 @@ export default function POSPage() {
     setCheckoutOpen(false);
   }, []);
 
-  usePosKeyboard(searchRef, handleCheckout, checkoutOpen, handleCloseCheckout);
+  const handleOpenHold = useCallback(() => {
+    if (itemCount === 0) {
+      toastRef.current("No hay productos para guardar", "error");
+      return;
+    }
+    setHoldLabel("");
+    setHoldModalOpen(true);
+  }, [itemCount]);
+
+  const handleConfirmHold = useCallback(() => {
+    const ok = useHoldQueueStore.getState().holdCurrentCart(holdLabel);
+    setHoldModalOpen(false);
+    setHoldLabel("");
+    if (ok) {
+      toastRef.current("Venta guardada", "success");
+    }
+  }, [holdLabel]);
+
+  const handleOpenQueue = useCallback(() => {
+    setHoldDrawerOpen(true);
+  }, []);
+
+  usePosKeyboard(searchRef, handleCheckout, checkoutOpen, handleCloseCheckout, handleOpenHold, handleOpenQueue);
 
   const handleBarcodeScan = useCallback(() => {
     setSearch("");
@@ -274,7 +306,10 @@ export default function POSPage() {
           totalVes={totalVes}
           snapshotTasa={snapshotTasa}
           itemCount={itemCount}
+          heldCount={heldCount}
           onCheckout={handleCheckout}
+          onHold={handleOpenHold}
+          onOpenQueue={handleOpenQueue}
         />
       </div>
 
@@ -284,6 +319,11 @@ export default function POSPage() {
         onSuccess={handleSuccess}
       />
 
+      <HoldQueueDrawer
+        open={holdDrawerOpen}
+        onClose={() => setHoldDrawerOpen(false)}
+      />
+
       {customizingCombo && (
         <ComboSelectorModal
           combo={customizingCombo}
@@ -291,6 +331,38 @@ export default function POSPage() {
           onClose={() => setCustomizingCombo(null)}
         />
       )}
+
+      <Modal
+        open={holdModalOpen}
+        onClose={() => setHoldModalOpen(false)}
+        title="Guardar venta"
+      >
+        <p className="text-sm text-slate-600 mb-4">
+          El carrito actual se guardará en la cola de espera y quedará vacío para poder hacer otra venta.
+        </p>
+        <Input
+          label="Nombre / nota del cliente (opcional)"
+          placeholder="Cliente"
+          maxLength={60}
+          autoFocus
+          value={holdLabel}
+          onChange={(e) => setHoldLabel(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleConfirmHold();
+            }
+          }}
+        />
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="ghost" onClick={() => setHoldModalOpen(false)}>
+            Cancelar
+          </Button>
+          <Button variant="success" onClick={handleConfirmHold}>
+            Guardar
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

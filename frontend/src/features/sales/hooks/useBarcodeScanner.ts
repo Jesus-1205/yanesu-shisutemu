@@ -69,6 +69,15 @@ export function useBarcodeScanner(
     const handler = (e: KeyboardEvent) => {
       if (e.key.length === 1) {
         const now = Date.now();
+        const active = document.activeElement;
+        const typingInTextField =
+          active !== searchRef.current &&
+          (active instanceof HTMLInputElement ||
+            active instanceof HTMLTextAreaElement ||
+            (active instanceof HTMLElement && active.isContentEditable));
+
+        if (typingInTextField) return;
+
         if (now - lastKeyTime > SCANNER_THRESHOLD_MS) {
           buffer = "";
         } else if (lastKeyTime > 0 && document.activeElement !== searchRef.current) {
