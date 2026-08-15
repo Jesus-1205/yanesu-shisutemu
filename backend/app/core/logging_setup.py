@@ -7,9 +7,9 @@ def ensure_logging() -> None:
     if root.handlers:
         return
 
-    from app.core.config import get_app_data_dir
+    from app.core.config import get_log_dir
 
-    log_dir = get_app_data_dir() / "logs"
+    log_dir = get_log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
 
     file_handler = RotatingFileHandler(
