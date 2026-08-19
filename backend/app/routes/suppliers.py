@@ -16,7 +16,7 @@ def create(
     data: SupplierCreate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("ADMINISTRADOR")),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
     """POST /suppliers - Crear nuevo proveedor
 

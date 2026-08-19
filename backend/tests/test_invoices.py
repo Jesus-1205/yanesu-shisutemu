@@ -161,3 +161,22 @@ class TestGetInvoice:
         _login(client)
         response = client.get("/api/invoices/999")
         assert response.status_code == 404
+
+
+class TestAnalyzeInvoice:
+    def test_analyze_unauthenticated(self, client):
+        response = client.post("/api/invoices/analyze", files={"files": ("test.jpg", b"fake", "image/jpeg")})
+        assert response.status_code == 401
+
+    def test_analyze_empty_files(self, client):
+        _login(client)
+        response = client.post("/api/invoices/analyze")
+        assert response.status_code == 422
+
+    def test_analyze_invalid_file_type(self, client):
+        _login(client)
+        response = client.post(
+            "/api/invoices/analyze",
+            files={"files": ("test.exe", b"fake", "application/exe")},
+        )
+        assert response.status_code == 400

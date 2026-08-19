@@ -86,11 +86,6 @@ class TestCreateSupplier:
         response = client.post("/api/suppliers", json={"nombre": "Proveedor A"})
         assert response.status_code == 401
 
-    def test_create_as_operator_forbidden(self, client):
-        _register_operator(client)
-        response = client.post("/api/suppliers", json={"nombre": "Proveedor A"})
-        assert response.status_code == 403
-
 
 class TestUpdateSupplier:
     def test_update_success(self, client):
@@ -177,3 +172,12 @@ class TestSupplierAnalytics:
     def test_analytics_unauthenticated(self, client):
         response = client.get("/api/suppliers/analytics")
         assert response.status_code == 401
+
+
+class TestCreateSupplierOperator:
+    def test_operator_can_create_supplier(self, client):
+        _register_operator(client)
+        response = client.post("/api/suppliers", json={"nombre": "Distribuidora XYZ"})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["nombre"] == "Distribuidora XYZ"

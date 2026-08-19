@@ -20,6 +20,7 @@ const DECIMAL_KEY_EXACT = new Set<string>([
   "iva_porcentaje",
   "precio_divisas_unidad",
   "precio_divisas_caja",
+  "precio_unitario",
 ]);
 
 export function isDecimalKey(key: string): boolean {

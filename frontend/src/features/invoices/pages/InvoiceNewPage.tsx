@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft, Package, CirclePlus, ScanLine, CheckCircle2, AlertTriangle, XCircle, Loader2, X } from "lucide-react";
 import { api } from "@/services/api";
-import type { MonedaEnum, TipoEmpaque, ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut, MatchedProduct, MatchStatus } from "@/types/api";
+import type { MonedaEnum, TipoEmpaque, ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut, MatchedProduct } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Combobox from "@/ui-components/Combobox";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
@@ -17,6 +17,7 @@ import CreateCategoryModal from "@/features/shared/components/CreateCategoryModa
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
 import { formatBs } from "@/lib/text";
 import { calcIva } from "@/lib/iva";
+import { toCents, convertirCostos, calcularSubtotal } from "@/lib/money";
 
 interface LineItem {
   key: string;
@@ -108,7 +109,7 @@ export default function InvoiceNewPage() {
           ...updated[idx],
           resolved_producto_id: product.id,
           resolved_nombre: product.nombre,
-          match_status: "EXACT" as MatchStatus,
+          match_status: "EXACT",
         };
         return updated;
       });
@@ -193,7 +194,7 @@ export default function InvoiceNewPage() {
           ...item,
           resolved_producto_id: productoId,
           resolved_nombre: prod?.nombre ?? item.nombre_extraido,
-          match_status: "EXACT" as MatchStatus,
+          match_status: "EXACT",
         };
       }
       return updated;
@@ -217,20 +218,9 @@ export default function InvoiceNewPage() {
     const tasaNum = tasa === "" ? 0 : Number(tasa);
     const newLineItems: LineItem[] = aiItems.map((item) => {
       const prod = products.find((p) => p.id === item.resolved_producto_id);
-      const precioUnitario = item.precio_unitario;
-      const costoUsd = selectedAiCurrency === "BS" && tasaNum > 0
-        ? Math.round((precioUnitario / tasaNum) * 100) / 100
-        : precioUnitario;
-      const costoBs = selectedAiCurrency === "BS"
-        ? precioUnitario
-        : tasaNum > 0
-          ? Math.round((precioUnitario * tasaNum) * 100) / 100
-          : 0;
-
+      const precioUnitario = toCents(Number(item.precio_unitario));
+      const costos = convertirCostos(precioUnitario, selectedAiCurrency, tasaNum);
       const unidadesPorCaja = prod?.unidades_por_caja ?? 1;
-      const unidades = item.tipo_empaque === "CAJA"
-        ? item.cantidad * unidadesPorCaja
-        : item.cantidad;
 
       return {
         key: crypto.randomUUID(),
@@ -239,10 +229,10 @@ export default function InvoiceNewPage() {
         codigo_barra: prod?.codigo_barra ?? null,
         tipo_empaque: item.tipo_empaque,
         cantidad: item.cantidad,
-        costo_unitario_usd: costoUsd,
-        costo_unitario_bs: costoBs,
-        subtotal_usd: Math.round(unidades * costoUsd * 100) / 100,
-        subtotal_bs: Math.round(unidades * costoBs * 100) / 100,
+        costo_unitario_usd: costos.usd,
+        costo_unitario_bs: costos.bs,
+        subtotal_usd: calcularSubtotal(item.cantidad, costos.usd),
+        subtotal_bs: calcularSubtotal(item.cantidad, costos.bs),
         unidades_por_caja: unidadesPorCaja,
         tipo_iva: prod?.tipo_iva ?? "GRAVADO",
         costo_ingresado: precioUnitario,
@@ -276,7 +266,7 @@ export default function InvoiceNewPage() {
       if (field === "cantidad") {
         item.cantidad = value === "" ? 0 : parseInt(value, 10) || 0;
       } else {
-        item.precio_unitario = value === "" ? 0 : parseFloat(value) || 0;
+        item.precio_unitario = toCents(parseFloat(value) || 0);
       }
       updated[index] = item;
       return updated;
@@ -333,11 +323,9 @@ export default function InvoiceNewPage() {
   const nUndsCaja = newUnidadesPorCaja === "" ? 0 : Number(newUnidadesPorCaja);
 
   const newCostoSecundario = useMemo(() => {
-    if (nTasa <= 0) return 0;
-    return esBs
-      ? Math.round((nCostoPrim / nTasa) * 100) / 100
-      : Math.round((nCostoPrim * nTasa) * 100) / 100;
-  }, [esBs, nCostoPrim, nTasa]);
+    const costos = convertirCostos(nCostoPrim, moneda, nTasa);
+    return esBs ? costos.usd : costos.bs;
+  }, [esBs, nCostoPrim, nTasa, moneda]);
 
   const handleProductSelect = useCallback((val: string | number | null) => {
     const id = val ? Number(val) : null;
@@ -356,23 +344,13 @@ export default function InvoiceNewPage() {
     if (nTasa <= 0) return;
     setLineItems((prev) =>
       prev.map((item) => {
-        const costo_usd =
-          item.moneda_ingreso === "BS"
-            ? Math.round((item.costo_ingresado / nTasa) * 100) / 100
-            : item.costo_ingresado;
-        const costo_bs =
-          item.moneda_ingreso === "BS"
-            ? item.costo_ingresado
-            : Math.round((item.costo_ingresado * nTasa) * 100) / 100;
-        const unidades = item.tipo_empaque === "CAJA"
-          ? item.cantidad * item.unidades_por_caja
-          : item.cantidad;
+        const costos = convertirCostos(item.costo_ingresado, item.moneda_ingreso, nTasa);
         return {
           ...item,
-          costo_unitario_usd: costo_usd,
-          costo_unitario_bs: costo_bs,
-          subtotal_usd: Math.round(unidades * costo_usd * 100) / 100,
-          subtotal_bs: Math.round(unidades * costo_bs * 100) / 100,
+          costo_unitario_usd: costos.usd,
+          costo_unitario_bs: costos.bs,
+          subtotal_usd: calcularSubtotal(item.cantidad, costos.usd),
+          subtotal_bs: calcularSubtotal(item.cantidad, costos.bs),
         };
       })
     );
@@ -382,10 +360,8 @@ export default function InvoiceNewPage() {
     if (!canAdd || !selectedProduct) return;
     const costo_ingresado = nCostoPrim;
     const moneda_ingreso = moneda;
-    const costo_usd = Math.round((esBs ? (nTasa > 0 ? nCostoPrim / nTasa : 0) : nCostoPrim) * 100) / 100;
-    const costo_bs = Math.round((esBs ? nCostoPrim : nCostoPrim * nTasa) * 100) / 100;
+    const costos = convertirCostos(costo_ingresado, moneda, nTasa);
     const unidadesPorCaja = newTipoEmpaque === "CAJA" ? nUndsCaja : selectedProduct.unidades_por_caja;
-    const unidades = newTipoEmpaque === "CAJA" ? nCajas * unidadesPorCaja : nCajas;
     const item: LineItem = {
       key: crypto.randomUUID(),
       producto_id: newProductId!,
@@ -393,10 +369,10 @@ export default function InvoiceNewPage() {
       codigo_barra: selectedProduct.codigo_barra,
       tipo_empaque: newTipoEmpaque,
       cantidad: nCajas,
-      costo_unitario_usd: costo_usd,
-      costo_unitario_bs: costo_bs,
-      subtotal_usd: Math.round(unidades * costo_usd * 100) / 100,
-      subtotal_bs: Math.round(unidades * costo_bs * 100) / 100,
+      costo_unitario_usd: costos.usd,
+      costo_unitario_bs: costos.bs,
+      subtotal_usd: calcularSubtotal(nCajas, costos.usd),
+      subtotal_bs: calcularSubtotal(nCajas, costos.bs),
       unidades_por_caja: unidadesPorCaja,
       tipo_iva: selectedProduct.tipo_iva,
       costo_ingresado,
@@ -433,11 +409,12 @@ export default function InvoiceNewPage() {
         ? item.cantidad * item.unidades_por_caja
         : item.cantidad;
       totalUnidades += unidades;
+      const subtotal = aplicaIva ? item.subtotal_bs : item.subtotal_usd;
       if (aplicaIva && item.tipo_iva === "GRAVADO") {
-        base += Math.round(item.subtotal_usd * 100) / 100;
-        iva += calcIva(item.subtotal_usd);
+        base += Math.round(subtotal * 100) / 100;
+        iva += calcIva(subtotal);
       } else {
-        exento += Math.round(item.subtotal_usd * 100) / 100;
+        exento += Math.round(subtotal * 100) / 100;
       }
     }
     return {
@@ -862,26 +839,53 @@ export default function InvoiceNewPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between text-slate-600">
                       <span>Exento</span>
-                      <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.exento.toFixed(2)}</span>
+                      {esBs ? (
+                        <span className="font-mono text-xs sm:text-sm">Bs. {formatBs(ivaBreakdown.exento)}</span>
+                      ) : (
+                        <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.exento.toFixed(2)}</span>
+                      )}
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>Base imponible</span>
-                      <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.base_imponible.toFixed(2)}</span>
+                      {esBs ? (
+                        <span className="font-mono text-xs sm:text-sm">Bs. {formatBs(ivaBreakdown.base_imponible)}</span>
+                      ) : (
+                        <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.base_imponible.toFixed(2)}</span>
+                      )}
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>IVA (16%)</span>
-                      <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.iva.toFixed(2)}</span>
+                      {esBs ? (
+                        <span className="font-mono text-xs sm:text-sm">Bs. {formatBs(ivaBreakdown.iva)}</span>
+                      ) : (
+                        <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.iva.toFixed(2)}</span>
+                      )}
                     </div>
                   </div>
                   <div className="border-t border-slate-200 pt-3 space-y-2">
-                    <div className="flex justify-between items-center font-bold text-text-main text-base">
-                      <span>Total USD</span>
-                      <span className="font-mono text-lg">${ivaBreakdown.total.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center font-bold text-text-main text-base">
-                      <span>Total Bs.</span>
-                      <span className="font-mono text-lg">Bs. {formatBs(total_bs)}</span>
-                    </div>
+                    {esBs ? (
+                      <>
+                        <div className="flex justify-between items-center font-bold text-text-main text-base">
+                          <span>Total</span>
+                          <span className="font-mono text-lg">Bs. {formatBs(ivaBreakdown.total)}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-bold text-text-main text-base">
+                          <span>Total USD</span>
+                          <span className="font-mono text-lg">${total_usd.toFixed(2)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-center font-bold text-text-main text-base">
+                          <span>Total USD</span>
+                          <span className="font-mono text-lg">${ivaBreakdown.total.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-bold text-text-main text-base">
+                          <span>Total Bs.</span>
+                          <span className="font-mono text-lg">Bs. {formatBs(total_bs)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

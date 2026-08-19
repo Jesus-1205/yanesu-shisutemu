@@ -84,11 +84,6 @@ class TestCreateCategory:
         response = client.post("/api/categories", json={"nombre": "Cat"})
         assert response.status_code == 401
 
-    def test_create_as_operator_forbidden(self, client):
-        _register_operator(client)
-        response = client.post("/api/categories", json={"nombre": "Cat"})
-        assert response.status_code == 403
-
 
 class TestUpdateCategory:
     def test_update_success(self, client):
@@ -207,3 +202,12 @@ class TestCategoryLowRotation:
         _register_operator(client)
         response = client.get("/api/categories/low-rotation")
         assert response.status_code == 403
+
+
+class TestCreateCategoryOperator:
+    def test_operator_can_create_category(self, client):
+        _register_operator(client)
+        response = client.post("/api/categories", json={"nombre": "Cervezas Import"})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["nombre"] == "Cervezas Import"

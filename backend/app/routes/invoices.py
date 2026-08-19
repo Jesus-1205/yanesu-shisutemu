@@ -97,6 +97,11 @@ def analyze_invoice(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
+    except (KeyError, TypeError, AttributeError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La IA no pudo leer la factura correctamente. Intenta con otra imagen.",
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

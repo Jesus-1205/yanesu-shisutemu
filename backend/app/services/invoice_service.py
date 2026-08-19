@@ -479,8 +479,21 @@ def _call_gemini(
             json=payload,
         )
         if response.status_code != 200:
+            if response.status_code in (401, 403):
+                raise ValueError(
+                    "API Key de Gemini inválida o revocada. "
+                    "Revísala en Ajustes del Sistema."
+                )
+            if response.status_code == 429:
+                raise ValueError(
+                    "Se excedió la cuota de Gemini. Intenta más tarde."
+                )
+            if response.status_code >= 500:
+                raise ValueError(
+                    "Gemini no está disponible en este momento. Intenta más tarde."
+                )
             raise ValueError(
-                f"Gemini API error {response.status_code}: {response.text}"
+                f"Gemini devolvió un error ({response.status_code})."
             )
 
     ia_response = response.json()
@@ -539,20 +552,25 @@ def analyze_invoice_from_image(
     )
 
     # ── Fuzzy matching ───────────────────────────────────────────────
-    proveedor_match = fuzzy_match_proveedor(db, metadata["proveedor"]["nombre"])
-
-    productos_match = fuzzy_match_productos_batch(
-        db,
-        [
-            {
-                "nombre": p["nombre"],
-                "tipo_empaque": p.get("tipo_empaque", "CAJA").upper(),
-                "cantidad": p.get("cantidad", 1),
-                "precio_unitario": p.get("precio_unitario", 0),
-            }
-            for p in productos_data.get("productos", [])
-        ],
+    proveedor_match = fuzzy_match_proveedor(
+        db, (metadata.get("proveedor") or {}).get("nombre", "")
     )
+
+    if not proveedor_match.nombre or proveedor_match.match_status == "NOT_FOUND":
+        if not (metadata.get("proveedor") or {}).get("nombre"):
+            raise ValueError("La IA no pudo identificar el proveedor en la factura.")
+
+    productos_raw = []
+    for p in productos_data.get("productos", []):
+        tipo_empaque_raw = str(p.get("tipo_empaque", "CAJA")).upper()
+        productos_raw.append({
+            "nombre": p.get("nombre", ""),
+            "tipo_empaque": tipo_empaque_raw if tipo_empaque_raw in ("CAJA", "UNIDAD") else "CAJA",
+            "cantidad": p.get("cantidad", 1),
+            "precio_unitario": p.get("precio_unitario", 0),
+        })
+
+    productos_match = fuzzy_match_productos_batch(db, productos_raw)
 
     # ── Armar respuesta ──────────────────────────────────────────────
     fecha = None
