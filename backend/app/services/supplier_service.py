@@ -100,7 +100,7 @@ def get_supplier_analytics(db: Session) -> SupplierAnalyticsResponse:
         select(
             Product.proveedor_id,
             func.count(Product.id).label("total_productos"),
-            func.coalesce(func.sum(Product.stock_unidades), 0).label("stock_total"),
+            func.coalesce(func.sum(Product.stock_cajas * Product.unidades_por_caja + Product.stock_unidades), 0).label("stock_total"),
         )
         .group_by(Product.proveedor_id)
     ).subquery()

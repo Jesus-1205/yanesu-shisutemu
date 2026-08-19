@@ -92,7 +92,7 @@ def get_category_analytics(db: Session) -> CategoryAnalyticsResponse:
         select(
             producto_categoria.c.categoria_id,
             func.count(Product.id).label("total_productos"),
-            func.coalesce(func.sum(Product.stock_unidades), 0).label("stock_total"),
+            func.coalesce(func.sum(Product.stock_cajas * Product.unidades_por_caja + Product.stock_unidades), 0).label("stock_total"),
         )
         .select_from(producto_categoria)
         .join(Product, Product.id == producto_categoria.c.producto_id)

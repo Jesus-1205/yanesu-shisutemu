@@ -35,7 +35,7 @@ export default function DashboardPage() {
     const fechaHasta = lastSunday.toISOString().slice(0, 10);
 
     Promise.allSettled([
-      api.getProducts(),
+      api.getProducts({ page_size: 9999 }),
       api.getCategories(),
       api.getSuppliers(),
       api.getSalesSummary({ rango: "semanal", fecha_desde: fechaDesde, fecha_hasta: fechaHasta }),
@@ -52,8 +52,8 @@ export default function DashboardPage() {
       lowRotationRes,
     ]) => {
       if (productsRes.status === "fulfilled") {
-        setTotalProductos(productsRes.value.items.length);
-        setSinStock(productsRes.value.items.filter((p) => p.stock_unidades === 0).length);
+        setTotalProductos(productsRes.value.total);
+        setSinStock(productsRes.value.items.filter((p) => p.stock_cajas === 0 && p.stock_unidades === 0).length);
       }
       if (categoriesRes.status === "fulfilled") setTotalCategorias(categoriesRes.value.length);
       if (suppliersRes.status === "fulfilled") setTotalProveedores(suppliersRes.value.length);
