@@ -12,10 +12,12 @@ echo === Preparando sidecar para Tauri ===
 set TARGET_TRIPLE=x86_64-pc-windows-msvc
 copy /Y "dist\yanesu_shisutemu.exe" "dist\yanesu_shisutemu-%TARGET_TRIPLE%.exe"
 
+echo === Construyendo instalador Tauri (NSIS) ===
+cd ..\licoreria-desktop
+call pnpm install
+call pnpm build
+
 echo === Build completado ===
-echo Backend (onefile): dist\yanesu_shisutemu.exe
-echo.
-echo Para crear el instalador NSIS:
-echo   cd ..\licoreria-desktop\src-tauri
-echo   cargo tauri build
+echo Backend: ..\backend\dist\yanesu_shisutemu.exe
+echo Instalador: ..\licoreria-desktop\src-tauri\target\release\bundle\nsis\Yanesu Shisutemu_1.0.0_x64-setup.exe
 pause
