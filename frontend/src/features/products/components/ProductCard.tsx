@@ -16,8 +16,9 @@ export default function ProductCard({ product, onEdit, onDelete, onToggleFavorit
   const tasa = useExchangeRateStore((s) => s.tasa);
   const margin = calcMargin(Number(product.precio_costo_usd), Number(product.precio_unidad_usd));
 
-  const isLowStock = product.stock_unidades > 0 && product.stock_unidades <= product.stock_minimo;
-  const isOutOfStock = product.stock_unidades === 0;
+  const totalStock = product.stock_cajas * product.unidades_por_caja + product.stock_unidades;
+  const isLowStock = totalStock > 0 && totalStock <= product.stock_minimo;
+  const isOutOfStock = totalStock === 0;
 
   const stockVariant = isOutOfStock ? "danger" : isLowStock ? "warning" : "success";
 
@@ -77,7 +78,7 @@ export default function ProductCard({ product, onEdit, onDelete, onToggleFavorit
         <div className="flex items-center gap-2">
           <Box className="w-4 h-4 text-slate-400" />
           <Badge variant={stockVariant}>
-            {product.stock_unidades} uds
+            {totalStock} uds
           </Badge>
         </div>
         <div className="text-right">

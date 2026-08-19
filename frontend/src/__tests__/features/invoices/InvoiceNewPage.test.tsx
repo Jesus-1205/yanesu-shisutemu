@@ -4,6 +4,9 @@ import { MemoryRouter } from "react-router-dom";
 import InvoiceNewPage from "@/features/invoices/pages/InvoiceNewPage";
 import type { SupplierOut, ProductOut } from "@/types/api";
 
+// @ts-expect-error vi.hoisted + require is valid at runtime in vitest mock factories
+const React = vi.hoisted(() => require("react") as typeof import("react"));
+
 // ─── Mock API ──────────────────────────────────────────────────────────────
 vi.mock("@/services/api", () => ({
   api: {
@@ -22,113 +25,48 @@ vi.mock("@/services/api", () => ({
 // ─── Mock Toast ────────────────────────────────────────────────────────────
 vi.mock("@/ui-components/Toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
-  ToastProvider: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
 }));
 
-// ─── Mock AsyncCombobox (simplified for testing) ───────────────────────────
-vi.mock("@/ui-components/AsyncCombobox", () => {
-  const React = require("react");
-  return {
-    default: function AsyncComboboxMock({
-      value,
-      onChange,
-      onSearch,
-      placeholder,
-      allowClear,
-      clearLabel,
-    }: {
-      value: number | null;
-      onChange: (v: number | null) => void;
-      onSearch: (
-        q: string,
-      ) => Promise<Array<{ value: number; label: string; subtitle?: string }>>;
-      placeholder: string;
-      allowClear?: boolean;
-      clearLabel?: string;
-    }) {
-      const [options, setOptions] = React.useState<
-        Array<{ value: number; label: string; subtitle?: string }>
-      >([]);
-      const [query, setQuery] = React.useState("");
+// ─── Mock AsyncCombobox (functional for testing) ───────────────────────────
+vi.mock("@/ui-components/AsyncCombobox", () => ({
+  default: function AsyncComboboxMock({
+    value: _value,
+    onChange,
+    onSearch,
+    placeholder,
+  }: {
+    value: number | null;
+    onChange: (v: number | null) => void;
+    onSearch: (q: string) => Promise<Array<{ value: number; label: string }>>;
+    placeholder: string;
+  }) {
+    const [options, setOptions] = React.useState<Array<{ value: number; label: string }>>([]);
+    const [query, setQuery] = React.useState("");
 
-      const handleSearch = React.useCallback(async () => {
-        if (!query) {
-          setOptions([]);
-          return;
-        }
-        try {
-          const results = await onSearch(query);
-          setOptions(results);
-        } catch {
-          setOptions([]);
-        }
-      }, [query, onSearch]);
+    const doSearch = React.useCallback(async () => {
+      if (!query) { setOptions([]); return; }
+      try { setOptions(await onSearch(query)); } catch { setOptions([]); }
+    }, [query, onSearch]);
 
-      const children = [
-        React.createElement("input", {
-          key: "input",
-          placeholder,
-          value: query,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setQuery(e.target.value),
-          "data-testid": `combobox-input-${placeholder}`,
-        }),
-        React.createElement(
-          "button",
-          {
-            key: "search",
-            type: "button",
-            onClick: handleSearch,
-          },
-          "Buscar",
-        ),
-      ];
-
-      if (allowClear && value != null) {
-        children.push(
-          React.createElement(
-            "button",
-            {
-              key: "clear",
-              type: "button",
-              onClick: () => {
-                onChange(null);
-                setQuery("");
-              },
-            },
-            clearLabel || "Limpiar",
-          ),
-        );
-      }
-
-      options.forEach((opt) => {
-        children.push(
-          React.createElement(
-            "button",
-            {
-              key: `opt-${opt.value}`,
-              type: "button",
-              "data-testid": `option-${opt.value}`,
-              onClick: () => {
-                onChange(opt.value);
-                setQuery(opt.label);
-              },
-            },
-            opt.label,
-          ),
-        );
-      });
-
-      return React.createElement(
-        "div",
-        { "data-testid": `combobox-${placeholder}` },
-        ...children,
-      );
-    },
-  };
-});
+    return React.createElement("div", { "data-testid": `combobox-${placeholder}` },
+      React.createElement("input", {
+        placeholder,
+        value: query,
+        onChange: (e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value),
+        "data-testid": `input-${placeholder}`,
+      }),
+      React.createElement("button", { type: "button", onClick: doSearch, "data-testid": `search-${placeholder}` }, "Buscar"),
+      ...options.map((opt) =>
+        React.createElement("button", {
+          key: opt.value,
+          type: "button",
+          "data-testid": `option-${opt.value}`,
+          onClick: () => { onChange(opt.value); setQuery(opt.label); },
+        }, opt.label)
+      ),
+    );
+  },
+}));
 
 // ─── Mock modals (not needed for these tests) ─────────────────────────────
 vi.mock("@/features/shared/components/CreateSupplierModal", () => ({
@@ -354,7 +292,7 @@ describe("InvoiceNewPage", () => {
 
     // The secondary field should now show the BS equivalent: 22 × 750 = 16500
     // formatBs(16500) in es-VE locale = "16.500,00"
-    expect(secondaryField.value).toContain("16");
+    expect((secondaryField as HTMLInputElement).value).toContain("16");
   });
 
   it("currency conversion: BS mode shows USD as secondary", () => {
@@ -372,7 +310,7 @@ describe("InvoiceNewPage", () => {
 
     // The secondary field should show USD: 16500 / 750 = 22
     const secondaryField = screen.getByLabelText(/USD.*calc|Bs.*calc/);
-    expect(secondaryField.value).toContain("22");
+    expect((secondaryField as HTMLInputElement).value).toContain("22");
   });
 
   it("IVA breakdown in BS mode shows values in Bs", async () => {

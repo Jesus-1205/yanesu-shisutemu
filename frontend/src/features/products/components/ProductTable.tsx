@@ -78,14 +78,15 @@ export default function ProductTable({
       className: "text-center",
       ...(role !== "operator" ? sortable("stock") : {}),
       render: (p: Product) => {
+        const totalStock = p.stock_cajas * p.unidades_por_caja + p.stock_unidades;
         if (role === "operator") {
-          return p.stock_unidades > 0
+          return totalStock > 0
             ? <Badge variant="success">Disponible</Badge>
             : <Badge variant="danger">Agotado</Badge>;
         }
-        if (p.stock_unidades === 0) return <Badge variant="danger">0</Badge>;
-        if (p.stock_unidades <= p.stock_minimo) return <Badge variant="warning">{p.stock_unidades}</Badge>;
-        return <Badge variant="success">{p.stock_unidades}</Badge>;
+        if (totalStock === 0) return <Badge variant="danger">0</Badge>;
+        if (totalStock <= p.stock_minimo) return <Badge variant="warning">{totalStock}</Badge>;
+        return <Badge variant="success">{totalStock}</Badge>;
       },
     },
     {
