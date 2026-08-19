@@ -1,0 +1,59 @@
+name: yanesu-shisutemu
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-yanesu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-licoreria}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-yanesu} -d ${POSTGRES_DB:-licoreria}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - yanesu_net
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      # El password debe ser URL-safe (sin @ : / ? #). Puede sobreescribirse con DATABASE_URL.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-yanesu}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-licoreria}
+      SECURE_COOKIE: ${SECURE_COOKIE:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://localhost}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      DATA_DIR: /data
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - yanesu_data:/data
+    networks:
+      - yanesu_net
+
+  nginx:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - yanesu_net
+
+volumes:
+  pgdata:
+  yanesu_data:
+
+networks:
+  yanesu_net:
+    driver: bridge

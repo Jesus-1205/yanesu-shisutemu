@@ -2,7 +2,7 @@
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, delete
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base
@@ -113,7 +113,7 @@ class TestFuzzyMatchProveedor:
         assert result.match_status == "NOT_FOUND"
 
     def test_empty_db(self, db):
-        db.query(Supplier).delete()
+        db.execute(delete(Supplier))
         db.commit()
         result = fuzzy_match_proveedor(db, "PROVEEDOR TEST")
         assert result.match_status == "NOT_FOUND"
@@ -189,7 +189,7 @@ class TestFuzzyMatchProductosBatch:
             assert result[0].suggestions[0].nombre == "CERVEZA POLAR PILSEN 355ML"
 
     def test_empty_catalog(self, db):
-        db.query(Product).delete()
+        db.execute(delete(Product))
         db.commit()
         items = [
             {"nombre": "CERVEZA POLAR", "cantidad": 1, "precio_unitario": 1.25}

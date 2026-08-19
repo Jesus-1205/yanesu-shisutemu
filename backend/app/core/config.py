@@ -20,21 +20,30 @@ def get_app_data_dir() -> Path:
     Windows: %LOCALAPPDATA%/YanesuShisutemu
     macOS:   ~/Library/Application Support/YanesuShisutemu
     Linux:   ~/.local/share/YanesuShisutemu
+    Docker:  se sobreescribe con la variable DATA_DIR (volumen montado).
     """
-    if sys.platform == "win32":
+    data_dir_override = os.getenv("DATA_DIR")
+    if data_dir_override:
+        app_dir = Path(data_dir_override)
+    elif sys.platform == "win32":
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        app_dir = base / "YanesuShisutemu"
     elif sys.platform == "darwin":
         base = Path.home() / "Library" / "Application Support"
+        app_dir = base / "YanesuShisutemu"
     else:
         base = Path.home() / ".local" / "share"
+        app_dir = base / "YanesuShisutemu"
 
-    app_dir = base / "YanesuShisutemu"
     app_dir.mkdir(parents=True, exist_ok=True)
     return app_dir
 
 
 def get_secret_key() -> str:
-    """Retorna SECRET_KEY desde archivo persistente o la genera en el primer inicio."""
+    """Retorna SECRET_KEY desde env (VPS) o archivo persistente (desktop)."""
+    env_key = os.getenv("SECRET_KEY")
+    if env_key:
+        return env_key
     key_file = get_app_data_dir() / ".secret_key"
     try:
         return key_file.read_text().strip()
@@ -60,10 +69,14 @@ def get_uploads_dir() -> Path:
     return uploads
 
 
-def get_audit_log_path() -> Path:
+def get_log_dir() -> Path:
     log_dir = get_app_data_dir() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
-    return log_dir / "audit.log"
+    return log_dir
+
+
+def get_audit_log_path() -> Path:
+    return get_log_dir() / "audit.log"
 
 
 AUDIT_MAX_BYTES: int = 5 * 1024 * 1024
@@ -84,7 +97,11 @@ class Config:
 
     ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
 
-    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{DATABASE_PATH}"
+    SQLALCHEMY_DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
+
+    @classmethod
+    def is_postgres(cls) -> bool:
+        return cls.SQLALCHEMY_DATABASE_URL.startswith("postgresql")
 
     @classmethod
     def get_fernet_key(cls) -> bytes:
