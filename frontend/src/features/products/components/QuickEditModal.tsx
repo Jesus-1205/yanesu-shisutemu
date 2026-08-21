@@ -78,6 +78,23 @@ export default function QuickEditModal({
     [form.precio_costo_caja_usd, form.precio_caja_usd],
   );
 
+  const [marginUnitFocused, setMarginUnitFocused] = useState(false);
+  const [marginUnitInput, setMarginUnitInput] = useState("");
+  const [marginCajaFocused, setMarginCajaFocused] = useState(false);
+  const [marginCajaInput, setMarginCajaInput] = useState("");
+
+  useEffect(() => {
+    if (!marginUnitFocused) {
+      setMarginUnitInput(margin.margen > 0 ? margin.margen.toFixed(1) : "");
+    }
+  }, [margin.margen, marginUnitFocused]);
+
+  useEffect(() => {
+    if (!marginCajaFocused) {
+      setMarginCajaInput(marginCaja.margen > 0 ? marginCaja.margen.toFixed(1) : "");
+    }
+  }, [marginCaja.margen, marginCajaFocused]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!product) return;
@@ -199,23 +216,31 @@ export default function QuickEditModal({
                 <span className={labelBase}>Margen unidad</span>
                 <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
                   <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="99.9"
-                    value={margin.margen > 0 ? margin.margen.toFixed(1) : ""}
+                    type="text"
+                    inputMode="decimal"
+                    value={marginUnitInput}
                     placeholder="0.0"
+                    onFocus={() => setMarginUnitFocused(true)}
                     onChange={(e) => {
+                      setMarginUnitInput(e.target.value);
                       const pct = parseFloat(e.target.value);
                       if (!isNaN(pct) && precioCostoUnitario > 0) {
                         const divisor = 1 - pct / 100;
                         if (divisor > 0) {
-                          const newPrice = Math.round((precioCostoUnitario / divisor) * 100) / 100;
-                          setForm((prev) => ({ ...prev, precio_unidad_usd: newPrice }));
+                          setForm((prev) => ({ ...prev, precio_unidad_usd: Math.round((precioCostoUnitario / divisor) * 100) / 100 }));
                         }
-                      } else if (e.target.value === "") {
-                        setForm((prev) => ({ ...prev, precio_unidad_usd: 0 }));
                       }
+                    }}
+                    onBlur={() => {
+                      setMarginUnitFocused(false);
+                      const pct = parseFloat(marginUnitInput);
+                      if (!isNaN(pct) && precioCostoUnitario > 0) {
+                        const divisor = 1 - pct / 100;
+                        if (divisor > 0) {
+                          setForm((prev) => ({ ...prev, precio_unidad_usd: Math.round((precioCostoUnitario / divisor) * 100) / 100 }));
+                        }
+                      }
+                      setMarginUnitInput(margin.margen > 0 ? margin.margen.toFixed(1) : "");
                     }}
                     className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                   />
@@ -227,24 +252,33 @@ export default function QuickEditModal({
                 <span className={labelBase}>Margen caja</span>
                 <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
                   <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="99.9"
-                    value={marginCaja.margen > 0 ? marginCaja.margen.toFixed(1) : ""}
+                    type="text"
+                    inputMode="decimal"
+                    value={marginCajaInput}
                     placeholder="0.0"
+                    onFocus={() => setMarginCajaFocused(true)}
                     onChange={(e) => {
+                      setMarginCajaInput(e.target.value);
                       const pct = parseFloat(e.target.value);
                       const costoCaja = n(form.precio_costo_caja_usd);
                       if (!isNaN(pct) && costoCaja > 0) {
                         const divisor = 1 - pct / 100;
                         if (divisor > 0) {
-                          const newPrice = Math.round((costoCaja / divisor) * 100) / 100;
-                          setForm((prev) => ({ ...prev, precio_caja_usd: newPrice }));
+                          setForm((prev) => ({ ...prev, precio_caja_usd: Math.round((costoCaja / divisor) * 100) / 100 }));
                         }
-                      } else if (e.target.value === "") {
-                        setForm((prev) => ({ ...prev, precio_caja_usd: 0 }));
                       }
+                    }}
+                    onBlur={() => {
+                      setMarginCajaFocused(false);
+                      const pct = parseFloat(marginCajaInput);
+                      const costoCaja = n(form.precio_costo_caja_usd);
+                      if (!isNaN(pct) && costoCaja > 0) {
+                        const divisor = 1 - pct / 100;
+                        if (divisor > 0) {
+                          setForm((prev) => ({ ...prev, precio_caja_usd: Math.round((costoCaja / divisor) * 100) / 100 }));
+                        }
+                      }
+                      setMarginCajaInput(marginCaja.margen > 0 ? marginCaja.margen.toFixed(1) : "");
                     }}
                     className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                   />
