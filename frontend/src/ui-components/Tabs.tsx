@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, useRef, useLayoutEffect, useState, type ReactNode } from "react";
 
 interface Tab {
   value: string;
@@ -22,9 +22,27 @@ export default function Tabs({
 }: TabsProps) {
   const uid = useId();
   const activeIndex = tabs.findIndex((t) => t.value === value);
+  const tabsRef = useRef<(HTMLLabelElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [glider, setGlider] = useState<{ left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const activeTab = tabsRef.current[activeIndex];
+    const container = containerRef.current;
+    if (!activeTab || !container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = activeTab.getBoundingClientRect();
+
+    setGlider({
+      left: tabRect.left - containerRect.left + container.scrollLeft,
+      width: tabRect.width,
+    });
+  }, [activeIndex, tabs]);
 
   return (
     <div
+      ref={containerRef}
       className={`
         relative flex items-center overflow-x-auto
         bg-white rounded-full p-3
@@ -32,13 +50,14 @@ export default function Tabs({
         ${className}
       `}
     >
-      {tabs.map((tab) => {
+      {tabs.map((tab, i) => {
         const isActive = tab.value === value;
         const inputId = `${uid}-tab-${tab.value}`;
 
         return (
           <label
             key={tab.value}
+            ref={(el) => { tabsRef.current[i] = el; }}
             htmlFor={inputId}
             className={`
               relative z-10 flex items-center justify-center
@@ -78,17 +97,14 @@ export default function Tabs({
       })}
 
       {/* Glider */}
-      {activeIndex >= 0 && (
+      {glider && (
         <span
           className="
             absolute top-3 bottom-3 z-0
             rounded-full bg-slate-100
             transition-all duration-250 ease-out
           "
-          style={{
-            width: `calc(${100 / tabs.length}% - 6px)`,
-            left: `calc(${activeIndex * (100 / tabs.length)}% + 3px)`,
-          }}
+          style={{ left: glider.left, width: glider.width }}
         />
       )}
     </div>

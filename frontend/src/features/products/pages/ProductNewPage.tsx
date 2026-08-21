@@ -12,7 +12,7 @@ import PageHeader from "@/ui-components/PageHeader";
 import Spinner from "@/ui-components/Spinner";
 import { useToast } from "@/ui-components/Toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { calcMargin } from "../types";
+import { useMarginInput } from "../hooks/useMarginInput";
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateSupplierModal from "@/features/shared/components/CreateSupplierModal";
 
@@ -98,32 +98,21 @@ export default function ProductNewPage() {
     [form.precio_costo_caja_usd, form.unidades_por_caja],
   );
 
-  const margin = useMemo(
-    () => calcMargin(precioCostoUnitario, n(form.precio_unidad_usd)),
-    [precioCostoUnitario, form.precio_unidad_usd],
+  const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const unitMargin = useMarginInput(
+    precioCostoUnitario,
+    n(form.precio_unidad_usd),
+    (p) => setField("precio_unidad_usd", p),
   );
 
-  const marginCaja = useMemo(
-    () => calcMargin(n(form.precio_costo_caja_usd), n(form.precio_caja_usd)),
-    [form.precio_costo_caja_usd, form.precio_caja_usd],
+  const boxMargin = useMarginInput(
+    n(form.precio_costo_caja_usd),
+    n(form.precio_caja_usd),
+    (p) => setField("precio_caja_usd", p),
   );
-
-  const [marginUnitFocused, setMarginUnitFocused] = useState(false);
-  const [marginUnitInput, setMarginUnitInput] = useState("");
-  const [marginCajaFocused, setMarginCajaFocused] = useState(false);
-  const [marginCajaInput, setMarginCajaInput] = useState("");
-
-  useEffect(() => {
-    if (!marginUnitFocused) {
-      setMarginUnitInput(margin.margen > 0 ? margin.margen.toFixed(1) : "");
-    }
-  }, [margin.margen, marginUnitFocused]);
-
-  useEffect(() => {
-    if (!marginCajaFocused) {
-      setMarginCajaInput(marginCaja.margen > 0 ? marginCaja.margen.toFixed(1) : "");
-    }
-  }, [marginCaja.margen, marginCajaFocused]);
 
   const precioSugerido = useMemo(
     () => (precioCostoUnitario > 0 ? Math.round((precioCostoUnitario / 0.7) * 100) / 100 : 0),
@@ -137,10 +126,6 @@ export default function ProductNewPage() {
     },
     [form.precio_costo_caja_usd],
   );
-
-  const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
 
   const onCategoryCreated = (cat: CategoryOut) => {
     setCategories((prev) => [...prev, cat]);
@@ -482,34 +467,15 @@ export default function ProductNewPage() {
                     <input
                       type="text"
                       inputMode="decimal"
-                      value={marginUnitInput}
+                      value={unitMargin.input}
                       placeholder="0.0"
-                      onFocus={() => setMarginUnitFocused(true)}
-                      onChange={(e) => {
-                        setMarginUnitInput(e.target.value);
-                        const pct = parseFloat(e.target.value);
-                        if (!isNaN(pct) && precioCostoUnitario > 0) {
-                          const divisor = 1 - pct / 100;
-                          if (divisor > 0) {
-                            setField("precio_unidad_usd", Math.round((precioCostoUnitario / divisor) * 100) / 100);
-                          }
-                        }
-                      }}
-                      onBlur={() => {
-                        setMarginUnitFocused(false);
-                        const pct = parseFloat(marginUnitInput);
-                        if (!isNaN(pct) && precioCostoUnitario > 0) {
-                          const divisor = 1 - pct / 100;
-                          if (divisor > 0) {
-                            setField("precio_unidad_usd", Math.round((precioCostoUnitario / divisor) * 100) / 100);
-                          }
-                        }
-                        setMarginUnitInput(margin.margen > 0 ? margin.margen.toFixed(1) : "");
-                      }}
+                      onFocus={unitMargin.onFocus}
+                      onChange={(e) => unitMargin.onChange(e.target.value)}
+                      onBlur={unitMargin.onBlur}
                       className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                     />
                     <span className="text-xs text-slate-400">%</span>
-                    <Badge variant={margin.color}>{margin.label}</Badge>
+                    <Badge variant={unitMargin.margin.color}>{unitMargin.margin.label}</Badge>
                   </div>
                 </div>
                 <div>
@@ -518,36 +484,15 @@ export default function ProductNewPage() {
                     <input
                       type="text"
                       inputMode="decimal"
-                      value={marginCajaInput}
+                      value={boxMargin.input}
                       placeholder="0.0"
-                      onFocus={() => setMarginCajaFocused(true)}
-                      onChange={(e) => {
-                        setMarginCajaInput(e.target.value);
-                        const pct = parseFloat(e.target.value);
-                        const costoCaja = n(form.precio_costo_caja_usd);
-                        if (!isNaN(pct) && costoCaja > 0) {
-                          const divisor = 1 - pct / 100;
-                          if (divisor > 0) {
-                            setField("precio_caja_usd", Math.round((costoCaja / divisor) * 100) / 100);
-                          }
-                        }
-                      }}
-                      onBlur={() => {
-                        setMarginCajaFocused(false);
-                        const pct = parseFloat(marginCajaInput);
-                        const costoCaja = n(form.precio_costo_caja_usd);
-                        if (!isNaN(pct) && costoCaja > 0) {
-                          const divisor = 1 - pct / 100;
-                          if (divisor > 0) {
-                            setField("precio_caja_usd", Math.round((costoCaja / divisor) * 100) / 100);
-                          }
-                        }
-                        setMarginCajaInput(marginCaja.margen > 0 ? marginCaja.margen.toFixed(1) : "");
-                      }}
+                      onFocus={boxMargin.onFocus}
+                      onChange={(e) => boxMargin.onChange(e.target.value)}
+                      onBlur={boxMargin.onBlur}
                       className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                     />
                     <span className="text-xs text-slate-400">%</span>
-                    <Badge variant={marginCaja.color}>{marginCaja.label}</Badge>
+                    <Badge variant={boxMargin.margin.color}>{boxMargin.margin.label}</Badge>
                   </div>
                 </div>
               </div>
