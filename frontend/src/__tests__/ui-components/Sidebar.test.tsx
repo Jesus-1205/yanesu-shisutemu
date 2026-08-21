@@ -96,4 +96,12 @@ describe("Sidebar", () => {
     );
     expect(screen.getByText("A")).toBeInTheDocument();
   });
+
+  it("uses h-dvh on the aside element instead of h-screen", () => {
+    const { container } = renderWithRouter(<Sidebar items={items} />);
+    const aside = container.querySelector("aside");
+    expect(aside).toBeInTheDocument();
+    expect(aside!.className).toMatch(/\bh-dvh\b/);
+    expect(aside!.className).not.toMatch(/\bh-screen\b/);
+  });
 });
