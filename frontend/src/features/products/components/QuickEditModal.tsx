@@ -6,7 +6,7 @@ import Modal from "@/ui-components/Modal";
 import Button from "@/ui-components/Button";
 import Badge from "@/ui-components/Badge";
 import { useToast } from "@/ui-components/Toast";
-import { calcMargin } from "../types";
+import { useMarginInput } from "../hooks/useMarginInput";
 
 interface QuickEditModalProps {
   open: boolean;
@@ -68,14 +68,16 @@ export default function QuickEditModal({
     [form.precio_costo_caja_usd, udsPorCaja],
   );
 
-  const margin = useMemo(
-    () => calcMargin(precioCostoUnitario, n(form.precio_unidad_usd)),
-    [precioCostoUnitario, form.precio_unidad_usd],
+  const unitMargin = useMarginInput(
+    precioCostoUnitario,
+    n(form.precio_unidad_usd),
+    (p) => setForm((prev) => ({ ...prev, precio_unidad_usd: p })),
   );
 
-  const precioSugerido = useMemo(
-    () => (precioCostoUnitario > 0 ? Math.round((precioCostoUnitario / 0.7) * 100) / 100 : 0),
-    [precioCostoUnitario],
+  const boxMargin = useMarginInput(
+    n(form.precio_costo_caja_usd),
+    n(form.precio_caja_usd),
+    (p) => setForm((prev) => ({ ...prev, precio_caja_usd: p })),
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,16 +198,37 @@ export default function QuickEditModal({
           {role === "admin" && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <span className={labelBase}>Margen</span>
+                <span className={labelBase}>Margen unidad</span>
                 <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Ganancia</span>
-                  <Badge variant={margin.color}>{margin.label}</Badge>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={unitMargin.input}
+                    placeholder="0.0"
+                    onFocus={unitMargin.onFocus}
+                    onChange={(e) => unitMargin.onChange(e.target.value)}
+                    onBlur={unitMargin.onBlur}
+                    className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                  />
+                  <span className="text-xs text-slate-400">%</span>
+                  <Badge variant={unitMargin.margin.color}>{unitMargin.margin.label}</Badge>
                 </div>
               </div>
               <div>
-                <span className={labelBase}>Precio sugerido USD</span>
-                <div className="h-10 px-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center text-sm text-blue-700 font-mono">
-                  ${precioSugerido.toFixed(2)}
+                <span className={labelBase}>Margen caja</span>
+                <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={boxMargin.input}
+                    placeholder="0.0"
+                    onFocus={boxMargin.onFocus}
+                    onChange={(e) => boxMargin.onChange(e.target.value)}
+                    onBlur={boxMargin.onBlur}
+                    className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                  />
+                  <span className="text-xs text-slate-400">%</span>
+                  <Badge variant={boxMargin.margin.color}>{boxMargin.margin.label}</Badge>
                 </div>
               </div>
             </div>

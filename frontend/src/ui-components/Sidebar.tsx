@@ -230,7 +230,7 @@ export default function Sidebar({
   return (
     <aside
       className={`
-        relative flex flex-col h-screen bg-surface
+        relative flex flex-col h-dvh bg-surface
         transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
         shadow-[1px_0_10px_rgba(0,0,0,0.08)]
         ${collapsed ? "w-[4.94rem]" : "w-60"}

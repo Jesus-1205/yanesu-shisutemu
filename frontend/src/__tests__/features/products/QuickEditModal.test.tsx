@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import QuickEditModal from "../../../features/products/components/QuickEditModal";
@@ -59,10 +59,10 @@ describe("QuickEditModal", () => {
     expect(screen.getByText("Precio caja USD")).toBeInTheDocument();
   });
 
-  it("renders margin and suggested price", () => {
+  it("renders margin inputs for unit and box", () => {
     renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
-    expect(screen.getByText("Margen")).toBeInTheDocument();
-    expect(screen.getByText("Precio sugerido USD")).toBeInTheDocument();
+    expect(screen.getByText("Margen unidad")).toBeInTheDocument();
+    expect(screen.getByText("Margen caja")).toBeInTheDocument();
   });
 
   it("shows Cancelar and Guardar Cambios buttons", () => {
@@ -107,5 +107,123 @@ describe("QuickEditModal", () => {
       expect(api.updateProduct).toHaveBeenCalledWith(1, { precio_caja_usd: 200 });
     });
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it("renders Margen caja input with type text and inputMode decimal", () => {
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    // Find the input inside the Margen caja section
+    const allInputs = screen.getAllByRole("textbox");
+    // The margin inputs are the ones inside the margin sections
+    // Look for inputs with inputMode="decimal"
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    expect(marginInputs.length).toBe(2); // one for unit margin, one for box margin
+    marginInputs.forEach((input) => {
+      expect(input).toHaveAttribute("type", "text");
+      expect(input).toHaveAttribute("inputmode", "decimal");
+    });
+  });
+
+  it("shows calculated box margin value", () => {
+    // precio_costo_caja_usd: 96, precio_caja_usd: 150
+    // margin = ((150 - 96) / 150) * 100 = 36%
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    expect(screen.getByText("Margen caja")).toBeInTheDocument();
+    // The margin caja input should display the calculated margin
+    const allInputs = screen.getAllByRole("textbox");
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    // Second margin input is box margin — should show ~36.0
+    expect(marginInputs[1]).toHaveValue("36.0");
+  });
+
+  it("shows calculated unit margin value", () => {
+    // precio_costo_caja_usd: 96, unidades_por_caja: 12 → costo unitario = 8
+    // precio_unidad_usd: 15
+    // margin = ((15 - 8) / 15) * 100 = 46.666...%
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    const allInputs = screen.getAllByRole("textbox");
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    // First margin input is unit margin — should show ~46.7
+    expect(marginInputs[0]).toHaveValue("46.7");
+  });
+
+  it("updates precio_unidad_usd when typing in margin unit input", async () => {
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    const allInputs = screen.getAllByRole("textbox");
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    const unitMarginInput = marginInputs[0];
+
+    // Clear and type a new margin percentage
+    await userEvent.clear(unitMarginInput);
+    await userEvent.type(unitMarginInput, "50");
+
+    // precio_costo_unitario = 96/12 = 8
+    // price = 8 / (1 - 50/100) = 8 / 0.5 = 16
+    const precioUnidadInput = screen.getByLabelText("Precio unidad USD");
+    expect(precioUnidadInput).toHaveValue(16);
+  });
+
+  it("updates precio_caja_usd when typing in margin caja input", async () => {
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    const allInputs = screen.getAllByRole("textbox");
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    const cajaMarginInput = marginInputs[1];
+
+    // Clear and type a new margin percentage
+    await userEvent.clear(cajaMarginInput);
+    await userEvent.type(cajaMarginInput, "40");
+
+    // precio_costo_caja = 96
+    // price = 96 / (1 - 40/100) = 96 / 0.6 = 160
+    const precioCajaInput = screen.getByLabelText("Precio caja USD");
+    expect(precioCajaInput).toHaveValue(160);
+  });
+
+  it("resets margin caja input to calculated value on blur", async () => {
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    const allInputs = screen.getAllByRole("textbox");
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    const cajaMarginInput = marginInputs[1];
+
+    // Type a value then blur
+    await userEvent.clear(cajaMarginInput);
+    await userEvent.type(cajaMarginInput, "25");
+    await userEvent.tab();
+
+    // After blur, it should reset to the calculated margin from the new price
+    // price = 96 / (1 - 25/100) = 96 / 0.75 = 128
+    // margin = ((128 - 96) / 128) * 100 = 25.0
+    expect(cajaMarginInput).toHaveValue("25.0");
+  });
+
+  it("resets margin unit input to calculated value on blur", async () => {
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    const allInputs = screen.getAllByRole("textbox");
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    const unitMarginInput = marginInputs[0];
+
+    // Type a value then blur
+    await userEvent.clear(unitMarginInput);
+    await userEvent.type(unitMarginInput, "20");
+    await userEvent.tab();
+
+    // costo_unitario = 96/12 = 8
+    // price = 8 / (1 - 20/100) = 8 / 0.8 = 10
+    // margin = ((10 - 8) / 10) * 100 = 20.0
+    expect(unitMarginInput).toHaveValue("20.0");
+  });
+
+  it("does not update price when margin divisor is zero or negative", async () => {
+    renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
+    const allInputs = screen.getAllByRole("textbox");
+    const marginInputs = allInputs.filter((input) => input.getAttribute("inputmode") === "decimal");
+    const unitMarginInput = marginInputs[0];
+
+    // Use fireEvent to set value directly to "100" (divisor = 1 - 100/100 = 0)
+    // This avoids intermediate character-by-character updates from userEvent.type
+    fireEvent.change(unitMarginInput, { target: { value: "100" } });
+
+    const precioUnidadInput = screen.getByLabelText("Precio unidad USD");
+    // Price should remain unchanged (15) since divisor is 0
+    expect(precioUnidadInput).toHaveValue(15);
   });
 });

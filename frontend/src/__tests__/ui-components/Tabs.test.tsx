@@ -36,4 +36,23 @@ describe("Tabs", () => {
     await userEvent.click(screen.getByText("Usuarios"));
     expect(onChange).toHaveBeenCalledWith("users");
   });
+
+  it("applies overflow-x-auto to the container for horizontal scrolling", () => {
+    const { container } = render(<Tabs tabs={tabs} value="products" onChange={vi.fn()} />);
+    // The container div is the first child element
+    const containerDiv = container.firstElementChild as HTMLElement;
+    expect(containerDiv).toBeInTheDocument();
+    expect(containerDiv.className).toMatch(/\boverflow-x-auto\b/);
+  });
+
+  it("applies shrink-0 to tab labels to prevent wrapping", () => {
+    render(<Tabs tabs={tabs} value="products" onChange={vi.fn()} />);
+    const labels = screen.getAllByRole("radio");
+    // Each label wrapping a radio input should have shrink-0
+    labels.forEach((radio) => {
+      const label = radio.closest("label");
+      expect(label).toBeInTheDocument();
+      expect(label!.className).toMatch(/\bshrink-0\b/);
+    });
+  });
 });

@@ -254,8 +254,8 @@ function SortableSalesTable({ data, rango }: { data: SalesSummaryItem[]; rango: 
   const { toast } = useToast();
   const notifyExport = (name: string) => toast(`Archivo descargado: ${name}`, "success");
   const [limit, setLimit] = useState(5);
-  const visible = useMemo(() => data.slice(0, limit), [data, limit]);
-  const { sorted, sortConfig, requestSort } = useSortableData<SalesSummaryItem & Record<string, unknown>>(visible as (SalesSummaryItem & Record<string, unknown>)[], "periodo");
+  const visible = useMemo(() => data.slice(-limit), [data, limit]);
+  const { sorted, sortConfig, requestSort } = useSortableData<SalesSummaryItem & Record<string, unknown>>(visible as (SalesSummaryItem & Record<string, unknown>)[], "periodo", "desc");
   const columns = [
     {
       key: "periodo",

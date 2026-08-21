@@ -12,7 +12,7 @@ import PageHeader from "@/ui-components/PageHeader";
 import Spinner from "@/ui-components/Spinner";
 import { useToast } from "@/ui-components/Toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { calcMargin } from "../types";
+import { useMarginInput } from "../hooks/useMarginInput";
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateSupplierModal from "@/features/shared/components/CreateSupplierModal";
 
@@ -98,9 +98,20 @@ export default function ProductNewPage() {
     [form.precio_costo_caja_usd, form.unidades_por_caja],
   );
 
-  const margin = useMemo(
-    () => calcMargin(precioCostoUnitario, n(form.precio_unidad_usd)),
-    [precioCostoUnitario, form.precio_unidad_usd],
+  const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const unitMargin = useMarginInput(
+    precioCostoUnitario,
+    n(form.precio_unidad_usd),
+    (p) => setField("precio_unidad_usd", p),
+  );
+
+  const boxMargin = useMarginInput(
+    n(form.precio_costo_caja_usd),
+    n(form.precio_caja_usd),
+    (p) => setField("precio_caja_usd", p),
   );
 
   const precioSugerido = useMemo(
@@ -115,10 +126,6 @@ export default function ProductNewPage() {
     },
     [form.precio_costo_caja_usd],
   );
-
-  const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
 
   const onCategoryCreated = (cat: CategoryOut) => {
     setCategories((prev) => [...prev, cat]);
@@ -453,14 +460,40 @@ export default function ProductNewPage() {
               />
             </div>
             {!isOperator && (
-              <div>
-                <span className={labelBase}>Margen</span>
-                <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Ganancia</span>
-                  <span className="text-xs text-slate-400">
-                    {margin.margen > 0 ? `${margin.margen.toFixed(1)}%` : "—"}
-                  </span>
-                  <Badge variant={margin.color}>{margin.label}</Badge>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className={labelBase}>Margen unidad</span>
+                  <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={unitMargin.input}
+                      placeholder="0.0"
+                      onFocus={unitMargin.onFocus}
+                      onChange={(e) => unitMargin.onChange(e.target.value)}
+                      onBlur={unitMargin.onBlur}
+                      className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                    />
+                    <span className="text-xs text-slate-400">%</span>
+                    <Badge variant={unitMargin.margin.color}>{unitMargin.margin.label}</Badge>
+                  </div>
+                </div>
+                <div>
+                  <span className={labelBase}>Margen caja</span>
+                  <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={boxMargin.input}
+                      placeholder="0.0"
+                      onFocus={boxMargin.onFocus}
+                      onChange={(e) => boxMargin.onChange(e.target.value)}
+                      onBlur={boxMargin.onBlur}
+                      className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                    />
+                    <span className="text-xs text-slate-400">%</span>
+                    <Badge variant={boxMargin.margin.color}>{boxMargin.margin.label}</Badge>
+                  </div>
                 </div>
               </div>
             )}
