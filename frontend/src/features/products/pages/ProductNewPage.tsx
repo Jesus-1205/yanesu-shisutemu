@@ -103,6 +103,11 @@ export default function ProductNewPage() {
     [precioCostoUnitario, form.precio_unidad_usd],
   );
 
+  const marginCaja = useMemo(
+    () => calcMargin(n(form.precio_costo_caja_usd), n(form.precio_caja_usd)),
+    [form.precio_costo_caja_usd, form.precio_caja_usd],
+  );
+
   const precioSugerido = useMemo(
     () => (precioCostoUnitario > 0 ? Math.round((precioCostoUnitario / 0.7) * 100) / 100 : 0),
     [precioCostoUnitario],
@@ -453,14 +458,63 @@ export default function ProductNewPage() {
               />
             </div>
             {!isOperator && (
-              <div>
-                <span className={labelBase}>Margen</span>
-                <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Ganancia</span>
-                  <span className="text-xs text-slate-400">
-                    {margin.margen > 0 ? `${margin.margen.toFixed(1)}%` : "—"}
-                  </span>
-                  <Badge variant={margin.color}>{margin.label}</Badge>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className={labelBase}>Margen unidad</span>
+                  <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="99.9"
+                      value={margin.margen > 0 ? margin.margen.toFixed(1) : ""}
+                      placeholder="0.0"
+                      onChange={(e) => {
+                        const pct = parseFloat(e.target.value);
+                        if (!isNaN(pct) && precioCostoUnitario > 0) {
+                          const divisor = 1 - pct / 100;
+                          if (divisor > 0) {
+                            const newPrice = Math.round((precioCostoUnitario / divisor) * 100) / 100;
+                            setField("precio_unidad_usd", newPrice);
+                          }
+                        } else if (e.target.value === "") {
+                          setField("precio_unidad_usd", "");
+                        }
+                      }}
+                      className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                    />
+                    <span className="text-xs text-slate-400">%</span>
+                    <Badge variant={margin.color}>{margin.label}</Badge>
+                  </div>
+                </div>
+                <div>
+                  <span className={labelBase}>Margen caja</span>
+                  <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="99.9"
+                      value={marginCaja.margen > 0 ? marginCaja.margen.toFixed(1) : ""}
+                      placeholder="0.0"
+                      onChange={(e) => {
+                        const pct = parseFloat(e.target.value);
+                        const costoCaja = n(form.precio_costo_caja_usd);
+                        if (!isNaN(pct) && costoCaja > 0) {
+                          const divisor = 1 - pct / 100;
+                          if (divisor > 0) {
+                            const newPrice = Math.round((costoCaja / divisor) * 100) / 100;
+                            setField("precio_caja_usd", newPrice);
+                          }
+                        } else if (e.target.value === "") {
+                          setField("precio_caja_usd", "");
+                        }
+                      }}
+                      className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                    />
+                    <span className="text-xs text-slate-400">%</span>
+                    <Badge variant={marginCaja.color}>{marginCaja.label}</Badge>
+                  </div>
                 </div>
               </div>
             )}

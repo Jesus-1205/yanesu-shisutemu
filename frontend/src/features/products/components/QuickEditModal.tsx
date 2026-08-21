@@ -73,9 +73,9 @@ export default function QuickEditModal({
     [precioCostoUnitario, form.precio_unidad_usd],
   );
 
-  const precioSugerido = useMemo(
-    () => (precioCostoUnitario > 0 ? Math.round((precioCostoUnitario / 0.7) * 100) / 100 : 0),
-    [precioCostoUnitario],
+  const marginCaja = useMemo(
+    () => calcMargin(n(form.precio_costo_caja_usd), n(form.precio_caja_usd)),
+    [form.precio_costo_caja_usd, form.precio_caja_usd],
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,16 +196,60 @@ export default function QuickEditModal({
           {role === "admin" && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <span className={labelBase}>Margen</span>
+                <span className={labelBase}>Margen unidad</span>
                 <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Ganancia</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="99.9"
+                    value={margin.margen > 0 ? margin.margen.toFixed(1) : ""}
+                    placeholder="0.0"
+                    onChange={(e) => {
+                      const pct = parseFloat(e.target.value);
+                      if (!isNaN(pct) && precioCostoUnitario > 0) {
+                        const divisor = 1 - pct / 100;
+                        if (divisor > 0) {
+                          const newPrice = Math.round((precioCostoUnitario / divisor) * 100) / 100;
+                          setForm((prev) => ({ ...prev, precio_unidad_usd: newPrice }));
+                        }
+                      } else if (e.target.value === "") {
+                        setForm((prev) => ({ ...prev, precio_unidad_usd: 0 }));
+                      }
+                    }}
+                    className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                  />
+                  <span className="text-xs text-slate-400">%</span>
                   <Badge variant={margin.color}>{margin.label}</Badge>
                 </div>
               </div>
               <div>
-                <span className={labelBase}>Precio sugerido USD</span>
-                <div className="h-10 px-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center text-sm text-blue-700 font-mono">
-                  ${precioSugerido.toFixed(2)}
+                <span className={labelBase}>Margen caja</span>
+                <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="99.9"
+                    value={marginCaja.margen > 0 ? marginCaja.margen.toFixed(1) : ""}
+                    placeholder="0.0"
+                    onChange={(e) => {
+                      const pct = parseFloat(e.target.value);
+                      const costoCaja = n(form.precio_costo_caja_usd);
+                      if (!isNaN(pct) && costoCaja > 0) {
+                        const divisor = 1 - pct / 100;
+                        if (divisor > 0) {
+                          const newPrice = Math.round((costoCaja / divisor) * 100) / 100;
+                          setForm((prev) => ({ ...prev, precio_caja_usd: newPrice }));
+                        }
+                      } else if (e.target.value === "") {
+                        setForm((prev) => ({ ...prev, precio_caja_usd: 0 }));
+                      }
+                    }}
+                    className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                  />
+                  <span className="text-xs text-slate-400">%</span>
+                  <Badge variant={marginCaja.color}>{marginCaja.label}</Badge>
                 </div>
               </div>
             </div>

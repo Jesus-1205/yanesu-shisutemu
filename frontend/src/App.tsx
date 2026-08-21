@@ -296,7 +296,7 @@ function AppLayoutInner({
 
       <div
         className={`
-          fixed inset-y-0 left-0 z-30 pr-4 overflow-y-hidden
+          fixed inset-y-0 left-0 z-30 pr-4 overflow-y-auto
           transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
           lg:translate-x-0
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}

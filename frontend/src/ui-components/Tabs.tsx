@@ -26,7 +26,7 @@ export default function Tabs({
   return (
     <div
       className={`
-        relative flex items-center
+        relative flex items-center overflow-x-auto
         bg-white rounded-full p-3
         shadow-[0_0_1px_0_rgba(24,94,224,0.15),0_6px_12px_0_rgba(24,94,224,0.15)]
         ${className}
@@ -42,7 +42,7 @@ export default function Tabs({
             htmlFor={inputId}
             className={`
               relative z-10 flex items-center justify-center
-              h-[30px] px-4
+              h-[30px] px-4 shrink-0
               text-xs font-medium
               rounded-full cursor-pointer select-none
               transition-colors duration-150 ease-in

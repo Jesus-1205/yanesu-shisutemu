@@ -59,10 +59,10 @@ describe("QuickEditModal", () => {
     expect(screen.getByText("Precio caja USD")).toBeInTheDocument();
   });
 
-  it("renders margin and suggested price", () => {
+  it("renders margin inputs for unit and box", () => {
     renderWithRouter(<QuickEditModal open onClose={vi.fn()} onSaved={vi.fn()} product={product} />);
-    expect(screen.getByText("Margen")).toBeInTheDocument();
-    expect(screen.getByText("Precio sugerido USD")).toBeInTheDocument();
+    expect(screen.getByText("Margen unidad")).toBeInTheDocument();
+    expect(screen.getByText("Margen caja")).toBeInTheDocument();
   });
 
   it("shows Cancelar and Guardar Cambios buttons", () => {
