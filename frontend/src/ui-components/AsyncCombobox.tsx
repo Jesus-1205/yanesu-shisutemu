@@ -61,7 +61,7 @@ export default function AsyncCombobox({
   useEffect(() => {
     if (selected) {
       setQuery(selected.label);
-    } else if (!value && !query) {
+    } else if (value === null || value === undefined) {
       setQuery("");
     }
   }, [selected, value]);
