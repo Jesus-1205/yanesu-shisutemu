@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   cn,
   formatCurrency,
@@ -8,6 +8,7 @@ import {
   formatDateVE,
   parseVETime,
   isTodayInCaracas,
+  getTodayInCaracas,
 } from "../../lib/utils";
 
 describe("cn", () => {
@@ -156,5 +157,75 @@ describe("isTodayInCaracas", () => {
   it("rechaza valores vacíos", () => {
     expect(isTodayInCaracas(null)).toBe(false);
     expect(isTodayInCaracas(undefined)).toBe(false);
+  });
+});
+
+describe("getTodayInCaracas", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns a string in YYYY-MM-DD format", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-22T12:00:00Z"));
+
+    const result = getTodayInCaracas();
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("returns the correct date for a normal daytime UTC hour", () => {
+    // 2026-08-22T12:00:00Z → Caracas (UTC-4) = 2026-08-22T08:00
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-22T12:00:00Z"));
+
+    expect(getTodayInCaracas()).toBe("2026-08-22");
+  });
+
+  it("returns the previous day when UTC is before 04:00 (Caracas still previous day)", () => {
+    // 2026-08-22T02:00:00Z → Caracas (UTC-4) = 2026-08-21T22:00
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-22T02:00:00Z"));
+
+    expect(getTodayInCaracas()).toBe("2026-08-21");
+  });
+
+  it("returns the new day exactly at Caracas midnight (04:00 UTC)", () => {
+    // 2026-08-22T04:00:00Z → Caracas (UTC-4) = 2026-08-22T00:00
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-22T04:00:00Z"));
+
+    expect(getTodayInCaracas()).toBe("2026-08-22");
+  });
+
+  it("returns the previous day one second before Caracas midnight", () => {
+    // 2026-08-22T03:59:59Z → Caracas (UTC-4) = 2026-08-21T23:59:59
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-22T03:59:59Z"));
+
+    expect(getTodayInCaracas()).toBe("2026-08-21");
+  });
+
+  it("returns the new day one second after Caracas midnight", () => {
+    // 2026-08-22T04:00:01Z → Caracas (UTC-4) = 2026-08-22T00:00:01
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-22T04:00:01Z"));
+
+    expect(getTodayInCaracas()).toBe("2026-08-22");
+  });
+
+  it("handles end-of-day in Caracas (23:59 UTC-4)", () => {
+    // 2026-12-31T23:59:00-04:00 → 2027-01-01T03:59:00Z, Caracas still 2026-12-31
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2027-01-01T03:59:00Z"));
+
+    expect(getTodayInCaracas()).toBe("2026-12-31");
+  });
+
+  it("handles year boundary crossing into new year in Caracas", () => {
+    // 2027-01-01T04:00:00Z → Caracas (UTC-4) = 2027-01-01T00:00
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2027-01-01T04:00:00Z"));
+
+    expect(getTodayInCaracas()).toBe("2027-01-01");
   });
 });

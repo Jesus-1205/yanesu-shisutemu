@@ -18,6 +18,7 @@ import CreateProductModal from "@/features/shared/components/CreateProductModal"
 import { formatBs } from "@/lib/text";
 import { calcIva } from "@/lib/iva";
 import { toCents, convertirCostos, calcularSubtotal } from "@/lib/money";
+import { getTodayInCaracas } from "@/lib/utils";
 
 interface LineItem {
   key: string;
@@ -52,7 +53,7 @@ export default function InvoiceNewPage() {
 
   const [proveedorId, setProveedorId] = useState<number | null>(null);
   const [numeroFactura, setNumeroFactura] = useState("");
-  const [fechaFactura, setFechaFactura] = useState(new Date().toISOString().slice(0, 10));
+  const [fechaFactura, setFechaFactura] = useState(getTodayInCaracas);
   const [observaciones, setObservaciones] = useState("");
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
