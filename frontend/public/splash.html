@@ -2,41 +2,218 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cargando…</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      background-color: #0f172a;
-      color: #f8fafc;
+      background: radial-gradient(ellipse at 35% 40%, #1a2744 0%, #0f172a 50%, #0b1120 100%);
+      color: #e2e8f0;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
+      overflow: hidden;
       user-select: none;
     }
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-top-color: #38bdf8;
+
+    /* ── Ambient glow behind logo ── */
+    .ambient {
+      position: absolute;
+      width: 260px;
+      height: 260px;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 24px;
+      background: radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%);
+      filter: blur(40px);
+      animation: ambientPulse 4s ease-in-out infinite;
+      pointer-events: none;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      position: relative;
+      z-index: 1;
+      width: 96px;
+      height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+      animation: logoEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
-    h3 {
-      font-size: 16px;
-      font-weight: 500;
-      color: #94a3b8;
-      letter-spacing: 0.5px;
+    .logo-wrap svg {
+      width: 80px;
+      height: 80px;
+      filter: drop-shadow(0 0 20px rgba(59,130,246,0.5));
+      animation: glow 3s ease-in-out infinite;
+    }
+
+    /* ── Brand name ── */
+    .brand {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    /* ── Version ── */
+    .version {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: #475569;
+      margin-bottom: 36px;
+      animation: fadeUp 0.6s 0.45s ease both;
+    }
+
+    /* ── Bouncing dots ── */
+    .dots {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      animation: fadeUp 0.6s 0.6s ease both;
+    }
+    .dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3b82f6;
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.16s; }
+    .dots span:nth-child(3) { animation-delay: 0.32s; }
+
+    /* ── Status message ── */
+    .status {
+      font-size: 12px;
+      color: #64748b;
+      letter-spacing: 0.04em;
+      height: 18px;
+      margin-bottom: 14px;
+      animation: fadeUp 0.6s 0.75s ease both;
+    }
+
+    /* ── Progress bar ── */
+    .progress-track {
+      width: 180px;
+      height: 2px;
+      border-radius: 1px;
+      background: #1e293b;
+      overflow: hidden;
+      animation: fadeUp 0.6s 0.9s ease both;
+    }
+    .progress-fill {
+      width: 40%;
+      height: 100%;
+      border-radius: 1px;
+      background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+      animation: shimmer 1.8s ease-in-out infinite;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes ambientPulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50%      { opacity: 1;   transform: scale(1.08); }
+    }
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 18px rgba(59,130,246,0.45)); transform: scale(1); }
+      50%      { filter: drop-shadow(0 0 32px rgba(59,130,246,0.75)); transform: scale(1.04); }
+    }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+      40%            { transform: translateY(-7px); opacity: 1; }
+    }
+    @keyframes shimmer {
+      0%   { transform: translateX(-120%); }
+      100% { transform: translateX(350%); }
+    }
+    @keyframes logoEntry {
+      from { opacity: 0; transform: scale(0.85) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .ambient,
+      .logo-wrap svg,
+      .dots span,
+      .progress-fill {
+        animation: none !important;
+      }
+      .logo-wrap,
+      .brand,
+      .version,
+      .dots,
+      .status,
+      .progress-track {
+        animation: none !important;
+        opacity: 1;
+        transform: none;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="spinner"></div>
-  <h3>Iniciando sistema...</h3>
+  <!-- Ambient glow -->
+  <div class="ambient"></div>
+
+  <!-- Logo ネ (Ne) — katakana brand mark -->
+  <div class="logo-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 111.125 111.125">
+      <g transform="translate(0,-185.875)">
+        <path
+          d="m 45.349618,198.09889 c 6.34998,3.91582 11.006632,7.30247 14.181622,11.32413 1.904994,2.64582 3.069157,4.55082 5.29165,4.55082 2.222493,0 3.598322,-1.79917 3.598322,-3.70416 0,-7.19664 -11.429964,-11.8533 -21.907431,-13.96996 z m -18.944107,21.80159 c 0.105833,2.32833 0.423332,5.29165 1.05833,6.56165 1.375829,2.85749 5.820815,6.77331 8.572473,6.77331 2.434159,0 2.857491,-2.01083 6.244147,-2.85749 5.714982,-1.48166 23.28326,-5.60915 27.304914,-6.13831 1.375829,-0.10584 1.481662,0.21166 0.740831,1.48166 -8.784139,15.23995 -35.877387,35.24239 -57.255653,45.71985 l 1.481662,2.54 c 15.451618,-5.82082 30.268238,-14.60496 42.650699,-24.76493 0.317499,1.05833 0.423332,2.32833 0.423332,4.12749 0,5.39748 -0.529165,17.46245 -0.846664,20.31994 -0.423332,4.12748 -0.846664,4.86832 -0.846664,6.87914 0,2.64583 1.164163,7.72581 4.021654,7.72581 2.963324,0 3.809988,-2.43416 3.809988,-4.76248 0,-2.32833 -0.423332,-6.34998 -0.423332,-9.73664 0,-17.46244 0.529165,-21.4841 0.529165,-24.12992 0,-1.48167 -0.952497,-2.75166 -2.434159,-4.02166 6.34998,-5.60915 11.853296,-11.53579 16.298282,-17.46244 1.164163,-1.5875 5.397483,-2.2225 5.397483,-4.23332 0,-2.11666 -6.34998,-6.77331 -9.101638,-6.77331 -1.481662,0 -2.010827,1.79916 -5.185817,2.53999 -5.079984,1.26999 -27.622413,5.50331 -33.654894,5.50331 -3.280823,0 -5.185817,-3.59832 -6.879145,-5.92664 z m 44.132361,27.09325 c 7.725809,3.70416 14.393288,9.84247 19.579105,17.25078 1.587495,2.43416 2.645825,3.28082 4.550819,3.28082 2.010827,0 3.386656,-1.48166 3.386656,-3.38665 0,-8.46664 -12.276628,-15.66329 -26.352417,-19.15578 z"
+          fill="#ffffff"
+        />
+      </g>
+    </svg>
+  </div>
+
+  <!-- Brand name -->
+  <div class="brand">Yanesu Shisutemu</div>
+
+  <!-- Version -->
+  <div class="version">v1.0.0</div>
+
+  <!-- Bouncing dots -->
+  <div class="dots">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <!-- Rotating status message -->
+  <div class="status" id="status">Iniciando sistema…</div>
+
+  <!-- Shimmer progress bar -->
+  <div class="progress-track">
+    <div class="progress-fill"></div>
+  </div>
+
+  <script>
+    (function () {
+      var msgs = [
+        'Conectando base de datos…',
+        'Cargando catálogo de productos…',
+        'Preparando módulos…',
+        'Iniciando sistema…'
+      ];
+      var i = 0;
+      var el = document.getElementById('status');
+      setInterval(function () {
+        i = (i + 1) % msgs.length;
+        el.textContent = msgs[i];
+      }, 1800);
+    })();
+  </script>
 </body>
 </html>
