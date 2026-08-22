@@ -69,20 +69,19 @@ if !errorlevel! neq 0 (
 )
 
 where pyinstaller >nul 2>&1
-if !errorlevel! neq 0 (
-    echo [WARN] pyinstaller no esta en PATH, intentando via python -m PyInstaller
-    python -m PyInstaller --version >nul 2>&1
-    if !errorlevel! neq 0 (
-        echo [ERROR] pyinstaller no encontrado (ni standalone ni via python -m)
-        echo         Ejecuta: pip install pyinstaller
-        set "HAS_ERROR=1"
-    ) else (
-        echo [OK] pyinstaller ^(via python -m PyInstaller^)
-        set "PYINSTALLER_CMD=python -m PyInstaller"
-    )
-) else (
+if !errorlevel! equ 0 (
     echo [OK] pyinstaller
     set "PYINSTALLER_CMD=pyinstaller"
+) else (
+    python -m PyInstaller --version >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo [OK] pyinstaller ^(via python -m PyInstaller^)
+        set "PYINSTALLER_CMD=python -m PyInstaller"
+    ) else (
+        echo [ERROR] pyinstaller no encontrado
+        echo         Ejecuta: pip install pyinstaller
+        set "HAS_ERROR=1"
+    )
 )
 
 where cargo >nul 2>&1

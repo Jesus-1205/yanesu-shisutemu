@@ -19,7 +19,7 @@ vi.mock("recharts", () => ({
   ),
   Cell: ({ fill }: { fill: string }) => <div data-testid="cell" data-fill={fill} />,
   Tooltip: () => null,
-  Legend: ({ content }: { content: (props: Record<string, unknown>) => React.ReactNode }) => {
+  Legend: (_props: { content: (props: Record<string, unknown>) => React.ReactNode }) => {
     // Recharts passes { payload } to the custom content renderer.
     // We don't have real payload here, so we rely on the Pie/Cell data instead.
     return null;
