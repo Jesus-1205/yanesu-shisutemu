@@ -30,6 +30,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function Sear
         ref={ref}
         value={value}
         onChange={onChange}
+        autoComplete="off"
         className={`w-full pl-10 pr-8 py-2 text-sm rounded-lg border border-slate-300 bg-surface text-text-main outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-colors ${className}`}
         {...props}
       />

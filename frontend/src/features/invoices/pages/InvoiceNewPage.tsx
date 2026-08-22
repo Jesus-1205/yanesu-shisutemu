@@ -528,6 +528,7 @@ export default function InvoiceNewPage() {
                   onChange={(e) => setNumeroFactura(e.target.value)}
                   placeholder="Ej: 001-00012345"
                   required
+                  autoComplete="off"
                   className={inputBase}
                 />
               </div>
@@ -538,6 +539,7 @@ export default function InvoiceNewPage() {
                   type="date"
                   value={fechaFactura}
                   onChange={(e) => setFechaFactura(e.target.value)}
+                  autoComplete="off"
                   className={inputBase}
                 />
               </div>
@@ -580,6 +582,7 @@ export default function InvoiceNewPage() {
                   value={tasa}
                   onChange={(e) => setTasa(e.target.value)}
                   placeholder="0.00"
+                  autoComplete="off"
                   className={inputBase}
                 />
               </div>
@@ -659,29 +662,31 @@ export default function InvoiceNewPage() {
               </div>
               <div>
                 <label htmlFor={fid("cajas")} className={labelBase}>{newTipoEmpaque === "CAJA" ? "Cajas" : "Unids"}</label>
-                <input
-                  id={fid("cajas")}
-                  type="number"
-                  min={1}
-                  value={newCantidad}
-                  onChange={(e) => setNewCantidad(e.target.value)}
-                  className={inputBase}
-                />
+<input
+                id={fid("cajas")}
+                type="number"
+                min={1}
+                value={newCantidad}
+                onChange={(e) => setNewCantidad(e.target.value)}
+                autoComplete="off"
+                className={inputBase}
+              />
               </div>
               <div>
                 <label htmlFor={fid("costo-prim")} className={labelBase}>
                   {newTipoEmpaque === "CAJA" ? "$/Caja" : "$/Unid"} <span className="text-slate-400 font-normal">({esBs ? "Bs" : "USD"})</span>
                 </label>
-                <input
-                  id={fid("costo-prim")}
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={newCostoPrimario}
-                  onChange={(e) => setNewCostoPrimario(e.target.value)}
-                  className={inputBase}
-                  placeholder="0.00"
-                />
+<input
+                id={fid("costo-prim")}
+                type="number"
+                min={0}
+                step="0.01"
+                value={newCostoPrimario}
+                onChange={(e) => setNewCostoPrimario(e.target.value)}
+                autoComplete="off"
+                className={inputBase}
+                placeholder="0.00"
+              />
               </div>
               <div>
                 <label htmlFor={fid("costo-sec")} className={labelBase}>
@@ -695,6 +700,7 @@ export default function InvoiceNewPage() {
                   readOnly
                   tabIndex={-1}
                   aria-readonly="true"
+                  autoComplete="off"
                   placeholder="—"
                 />
               </div>
@@ -1015,6 +1021,7 @@ export default function InvoiceNewPage() {
                     placeholder="Ej: 742.81"
                     min="0"
                     step="0.01"
+                    autoComplete="off"
                     className="w-28 h-8 rounded-lg border border-slate-300 bg-surface px-2 text-xs text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
                   />
                 </div>
@@ -1065,6 +1072,7 @@ export default function InvoiceNewPage() {
                             value={item.cantidad || ""}
                             onChange={(e) => handleAiItemEdit(idx, "cantidad", e.target.value)}
                             min="0"
+                            autoComplete="off"
                             className="w-16 h-8 text-right text-sm font-mono rounded border border-slate-300 bg-surface px-1 outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                           />
                         </td>
@@ -1076,6 +1084,7 @@ export default function InvoiceNewPage() {
                               onChange={(e) => handleAiItemEdit(idx, "precio_unitario", e.target.value)}
                               min="0"
                               step="0.01"
+                              autoComplete="off"
                               className="w-28 h-8 text-right text-sm font-mono rounded border border-slate-300 bg-surface px-1 outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                             />
                             {selectedAiCurrency === "BS" && (

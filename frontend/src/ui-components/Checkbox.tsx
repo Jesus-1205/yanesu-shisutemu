@@ -15,7 +15,7 @@ export default function Checkbox({
 
   return (
     <label className={`inline-flex items-center gap-2.5 cursor-pointer select-none ${className}`}>
-      <input id={inputId} type="checkbox" className="hidden peer" {...props} />
+      <input id={inputId} type="checkbox" className="hidden peer" autoComplete="off" {...props} />
       <span
         className="
           relative w-[18px] h-[18px] block

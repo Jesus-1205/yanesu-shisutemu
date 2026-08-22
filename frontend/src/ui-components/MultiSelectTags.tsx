@@ -110,6 +110,7 @@ export default function MultiSelectTags({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filtrar..."
               className="w-full h-8 px-3 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
+              autoComplete="off"
               autoFocus
             />
           </div>

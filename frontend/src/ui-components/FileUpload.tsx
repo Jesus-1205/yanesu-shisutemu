@@ -148,6 +148,7 @@ export default function FileUpload({
           accept={accept}
           multiple
           className="hidden"
+          autoComplete="off"
           onChange={(e) => {
             if (e.target.files?.length) addFiles(e.target.files);
           }}

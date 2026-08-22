@@ -151,6 +151,7 @@ export default function QuickEditModal({
                     precio_costo_caja_usd: raw === "" ? "" : e.target.valueAsNumber,
                   }));
                 }}
+                autoComplete="off"
                 className={inputBase}
               />
               <p className="text-[11px] text-slate-400 mt-0.5">
@@ -172,6 +173,7 @@ export default function QuickEditModal({
                     precio_unidad_usd: raw === "" ? "" : e.target.valueAsNumber,
                   }));
                 }}
+                autoComplete="off"
                 className={inputBase}
               />
             </div>
@@ -190,6 +192,7 @@ export default function QuickEditModal({
                     precio_caja_usd: raw === "" ? "" : e.target.valueAsNumber,
                   }));
                 }}
+                autoComplete="off"
                 className={inputBase}
               />
             </div>
@@ -208,6 +211,7 @@ export default function QuickEditModal({
                     onFocus={unitMargin.onFocus}
                     onChange={(e) => unitMargin.onChange(e.target.value)}
                     onBlur={unitMargin.onBlur}
+                    autoComplete="off"
                     className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                   />
                   <span className="text-xs text-slate-400">%</span>
@@ -225,6 +229,7 @@ export default function QuickEditModal({
                     onFocus={boxMargin.onFocus}
                     onChange={(e) => boxMargin.onChange(e.target.value)}
                     onBlur={boxMargin.onBlur}
+                    autoComplete="off"
                     className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                   />
                   <span className="text-xs text-slate-400">%</span>

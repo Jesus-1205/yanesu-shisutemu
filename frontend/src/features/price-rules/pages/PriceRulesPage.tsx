@@ -322,6 +322,7 @@ export default function PriceRulesPage() {
                     value={entry.precio_usd || ""}
                     onChange={(e) => updateProductEntry(idx, "precio_usd", Number(e.target.value))}
                     placeholder="$ 0.00"
+                    autoComplete="off"
                     className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-brand-blue focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                   <button
@@ -357,6 +358,7 @@ export default function PriceRulesPage() {
                     type="checkbox"
                     checked={formMethodIds.includes(pm.id)}
                     onChange={() => toggleMethod(pm.id)}
+                    autoComplete="off"
                     className="sr-only"
                   />
                   {pm.nombre}

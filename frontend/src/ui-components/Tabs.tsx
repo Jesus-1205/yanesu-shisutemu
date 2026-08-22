@@ -91,6 +91,7 @@ export default function Tabs({
               checked={isActive}
               onChange={() => onChange(tab.value)}
               className="hidden"
+              autoComplete="off"
             />
           </label>
         );

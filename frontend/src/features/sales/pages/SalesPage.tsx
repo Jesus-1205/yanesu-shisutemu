@@ -184,6 +184,7 @@ export default function SalesPage() {
               value={fechaDesde}
               onChange={(e) => handleFilterChange(setFechaDesde)(e.target.value)}
               className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              autoComplete="off"
             />
           </div>
           <div>
@@ -193,6 +194,7 @@ export default function SalesPage() {
               value={fechaHasta}
               onChange={(e) => handleFilterChange(setFechaHasta)(e.target.value)}
               className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              autoComplete="off"
             />
           </div>
           <div>
@@ -202,6 +204,7 @@ export default function SalesPage() {
               value={horaDesde}
               onChange={(e) => handleFilterChange(setHoraDesde)(e.target.value)}
               className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              autoComplete="off"
             />
           </div>
           <div>
@@ -211,6 +214,7 @@ export default function SalesPage() {
               value={horaHasta}
               onChange={(e) => handleFilterChange(setHoraHasta)(e.target.value)}
               className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              autoComplete="off"
             />
           </div>
           <MultiSelectTags

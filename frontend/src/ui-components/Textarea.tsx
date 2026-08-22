@@ -26,6 +26,7 @@ export default function Textarea({
           id={textareaId}
           placeholder={placeholder ?? " "}
           rows={rows}
+          autoComplete="off"
           className={`
             peer w-full rounded-xl border bg-surface px-4 pt-7 pb-3 text-sm text-text-main
             transition-all duration-200 outline-none resize-y

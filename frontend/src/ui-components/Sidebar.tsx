@@ -290,6 +290,7 @@ export default function Sidebar({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent text-sm text-text-main outline-none placeholder:text-slate-400"
+              autoComplete="off"
             />
           )}
         </div>

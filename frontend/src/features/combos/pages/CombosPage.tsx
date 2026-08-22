@@ -382,6 +382,7 @@ export default function CombosPage() {
                           value={group.min_cantidad}
                           onChange={(e) => updateGroup(gIdx, "min_cantidad", Number(e.target.value))}
                           className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
+                          autoComplete="off"
                           title="Cantidad mínima de productos que el cliente debe elegir"
                         />
                       </label>
@@ -393,6 +394,7 @@ export default function CombosPage() {
                           value={group.max_cantidad}
                           onChange={(e) => updateGroup(gIdx, "max_cantidad", Number(e.target.value))}
                           className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
+                          autoComplete="off"
                           title="Cantidad máxima de productos que el cliente puede elegir"
                         />
                       </label>
@@ -467,6 +469,7 @@ export default function CombosPage() {
                     type="checkbox"
                     checked={formMethodIds.includes(pm.id)}
                     onChange={() => toggleMethod(pm.id)}
+                    autoComplete="off"
                     className="sr-only"
                   />
                   {pm.nombre}
