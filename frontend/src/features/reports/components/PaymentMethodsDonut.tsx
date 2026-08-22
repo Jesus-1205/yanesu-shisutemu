@@ -1,28 +1,18 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { chartColors } from "@/ui-components/charts/theme";
 import type { PaymentMethodSummaryItem } from "@/types/api";
 import { formatPaymentMethodName } from "@/lib/utils";
 
-const METHOD_COLORS: Record<string, string> = {
-  DIVISAS: chartColors.success,
-  EFECTIVO: chartColors.brand,
-  PUNTO_DE_VENTA: chartColors.accent,
-  PAGO_MOVIL: chartColors.info,
-  TRANSFERENCIA: chartColors.danger,
-  ZELLE: "#8B5CF6",
-};
-
-const DEFAULT_PALETTE = [
-  chartColors.brand,
-  chartColors.accent,
-  chartColors.success,
-  chartColors.info,
-  chartColors.danger,
-  chartColors.slate,
-  "#8B5CF6",
-  "#F59E0B",
-  "#10B981",
-  "#EC4899",
+const PALETTE = [
+  "#1E40AF",
+  "#EA580C",
+  "#16A34A",
+  "#DC2626",
+  "#7C3AED",
+  "#0891B2",
+  "#CA8A04",
+  "#DB2777",
+  "#64748B",
+  "#059669",
 ];
 
 interface ChartDatum {
@@ -60,9 +50,7 @@ export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) 
       value,
       amount: `$${value.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0.0",
-      color:
-        METHOD_COLORS[m.metodo_pago_nombre.toUpperCase()] ||
-        DEFAULT_PALETTE[index % DEFAULT_PALETTE.length],
+      color: PALETTE[index % PALETTE.length],
     };
   });
 

@@ -85,6 +85,11 @@ const caracasDayKey = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
+/** Retorna la fecha actual como YYYY-MM-DD en zona horaria America/Caracas. */
+export function getTodayInCaracas(): string {
+  return caracasDayKey.format(new Date());
+}
+
 /** Verifica si un timestamp (naive en hora de Caracas) corresponde al día actual en Caracas. */
 export function isTodayInCaracas(iso: string | null | undefined): boolean {
   const d = toCaracasDate(iso);
