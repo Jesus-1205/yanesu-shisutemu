@@ -167,3 +167,14 @@ Top 3 UX improvements with most impact.
 8. **Ask when uncertain** — present options
 9. **Consider all 19 features** — consistency across the app
 10. **Respect existing patterns** — don't break what works
+
+## Relevant Skills
+
+When analyzing UX patterns, load the appropriate skill for deeper context:
+
+- **`react-best-practices`** — Component patterns, hooks, composition, performance. Helps understand how components are structured and where UX improvements can be applied.
+- **`accessibility`** — WCAG 2.2 guidelines, keyboard navigation, screen reader support, focus management, ARIA attributes.
+- **`frontend-design`** — Production-grade UI design patterns, layout strategies, visual hierarchy, design systems.
+- **`tailwind-css-patterns`** — Responsive design utilities, spacing, typography, color systems, modern CSS patterns.
+
+Use the `skill` tool with the skill name when evaluating specific UX aspects.

@@ -350,3 +350,19 @@ After applying the fix, verify by:
 7. **Include verification steps** — how to confirm the fix works
 8. **Be specific** — exact file paths, line numbers, code snippets
 9. **Don't edit files** — only report and suggest
+
+## Relevant Skills
+
+When investigating errors, load the appropriate skill for deeper context:
+
+**Backend errors:**
+- **`fastapi-python`** — FastAPI route errors, dependency injection, middleware, CORS, status codes
+- **`pydantic`** — Schema validation errors, Field constraints, type coercion, model_dump()
+- **`sqlalchemy`** — ORM errors, relationship configuration, query patterns, DECIMAL columns
+- **`python-patterns`** — General Python error patterns and best practices
+
+**Frontend errors:**
+- **`react-best-practices`** — React component patterns, hooks rules, useEffect, memoization, Zustand selectors
+- **`typescript-advanced-types`** — Type errors, generics, utility types, type guards
+
+Use the `skill` tool with the skill name when the error involves a specific framework.
