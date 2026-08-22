@@ -5,9 +5,9 @@ color 0F
 
 set "ROOT=%~dp0..\"
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  0. Detectar Node.js desde fnm
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 set "NODE_VERSION="
 if exist "%ROOT%.node-version" (
@@ -35,9 +35,9 @@ if not exist "!FNM_NODE_DIR!\node.exe" (
 echo [OK] Node !NODE_VERSION! detectado en fnm
 set "PATH=!FNM_NODE_DIR!;%PATH%"
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  1. Verificar herramientas requeridas
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 echo.
 echo === Verificando herramientas ===
@@ -105,9 +105,9 @@ if "!HAS_ERROR!"=="1" (
     goto :fail
 )
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  2. Opcion --clean
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 if "%1"=="--clean" (
     echo.
@@ -130,9 +130,9 @@ if "%1"=="--clean" (
     )
 )
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  3. Construir Frontend
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 echo.
 echo === [1/4] Construyendo Frontend ===
@@ -151,9 +151,9 @@ if !errorlevel! neq 0 (
 )
 echo [OK] Frontend construido exitosamente
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  4. Empaquetar Backend con PyInstaller
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 echo.
 echo === [2/4] Empaquetando Backend con PyInstaller ===
@@ -171,9 +171,9 @@ if not exist "dist\yanesu_shisutemu.exe" (
 )
 echo [OK] Backend empaquetado exitosamente
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  5. Preparar sidecar para Tauri
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 echo.
 echo === [3/4] Preparando sidecar para Tauri ===
@@ -185,9 +185,9 @@ if !errorlevel! neq 0 (
 )
 echo [OK] Sidecar copiado: yanesu_shisutemu-%TARGET_TRIPLE%.exe
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  6. Construir instalador Tauri (NSIS)
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 echo.
 echo === [4/4] Construyendo instalador Tauri ===
@@ -206,23 +206,23 @@ if !errorlevel! neq 0 (
 )
 echo [OK] Instalador Tauri construido exitosamente
 
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 REM  7. Resumen
-REM ═══════════════════════════════════════════════════════════
+REM ============================================================
 
 echo.
-echo ═══════════════════════════════════════════════════════════
+echo ============================================================
 echo  BUILD COMPLETADO EXITOSAMENTE
-echo ═══════════════════════════════════════════════════════════
+echo ============================================================
 echo.
-echo  Backend:   %ROOT%backend\dist\yanesu_shisutemu.exe
-echo  Sidecar:   %ROOT%backend\dist\yanesu_shisutemu-%TARGET_TRIPLE%.exe
+echo  Backend:   %~dp0dist\yanesu_shisutemu.exe
+echo  Sidecar:   %~dp0dist\yanesu_shisutemu-%TARGET_TRIPLE%.exe
 echo  Instalador: %ROOT%licoreria-desktop\src-tauri\target\release\bundle\nsis\Yanesu Shisutemu_1.0.0_x64-setup.exe
 echo.
 
 REM Verificar que los artefactos existen
 set "ALL_OK=1"
-if not exist "%ROOT%backend\dist\yanesu_shisutemu.exe" (
+if not exist "%~dp0dist\yanesu_shisutemu.exe" (
     echo [WARN] Backend NO generado
     set "ALL_OK=0"
 )
@@ -238,9 +238,9 @@ goto :end
 
 :fail
 echo.
-echo ═══════════════════════════════════════════════════════════
+echo ============================================================
 echo  BUILD FALLIDO
-echo ═══════════════════════════════════════════════════════════
+echo ============================================================
 echo.
 pause
 exit /b 1
