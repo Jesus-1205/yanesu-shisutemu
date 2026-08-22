@@ -239,17 +239,17 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
                   <div>
                     <label htmlFor={fid("stock")} className="block text-xs font-medium text-slate-700 mb-1">Stock (uds)</label>
                     <input id={fid("stock")} type="number" min="0" value={stock}
-                      onChange={(e) => setStock(e.target.value)} className={inputBase} placeholder="0" />
+                      onChange={(e) => setStock(e.target.value)} autoComplete="off" className={inputBase} placeholder="0" />
                   </div>
                   <div>
                     <label htmlFor={fid("stock-min")} className="block text-xs font-medium text-slate-700 mb-1">Stock mínimo</label>
                     <input id={fid("stock-min")} type="number" min="0" value={stockMinimo}
-                      onChange={(e) => setStockMinimo(e.target.value)} className={inputBase} placeholder="0" />
+                      onChange={(e) => setStockMinimo(e.target.value)} autoComplete="off" className={inputBase} placeholder="0" />
                   </div>
                   <div>
                     <label htmlFor={fid("uds-caja")} className="block text-xs font-medium text-slate-700 mb-1">Unds/caja</label>
                     <input id={fid("uds-caja")} type="number" min="1" value={unidadesPorCaja}
-                      onChange={(e) => setUnidadesPorCaja(e.target.value)} className={inputBase} placeholder="1" />
+                      onChange={(e) => setUnidadesPorCaja(e.target.value)} autoComplete="off" className={inputBase} placeholder="1" />
                   </div>
                 </div>
               )}
@@ -271,7 +271,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
               <div>
                 <label htmlFor={fid("costo-caja")} className="block text-xs font-medium text-slate-700 mb-1">Costo por caja USD *</label>
                 <input id={fid("costo-caja")} type="number" step="0.01" min="0" value={costoCaja}
-                  onChange={(e) => setCostoCaja(e.target.value)} required className={inputBase} placeholder="0.00" />
+                  onChange={(e) => setCostoCaja(e.target.value)} required autoComplete="off" className={inputBase} placeholder="0.00" />
               </div>
 
               <div>
@@ -301,7 +301,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
                   <div className="flex gap-2">
                     <input id={fid("precio-u")} type="number" step="0.01" min="0" value={precioUnidad}
                       onChange={(e) => setPrecioUnidad(e.target.value)} required
-                      className={`${inputBase} flex-1`} placeholder="0.00" />
+                      autoComplete="off" className={`${inputBase} flex-1`} placeholder="0.00" />
                     {!isOperator && (
                       <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs whitespace-nowrap"
                         onClick={() => setPrecioUnidad(String(precioSugeridoUnidad))}
@@ -327,7 +327,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
                   <div className="flex gap-2">
                     <input id={fid("precio-c")} type="number" step="0.01" min="0" value={precioCaja}
                       onChange={(e) => setPrecioCaja(e.target.value)} required
-                      className={`${inputBase} flex-1`} placeholder="0.00" />
+                      autoComplete="off" className={`${inputBase} flex-1`} placeholder="0.00" />
                     {!isOperator && (
                       <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs whitespace-nowrap"
                         onClick={() => setPrecioCaja(String(precioSugeridoCaja))}

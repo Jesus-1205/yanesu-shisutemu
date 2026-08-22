@@ -68,6 +68,7 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
               const v = parseInt(e.target.value, 10);
               if (!isNaN(v)) updateQuantity(item.cartItemId, v);
             }}
+            autoComplete="off"
             className="w-14 text-center text-base font-semibold rounded-md border border-slate-300 bg-surface py-1 outline-none focus:border-brand-blue [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <button
@@ -142,6 +143,7 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
               const v = parseInt(e.target.value, 10);
               if (!isNaN(v)) updateQuantity(item.cartItemId, v);
             }}
+            autoComplete="off"
             className="w-14 text-center text-base font-semibold rounded-md border border-slate-300 bg-surface py-1 outline-none focus:border-brand-blue [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <button
@@ -177,6 +179,7 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
               type="checkbox"
               checked={item.usaPrecioDivisas}
               onChange={() => toggleDivisas(item.cartItemId)}
+              autoComplete="off"
               className="w-3.5 h-3.5 rounded accent-emerald-600"
             />
             <span className={item.usaPrecioDivisas ? "text-emerald-700 font-semibold" : "text-slate-500"}>

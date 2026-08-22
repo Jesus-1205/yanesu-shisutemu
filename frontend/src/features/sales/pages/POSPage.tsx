@@ -237,6 +237,7 @@ export default function POSPage() {
                 onChange={handleSearchChange}
                 onFocus={(e) => e.target.select()}
                 className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+                autoComplete="off"
                 autoFocus
               />
             </div>

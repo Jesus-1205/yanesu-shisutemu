@@ -236,6 +236,7 @@ export default function ProductEditPage() {
                 onChange={(e) => setField("nombre", e.target.value)}
                 placeholder="ej: Ron Santa Teresa Añejo"
                 required
+                autoComplete="off"
                 className={inputBase}
               />
             </div>
@@ -249,6 +250,7 @@ export default function ProductEditPage() {
                   if (e.key === "Enter") e.preventDefault();
                 }}
                 placeholder="Opcional"
+                autoComplete="off"
                 className={inputBase}
               />
             </div>
@@ -286,6 +288,7 @@ export default function ProductEditPage() {
                         prev ? { ...prev, stock_cajas: raw === "" ? "" : e.target.valueAsNumber } : prev,
                       );
                     }}
+                    autoComplete="off"
                     className={inputBase}
                   />
                 </div>
@@ -302,6 +305,7 @@ export default function ProductEditPage() {
                         prev ? { ...prev, stock_unidades: raw === "" ? "" : e.target.valueAsNumber } : prev,
                       );
                     }}
+                    autoComplete="off"
                     className={inputBase}
                   />
                 </div>
@@ -313,6 +317,7 @@ export default function ProductEditPage() {
                     min="0"
                     value={form.stock_minimo}
                     onChange={numChange("stock_minimo")}
+                    autoComplete="off"
                     className={inputBase}
                   />
                 </div>
@@ -327,6 +332,7 @@ export default function ProductEditPage() {
                       const raw = e.target.value;
                       setField("unidades_por_caja", raw === "" ? "" : e.target.valueAsNumber);
                     }}
+                    autoComplete="off"
                     className={inputBase}
                   />
                 </div>
@@ -344,6 +350,7 @@ export default function ProductEditPage() {
                     const raw = e.target.value;
                     setField("unidades_por_caja", raw === "" ? "" : e.target.valueAsNumber);
                   }}
+                  autoComplete="off"
                   className={inputBase}
                 />
               </div>
@@ -364,6 +371,7 @@ export default function ProductEditPage() {
                 value={form.precio_costo_caja_usd}
                 onChange={numChange("precio_costo_caja_usd")}
                 required
+                autoComplete="off"
                 className={inputBase}
               />
             </div>
@@ -401,6 +409,7 @@ export default function ProductEditPage() {
                     value={form.precio_unidad_usd}
                     onChange={numChange("precio_unidad_usd")}
                     required
+                    autoComplete="off"
                     className={`${inputBase} flex-1`}
                   />
                   {!isOperator && (
@@ -438,6 +447,7 @@ export default function ProductEditPage() {
                     value={form.precio_caja_usd}
                     onChange={numChange("precio_caja_usd")}
                     required
+                    autoComplete="off"
                     className={`${inputBase} flex-1`}
                   />
                   {!isOperator && (
@@ -479,6 +489,7 @@ export default function ProductEditPage() {
                       onFocus={unitMargin.onFocus}
                       onChange={(e) => unitMargin.onChange(e.target.value)}
                       onBlur={unitMargin.onBlur}
+                      autoComplete="off"
                       className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                     />
                     <span className="text-xs text-slate-400">%</span>
@@ -496,6 +507,7 @@ export default function ProductEditPage() {
                       onFocus={boxMargin.onFocus}
                       onChange={(e) => boxMargin.onChange(e.target.value)}
                       onBlur={boxMargin.onBlur}
+                      autoComplete="off"
                       className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
                     />
                     <span className="text-xs text-slate-400">%</span>

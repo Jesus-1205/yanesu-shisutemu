@@ -422,6 +422,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
             placeholder="Notas (opcional)"
+            autoComplete="off"
             className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue resize-none"
           />
         </div>

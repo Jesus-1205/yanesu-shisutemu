@@ -221,6 +221,7 @@ export default function PaymentMethodsPage() {
               type="checkbox"
               checked={formAceptaRef}
               onChange={(e) => setFormAceptaRef(e.target.checked)}
+              autoComplete="off"
               className="rounded border-slate-300"
             />
             Acepta referencia (ej: pago móvil)
@@ -230,6 +231,7 @@ export default function PaymentMethodsPage() {
               type="checkbox"
               checked={formActivo}
               onChange={(e) => setFormActivo(e.target.checked)}
+              autoComplete="off"
               className="rounded border-slate-300"
             />
             Activo

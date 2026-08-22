@@ -858,6 +858,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
             type="checkbox"
             checked={showInactives}
             onChange={(e) => setShowInactives(e.target.checked)}
+            autoComplete="off"
             className="rounded border-slate-300 text-brand focus:ring-brand"
           />
           Mostrar inactivos
@@ -1026,6 +1027,7 @@ function PagosTab({
             type="date"
             value={desde}
             onChange={(e) => onDesdeChange(e.target.value)}
+            autoComplete="off"
             className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
           />
         </div>
@@ -1035,6 +1037,7 @@ function PagosTab({
             type="date"
             value={hasta}
             onChange={(e) => onHastaChange(e.target.value)}
+            autoComplete="off"
             className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
           />
         </div>

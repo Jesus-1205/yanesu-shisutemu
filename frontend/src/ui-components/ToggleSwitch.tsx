@@ -23,6 +23,7 @@ export default function ToggleSwitch({
           id={inputId}
           type="checkbox"
           className="hidden peer"
+          autoComplete="off"
           {...props}
         />
         <span

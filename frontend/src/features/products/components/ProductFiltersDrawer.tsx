@@ -91,6 +91,7 @@ export default function ProductFiltersDrawer({
                 placeholder="Mínimo"
                 value={draft.precio_min}
                 onChange={(e) => set("precio_min", e.target.value === "" ? "" : Number(e.target.value))}
+                autoComplete="off"
                 className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 placeholder:text-slate-400"
               />
               <input
@@ -100,6 +101,7 @@ export default function ProductFiltersDrawer({
                 placeholder="Máximo"
                 value={draft.precio_max}
                 onChange={(e) => set("precio_max", e.target.value === "" ? "" : Number(e.target.value))}
+                autoComplete="off"
                 className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 placeholder:text-slate-400"
               />
             </div>
