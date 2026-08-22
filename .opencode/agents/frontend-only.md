@@ -22,7 +22,12 @@ permission:
     "git log*": allow
     "pytest*": deny
     "cd backend*": deny
-    "*": ask
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "git checkout*": allow
+    "git branch*": allow
+    "*": deny
 ---
 
 # Frontend-Only Agent

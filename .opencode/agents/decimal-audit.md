@@ -14,7 +14,10 @@ permission:
     "pnpm exec tsc*": allow
     "pnpm test*": allow
     "pytest*": allow
-    "*": ask
+    "python -m pytest*": allow
+    "npm run lint*": allow
+    "pnpm run lint*": allow
+    "*": deny
 ---
 
 # Decimal Audit Agent

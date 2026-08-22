@@ -15,7 +15,10 @@ permission:
     "pnpm test*": allow
     "npm test*": allow
     "npm run test*": allow
-    "*": ask
+    "npm run lint*": allow
+    "pnpm run lint*": allow
+    "pnpm run typecheck*": allow
+    "*": deny
 ---
 
 # Frontend Test Writer Agent

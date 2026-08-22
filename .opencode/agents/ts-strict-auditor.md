@@ -12,7 +12,11 @@ permission:
     "Select-String *": allow
     "pnpm exec tsc*": allow
     "pnpm test*": allow
-    "*": ask
+    "pnpm vitest*": allow
+    "npm run typecheck*": allow
+    "npm run lint*": allow
+    "pnpm run lint*": allow
+    "*": deny
 ---
 
 # TypeScript Strict Auditor Agent

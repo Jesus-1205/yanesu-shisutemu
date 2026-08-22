@@ -10,6 +10,9 @@ permission:
     "Get-ChildItem *": allow
     "Get-Content *": allow
     "Select-String *": allow
+    "pytest*": allow
+    "python -m pytest*": allow
+    "pip list*": allow
     "*": deny
 ---
 
