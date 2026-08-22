@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 title Yanesu Shisutemu - Build
 color 0F
 
-set "ROOT=%~dp0"
+set "ROOT=%~dp0..\"
 
 REM ═══════════════════════════════════════════════════════════
 REM  0. Detectar Node.js desde fnm
@@ -243,6 +243,7 @@ echo ═════════════════════════
 echo  BUILD FALLIDO
 echo ═══════════════════════════════════════════════════════════
 echo.
+pause
 exit /b 1
 
 :end
