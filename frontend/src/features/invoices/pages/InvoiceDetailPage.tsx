@@ -393,6 +393,44 @@ export default function InvoiceDetailPage() {
         />
       </div>
 
+      {/* Sección de Obsequios */}
+      {invoice.obsequios && invoice.obsequios.length > 0 && (
+        <div className="mb-6 rounded-xl border-2 border-purple-200 bg-purple-50/50 p-5">
+          <h3 className="text-sm font-semibold text-purple-800 uppercase tracking-wide mb-3">
+            Obsequios / Cortesías ({invoice.obsequios.length})
+          </h3>
+          <div className="overflow-x-auto rounded-lg border border-purple-200 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-purple-50 border-b border-purple-200 text-purple-700">
+                  <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Producto</th>
+                  <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-2">Tipo</th>
+                  <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Cant</th>
+                  <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Justificación</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-purple-100">
+                {invoice.obsequios.map((o) => (
+                  <tr key={o.id} className="bg-purple-50/30">
+                    <td className="px-4 py-2 text-text-main font-medium">{o.product?.nombre || "—"}</td>
+                    <td className="px-4 py-2 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                        {o.tipo_empaque === "CAJA" ? "Caja" : "Und"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums">{o.cantidad}</td>
+                    <td className="px-4 py-2 text-xs text-slate-600">{o.justificacion}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-purple-400 mt-2">
+            Los obsequios actualizan el stock sin afectar el total de la factura.
+          </p>
+        </div>
+      )}
+
       {invoice.detalles.length > 0 && (() => {
         const resumen = calcularResumenFiscal(
           invoice.detalles.map(d => ({

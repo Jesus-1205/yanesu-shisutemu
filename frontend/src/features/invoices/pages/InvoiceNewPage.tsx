@@ -15,6 +15,7 @@ import { useToast } from "@/ui-components/Toast";
 import CreateSupplierModal from "@/features/shared/components/CreateSupplierModal";
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
+import ObsequioForm from "../components/ObsequioForm";
 import { formatBs } from "@/lib/text";
 import { calcularResumenFiscal } from "@/lib/iva";
 import { toCents, convertirCostos, calcularSubtotal } from "@/lib/money";
@@ -35,6 +36,16 @@ interface LineItem {
   tipo_iva: "GRAVADO" | "EXENTO";
   costo_ingresado: number;
   moneda_ingreso: MonedaEnum;
+}
+
+interface ObsequioItem {
+  key: string;
+  producto_id: number;
+  nombre: string;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  unidades_por_caja: number;
+  justificacion: string;
 }
 
 interface AIAnalysisItem extends MatchedProduct {
@@ -59,6 +70,7 @@ export default function InvoiceNewPage() {
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [aplicaIva, setAplicaIva] = useState(true);
+  const [obsequioItems, setObsequioItems] = useState<ObsequioItem[]>([]);
 
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [supplierModalNombre, setSupplierModalNombre] = useState("");
@@ -447,6 +459,13 @@ export default function InvoiceNewPage() {
             costo_unitario_bs: d.costo_unitario_bs,
             unidades_por_caja: d.tipo_empaque === "CAJA" ? d.unidades_por_caja : null,
           })),
+          obsequios: obsequioItems.map((o) => ({
+            producto_id: o.producto_id,
+            tipo_empaque: o.tipo_empaque,
+            cantidad: o.cantidad,
+            justificacion: o.justificacion.trim(),
+            unidades_por_caja: o.tipo_empaque === "CAJA" ? o.unidades_por_caja : null,
+          })),
         },
         invoiceFiles[0] || undefined,
         aiRawJsonIa ? { procesada_por_ia: true, raw_json_ia: aiRawJsonIa } : undefined,
@@ -764,6 +783,7 @@ export default function InvoiceNewPage() {
                 <div className="flex rounded-lg border border-slate-300 overflow-hidden h-10">
                   <button
                     type="button"
+                    data-testid="empaque-caja"
                     onClick={() => {
                       setNewTipoEmpaque("CAJA");
                       if (selectedProduct) setNewUnidadesPorCaja(String(selectedProduct.unidades_por_caja));
@@ -778,6 +798,7 @@ export default function InvoiceNewPage() {
                   </button>
                   <button
                     type="button"
+                    data-testid="empaque-unid"
                     onClick={() => {
                       setNewTipoEmpaque("UNIDAD");
                       setNewUnidadesPorCaja("");
@@ -797,6 +818,7 @@ export default function InvoiceNewPage() {
                   variant="accent"
                   onClick={handleAddLine}
                   disabled={!canAdd}
+                  data-testid="agregar-item"
                   className="w-full h-10 shadow-sm font-semibold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
@@ -966,6 +988,75 @@ export default function InvoiceNewPage() {
               <p className="text-sm font-medium">Ningún producto agregado</p>
               <p className="text-xs mt-1">Busca un producto arriba y haz clic en "Agregar"</p>
             </div>
+          )}
+        </div>
+
+        {/* ─── Sección de Obsequios ─────────────────────────────────── */}
+        <div className="rounded-xl border-2 border-purple-200 bg-purple-50/50 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-purple-800 uppercase tracking-wide flex items-center gap-2">
+              Obsequios / Cortesías
+              {obsequioItems.length > 0 && (
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{obsequioItems.length}</span>
+              )}
+            </h3>
+          </div>
+
+          <div className="rounded-lg border border-purple-200 bg-white p-4 space-y-3">
+            <div className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Agregar Obsequio</div>
+            <ObsequioForm
+              products={products}
+              onSearchProducts={handleSearchProducts}
+              onAdd={(item) => setObsequioItems((prev) => [...prev, item])}
+            />
+          </div>
+
+          {obsequioItems.length > 0 && (
+            <div className="overflow-x-auto rounded-lg border border-purple-200 bg-white">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-purple-50 border-b border-purple-200 text-purple-700">
+                    <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Producto</th>
+                    <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-2">Tipo</th>
+                    <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Cant</th>
+                    <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Justificación</th>
+                    <th className="text-center text-xs font-medium uppercase tracking-wider px-3 py-2 w-16"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-purple-100">
+                  {obsequioItems.map((item) => (
+                    <tr key={item.key} className="bg-purple-50/30 hover:bg-purple-50/60 transition-colors">
+                      <td className="px-4 py-2 text-text-main font-medium max-w-[200px] truncate">{item.nombre}</td>
+                      <td className="px-4 py-2 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          item.tipo_empaque === "CAJA" ? "bg-purple-100 text-purple-700" : "bg-purple-100 text-purple-600"
+                        }`}>
+                          {item.tipo_empaque === "CAJA" ? "Caja" : "Und"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-right text-text-main tabular-nums">{item.cantidad}</td>
+                      <td className="px-4 py-2 text-xs text-slate-600 max-w-[250px] truncate">{item.justificacion}</td>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setObsequioItems((prev) => prev.filter((_, i) => i !== obsequioItems.indexOf(item)))}
+                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          title="Eliminar obsequio"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {obsequioItems.length === 0 && (
+            <p className="text-xs text-purple-400 text-center py-2">
+              No hay obsequios registrados. Los obsequios actualizan el stock sin afectar el total.
+            </p>
           )}
         </div>
 

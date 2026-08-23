@@ -468,6 +468,7 @@ export interface FacturaCreate {
   tasa_bs: number;
   aplica_iva?: boolean;
   detalles: DetalleFacturaCreate[];
+  obsequios?: ObsequioFacturaCreate[];
 }
 
 export interface DetalleFacturaOut {
@@ -501,6 +502,7 @@ export interface FacturaOut {
   raw_json_ia?: Record<string, unknown> | null;
   supplier: SupplierOut | null;
   detalles: DetalleFacturaOut[];
+  obsequios: ObsequioFacturaOut[];
 }
 
 export interface FacturaPaginationOut {
@@ -555,6 +557,26 @@ export interface InvoicePaymentSummary {
   saldo_pendiente_bs: number;
   cantidad_pagos: number;
   porcentaje_pagado: number;
+}
+
+// ─── Obsequios de Factura ──────────────────────────────────────────────────
+
+export interface ObsequioFacturaCreate {
+  producto_id: number;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  justificacion: string;
+  unidades_por_caja?: number | null;
+}
+
+export interface ObsequioFacturaOut {
+  id: number;
+  factura_id: number;
+  producto_id: number;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  justificacion: string;
+  product: ProductOut | null;
 }
 
 // ─── Análisis de Facturas por IA ──────────────────────────────

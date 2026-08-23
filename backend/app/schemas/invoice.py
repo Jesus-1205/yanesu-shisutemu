@@ -34,6 +34,7 @@ class FacturaCreate(BaseModel):
     tasa_bs: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
     aplica_iva: bool = True
     detalles: list[DetalleFacturaCreate]
+    obsequios: list["ObsequioFacturaCreate"] = Field(default_factory=list)
 
 
 class DetalleFacturaOut(BaseModel):
@@ -72,6 +73,7 @@ class FacturaOut(BaseModel):
 
     supplier: SupplierOut | None = None
     detalles: list[DetalleFacturaOut] = []
+    obsequios: list["ObsequioFacturaOut"] = []
 
 
 class FacturaPaginationOut(BaseModel):
@@ -173,3 +175,28 @@ class InvoicePaymentSummary(BaseModel):
     saldo_pendiente_bs: Decimal
     cantidad_pagos: int
     porcentaje_pagado: float
+
+
+# ── Schemas para Obsequios ──────────────────────────────────────────────────
+
+
+class ObsequioFacturaCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    producto_id: int
+    tipo_empaque: Literal["UNIDAD", "CAJA"] = "CAJA"
+    cantidad: int = Field(gt=0)
+    justificacion: str = Field(min_length=3, max_length=500)
+    unidades_por_caja: int | None = Field(gt=0, default=None)
+
+
+class ObsequioFacturaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    factura_id: int
+    producto_id: int
+    tipo_empaque: str
+    cantidad: int
+    justificacion: str
+    product: ProductOut | None = None

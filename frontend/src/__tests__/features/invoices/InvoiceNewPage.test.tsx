@@ -176,7 +176,7 @@ function fillCost(value: string) {
  * Click the "Agregar" button to add the current item.
  */
 function clickAdd() {
-  const addBtn = screen.getByRole("button", { name: /Agregar/ });
+  const addBtn = screen.getByTestId("agregar-item");
   fireEvent.click(addBtn);
 }
 
@@ -223,7 +223,7 @@ describe("InvoiceNewPage", () => {
     fillCost("22");
 
     // 5. Verify type is CAJA (default)
-    const cajaBtn = screen.getByRole("button", { name: "Caja" });
+    const cajaBtn = screen.getByTestId("empaque-caja");
     expect(cajaBtn).toBeInTheDocument();
 
     // 6. Click Agregar
@@ -251,7 +251,7 @@ describe("InvoiceNewPage", () => {
     await selectProduct("Producto Test", 1);
 
     // 3. Switch to UNIDAD type
-    const unidadBtn = screen.getByRole("button", { name: "Unid" });
+    const unidadBtn = screen.getByTestId("empaque-unid");
     fireEvent.click(unidadBtn);
 
     // 4. Set quantity = 3

@@ -68,6 +68,9 @@ class Factura(Base):
     payments: Mapped[list["InvoicePayment"]] = relationship(
         "InvoicePayment", back_populates="factura", cascade="all, delete-orphan"
     )
+    obsequios: Mapped[list["ObsequioFactura"]] = relationship(
+        "ObsequioFactura", back_populates="factura", cascade="all, delete-orphan"
+    )
 
 
 class TipoEmpaqueFactura(str, enum.Enum):
@@ -102,3 +105,29 @@ class DetalleFactura(Base):
 
     factura: Mapped["Factura"] = relationship("Factura", back_populates="detalles")
     product: Mapped["Product"] = relationship("Product", back_populates="factura_detalles")
+
+
+class ObsequioFactura(Base):
+    __tablename__ = "obsequios_factura"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    factura_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("facturas.id", ondelete="CASCADE"), nullable=False
+    )
+    producto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("productos.id", ondelete="RESTRICT"), nullable=False
+    )
+    tipo_empaque: Mapped[str] = mapped_column(String(10), nullable=False, default="CAJA")
+    cantidad: Mapped[int] = mapped_column(Integer, nullable=False)
+    justificacion: Mapped[str] = mapped_column(Text, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("cantidad > 0", name="ck_obsequio_cantidad_positivo"),
+        CheckConstraint(
+            "tipo_empaque IN ('UNIDAD', 'CAJA')",
+            name="ck_obsequio_tipo_empaque_valido",
+        ),
+    )
+
+    factura: Mapped["Factura"] = relationship("Factura", back_populates="obsequios")
+    product: Mapped["Product"] = relationship("Product")

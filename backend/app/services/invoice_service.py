@@ -9,12 +9,12 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_uploads_dir, get_comprobantes_pago_dir
 from app.core.exceptions import ConflictError, EntityNotFoundError
-from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoEmpaqueFactura
+from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoEmpaqueFactura, ObsequioFactura
 from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.product import Product
 from app.models.supplier import Supplier
 from app.services.product_service import _accent_fold, _accent_fold_pattern
-from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, MatchedProduct, MatchedSupplier
+from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, MatchedProduct, MatchedSupplier, ObsequioFacturaCreate
 from app.schemas.product import ProductOut as ProductOutSchema
 
 # ── System Prompt para el modelo de Visión ────────────────────────────────
@@ -716,7 +716,32 @@ def create_invoice(
         product.precio_costo_usd = nuevo_costo_unidad
         product.proveedor_id = data.proveedor_id
 
+    obsequios = []
+    for item in data.obsequios:
+        stmt_prod = select(Product).where(Product.id == item.producto_id)
+        product = db.execute(stmt_prod).scalars().first()
+        if not product:
+            raise EntityNotFoundError(f"Producto ID {item.producto_id} no encontrado (obsequio)")
+
+        obsequio = ObsequioFactura(
+            factura=factura,
+            producto_id=item.producto_id,
+            tipo_empaque=item.tipo_empaque,
+            cantidad=item.cantidad,
+            justificacion=item.justificacion,
+        )
+        obsequios.append(obsequio)
+
+        if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
+            product.stock_cajas += item.cantidad
+        else:
+            product.stock_unidades += item.cantidad
+
+        if item.unidades_por_caja and item.unidades_por_caja != product.unidades_por_caja:
+            product.unidades_por_caja = item.unidades_por_caja
+
     factura.detalles = detalles
+    factura.obsequios = obsequios
     factura.total_usd = total_usd.quantize(Decimal("0.01"))
     factura.total_bs = total_bs.quantize(Decimal("0.01"))
     db.add(factura)
@@ -762,6 +787,7 @@ def get_invoices(
         selectinload(Factura.supplier),
         selectinload(Factura.detalles).selectinload(DetalleFactura.product),
         selectinload(Factura.payments),
+        selectinload(Factura.obsequios),
     )
 
     items = list(db.execute(stmt).scalars().all())
@@ -785,6 +811,7 @@ def get_invoice(db: Session, invoice_id: int) -> Factura:
             selectinload(Factura.supplier),
             selectinload(Factura.detalles).selectinload(DetalleFactura.product),
             selectinload(Factura.payments),
+            selectinload(Factura.obsequios),
         )
         .where(Factura.id == invoice_id)
     )

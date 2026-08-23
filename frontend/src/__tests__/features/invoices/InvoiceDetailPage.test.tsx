@@ -42,6 +42,7 @@ const baseInvoice: FacturaOut = {
   raw_json_ia: null,
   supplier: { id: 1, nombre: "Inversiones CG, C.A", telefono: null, email: null },
   detalles: [],
+  obsequios: [],
 };
 
 const invoiceWithAI: FacturaOut = {

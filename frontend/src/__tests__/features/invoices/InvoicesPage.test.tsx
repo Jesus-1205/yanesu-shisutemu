@@ -48,6 +48,7 @@ const mockInvoices: FacturaOut[] = [
     raw_json_ia: null,
     supplier: { id: 1, nombre: "Proveedor A", telefono: null, email: null },
     detalles: [],
+    obsequios: [],
   },
   {
     id: 2,
@@ -69,6 +70,7 @@ const mockInvoices: FacturaOut[] = [
     raw_json_ia: null,
     supplier: { id: 2, nombre: "Proveedor B", telefono: null, email: null },
     detalles: [],
+    obsequios: [],
   },
 ];
 
