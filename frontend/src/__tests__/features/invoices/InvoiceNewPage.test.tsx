@@ -391,4 +391,55 @@ describe("InvoiceNewPage", () => {
     const subtotal30 = screen.getAllByText("$30.00");
     expect(subtotal30.length).toBeGreaterThanOrEqual(1);
   });
+
+  // ── tipo_documento (Factura / Nota de Entrega) ───────────────────────
+
+  it("shows 'Nueva Factura' header and 'Registrar Factura' submit button by default", () => {
+    renderPage();
+    expect(
+      screen.getByRole("heading", { name: /Nueva Factura/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Registrar Factura/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("clicking 'Nota de Entrega' changes title to 'Nueva Nota de Entrega'", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Nota de Entrega" }));
+    expect(
+      screen.getByRole("heading", { name: /Nueva Nota de Entrega/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("clicking 'Nota de Entrega' changes submit button text to 'Registrar Nota de Entrega'", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Nota de Entrega" }));
+    expect(
+      screen.getByRole("button", { name: /Registrar Nota de Entrega/ }),
+    ).toBeInTheDocument();
+    // Original submit text should no longer be present
+    expect(
+      screen.queryByRole("button", { name: /Registrar Factura$/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clicking back to 'Factura' restores original header and submit text", () => {
+    renderPage();
+
+    // Switch to Nota de Entrega
+    fireEvent.click(screen.getByRole("button", { name: "Nota de Entrega" }));
+    expect(
+      screen.getByRole("heading", { name: /Nueva Nota de Entrega/ }),
+    ).toBeInTheDocument();
+
+    // Switch back to Factura
+    fireEvent.click(screen.getByRole("button", { name: "Factura" }));
+    expect(
+      screen.getByRole("heading", { name: /Nueva Factura/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Registrar Factura/ }),
+    ).toBeInTheDocument();
+  });
 });
