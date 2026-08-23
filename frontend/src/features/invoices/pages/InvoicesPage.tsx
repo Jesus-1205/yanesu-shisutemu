@@ -124,11 +124,13 @@ export default function InvoicesPage() {
               {
                 key: "fecha_factura",
                 header: "Fecha",
+                hideOnMobile: true,
                 render: (inv: Invoice) => new Date(inv.fecha_factura).toLocaleDateString("es-VE"),
               },
               {
                 key: "moneda_principal",
                 header: "Moneda",
+                hideOnMobile: true,
                 render: (inv: Invoice) => (
                   <Badge variant={inv.moneda_principal === "USD" ? "info" : "warning"}>
                     {inv.moneda_principal}
@@ -138,6 +140,7 @@ export default function InvoicesPage() {
               {
                 key: "total_usd",
                 header: "Total USD",
+                hideOnMobile: true,
                 render: (inv: Invoice) => (
                   <span className="font-mono tabular-nums">{formatUsd(Number(inv.total_usd))}</span>
                 ),
@@ -145,6 +148,7 @@ export default function InvoicesPage() {
               {
                 key: "total_bs",
                 header: "Total Bs.",
+                hideOnMobile: true,
                 render: (inv: Invoice) => (
                   <span className="font-mono tabular-nums">Bs. {formatBs(Number(inv.total_bs))}</span>
                 ),

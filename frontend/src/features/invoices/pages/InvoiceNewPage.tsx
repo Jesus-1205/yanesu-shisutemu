@@ -687,6 +687,11 @@ export default function InvoiceNewPage() {
                 className={inputBase}
                 placeholder="0.00"
               />
+              {newTipoEmpaque === "CAJA" && nUndsCaja > 0 && nCostoPrim > 0 && (
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  = ${(nCostoPrim / nUndsCaja).toFixed(2)} por unidad ({nUndsCaja} unds/caja)
+                </p>
+              )}
               </div>
               <div>
                 <label htmlFor={fid("costo-sec")} className={labelBase}>
@@ -782,13 +787,18 @@ export default function InvoiceNewPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            item.tipo_empaque === "CAJA"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-green-100 text-green-700"
-                          }`}>
-                            {item.tipo_empaque === "CAJA" ? "Caja" : "Und"}
-                          </span>
+                          <div className="flex flex-col items-center">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              item.tipo_empaque === "CAJA"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            }`}>
+                              {item.tipo_empaque === "CAJA" ? "Caja" : "Und"}
+                            </span>
+                            {item.tipo_empaque === "CAJA" && item.unidades_por_caja > 1 && (
+                              <span className="text-[10px] text-slate-400 mt-0.5">{item.unidades_por_caja} unds/caja</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
                           {item.cantidad}
@@ -824,8 +834,8 @@ export default function InvoiceNewPage() {
                       <td className="px-4 py-3.5">Totales</td>
                       <td />
                       <td />
-                      <td className="px-4 py-3.5 text-right tabular-nums">
-                        {ivaBreakdown.totalUnidades}
+                      <td className="px-4 py-3.5 text-right tabular-nums text-xs">
+                        {ivaBreakdown.totalUnidades} unds
                       </td>
                       <td />
                       <td className="px-4 py-3.5 text-right tabular-nums">
