@@ -54,6 +54,19 @@ def main():
     ensure_logging()
     logger = logging.getLogger(__name__)
 
+    # Ejecuta migraciones de Alembic antes de inicializar la BD.
+    # Esto asegura que tanto SQLite (local) como PostgreSQL (Docker) estén actualizados.
+    try:
+        import subprocess
+        subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            cwd=str(BASE_DIR),
+            check=False,
+            capture_output=True,
+        )
+    except Exception:
+        logger.exception("Error ejecutando migraciones de Alembic")
+
     db = SessionLocal()
     needs_setup = initialize_database(db)
     db.close()
