@@ -95,6 +95,33 @@ class TestCreateInvoice:
         response = client.post("/api/invoices", data={"data": json.dumps(payload)})
         assert response.status_code == 404
 
+    def test_create_invoice_with_tipo_documento(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = _invoice_payload(sup["id"], prod["id"], "F-TIPO-001")
+        payload["tipo_documento"] = "NOTA_ENTREGA"
+
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["tipo_documento"] == "NOTA_ENTREGA"
+        assert data["numero_factura"] == "F-TIPO-001"
+
+    def test_create_invoice_default_tipo_documento(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        # No tipo_documento in payload — should default to "FACTURA"
+        payload = _invoice_payload(sup["id"], prod["id"], "F-DEFAULT-001")
+
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["tipo_documento"] == "FACTURA"
+
 
 class TestListInvoices:
 
@@ -133,6 +160,38 @@ class TestListInvoices:
         )})
         response = client.get(f"/api/invoices?proveedor_id={sup1['id']}")
         assert len(response.json()["items"]) == 1
+
+    def test_list_filter_tipo_documento(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        # Create one FACTURA and one NOTA_ENTREGA
+        payload_factura = _invoice_payload(sup["id"], prod["id"], "F-FILT-001")
+        client.post("/api/invoices", data={"data": json.dumps(payload_factura)})
+
+        payload_nota = _invoice_payload(sup["id"], prod["id"], "F-FILT-002")
+        payload_nota["tipo_documento"] = "NOTA_ENTREGA"
+        client.post("/api/invoices", data={"data": json.dumps(payload_nota)})
+
+        # Filter by FACTURA
+        resp = client.get("/api/invoices?tipo_documento=FACTURA")
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) == 1
+        assert items[0]["tipo_documento"] == "FACTURA"
+
+        # Filter by NOTA_ENTREGA
+        resp = client.get("/api/invoices?tipo_documento=NOTA_ENTREGA")
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) == 1
+        assert items[0]["tipo_documento"] == "NOTA_ENTREGA"
+
+        # No filter — should return both
+        resp = client.get("/api/invoices")
+        assert resp.status_code == 200
+        assert resp.json()["total"] == 2
 
 
 class TestGetInvoice:
