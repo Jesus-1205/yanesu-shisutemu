@@ -23,7 +23,7 @@ services:
 
   # Backend FastAPI — imágenes pre-construidas desde GHCR
   backend:
-    image: ghcr.io/Jesus-1205/yanesu-shisutemu-backend:main
+    image: ghcr.io/jesus-1205/yanesu-shisutemu-backend:main
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-yanesu}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-licoreria}
@@ -49,7 +49,7 @@ services:
 
   # Frontend React + nginx — imágenes pre-construidas desde GHCR
   nginx:
-    image: ghcr.io/Jesus-1205/yanesu-shisutemu-frontend:main
+    image: ghcr.io/jesus-1205/yanesu-shisutemu-frontend:main
     restart: unless-stopped
     depends_on:
       backend:
