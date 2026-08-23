@@ -196,32 +196,40 @@ export default function InvoiceDetailPage() {
             {
               key: "costo_unitario_usd",
               header: "$ / Unid",
-              render: (d) => <span className="font-mono">{formatUsd(Number(d.costo_unitario_usd))}</span>,
+              render: (d) => (
+                <div className="text-right">
+                  <span className="font-mono">{formatUsd(Number(d.costo_unitario_usd))}</span>
+                  <div className="text-[10px] text-slate-400">
+                    /{d.tipo_empaque === "CAJA" ? "caja" : "und"}
+                  </div>
+                </div>
+              ),
             },
             {
               key: "costo_unitario_bs",
               header: "Bs. / Unid",
-              render: (d) => <span className="font-mono">Bs. {formatBs(Number(d.costo_unitario_bs))}</span>,
+              render: (d) => (
+                <div className="text-right">
+                  <span className="font-mono">Bs. {formatBs(Number(d.costo_unitario_bs))}</span>
+                  <div className="text-[10px] text-slate-400">
+                    /{d.tipo_empaque === "CAJA" ? "caja" : "und"}
+                  </div>
+                </div>
+              ),
             },
             {
               key: "subtotal_usd",
               header: "Subtotal USD",
-              render: (d) => {
-                const unidades = d.tipo_empaque === "CAJA"
-                  ? d.cantidad * (d.product?.unidades_por_caja ?? 1)
-                  : d.cantidad;
-                return <span className="font-mono">{formatUsd(unidades * Number(d.costo_unitario_usd))}</span>;
-              },
+              render: (d) => (
+                <span className="font-mono">{formatUsd(d.cantidad * Number(d.costo_unitario_usd))}</span>
+              ),
             },
             {
               key: "subtotal_bs",
               header: "Subtotal Bs.",
-              render: (d) => {
-                const unidades = d.tipo_empaque === "CAJA"
-                  ? d.cantidad * (d.product?.unidades_por_caja ?? 1)
-                  : d.cantidad;
-                return <span className="font-mono">Bs. {formatBs(unidades * Number(d.costo_unitario_bs))}</span>;
-              },
+              render: (d) => (
+                <span className="font-mono">Bs. {formatBs(d.cantidad * Number(d.costo_unitario_bs))}</span>
+              ),
             },
           ]}
           data={invoice.detalles}
@@ -234,10 +242,7 @@ export default function InvoiceDetailPage() {
       {invoice.detalles.length > 0 && (() => {
         const baseImponible = invoice.detalles
           .reduce((sum, d) => {
-            const unidades = d.tipo_empaque === "CAJA"
-              ? d.cantidad * (d.product?.unidades_por_caja ?? 1)
-              : d.cantidad;
-            return Math.round((sum + unidades * Number(d.costo_unitario_bs)) * 100) / 100;
+            return Math.round((sum + d.cantidad * Number(d.costo_unitario_bs)) * 100) / 100;
           }, 0);
         const iva = invoice.moneda_principal === "BS" ? calcIva(baseImponible) : 0;
         const exento = invoice.moneda_principal === "USD"

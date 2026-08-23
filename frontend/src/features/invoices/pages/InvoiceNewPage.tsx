@@ -794,7 +794,10 @@ export default function InvoiceNewPage() {
                           {item.cantidad}
                         </td>
                         <td className="px-4 py-3 text-right text-text-main font-mono text-xs">
-                          ${item.costo_unitario_usd.toFixed(2)}
+                          <div>${item.costo_unitario_usd.toFixed(2)}</div>
+                          <div className="text-[10px] text-slate-400">
+                            /{item.tipo_empaque === "CAJA" ? "caja" : "und"}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
                           ${item.subtotal_usd.toFixed(2)}
