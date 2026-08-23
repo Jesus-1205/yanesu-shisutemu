@@ -27,8 +27,8 @@
                         └──────────────────────────┘
 ```
 
-- **PostgreSQL** (`db`): postgres:16-alpine con healthcheck.
-- **Backend** (`backend`): imagen `python:3.12-slim`; `entrypoint.sh` crea el esquema (create_all) y los seeds al arrancar.
+- **PostgreSQL** (`db`): postgres:16-alpine con healthcheck. Puerto 5432 expuesto en `127.0.0.1` para acceso mediante túnel SSH.
+- **Backend** (`backend`): imagen `python:3.12-slim`; `entrypoint.sh` ejecuta migraciones de Alembic y los seeds al arrancar.
 - **Frontend** (`nginx`): build multi-stage de React (node:24 → nginx:alpine) que sirve el SPA y hace proxy de `/api` y `/health` al backend.
 - **Persistencia**: volumen `pgdata` (BD) y `yanesu_data` (uploads de facturas, logs, `.secret_key`).
 
@@ -79,9 +79,10 @@ docker compose ps               # verificar estado (db healthy)
 ```
 
 Primer arranque:
-1. El `entrypoint.sh` del backend ejecuta `initialize_database`: crea las tablas, los roles y los métodos de pago por defecto.
-2. La app detecta `needs_setup: true` (sin usuarios) y muestra la pantalla de **Setup** para crear el administrador.
-3. Crear el usuario administrador en `http://<vps>/setup`.
+1. El `entrypoint.sh` del backend ejecuta `alembic upgrade head` para aplicar migraciones.
+2. Luego ejecuta `initialize_database`: crea los seeds (roles, métodos de pago) si las tablas están vacías.
+3. La app detecta `needs_setup: true` (sin usuarios) y muestra la pantalla de **Setup** para crear el administrador.
+4. Crear el usuario administrador en `http://<vps>/setup`.
 
 Verificar:
 ```bash
@@ -152,6 +153,48 @@ Los volúmenes (`pgdata`, `yanesu_data`) sobreviven a `down`; solo se pierden co
 
 ---
 
+## 7. Migraciones con Alembic
+
+El proyecto usa **Alembic** para gestionar migraciones del esquema de la base de datos. El sistema es dual-mode: SQLite (desktop) y PostgreSQL (VPS).
+
+### 7.1 Generar una nueva migración
+
+```bash
+cd backend
+python -m alembic revision --autogenerate -m "descripción del cambio"
+```
+
+### 7.2 Aplicar migraciones
+
+```bash
+cd backend
+python -m alembic upgrade head
+```
+
+### 7.3 Revertir la última migración
+
+```bash
+cd backend
+python -m alembic downgrade -1
+```
+
+### 7.4 Verificar el estado actual
+
+```bash
+cd backend
+python -m alembic current
+python -m alembic history
+```
+
+### 7.5 Notas importantes
+
+- Las migraciones se ejecutan automáticamente en el `entrypoint.sh` del Docker.
+- Para el modo desktop (SQLite), `create_all()` sigue creando las tablas si no existen. Alembic solo se usa en el entorno Docker/VPS.
+- Los archivos de migración están en `backend/alembic/versions/`.
+- Al generar una migración, revisar el archivo generado antes de commitear para asegurar que los cambios son correctos.
+
+---
+
 ## 7. HTTPS y Secure cookie
 
 - La cookie `access_token` se envía con `Secure` cuando `SECURE_COOKIE=true`. **Sin HTTPS el navegador no la guardará**, así que en producción debe haber TLS.
@@ -162,6 +205,27 @@ Los volúmenes (`pgdata`, `yanesu_data`) sobreviven a `down`; solo se pierden co
 Si se accede por IP/HTTP solo para pruebas, definir `SECURE_COOKIE=false` en el `.env` y recrear el backend:
 ```bash
 docker compose up -d --force-recreate backend
+```
+
+---
+
+## 8. Acceso a PostgreSQL mediante túnel SSH
+
+El puerto 5432 de PostgreSQL está expuesto solo en `127.0.0.1`, por lo que solo es accesible desde el propio VPS. Para conectarse remotamente, usar un túnel SSH:
+
+```bash
+# Desde tu máquina local, crear un túnel SSH al VPS
+ssh -L 5432:127.0.0.1:5432 usuario@tu-vps
+
+# Ahora puedes conectarte a PostgreSQL como si estuviera en localhost
+psql -h localhost -p 5432 -U $POSTGRES_USER -d $POSTGRES_DB
+```
+
+Opcionalmente, usar un puerto local diferente si ya tienes PostgreSQL instalado:
+```bash
+ssh -L 5433:127.0.0.1:5432 usuario@tu-vps
+# Conectar al puerto 5433 local
+psql -h localhost -p 5433 -U $POSTGRES_USER -d $POSTGRES_DB
 ```
 
 ---

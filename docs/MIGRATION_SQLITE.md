@@ -12,7 +12,7 @@ El proyecto fue diseñado originalmente como un sistema web desplegado en VPS co
 
 - **Eliminar dependencias de servidor:** Docker, PostgreSQL, pgAdmin.
 - **Base de datos embebida:** SQLite no requiere proceso separado.
-- **Sin migraciones externas:** Alembic se elimina; `create_all()` gestiona el esquema.
+- **Migraciones externas:** Alembic se ha reintegrado para el entorno Docker/VPS. `create_all()` se mantiene para el modo desktop (SQLite).
 - **Fuzzy matching sin pg_trgm:** La extensión `pg_trgm` es exclusiva de PostgreSQL y no existe en SQLite.
 
 ---
@@ -29,8 +29,6 @@ El proyecto fue diseñado originalmente como un sistema web desplegado en VPS co
 ### 2.2 Migraciones y esquema SQL
 | Archivo | Razón |
 |---------|-------|
-| `backend/alembic/` (14 archivos) | Sistema de migraciones PostgreSQL. SQLite usa `create_all()` para crear tablas desde los modelos SQLAlchemy. |
-| `backend/alembic.ini` | Configuración de Alembic. |
 | `backend/sql/schema.sql` | Esquema SQL manual PostgreSQL. Los modelos SQLAlchemy son la fuente de verdad. |
 | `backend/sql/migrations/` | Migraciones SQL manuales. |
 
@@ -171,11 +169,11 @@ matches = process.extract(
 
 ```
 # Eliminados
-psycopg2-binary==2.9.10   # Driver PostgreSQL
-alembic==1.14.1            # Sistema de migraciones
+psycopg2-binary==2.9.10   # Driver PostgreSQL (reemplazado por psycopg[binary])
 
 # Agregados
 rapidfuzz>=3.10.0          # Fuzzy matching en C++
+alembic==1.14.1            # Sistema de migraciones (reintegrado para Docker/VPS)
 ```
 
 ### 3.6 `backend/.env.example`
@@ -340,6 +338,5 @@ O ejecutar `backend\build.bat` que hace los pasos 1 y 2.
 |-------|-----------|-------|
 | Generar iconos reales | Media | Reemplazar placeholders PNG con icono del negocio |
 | Ajuste de umbral | Media | Evaluar con datos reales si 30.0 es el umbral óptimo |
-| Migraciones SQLite | Baja | Si el esquema cambia, considerar Alembic para SQLite |
 
 > Para documentación completa de errores durante el empaquetado, ver `docs/DESKTOP_BUILD_LOG.md`.
