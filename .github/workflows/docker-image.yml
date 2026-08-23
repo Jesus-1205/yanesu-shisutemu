@@ -18,7 +18,8 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
-
+      - name: Normalizar nombre del repositorio a minúsculas
+        run: echo "IMAGE_BASE=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
       - name: Iniciar sesión en GHCR
         uses: docker/login-action@v3
         with:
