@@ -446,6 +446,7 @@ export interface ValidationErrorDetail {
 
 // ─── Facturas de Proveedor ────────────────────────────────────
 export type MonedaEnum = "USD" | "BS";
+export type TipoDocumento = "FACTURA" | "NOTA_ENTREGA";
 
 export interface DetalleFacturaCreate {
   producto_id: number;
@@ -459,6 +460,7 @@ export interface DetalleFacturaCreate {
 export interface FacturaCreate {
   proveedor_id: number;
   numero_factura: string;
+  tipo_documento?: TipoDocumento;
   fecha_factura?: string | null;
   observaciones?: string | null;
   moneda_principal: MonedaEnum;
@@ -482,6 +484,7 @@ export interface FacturaOut {
   id: number;
   proveedor_id: number;
   numero_factura: string;
+  tipo_documento: TipoDocumento;
   fecha_factura: string;
   image_path: string | null;
   usuario_id: number;

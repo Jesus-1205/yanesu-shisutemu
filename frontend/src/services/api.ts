@@ -491,12 +491,14 @@ export const api = {
   // ── Facturas ──
   getInvoices: (params?: {
     proveedor_id?: number;
+    tipo_documento?: string;
     search?: string;
     page?: number;
     page_size?: number;
   }) => {
     const qs = new URLSearchParams();
     if (params?.proveedor_id) qs.set("proveedor_id", String(params.proveedor_id));
+    if (params?.tipo_documento) qs.set("tipo_documento", params.tipo_documento);
     if (params?.search) qs.set("search", params.search);
     if (params?.page) qs.set("page", String(params.page));
     if (params?.page_size) qs.set("page_size", String(params.page_size));

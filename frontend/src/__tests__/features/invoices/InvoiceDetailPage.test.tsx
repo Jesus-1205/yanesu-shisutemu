@@ -26,6 +26,7 @@ const baseInvoice: FacturaOut = {
   id: 26,
   proveedor_id: 1,
   numero_factura: "26662",
+  tipo_documento: "FACTURA",
   fecha_factura: "2026-07-14",
   image_path: null,
   usuario_id: 1,

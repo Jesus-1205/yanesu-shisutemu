@@ -53,6 +53,7 @@ export default function InvoiceNewPage() {
 
   const [proveedorId, setProveedorId] = useState<number | null>(null);
   const [numeroFactura, setNumeroFactura] = useState("");
+  const [tipoDocumento, setTipoDocumento] = useState<"FACTURA" | "NOTA_ENTREGA">("FACTURA");
   const [fechaFactura, setFechaFactura] = useState(getTodayInCaracas);
   const [observaciones, setObservaciones] = useState("");
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
@@ -432,6 +433,7 @@ export default function InvoiceNewPage() {
         {
           proveedor_id: proveedorId,
           numero_factura: numeroFactura.trim(),
+          tipo_documento: tipoDocumento,
           fecha_factura: fechaFactura || null,
           observaciones: observaciones.trim() || null,
           moneda_principal: moneda,
@@ -468,8 +470,8 @@ export default function InvoiceNewPage() {
   return (
     <div>
       <PageHeader
-        title="Nueva Factura"
-        description="Registra una factura de proveedor y actualiza el inventario"
+        title={tipoDocumento === "FACTURA" ? "Nueva Factura" : "Nueva Nota de Entrega"}
+        description={tipoDocumento === "FACTURA" ? "Registra una factura de proveedor y actualiza el inventario" : "Registra una nota de entrega de proveedor y actualiza el inventario"}
         actions={
           <Button variant="ghost" onClick={() => navigate("/invoices")}>
             <ArrowLeft className="w-4 h-4" />
@@ -492,6 +494,33 @@ export default function InvoiceNewPage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
             <div className="space-y-4">
+              <div>
+                <label className={labelBase}>Tipo de Documento</label>
+                <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setTipoDocumento("FACTURA")}
+                    className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                      tipoDocumento === "FACTURA"
+                        ? "bg-brand-blue text-white"
+                        : "bg-surface text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Factura
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTipoDocumento("NOTA_ENTREGA")}
+                    className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                      tipoDocumento === "NOTA_ENTREGA"
+                        ? "bg-brand-blue text-white"
+                        : "bg-surface text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Nota de Entrega
+                  </button>
+                </div>
+              </div>
               <div className="flex items-end gap-2">
                 <div className="flex-1">
                   <AsyncCombobox
@@ -1226,7 +1255,7 @@ export default function InvoiceNewPage() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
           <div className="flex-1" />
           <Button variant="accent" onClick={handleSubmit} loading={loading}>
-            Registrar Factura
+            {tipoDocumento === "FACTURA" ? "Registrar Factura" : "Registrar Nota de Entrega"}
           </Button>
           <Button variant="outline" onClick={() => navigate("/invoices")}>
             Cancelar

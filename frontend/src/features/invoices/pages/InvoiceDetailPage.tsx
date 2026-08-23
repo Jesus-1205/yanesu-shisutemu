@@ -90,7 +90,7 @@ export default function InvoiceDetailPage() {
   return (
     <div>
       <PageHeader
-        title={`Factura #${invoice.numero_factura}`}
+        title={`${invoice.tipo_documento === "NOTA_ENTREGA" ? "Nota" : "Factura"} #${invoice.numero_factura}`}
         description={invoice.supplier?.nombre || "Proveedor desconocido"}
         actions={
           <div className="flex items-center gap-2">
@@ -108,7 +108,13 @@ export default function InvoiceDetailPage() {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+        <div className="p-4 rounded-xl bg-surface border border-slate-200">
+          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tipo</p>
+          <p className="text-sm font-medium mt-1">
+            {invoice.tipo_documento === "FACTURA" ? "Factura" : "Nota de Entrega"}
+          </p>
+        </div>
         <div className="p-4 rounded-xl bg-surface border border-slate-200">
           <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Proveedor</p>
           <p className="text-sm font-medium mt-1">{invoice.supplier?.nombre || "—"}</p>

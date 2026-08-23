@@ -26,6 +26,7 @@ export default function InvoicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [proveedorId, setProveedorId] = useState<number | null>(null);
+  const [tipoDocumento, setTipoDocumento] = useState<string>("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -35,6 +36,7 @@ export default function InvoicesPage() {
     try {
       const data = await api.getInvoices({
         proveedor_id: proveedorId ?? undefined,
+        tipo_documento: tipoDocumento || undefined,
         search: search || undefined,
         page,
         page_size: PAGE_SIZE,
@@ -46,7 +48,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [proveedorId, search, page]);
+  }, [proveedorId, tipoDocumento, search, page]);
 
   useEffect(() => {
     fetchInvoices();
@@ -98,6 +100,17 @@ export default function InvoicesPage() {
             ]}
           />
         </div>
+        <div className="w-44">
+          <Select
+            value={tipoDocumento}
+            onChange={(e) => { setTipoDocumento(e.target.value); setPage(1); }}
+            options={[
+              { value: "", label: "Todos los tipos" },
+              { value: "FACTURA", label: "Factura" },
+              { value: "NOTA_ENTREGA", label: "Nota de Entrega" },
+            ]}
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -116,6 +129,15 @@ export default function InvoicesPage() {
           <Table
             columns={[
               { key: "numero_factura", header: "Factura" },
+              {
+                key: "tipo_documento",
+                header: "Tipo",
+                render: (inv: Invoice) => (
+                  <Badge variant={inv.tipo_documento === "FACTURA" ? "info" : "warning"}>
+                    {inv.tipo_documento === "FACTURA" ? "Factura" : "Nota Entrega"}
+                  </Badge>
+                ),
+              },
               {
                 key: "supplier",
                 header: "Proveedor",

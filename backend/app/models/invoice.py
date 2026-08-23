@@ -14,6 +14,11 @@ class MonedaEnum(str, enum.Enum):
     BS = "BS"
 
 
+class TipoDocumentoEnum(str, enum.Enum):
+    FACTURA = "FACTURA"
+    NOTA_ENTREGA = "NOTA_ENTREGA"
+
+
 class Factura(Base):
     __tablename__ = "facturas"
 
@@ -22,6 +27,9 @@ class Factura(Base):
         Integer, ForeignKey("proveedores.id", ondelete="RESTRICT"), nullable=False
     )
     numero_factura: Mapped[str] = mapped_column(String(50), nullable=False)
+    tipo_documento: Mapped[TipoDocumentoEnum] = mapped_column(
+        String(15), nullable=False, default=TipoDocumentoEnum.FACTURA
+    )
     fecha_factura: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
     image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     usuario_id: Mapped[int] = mapped_column(

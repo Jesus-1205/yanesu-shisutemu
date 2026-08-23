@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.invoice import MonedaEnum
+from app.models.invoice import MonedaEnum, TipoDocumentoEnum
 from app.schemas.product import ProductOut
 from app.schemas.supplier import SupplierOut
 
@@ -27,6 +27,7 @@ class FacturaCreate(BaseModel):
 
     proveedor_id: int
     numero_factura: str
+    tipo_documento: TipoDocumentoEnum = TipoDocumentoEnum.FACTURA
     fecha_factura: date | None = None
     observaciones: str | None = None
     moneda_principal: MonedaEnum = MonedaEnum.USD
@@ -54,6 +55,7 @@ class FacturaOut(BaseModel):
     id: int
     proveedor_id: int
     numero_factura: str
+    tipo_documento: TipoDocumentoEnum
     fecha_factura: date
     image_path: str | None
     usuario_id: int

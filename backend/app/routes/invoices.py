@@ -172,6 +172,7 @@ async def create(
 @router.get("", response_model=FacturaPaginationOut, status_code=status.HTTP_200_OK)
 def list_all(
     proveedor_id: int | None = None,
+    tipo_documento: str | None = None,
     search: str | None = None,
     page: int = 1,
     page_size: int = 20,
@@ -180,13 +181,14 @@ def list_all(
 ):
     """GET /invoices - Listar facturas de proveedores
 
-    Recibe: query params (proveedor_id, search, page, page_size)
+    Recibe: query params (proveedor_id, tipo_documento, search, page, page_size)
     Hace:   consulta facturas con filtros y paginación
     Devuelve: 200 + FacturaPaginationOut
     """
     result = get_invoices(
         db,
         proveedor_id=proveedor_id,
+        tipo_documento=tipo_documento,
         search=search,
         page=page,
         page_size=page_size,

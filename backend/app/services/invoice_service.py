@@ -626,6 +626,7 @@ def create_invoice(
     factura = Factura(
         proveedor_id=data.proveedor_id,
         numero_factura=data.numero_factura,
+        tipo_documento=data.tipo_documento,
         fecha_factura=data.fecha_factura or date.today(),
         image_path=image_path,
         usuario_id=usuario_id,
@@ -727,6 +728,7 @@ def get_invoices(
     db: Session,
     *,
     proveedor_id: int | None = None,
+    tipo_documento: str | None = None,
     search: str | None = None,
     page: int = 1,
     page_size: int = 20,
@@ -735,6 +737,8 @@ def get_invoices(
 
     if proveedor_id is not None:
         stmt = stmt.where(Factura.proveedor_id == proveedor_id)
+    if tipo_documento:
+        stmt = stmt.where(Factura.tipo_documento == tipo_documento)
     if search:
         pattern = f"%{_accent_fold_pattern(search)}%"
         stmt = stmt.where(
