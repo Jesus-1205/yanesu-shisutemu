@@ -36,6 +36,7 @@ const baseInvoice: FacturaOut = {
   total_usd: 89.35,
   total_bs: 67018,
   aplica_iva: true,
+  estado_pago: "PENDIENTE",
   created_at: "2026-07-14T12:00:00",
   procesada_por_ia: false,
   raw_json_ia: null,

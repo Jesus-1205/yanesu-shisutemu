@@ -7,13 +7,14 @@ from rapidfuzz import fuzz, process
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.config import get_uploads_dir
+from app.core.config import get_uploads_dir, get_comprobantes_pago_dir
 from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoEmpaqueFactura
+from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.product import Product
 from app.models.supplier import Supplier
 from app.services.product_service import _accent_fold, _accent_fold_pattern
-from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, MatchedProduct, MatchedSupplier
+from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, MatchedProduct, MatchedSupplier
 from app.schemas.product import ProductOut as ProductOutSchema
 
 # ── System Prompt para el modelo de Visión ────────────────────────────────
@@ -729,6 +730,7 @@ def get_invoices(
     *,
     proveedor_id: int | None = None,
     tipo_documento: str | None = None,
+    estado_pago: str | None = None,
     search: str | None = None,
     page: int = 1,
     page_size: int = 20,
@@ -739,6 +741,8 @@ def get_invoices(
         stmt = stmt.where(Factura.proveedor_id == proveedor_id)
     if tipo_documento:
         stmt = stmt.where(Factura.tipo_documento == tipo_documento)
+    if estado_pago:
+        stmt = stmt.where(Factura.estado_pago == estado_pago)
     if search:
         pattern = f"%{_accent_fold_pattern(search)}%"
         stmt = stmt.where(
@@ -757,6 +761,7 @@ def get_invoices(
     stmt = stmt.offset(offset).limit(page_size).options(
         selectinload(Factura.supplier),
         selectinload(Factura.detalles).selectinload(DetalleFactura.product),
+        selectinload(Factura.payments),
     )
 
     items = list(db.execute(stmt).scalars().all())
@@ -779,6 +784,7 @@ def get_invoice(db: Session, invoice_id: int) -> Factura:
         .options(
             selectinload(Factura.supplier),
             selectinload(Factura.detalles).selectinload(DetalleFactura.product),
+            selectinload(Factura.payments),
         )
         .where(Factura.id == invoice_id)
     )
@@ -786,3 +792,175 @@ def get_invoice(db: Session, invoice_id: int) -> Factura:
     if not factura:
         raise EntityNotFoundError("Factura no encontrada")
     return factura
+
+
+# ── Pagos de Factura ────────────────────────────────────────────────────────
+
+
+def _recalculate_invoice_payment_status(db: Session, factura: Factura) -> None:
+    stmt_usd = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
+        InvoicePayment.factura_id == factura.id
+    )
+    total_pagado_usd = Decimal(str(db.execute(stmt_usd).scalar()))
+
+    stmt_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
+        InvoicePayment.factura_id == factura.id
+    )
+    total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar()))
+
+    if factura.tasa_bs > 0:
+        total_pagado_usd += (total_pagado_bs / factura.tasa_bs).quantize(Decimal("0.01"))
+
+    if total_pagado_usd >= factura.total_usd:
+        factura.estado_pago = "PAGADA"
+    elif total_pagado_usd > 0:
+        factura.estado_pago = "PARCIALMENTE_PAGADA"
+    else:
+        factura.estado_pago = "PENDIENTE"
+
+
+def register_invoice_payment(
+    db: Session,
+    factura_id: int,
+    data: InvoicePaymentCreate,
+    usuario_id: int,
+    comprobantes_files: list[tuple[bytes, str, str]] | None = None,
+) -> InvoicePayment:
+    factura = db.get(Factura, factura_id)
+    if not factura:
+        raise EntityNotFoundError("Factura no encontrada")
+
+    if factura.estado_pago == "PAGADA":
+        raise ConflictError("La factura ya está completamente pagada")
+
+    if data.monto_usd <= 0 and data.monto_bs <= 0:
+        raise ConflictError("Debe especificar al menos un monto mayor a 0")
+
+    from app.models.payment_method import PaymentMethod
+    metodo = db.get(PaymentMethod, data.metodo_pago_id)
+    if not metodo:
+        raise EntityNotFoundError("Método de pago no encontrado")
+    if not metodo.activo:
+        raise ConflictError("El método de pago está inactivo")
+
+    stmt_pagado = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
+        InvoicePayment.factura_id == factura_id
+    )
+    pagado_actual = Decimal(str(db.execute(stmt_pagado).scalar()))
+    if factura.tasa_bs > 0:
+        stmt_pagado_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
+            InvoicePayment.factura_id == factura_id
+        )
+        pagado_actual_bs = Decimal(str(db.execute(stmt_pagado_bs).scalar()))
+        pagado_actual += (pagado_actual_bs / factura.tasa_bs).quantize(Decimal("0.01"))
+
+    saldo = factura.total_usd - pagado_actual
+    if data.monto_usd > saldo:
+        raise ConflictError(
+            f"El monto (${data.monto_usd}) excede el saldo pendiente (${saldo})"
+        )
+
+    pago = InvoicePayment(
+        factura_id=factura_id,
+        metodo_pago_id=data.metodo_pago_id,
+        monto_usd=data.monto_usd,
+        monto_bs=data.monto_bs,
+        referencia=data.referencia,
+        observaciones=data.observaciones,
+        usuario_id=usuario_id,
+    )
+    db.add(pago)
+    db.flush()
+
+    if comprobantes_files:
+        comprobantes_dir = get_comprobantes_pago_dir()
+        for file_bytes, content_type, filename in comprobantes_files:
+            import uuid
+            ext = Path(filename).suffix.lower() or ".jpg"
+            saved_name = f"pago_{pago.id}_{uuid.uuid4().hex[:8]}{ext}"
+            dest = comprobantes_dir / saved_name
+            dest.write_bytes(file_bytes)
+            receipt = InvoicePaymentReceipt(
+                pago_id=pago.id,
+                archivo_path=str(dest),
+                nombre_original=filename,
+                tipo_archivo=content_type,
+            )
+            db.add(receipt)
+
+    _recalculate_invoice_payment_status(db, factura)
+    db.commit()
+    db.refresh(pago)
+    return pago
+
+
+def get_invoice_payments(db: Session, factura_id: int) -> dict:
+    stmt = (
+        select(InvoicePayment)
+        .where(InvoicePayment.factura_id == factura_id)
+        .order_by(InvoicePayment.fecha_pago.desc())
+    )
+    pagos = list(db.execute(stmt).scalars().all())
+    return {"pagos": pagos}
+
+
+def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentSummary:
+    factura = db.get(Factura, factura_id)
+    if not factura:
+        raise EntityNotFoundError("Factura no encontrada")
+
+    stmt_usd = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
+        InvoicePayment.factura_id == factura_id
+    )
+    total_pagado_usd = Decimal(str(db.execute(stmt_usd).scalar()))
+
+    stmt_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
+        InvoicePayment.factura_id == factura_id
+    )
+    total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar()))
+
+    if factura.tasa_bs > 0:
+        total_pagado_usd += (total_pagado_bs / factura.tasa_bs).quantize(Decimal("0.01"))
+
+    saldo_usd = factura.total_usd - total_pagado_usd
+    saldo_bs = factura.total_bs - total_pagado_bs
+
+    pct = float(total_pagado_usd / factura.total_usd * 100) if factura.total_usd > 0 else 0.0
+
+    stmt_count = select(func.count()).where(InvoicePayment.factura_id == factura_id)
+    count = db.execute(stmt_count).scalar() or 0
+
+    return InvoicePaymentSummary(
+        estado_pago=factura.estado_pago,
+        total_factura_usd=factura.total_usd,
+        total_factura_bs=factura.total_bs,
+        total_pagado_usd=total_pagado_usd.quantize(Decimal("0.01")),
+        total_pagado_bs=total_pagado_bs.quantize(Decimal("0.01")),
+        saldo_pendiente_usd=max(saldo_usd, Decimal("0")).quantize(Decimal("0.01")),
+        saldo_pendiente_bs=max(saldo_bs, Decimal("0")).quantize(Decimal("0.01")),
+        cantidad_pagos=count,
+        porcentaje_pagado=min(pct, 100.0),
+    )
+
+
+def delete_invoice_payment(db: Session, factura_id: int, payment_id: int) -> None:
+    pago = db.get(InvoicePayment, payment_id)
+    if not pago or pago.factura_id != factura_id:
+        raise EntityNotFoundError("Pago no encontrado")
+
+    comprobantes_dir = get_comprobantes_pago_dir()
+    for receipt in pago.comprobantes:
+        try:
+            p = Path(receipt.archivo_path)
+            if p.exists():
+                p.unlink()
+        except OSError:
+            pass
+
+    factura = db.get(Factura, factura_id)
+    db.delete(pago)
+
+    if factura:
+        _recalculate_invoice_payment_status(db, factura)
+
+    db.commit()

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, DollarSign } from "lucide-react";
 import { api } from "@/services/api";
 import type { Invoice } from "../types";
 import type { SupplierOut } from "@/types/api";
@@ -27,6 +27,7 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [proveedorId, setProveedorId] = useState<number | null>(null);
   const [tipoDocumento, setTipoDocumento] = useState<string>("");
+  const [estadoPago, setEstadoPago] = useState<string>("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -37,6 +38,7 @@ export default function InvoicesPage() {
       const data = await api.getInvoices({
         proveedor_id: proveedorId ?? undefined,
         tipo_documento: tipoDocumento || undefined,
+        estado_pago: estadoPago || undefined,
         search: search || undefined,
         page,
         page_size: PAGE_SIZE,
@@ -48,7 +50,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [proveedorId, tipoDocumento, search, page]);
+  }, [proveedorId, tipoDocumento, estadoPago, search, page]);
 
   useEffect(() => {
     fetchInvoices();
@@ -108,6 +110,18 @@ export default function InvoicesPage() {
               { value: "", label: "Todos los tipos" },
               { value: "FACTURA", label: "Factura" },
               { value: "NOTA_ENTREGA", label: "Nota de Entrega" },
+            ]}
+          />
+        </div>
+        <div className="w-44">
+          <Select
+            value={estadoPago}
+            onChange={(e) => { setEstadoPago(e.target.value); setPage(1); }}
+            options={[
+              { value: "", label: "Todos los estados" },
+              { value: "PENDIENTE", label: "Pendiente" },
+              { value: "PARCIALMENTE_PAGADA", label: "Parcial" },
+              { value: "PAGADA", label: "Pagada" },
             ]}
           />
         </div>
@@ -176,17 +190,43 @@ export default function InvoicesPage() {
                 ),
               },
               {
+                key: "estado_pago",
+                header: "Estado",
+                hideOnMobile: true,
+                render: (inv: Invoice) => {
+                  const config = {
+                    PAGADA: { variant: "success" as const, label: "Pagada" },
+                    PARCIALMENTE_PAGADA: { variant: "warning" as const, label: "Parcial" },
+                    PENDIENTE: { variant: "danger" as const, label: "Pendiente" },
+                  };
+                  const c = config[inv.estado_pago] || config.PENDIENTE;
+                  return <Badge variant={c.variant}>{c.label}</Badge>;
+                },
+              },
+              {
                 key: "acciones",
                 header: "Acciones",
                 exportable: false,
                 render: (inv: Invoice) => (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/invoices/${inv.id}`)}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/invoices/${inv.id}`)}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    {inv.estado_pago !== "PAGADA" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/invoices/${inv.id}?action=pay`)}
+                        title="Registrar pago"
+                      >
+                        <DollarSign className="w-4 h-4 text-green-600" />
+                      </Button>
+                    )}
+                  </div>
                 ),
               },
             ]}

@@ -447,6 +447,7 @@ export interface ValidationErrorDetail {
 // ─── Facturas de Proveedor ────────────────────────────────────
 export type MonedaEnum = "USD" | "BS";
 export type TipoDocumento = "FACTURA" | "NOTA_ENTREGA";
+export type EstadoPago = "PENDIENTE" | "PARCIALMENTE_PAGADA" | "PAGADA";
 
 export interface DetalleFacturaCreate {
   producto_id: number;
@@ -494,6 +495,7 @@ export interface FacturaOut {
   total_usd: number;
   total_bs: number;
   aplica_iva: boolean;
+  estado_pago: EstadoPago;
   created_at: string;
   procesada_por_ia?: boolean;
   raw_json_ia?: Record<string, unknown> | null;
@@ -507,6 +509,52 @@ export interface FacturaPaginationOut {
   page: number;
   page_size: number;
   pages: number;
+}
+
+// ─── Pagos de Factura ──────────────────────────────────────────────────────
+
+export interface InvoicePaymentCreate {
+  metodo_pago_id: number;
+  monto_usd?: number;
+  monto_bs?: number;
+  referencia?: string | null;
+  observaciones?: string | null;
+}
+
+export interface InvoicePaymentReceiptOut {
+  id: number;
+  pago_id: number;
+  archivo_path: string;
+  nombre_original: string;
+  tipo_archivo: string;
+  created_at: string;
+}
+
+export interface InvoicePaymentOut {
+  id: number;
+  factura_id: number;
+  metodo_pago_id: number;
+  metodo_pago_nombre: string;
+  monto_usd: number;
+  monto_bs: number;
+  referencia: string | null;
+  observaciones: string | null;
+  fecha_pago: string;
+  usuario_id: number;
+  usuario_nombre?: string | null;
+  comprobantes: InvoicePaymentReceiptOut[];
+}
+
+export interface InvoicePaymentSummary {
+  estado_pago: EstadoPago;
+  total_factura_usd: number;
+  total_factura_bs: number;
+  total_pagado_usd: number;
+  total_pagado_bs: number;
+  saldo_pendiente_usd: number;
+  saldo_pendiente_bs: number;
+  cantidad_pagos: number;
+  porcentaje_pagado: number;
 }
 
 // ─── Análisis de Facturas por IA ──────────────────────────────

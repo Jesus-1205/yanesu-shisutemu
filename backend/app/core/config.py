@@ -69,6 +69,12 @@ def get_uploads_dir() -> Path:
     return uploads
 
 
+def get_comprobantes_pago_dir() -> Path:
+    comprobantes = get_app_data_dir() / "uploads" / "comprobantes_pago"
+    comprobantes.mkdir(parents=True, exist_ok=True)
+    return comprobantes
+
+
 def get_log_dir() -> Path:
     log_dir = get_app_data_dir() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)

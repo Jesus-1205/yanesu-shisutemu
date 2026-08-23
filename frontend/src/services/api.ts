@@ -21,6 +21,9 @@ import type {
   FacturaOut,
   FacturaPaginationOut,
   InvoiceAnalysisOut,
+  InvoicePaymentCreate,
+  InvoicePaymentOut,
+  InvoicePaymentSummary,
   PaymentMethodCreate,
   PaymentMethodOut,
   PaymentMethodUpdate,
@@ -492,6 +495,7 @@ export const api = {
   getInvoices: (params?: {
     proveedor_id?: number;
     tipo_documento?: string;
+    estado_pago?: string;
     search?: string;
     page?: number;
     page_size?: number;
@@ -499,6 +503,7 @@ export const api = {
     const qs = new URLSearchParams();
     if (params?.proveedor_id) qs.set("proveedor_id", String(params.proveedor_id));
     if (params?.tipo_documento) qs.set("tipo_documento", params.tipo_documento);
+    if (params?.estado_pago) qs.set("estado_pago", params.estado_pago);
     if (params?.search) qs.set("search", params.search);
     if (params?.page) qs.set("page", String(params.page));
     if (params?.page_size) qs.set("page_size", String(params.page_size));
@@ -563,6 +568,40 @@ export const api = {
     URL.revokeObjectURL(url);
     return filename;
   },
+
+  // ── Pagos de Factura ──
+  registerInvoicePayment: (
+    invoiceId: number,
+    data: InvoicePaymentCreate,
+    comprobantes?: File[],
+  ) => {
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(data));
+    if (comprobantes) {
+      comprobantes.forEach((f) => formData.append("comprobantes", f));
+    }
+    return request<InvoicePaymentOut>(`/invoices/${invoiceId}/payments`, {
+      method: "POST",
+      body: formData,
+      headers: {},
+    });
+  },
+
+  getInvoicePayments: (invoiceId: number) =>
+    request<{ pagos: InvoicePaymentOut[]; resumen: InvoicePaymentSummary }>(
+      `/invoices/${invoiceId}/payments`,
+    ),
+
+  deleteInvoicePayment: (invoiceId: number, paymentId: number) =>
+    request<void>(`/invoices/${invoiceId}/payments/${paymentId}`, {
+      method: "DELETE",
+    }),
+
+  getInvoicePaymentSummary: (invoiceId: number) =>
+    request<InvoicePaymentSummary>(`/invoices/${invoiceId}/payments/summary`),
+
+  getPaymentReceiptUrl: (invoiceId: number, paymentId: number, receiptId: number) =>
+    `${API_BASE}/invoices/${invoiceId}/payments/${paymentId}/receipts/${receiptId}`,
 
   // ── System Settings ──
   getApiKeyStatus: (clave: string) =>

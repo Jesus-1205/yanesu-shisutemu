@@ -15,14 +15,22 @@ from app.schemas.invoice import (
     FacturaOut,
     FacturaPaginationOut,
     InvoiceAnalysisOut,
+    InvoicePaymentCreate,
+    InvoicePaymentOut,
+    InvoicePaymentReceiptOut,
+    InvoicePaymentSummary,
 )
 from app.services.audit_service import log_action
 from app.services.invoice_service import (
     analyze_invoice_from_image,
     create_invoice,
+    delete_invoice_payment,
     get_invoice,
+    get_invoice_payment_summary,
+    get_invoice_payments,
     get_invoices,
     optimize_image,
+    register_invoice_payment,
 )
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
@@ -173,6 +181,7 @@ async def create(
 def list_all(
     proveedor_id: int | None = None,
     tipo_documento: str | None = None,
+    estado_pago: str | None = None,
     search: str | None = None,
     page: int = 1,
     page_size: int = 20,
@@ -181,7 +190,7 @@ def list_all(
 ):
     """GET /invoices - Listar facturas de proveedores
 
-    Recibe: query params (proveedor_id, tipo_documento, search, page, page_size)
+    Recibe: query params (proveedor_id, tipo_documento, estado_pago, search, page, page_size)
     Hace:   consulta facturas con filtros y paginación
     Devuelve: 200 + FacturaPaginationOut
     """
@@ -189,6 +198,7 @@ def list_all(
         db,
         proveedor_id=proveedor_id,
         tipo_documento=tipo_documento,
+        estado_pago=estado_pago,
         search=search,
         page=page,
         page_size=page_size,
@@ -239,3 +249,118 @@ def get_image(
 
 def _factura_to_out(factura) -> FacturaOut:
     return FacturaOut.model_validate(factura)
+
+
+# ── Pagos de Factura ────────────────────────────────────────────────────────
+
+
+@router.post("/{invoice_id}/payments", status_code=status.HTTP_201_CREATED)
+async def create_payment(
+    invoice_id: int,
+    data: str = Form(...),
+    comprobantes: list[UploadFile] | None = File(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """POST /invoices/{id}/payments - Registrar pago a factura
+
+    Recibe: multipart/form-data con:
+      - data: JSON string con InvoicePaymentCreate
+      - comprobantes: (opcional) archivos de comprobante
+    Devuelve: 201 + InvoicePaymentOut | 404 | 409
+    """
+    parsed = InvoicePaymentCreate(**json.loads(data))
+
+    files_data = []
+    if comprobantes:
+        ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"}
+        MAX_SIZE = 5 * 1024 * 1024
+        for f in comprobantes:
+            if not f.content_type or f.content_type not in ALLOWED:
+                raise HTTPException(status_code=400, detail=f"Tipo no soportado: {f.content_type}")
+            raw = await f.file.read()
+            if len(raw) > MAX_SIZE:
+                raise HTTPException(status_code=400, detail=f"Archivo {f.filename} supera 5MB")
+            files_data.append((raw, f.content_type, f.filename or "comprobante"))
+
+    try:
+        pago = register_invoice_payment(
+            db, invoice_id, parsed, current_user.id, files_data or None
+        )
+    except ConflictError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    log_action(
+        usuario=current_user.username,
+        ip="local",
+        accion="CREAR",
+        entidad="pago_factura",
+        entidad_id=pago.id,
+        detalle=f"Pago de ${pago.monto_usd} Bs.{pago.monto_bs} a factura #{invoice_id}",
+    )
+    return InvoicePaymentOut.model_validate(pago)
+
+
+@router.get("/{invoice_id}/payments", status_code=status.HTTP_200_OK)
+def list_payments(
+    invoice_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /invoices/{id}/payments - Listar pagos de una factura
+
+    Devuelve: 200 + { pagos, resumen }
+    """
+    get_invoice(db, invoice_id)
+    result = get_invoice_payments(db, invoice_id)
+    summary = get_invoice_payment_summary(db, invoice_id)
+    return {
+        "pagos": [InvoicePaymentOut.model_validate(p) for p in result["pagos"]],
+        "resumen": summary,
+    }
+
+
+@router.delete(
+    "/{invoice_id}/payments/{payment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_payment(
+    invoice_id: int,
+    payment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR")),
+):
+    """DELETE /invoices/{id}/payments/{pid} - Eliminar pago
+
+    Hace: elimina el pago y sus comprobantes, recalcula estado
+    Devuelve: 204 | 404
+    """
+    try:
+        delete_invoice_payment(db, invoice_id, payment_id)
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    log_action(
+        usuario=current_user.username,
+        ip="local",
+        accion="ELIMINAR",
+        entidad="pago_factura",
+        entidad_id=payment_id,
+        detalle=f"Pago {payment_id} eliminado de factura #{invoice_id}",
+    )
+
+
+@router.get("/{invoice_id}/payments/summary", status_code=status.HTTP_200_OK)
+def payment_summary(
+    invoice_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /invoices/{id}/payments/summary - Resumen de pago
+
+    Devuelve: 200 + InvoicePaymentSummary
+    """
+    summary = get_invoice_payment_summary(db, invoice_id)
+    return summary

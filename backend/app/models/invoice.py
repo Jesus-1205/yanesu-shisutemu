@@ -46,6 +46,8 @@ class Factura(Base):
 
     aplica_iva: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
+    estado_pago: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDIENTE")
+
     # Campos de auditoría IA
     procesada_por_ia: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     raw_json_ia: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -62,6 +64,9 @@ class Factura(Base):
     user: Mapped["User"] = relationship("User", back_populates="facturas")
     detalles: Mapped[list["DetalleFactura"]] = relationship(
         "DetalleFactura", back_populates="factura", cascade="all, delete-orphan"
+    )
+    payments: Mapped[list["InvoicePayment"]] = relationship(
+        "InvoicePayment", back_populates="factura", cascade="all, delete-orphan"
     )
 
 

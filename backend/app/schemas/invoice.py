@@ -65,6 +65,7 @@ class FacturaOut(BaseModel):
     total_usd: Decimal
     total_bs: Decimal
     aplica_iva: bool
+    estado_pago: str = "PENDIENTE"
     created_at: datetime
     procesada_por_ia: bool = False
     raw_json_ia: dict | None = None
@@ -118,3 +119,57 @@ class InvoiceAnalysisOut(BaseModel):
     moneda: MonedaEnum = MonedaEnum.USD
     productos: list[MatchedProduct]
     raw_json_ia: dict
+
+
+# ── Schemas para Pagos de Factura ──────────────────────────────────────────
+
+
+class InvoicePaymentCreate(BaseModel):
+    """Schema para registrar un pago a una factura."""
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    metodo_pago_id: int
+    monto_usd: Decimal = Field(ge=0, max_digits=12, decimal_places=2, default=Decimal("0"))
+    monto_bs: Decimal = Field(ge=0, max_digits=14, decimal_places=2, default=Decimal("0"))
+    referencia: str | None = Field(max_length=100, default=None)
+    observaciones: str | None = None
+
+
+class InvoicePaymentReceiptOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    pago_id: int
+    archivo_path: str
+    nombre_original: str
+    tipo_archivo: str
+    created_at: datetime
+
+
+class InvoicePaymentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    factura_id: int
+    metodo_pago_id: int
+    metodo_pago_nombre: str
+    monto_usd: Decimal
+    monto_bs: Decimal
+    referencia: str | None
+    observaciones: str | None
+    fecha_pago: datetime
+    usuario_id: int
+    usuario_nombre: str | None = None
+    comprobantes: list[InvoicePaymentReceiptOut] = []
+
+
+class InvoicePaymentSummary(BaseModel):
+    estado_pago: str
+    total_factura_usd: Decimal
+    total_factura_bs: Decimal
+    total_pagado_usd: Decimal
+    total_pagado_bs: Decimal
+    saldo_pendiente_usd: Decimal
+    saldo_pendiente_bs: Decimal
+    cantidad_pagos: int
+    porcentaje_pagado: float

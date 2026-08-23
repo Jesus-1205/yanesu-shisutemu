@@ -9,6 +9,7 @@ from app.models.sale import Sale, SaleItem
 from app.models.payment_method import PaymentMethod
 from app.models.sale_payment import SalePayment
 from app.models.invoice import Factura, DetalleFactura
+from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.price_rule import PriceRule, PriceRuleProduct, PriceRulePaymentMethod
 from app.models.system_setting import SystemSetting
 
@@ -30,6 +31,8 @@ __all__ = [
     "SalePayment",
     "Factura",
     "DetalleFactura",
+    "InvoicePayment",
+    "InvoicePaymentReceipt",
     "PriceRule",
     "PriceRuleProduct",
     "PriceRulePaymentMethod",

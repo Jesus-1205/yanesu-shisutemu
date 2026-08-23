@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Bot } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Download, Bot, DollarSign, Paperclip } from "lucide-react";
 import { api } from "@/services/api";
 import type { Invoice } from "../types";
+import type { InvoicePaymentOut, InvoicePaymentSummary } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Badge from "@/ui-components/Badge";
 import Spinner from "@/ui-components/Spinner";
@@ -13,6 +14,7 @@ import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
 import { calcularResumenFiscal } from "@/lib/iva";
+import PaymentDrawer from "../components/PaymentDrawer";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,10 @@ export default function InvoiceDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [payments, setPayments] = useState<InvoicePaymentOut[]>([]);
+  const [paymentSummary, setPaymentSummary] = useState<InvoicePaymentSummary | null>(null);
+  const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const fetchInvoice = useCallback(async () => {
     if (!id) return;
@@ -41,6 +47,27 @@ export default function InvoiceDetailPage() {
   useEffect(() => {
     fetchInvoice();
   }, [fetchInvoice]);
+
+  const fetchPayments = useCallback(async () => {
+    if (!id) return;
+    try {
+      const result = await api.getInvoicePayments(Number(id));
+      setPayments(result.pagos);
+      setPaymentSummary(result.resumen);
+    } catch {
+      // silently fail
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "pay" && invoice && invoice.estado_pago !== "PAGADA") {
+      setPaymentDrawerOpen(true);
+    }
+  }, [searchParams, invoice]);
 
   const handleDownloadImage = async () => {
     if (!invoice) return;
@@ -156,6 +183,121 @@ export default function InvoiceDetailPage() {
           </p>
         </div>
       </div>
+
+      {/* Panel de Estado de Pago */}
+      {paymentSummary && (
+        <div className="mb-6 p-4 rounded-xl bg-surface border border-slate-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Estado de Pago</h3>
+            {invoice.estado_pago !== "PAGADA" && (
+              <Button variant="accent" size="sm" onClick={() => setPaymentDrawerOpen(true)}>
+                <DollarSign className="w-4 h-4" />
+                Registrar Pago
+              </Button>
+            )}
+          </div>
+          <div className="mb-3">
+            <div className="flex justify-between text-xs text-slate-500 mb-1">
+              <span>{Math.round(paymentSummary.porcentaje_pagado)}% pagado</span>
+              <span>{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.saldo_pendiente_bs)}` : formatUsd(paymentSummary.saldo_pendiente_usd)} pendiente</span>
+            </div>
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  invoice.estado_pago === "PAGADA" ? "bg-green-500" : "bg-amber-500"
+                }`}
+                style={{ width: `${Math.min(paymentSummary.porcentaje_pagado, 100)}%` }}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+              <p className="text-slate-500">Total</p>
+              <p className="font-bold font-mono mt-0.5">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.total_factura_bs)}` : formatUsd(paymentSummary.total_factura_usd)}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-green-50 border border-green-100">
+              <p className="text-green-600">Pagado</p>
+              <p className="font-bold font-mono text-green-700 mt-0.5">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.total_pagado_bs)}` : formatUsd(paymentSummary.total_pagado_usd)}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-red-50 border border-red-100">
+              <p className="text-red-600">Saldo</p>
+              <p className="font-bold font-mono text-red-700 mt-0.5">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.saldo_pendiente_bs)}` : formatUsd(paymentSummary.saldo_pendiente_usd)}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+              <p className="text-slate-500">Estado</p>
+              <Badge
+                variant={
+                  invoice.estado_pago === "PAGADA" ? "success"
+                  : invoice.estado_pago === "PARCIALMENTE_PAGADA" ? "warning"
+                  : "danger"
+                }
+                className="mt-1"
+              >
+                {invoice.estado_pago === "PAGADA" ? "Pagada" : invoice.estado_pago === "PARCIALMENTE_PAGADA" ? "Parcial" : "Pendiente"}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Historial de Pagos */}
+      {payments.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-slate-700 mb-3">Historial de Pagos</h3>
+          <Table
+            columns={[
+              {
+                key: "fecha_pago",
+                header: "Fecha",
+                render: (p: InvoicePaymentOut) => new Date(p.fecha_pago).toLocaleDateString("es-VE"),
+              },
+              {
+                key: "metodo_pago_nombre",
+                header: "Método",
+              },
+              {
+                key: "monto_usd",
+                header: "Monto USD",
+                hideOnMobile: true,
+                render: (p: InvoicePaymentOut) => (
+                  <span className="font-mono">{formatUsd(p.monto_usd)}</span>
+                ),
+              },
+              {
+                key: "monto_bs",
+                header: "Monto Bs.",
+                hideOnMobile: true,
+                render: (p: InvoicePaymentOut) => (
+                  <span className="font-mono">Bs. {formatBs(p.monto_bs)}</span>
+                ),
+              },
+              {
+                key: "referencia",
+                header: "Referencia",
+                hideOnMobile: true,
+                render: (p: InvoicePaymentOut) => p.referencia || "—",
+              },
+              {
+                key: "comprobantes",
+                header: "Comprobante",
+                exportable: false,
+                render: (p: InvoicePaymentOut) =>
+                  p.comprobantes.length > 0 ? (
+                    <Button variant="ghost" size="sm" onClick={() => window.open(api.getPaymentReceiptUrl(invoice.id, p.id, p.comprobantes[0].id), "_blank")}>
+                      <Paperclip className="w-3.5 h-3.5" />
+                      Ver
+                    </Button>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  ),
+              },
+            ]}
+            data={payments}
+            keyExtractor={(p) => p.id}
+            emptyMessage="Sin pagos registrados"
+          />
+        </div>
+      )}
 
       {invoice.image_path && (
         <div className="mb-6">
@@ -377,6 +519,16 @@ export default function InvoiceDetailPage() {
           );
         })()}
       </Modal>
+
+      <PaymentDrawer
+        open={paymentDrawerOpen}
+        onClose={() => setPaymentDrawerOpen(false)}
+        invoice={invoice}
+        onSuccess={() => {
+          fetchPayments();
+          fetchInvoice();
+        }}
+      />
     </div>
   );
 }
