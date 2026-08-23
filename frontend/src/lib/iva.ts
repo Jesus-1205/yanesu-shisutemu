@@ -40,9 +40,15 @@ export function calcularResumenFiscal(
 
   for (const item of items) {
     const subtotal = esBs ? item.subtotal_bs : item.subtotal_usd;
-    if (shouldCalcIva && item.tipo_iva === "GRAVADO") {
-      base += Math.round(subtotal * 100) / 100;
-      iva += calcIva(subtotal);
+    if (shouldCalcIva) {
+      // Cuando aplica_iva=true y moneda=BS, todo es GRAVADO por defecto.
+      // El campo tipo_iva del item determina si el usuario marcó como EXENTO.
+      if (item.tipo_iva === "EXENTO") {
+        exento += Math.round(subtotal * 100) / 100;
+      } else {
+        base += Math.round(subtotal * 100) / 100;
+        iva += calcIva(subtotal);
+      }
     } else {
       exento += Math.round(subtotal * 100) / 100;
     }

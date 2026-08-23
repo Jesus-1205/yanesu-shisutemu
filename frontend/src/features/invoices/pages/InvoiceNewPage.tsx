@@ -870,6 +870,27 @@ export default function InvoiceNewPage() {
                             {item.tipo_empaque === "CAJA" && item.unidades_por_caja > 1 && (
                               <span className="text-[10px] text-slate-400 mt-0.5">{item.unidades_por_caja} unds/caja</span>
                             )}
+                            {aplicaIva && esBs && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLineItems((prev) =>
+                                    prev.map((li) =>
+                                      li.key === item.key
+                                        ? { ...li, tipo_iva: li.tipo_iva === "GRAVADO" ? "EXENTO" : "GRAVADO" }
+                                        : li
+                                    )
+                                  );
+                                }}
+                                className={`text-[10px] mt-0.5 cursor-pointer hover:underline ${
+                                  item.tipo_iva === "EXENTO"
+                                    ? "text-orange-600 font-semibold"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {item.tipo_iva === "EXENTO" ? "Exento" : "Exento?"}
+                              </button>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
