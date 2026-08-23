@@ -632,6 +632,7 @@ def create_invoice(
         observaciones=data.observaciones,
         moneda_principal=data.moneda_principal,
         tasa_bs=tasa,
+        aplica_iva=data.aplica_iva,
         procesada_por_ia=procesada_por_ia,
         raw_json_ia=raw_json_ia,
     )

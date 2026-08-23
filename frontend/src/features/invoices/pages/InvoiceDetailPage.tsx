@@ -12,7 +12,7 @@ import PageHeader from "@/ui-components/PageHeader";
 import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
-import { calcIva } from "@/lib/iva";
+import { calcularResumenFiscal } from "@/lib/iva";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -143,6 +143,12 @@ export default function InvoiceDetailPage() {
             {Number(invoice.tasa_bs) > 0 ? formatBs(Number(invoice.tasa_bs)) : "—"}
           </p>
         </div>
+        <div className="p-4 rounded-xl bg-surface border border-slate-200">
+          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">IVA</p>
+          <p className="text-sm font-medium mt-1">
+            {invoice.aplica_iva ? "Con IVA" : "Sin IVA"}
+          </p>
+        </div>
       </div>
 
       {invoice.image_path && (
@@ -240,14 +246,20 @@ export default function InvoiceDetailPage() {
       </div>
 
       {invoice.detalles.length > 0 && (() => {
-        const baseImponible = invoice.detalles
-          .reduce((sum, d) => {
-            return Math.round((sum + d.cantidad * Number(d.costo_unitario_bs)) * 100) / 100;
-          }, 0);
-        const iva = invoice.moneda_principal === "BS" ? calcIva(baseImponible) : 0;
+        const resumen = calcularResumenFiscal(
+          invoice.detalles.map(d => ({
+            subtotal_usd: d.cantidad * Number(d.costo_unitario_usd),
+            subtotal_bs: d.cantidad * Number(d.costo_unitario_bs),
+            tipo_iva: d.product?.tipo_iva ?? "GRAVADO",
+          })),
+          invoice.moneda_principal,
+          invoice.aplica_iva,
+        );
         const exento = invoice.moneda_principal === "USD"
           ? Number(invoice.total_usd)
-          : 0;
+          : resumen.exento;
+        const baseImponible = resumen.base_imponible;
+        const iva = resumen.iva;
         const totalUsd = invoice.moneda_principal === "USD"
           ? Number(invoice.total_usd)
           : 0;

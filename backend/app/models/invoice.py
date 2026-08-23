@@ -36,6 +36,8 @@ class Factura(Base):
     total_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0"))
     total_bs: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0"))
 
+    aplica_iva: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
     # Campos de auditoría IA
     procesada_por_ia: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     raw_json_ia: Mapped[dict | None] = mapped_column(JSON, nullable=True)

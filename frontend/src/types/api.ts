@@ -463,6 +463,7 @@ export interface FacturaCreate {
   observaciones?: string | null;
   moneda_principal: MonedaEnum;
   tasa_bs: number;
+  aplica_iva?: boolean;
   detalles: DetalleFacturaCreate[];
 }
 
@@ -489,6 +490,7 @@ export interface FacturaOut {
   tasa_bs: number;
   total_usd: number;
   total_bs: number;
+  aplica_iva: boolean;
   created_at: string;
   procesada_por_ia?: boolean;
   raw_json_ia?: Record<string, unknown> | null;

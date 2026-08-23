@@ -34,6 +34,7 @@ const baseInvoice: FacturaOut = {
   tasa_bs: 750,
   total_usd: 89.35,
   total_bs: 67018,
+  aplica_iva: true,
   created_at: "2026-07-14T12:00:00",
   procesada_por_ia: false,
   raw_json_ia: null,

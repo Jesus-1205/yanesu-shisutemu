@@ -31,6 +31,7 @@ class FacturaCreate(BaseModel):
     observaciones: str | None = None
     moneda_principal: MonedaEnum = MonedaEnum.USD
     tasa_bs: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    aplica_iva: bool = True
     detalles: list[DetalleFacturaCreate]
 
 
@@ -61,6 +62,7 @@ class FacturaOut(BaseModel):
     tasa_bs: Decimal
     total_usd: Decimal
     total_bs: Decimal
+    aplica_iva: bool
     created_at: datetime
     procesada_por_ia: bool = False
     raw_json_ia: dict | None = None

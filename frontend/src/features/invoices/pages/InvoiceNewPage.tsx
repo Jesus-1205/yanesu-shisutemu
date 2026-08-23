@@ -16,7 +16,7 @@ import CreateSupplierModal from "@/features/shared/components/CreateSupplierModa
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
 import { formatBs } from "@/lib/text";
-import { calcIva } from "@/lib/iva";
+import { calcularResumenFiscal } from "@/lib/iva";
 import { toCents, convertirCostos, calcularSubtotal } from "@/lib/money";
 import { getTodayInCaracas } from "@/lib/utils";
 
@@ -57,6 +57,7 @@ export default function InvoiceNewPage() {
   const [observaciones, setObservaciones] = useState("");
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
+  const [aplicaIva, setAplicaIva] = useState(true);
 
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [supplierModalNombre, setSupplierModalNombre] = useState("");
@@ -400,32 +401,23 @@ export default function InvoiceNewPage() {
   );
 
   const ivaBreakdown = useMemo(() => {
-    let exento = 0;
-    let base = 0;
-    let iva = 0;
     let totalUnidades = 0;
-    const aplicaIva = moneda === "BS"; // IVA solo aplica en bolívares
     for (const item of lineItems) {
-      const unidades = item.tipo_empaque === "CAJA"
+      totalUnidades += item.tipo_empaque === "CAJA"
         ? item.cantidad * item.unidades_por_caja
         : item.cantidad;
-      totalUnidades += unidades;
-      const subtotal = aplicaIva ? item.subtotal_bs : item.subtotal_usd;
-      if (aplicaIva && item.tipo_iva === "GRAVADO") {
-        base += Math.round(subtotal * 100) / 100;
-        iva += calcIva(subtotal);
-      } else {
-        exento += Math.round(subtotal * 100) / 100;
-      }
     }
-    return {
-      exento: Math.round(exento * 100) / 100,
-      base_imponible: Math.round(base * 100) / 100,
-      iva: Math.round(iva * 100) / 100,
-      total: Math.round((exento + base + iva) * 100) / 100,
-      totalUnidades,
-    };
-  }, [lineItems, moneda]);
+    const resumen = calcularResumenFiscal(
+      lineItems.map(item => ({
+        subtotal_usd: item.subtotal_usd,
+        subtotal_bs: item.subtotal_bs,
+        tipo_iva: item.tipo_iva,
+      })),
+      moneda,
+      aplicaIva,
+    );
+    return { ...resumen, totalUnidades };
+  }, [lineItems, moneda, aplicaIva]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -444,6 +436,7 @@ export default function InvoiceNewPage() {
           observaciones: observaciones.trim() || null,
           moneda_principal: moneda,
           tasa_bs: Math.round(nTasa * 100) / 100,
+          aplica_iva: aplicaIva,
           detalles: lineItems.map((d) => ({
             producto_id: d.producto_id,
             tipo_empaque: d.tipo_empaque,
@@ -585,6 +578,34 @@ export default function InvoiceNewPage() {
                   autoComplete="off"
                   className={inputBase}
                 />
+              </div>
+              <div>
+                <label className={labelBase}>¿La factura incluye IVA?</label>
+                <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setAplicaIva(true)}
+                    disabled={moneda === "USD"}
+                    className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                      aplicaIva ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+                    } ${moneda === "USD" ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    Con IVA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAplicaIva(false)}
+                    disabled={moneda === "USD"}
+                    className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                      !aplicaIva ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+                    } ${moneda === "USD" ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    Sin IVA
+                  </button>
+                </div>
+                {moneda === "USD" && (
+                  <p className="text-[10px] text-slate-400 mt-0.5">El IVA solo aplica a facturas en bolívares</p>
+                )}
               </div>
               <div>
                 <label className={labelBase}>Archivos de Factura (imagen o PDF)</label>
