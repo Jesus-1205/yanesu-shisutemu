@@ -244,16 +244,15 @@ describe("InvoiceNewPage", () => {
     // 6. Click Agregar
     clickAdd();
 
-    // 7. Verify subtotal = $88.00 (4 × 22 = 88), NOT $3168.00 (4 × 22 × 36)
-    // The value "$88.00" appears in multiple places: table row, footer, fiscal panel
+    // 7. Verify subtotal = $88,00 (4 × 22 = 88), NOT $3.168,00 (4 × 22 × 36)
+    // The value "$88,00" appears in multiple places: table row, footer, fiscal panel (formato es-VE: coma decimal)
     await waitFor(() => {
-      const elements = screen.getAllByText("$88.00");
+      const elements = screen.getAllByText("$88,00");
       expect(elements.length).toBeGreaterThanOrEqual(1);
     });
 
     // Verify the inflated value does NOT appear anywhere
-    expect(screen.queryByText("$3,168.00")).not.toBeInTheDocument();
-    expect(screen.queryByText("$3168.00")).not.toBeInTheDocument();
+    expect(screen.queryByText("$3.168,00")).not.toBeInTheDocument();
   });
 
   it("subtotal for UNIDAD items = quantity × unit cost", async () => {
@@ -279,9 +278,9 @@ describe("InvoiceNewPage", () => {
     // 6. Click Agregar
     clickAdd();
 
-    // 7. Verify subtotal = $30.00 (3 × 10 = 30)
+    // 7. Verify subtotal = $30,00 (3 × 10 = 30) — formato es-VE
     await waitFor(() => {
-      const elements = screen.getAllByText("$30.00");
+      const elements = screen.getAllByText("$30,00");
       expect(elements.length).toBeGreaterThanOrEqual(1);
     });
   });
@@ -381,9 +380,9 @@ describe("InvoiceNewPage", () => {
     fillCost("22");
     clickAdd();
 
-    // Wait for first item — "$88.00" appears in row, footer, and panel
+    // Wait for first item — "$88,00" appears in row, footer, and panel (formato es-VE)
     await waitFor(() => {
-      const els = screen.getAllByText("$88.00");
+      const els = screen.getAllByText("$88,00");
       expect(els.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -395,15 +394,15 @@ describe("InvoiceNewPage", () => {
 
     // Total should be 88 + 30 = 118
     await waitFor(() => {
-      const els = screen.getAllByText("$118.00");
+      const els = screen.getAllByText("$118,00");
       expect(els.length).toBeGreaterThanOrEqual(1);
     });
 
     // Also verify the individual subtotals still appear
-    const subtotal88 = screen.getAllByText("$88.00");
+    const subtotal88 = screen.getAllByText("$88,00");
     expect(subtotal88.length).toBeGreaterThanOrEqual(1);
 
-    const subtotal30 = screen.getAllByText("$30.00");
+    const subtotal30 = screen.getAllByText("$30,00");
     expect(subtotal30.length).toBeGreaterThanOrEqual(1);
   });
 

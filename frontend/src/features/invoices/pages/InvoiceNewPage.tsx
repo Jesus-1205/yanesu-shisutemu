@@ -16,7 +16,7 @@ import CreateSupplierModal from "@/features/shared/components/CreateSupplierModa
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
 import ObsequioForm from "../components/ObsequioForm";
-import { formatBs } from "@/lib/text";
+import { formatBs, formatUsd } from "@/lib/text";
 import { calcularResumenFiscal } from "@/lib/iva";
 import { toCents, convertirCostos, calcularSubtotal } from "@/lib/money";
 import { getTodayInCaracas } from "@/lib/utils";
@@ -724,7 +724,7 @@ export default function InvoiceNewPage() {
                 </div>
                 {exchangeRateStore.fechaUltimaActualizacion && (
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    Tasa actual: {exchangeRateStore.tasa.toFixed(2)} Bs/USD • Actualizada {new Date(exchangeRateStore.fechaUltimaActualizacion).toLocaleDateString("es-VE")}
+                    Tasa actual: {formatBs(exchangeRateStore.tasa)} Bs/USD • Actualizada {new Date(exchangeRateStore.fechaUltimaActualizacion).toLocaleDateString("es-VE")}
                   </p>
                 )}
               </div>
@@ -859,7 +859,7 @@ export default function InvoiceNewPage() {
                 />
                 {newTipoEmpaque === "CAJA" && nUndsCaja > 0 && nCostoPrim > 0 && (
                   <p className="absolute -bottom-4 left-0 text-[10px] text-slate-400 whitespace-nowrap">
-                    = ${(nCostoPrim / nUndsCaja).toFixed(2)}/und ({nUndsCaja} unds/caja)
+                    = {formatUsd(nCostoPrim / nUndsCaja)}/und ({nUndsCaja} unds/caja)
                   </p>
                 )}
               </div>
@@ -870,7 +870,7 @@ export default function InvoiceNewPage() {
                 <input
                   id={fid("costo-sec")}
                   type="text"
-                  value={newCostoSecundario > 0 ? (esBs ? `$${newCostoSecundario.toFixed(2)}` : `Bs. ${formatBs(newCostoSecundario)}`) : "—"}
+                  value={newCostoSecundario > 0 ? (esBs ? formatUsd(newCostoSecundario) : `Bs. ${formatBs(newCostoSecundario)}`) : "—"}
                   className={`${inputReadOnly} cursor-not-allowed text-slate-400 font-mono text-xs text-center`}
                   readOnly
                   tabIndex={-1}
@@ -998,13 +998,13 @@ export default function InvoiceNewPage() {
                           {item.cantidad}
                         </td>
                         <td className="px-4 py-3 text-right text-text-main font-mono text-xs">
-                          <div>${item.costo_unitario_usd.toFixed(2)}</div>
+                          <div>{formatUsd(item.costo_unitario_usd)}</div>
                           <div className="text-[10px] text-slate-400">
                             /{item.tipo_empaque === "CAJA" ? "caja" : "und"}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
-                          ${item.subtotal_usd.toFixed(2)}
+                          {formatUsd(item.subtotal_usd)}
                         </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
                           Bs. {formatBs(item.subtotal_bs)}
@@ -1033,7 +1033,7 @@ export default function InvoiceNewPage() {
                       </td>
                       <td />
                       <td className="px-4 py-3.5 text-right tabular-nums">
-                        ${total_usd.toFixed(2)}
+                        {formatUsd(total_usd)}
                       </td>
                       <td className="px-4 py-3.5 text-right tabular-nums">
                         Bs. {formatBs(total_bs)}
@@ -1056,7 +1056,7 @@ export default function InvoiceNewPage() {
                       {esBs ? (
                         <span className="font-mono text-xs sm:text-sm">Bs. {formatBs(ivaBreakdown.exento)}</span>
                       ) : (
-                        <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.exento.toFixed(2)}</span>
+                        <span className="font-mono text-xs sm:text-sm">{formatUsd(ivaBreakdown.exento)}</span>
                       )}
                     </div>
                     <div className="flex justify-between text-slate-600">
@@ -1064,7 +1064,7 @@ export default function InvoiceNewPage() {
                       {esBs ? (
                         <span className="font-mono text-xs sm:text-sm">Bs. {formatBs(ivaBreakdown.base_imponible)}</span>
                       ) : (
-                        <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.base_imponible.toFixed(2)}</span>
+                        <span className="font-mono text-xs sm:text-sm">{formatUsd(ivaBreakdown.base_imponible)}</span>
                       )}
                     </div>
                     <div className="flex justify-between text-slate-600">
@@ -1072,7 +1072,7 @@ export default function InvoiceNewPage() {
                       {esBs ? (
                         <span className="font-mono text-xs sm:text-sm">Bs. {formatBs(ivaBreakdown.iva)}</span>
                       ) : (
-                        <span className="font-mono text-xs sm:text-sm">${ivaBreakdown.iva.toFixed(2)}</span>
+                        <span className="font-mono text-xs sm:text-sm">{formatUsd(ivaBreakdown.iva)}</span>
                       )}
                     </div>
                   </div>
@@ -1085,14 +1085,14 @@ export default function InvoiceNewPage() {
                         </div>
                         <div className="flex justify-between items-center font-bold text-text-main text-base">
                           <span>Total USD</span>
-                          <span className="font-mono text-lg">${total_usd.toFixed(2)}</span>
+                          <span className="font-mono text-lg">{formatUsd(total_usd)}</span>
                         </div>
                       </>
                     ) : (
                       <>
                         <div className="flex justify-between items-center font-bold text-text-main text-base">
                           <span>Total USD</span>
-                          <span className="font-mono text-lg">${ivaBreakdown.total.toFixed(2)}</span>
+                          <span className="font-mono text-lg">{formatUsd(ivaBreakdown.total)}</span>
                         </div>
                         <div className="flex justify-between items-center font-bold text-text-main text-base">
                           <span>Total Bs.</span>
@@ -1380,8 +1380,8 @@ export default function InvoiceNewPage() {
                             {selectedAiCurrency === "BS" && (
                               <span className="text-[10px] text-slate-400">
                                 {tasa !== "" && Number(tasa) > 0
-                                  ? `$${(Number(item.precio_unitario) / Number(tasa)).toFixed(2)}`
-                                  : `$${Number(item.precio_unitario).toFixed(2)}`
+                                  ? formatUsd(Number(item.precio_unitario) / Number(tasa))
+                                  : formatUsd(Number(item.precio_unitario))
                                 }
                               </span>
                             )}
