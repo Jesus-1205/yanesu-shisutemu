@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Package, CirclePlus, ScanLine, CheckCircle2, AlertTriangle, XCircle, Loader2, X, ChevronDown, ChevronUp, Gift } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Package, CirclePlus, ScanLine, CheckCircle2, AlertTriangle, XCircle, Loader2, X, ChevronDown, ChevronUp, Gift, Copy, Clock } from "lucide-react";
 import { api } from "@/services/api";
 import type { MonedaEnum, TipoEmpaque, ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut, MatchedProduct } from "@/types/api";
 import Button from "@/ui-components/Button";
@@ -20,6 +20,8 @@ import { formatBs } from "@/lib/text";
 import { calcularResumenFiscal } from "@/lib/iva";
 import { toCents, convertirCostos, calcularSubtotal } from "@/lib/money";
 import { getTodayInCaracas } from "@/lib/utils";
+import { useExchangeRateStore } from "@/stores/exchangeRateStore";
+import type { ExchangeRateOut } from "@/types/api";
 
 interface LineItem {
   key: string;
@@ -60,18 +62,32 @@ export default function InvoiceNewPage() {
   const [suppliers, setSuppliers] = useState<SupplierOut[]>([]);
   const [products, setProducts] = useState<ProductOut[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [proveedorId, setProveedorId] = useState<number | null>(null);
   const [numeroFactura, setNumeroFactura] = useState("");
   const [tipoDocumento, setTipoDocumento] = useState<"FACTURA" | "NOTA_ENTREGA">("FACTURA");
   const [fechaFactura, setFechaFactura] = useState(getTodayInCaracas);
+  const [fechaLimitePago, setFechaLimitePago] = useState<string | null>(null);
   const [observaciones, setObservaciones] = useState("");
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [aplicaIva, setAplicaIva] = useState(true);
   const [obsequioItems, setObsequioItems] = useState<ObsequioItem[]>([]);
   const [showObsequios, setShowObsequios] = useState(false);
+
+  // ── Tasa de cambio ──
+  const exchangeRateStore = useExchangeRateStore();
+  const [rateHistory, setRateHistory] = useState<ExchangeRateOut[]>([]);
+  const [showRateHistory, setShowRateHistory] = useState(false);
+
+  useEffect(() => {
+    if (exchangeRateStore.tasa === 0) {
+      exchangeRateStore.loadTasa();
+    }
+    api.getRateHistory({ days: 10 }).then((res) => {
+      setRateHistory(res.history);
+    }).catch(() => {});
+  }, []);
 
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [supplierModalNombre, setSupplierModalNombre] = useState("");
@@ -141,7 +157,7 @@ export default function InvoiceNewPage() {
 
   const handleAnalyzeImage = useCallback(async () => {
     if (invoiceFiles.length === 0) {
-      setError("Sube una imagen primero para analizar con IA");
+      toast("Sube una imagen primero para analizar con IA", "error");
       return;
     }
 
@@ -442,11 +458,10 @@ export default function InvoiceNewPage() {
   }, [lineItems, moneda, aplicaIva]);
 
   const handleSubmit = async () => {
-    setError(null);
-    if (!proveedorId) { setError("Selecciona un proveedor"); return; }
-    if (!numeroFactura.trim()) { setError("Ingresa el número de factura"); return; }
+    if (!proveedorId) { toast("Selecciona un proveedor", "error"); return; }
+    if (!numeroFactura.trim()) { toast("Ingresa el número de factura", "error"); return; }
     if (nTasa <= 0) { toast("Ingresa la tasa de cambio", "error"); return; }
-    if (lineItems.length === 0) { setError("Agrega al menos un producto a la factura"); return; }
+    if (lineItems.length === 0) { toast("Agrega al menos un producto a la factura", "error"); return; }
 
     setLoading(true);
     try {
@@ -456,6 +471,7 @@ export default function InvoiceNewPage() {
           numero_factura: numeroFactura.trim(),
           tipo_documento: tipoDocumento,
           fecha_factura: fechaFactura || null,
+          fecha_limite_pago: fechaLimitePago || null,
           observaciones: observaciones.trim() || null,
           moneda_principal: moneda,
           tasa_bs: Math.round(nTasa * 100) / 100,
@@ -483,7 +499,7 @@ export default function InvoiceNewPage() {
       toast(`Factura #${factura.numero_factura} registrada con éxito`, "success");
       navigate(`/invoices/${factura.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al registrar factura");
+      toast(err instanceof Error ? err.message : "Error al registrar factura", "error");
     } finally {
       setLoading(false);
     }
@@ -508,12 +524,6 @@ export default function InvoiceNewPage() {
           </Button>
         }
       />
-
-      {error && (
-        <div className="mb-4">
-          <ErrorBanner onRetry={() => setError(null)}>{error}</ErrorBanner>
-        </div>
-      )}
 
       <div className="max-w-5xl mx-auto space-y-6 pb-8">
         {/* ─── Card: Información de la Factura ───────────────────── */}
@@ -594,6 +604,17 @@ export default function InvoiceNewPage() {
                   className={inputBase}
                 />
               </div>
+              <div>
+                <label htmlFor={fid("fecha-limite")} className={labelBase}>Fecha Límite de Pago <span className="text-slate-400 font-normal">(opcional)</span></label>
+                <input
+                  id={fid("fecha-limite")}
+                  type="date"
+                  value={fechaLimitePago || ""}
+                  onChange={(e) => setFechaLimitePago(e.target.value || null)}
+                  autoComplete="off"
+                  className={inputBase}
+                />
+              </div>
             </div>
             <div className="space-y-4">
               <div>
@@ -625,17 +646,87 @@ export default function InvoiceNewPage() {
               </div>
               <div>
                 <label htmlFor={fid("tasa")} className={labelBase}>Tasa de Cambio (Bs. por USD)</label>
-                <input
-                  id={fid("tasa")}
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={tasa}
-                  onChange={(e) => setTasa(e.target.value)}
-                  placeholder="0.00"
-                  autoComplete="off"
-                  className={inputBase}
-                />
+                <div className="flex gap-2">
+                  <input
+                    id={fid("tasa")}
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={tasa}
+                    onChange={(e) => setTasa(e.target.value)}
+                    placeholder="0.00"
+                    autoComplete="off"
+                    className={`${inputBase} flex-1`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (exchangeRateStore.tasa > 0) {
+                        setTasa(String(exchangeRateStore.tasa));
+                        toast("Tasa del día aplicada", "success");
+                      } else {
+                        exchangeRateStore.loadTasa().then(() => {
+                          if (exchangeRateStore.tasa > 0) {
+                            setTasa(String(exchangeRateStore.tasa));
+                            toast("Tasa del día aplicada", "success");
+                          }
+                        });
+                      }
+                    }}
+                    className="shrink-0 h-10 px-3 rounded-lg border border-slate-300 bg-surface text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-brand-blue transition-colors cursor-pointer flex items-center gap-1"
+                    title="Usar tasa del día de hoy"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Hoy
+                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowRateHistory((prev) => !prev)}
+                      className="shrink-0 h-10 px-3 rounded-lg border border-slate-300 bg-surface text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-brand-blue transition-colors cursor-pointer flex items-center gap-1"
+                      title="Historial de tasas"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                    </button>
+                    {showRateHistory && rateHistory.length > 0 && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowRateHistory(false)} />
+                        <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-lg border border-slate-200 bg-white shadow-lg overflow-hidden">
+                          <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                            Últimas tasas
+                          </div>
+                          <div className="max-h-64 overflow-y-auto">
+                            {rateHistory.map((rate) => (
+                              <button
+                                key={rate.id}
+                                type="button"
+                                onClick={() => {
+                                  setTasa(rate.tasa_usd.toString());
+                                  setShowRateHistory(false);
+                                  toast(`Tasa del ${new Date(rate.fecha_registro).toLocaleDateString("es-VE")} aplicada`, "success");
+                                }}
+                                className="w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between border-b border-slate-50 last:border-0"
+                              >
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium text-text-main">USD {Number(rate.tasa_usd).toFixed(2)}</span>
+                                  <span className="text-[10px] text-slate-400">EUR {Number(rate.tasa_eur).toFixed(2)}</span>
+                                </div>
+                                <span className="text-xs text-slate-400">
+                                  {new Date(rate.fecha_registro).toLocaleDateString("es-VE")}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {exchangeRateStore.fechaUltimaActualizacion && (
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Tasa actual: {exchangeRateStore.tasa.toFixed(2)} Bs/USD • Actualizada {new Date(exchangeRateStore.fechaUltimaActualizacion).toLocaleDateString("es-VE")}
+                  </p>
+                )}
               </div>
               <div>
                 <label className={labelBase}>¿La factura incluye IVA?</label>
