@@ -506,10 +506,10 @@ export default function InvoiceDetailPage() {
                 <td className="hidden md:table-cell" />
                 <td className="hidden md:table-cell" />
                 <td className="px-4 py-3.5 text-right tabular-nums">
-                  {formatUsd(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_usd), 0))}
+                  {formatUsd(Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_usd), 0) * 100) / 100)}
                 </td>
                 <td className="px-4 py-3.5 text-right tabular-nums">
-                  Bs. {formatBs(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0))}
+                  Bs. {formatBs(Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0) * 100) / 100)}
                 </td>
               </tr>
             );

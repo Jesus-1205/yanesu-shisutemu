@@ -55,7 +55,7 @@ export default function PaymentModal({ open, onClose, invoice, paymentSummary, o
 
   const selectedMethod = methods.find((m) => m.id === selectedMethodId);
   const montoNum = Number(monto) || 0;
-  const excedeSaldo = montoNum > saldoPendiente + 0.01;
+  const excedeSaldo = Math.round(montoNum * 100) / 100 > saldoPendiente;
   const isValid = montoNum > 0 && selectedMethodId !== null && !excedeSaldo;
 
   const handleConfirm = useCallback(async () => {

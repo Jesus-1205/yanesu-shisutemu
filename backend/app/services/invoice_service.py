@@ -994,7 +994,7 @@ def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentS
     saldo_usd = total_con_iva_usd - total_pagado_usd
     saldo_bs = total_con_iva_bs - total_pagado_bs
 
-    pct = float(total_pagado_usd / total_con_iva_usd * 100) if total_con_iva_usd > 0 else 0.0
+    pct = float((total_pagado_usd * Decimal("100") / total_con_iva_usd).quantize(Decimal("0.01"))) if total_con_iva_usd > 0 else 0.0
 
     stmt_count = select(func.count()).where(InvoicePayment.factura_id == factura_id)
     count = db.execute(stmt_count).scalar() or 0
