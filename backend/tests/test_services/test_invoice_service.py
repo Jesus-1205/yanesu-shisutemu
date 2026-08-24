@@ -365,28 +365,37 @@ class TestCalcularTotalConIva:
         assert total_bs == Decimal("3920.00")
 
     def test_bs_zero_tasa_keeps_usd_original(self, db):
-        """BS con tasa_bs=0 → total_usd no se recalcula."""
+        """BS con tasa_bs=0 → _calcular_total_con_iva retorna total_bs sin conversión USD."""
         sup = _sup(db)
         prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
         user = _user(db)
-        data = FacturaCreate(
-            proveedor_id=sup.id,
-            numero_factura="F-TASA0",
-            moneda_principal=MonedaEnum.BS,
-            tasa_bs=Decimal("0"),
-            aplica_iva=True,
-            detalles=[DetalleFacturaCreate(
-                producto_id=prod.id, tipo_empaque="CAJA", cantidad=2,
-                costo_unitario_usd=Decimal("50"), costo_unitario_bs=Decimal("2000"),
-                tipo_iva="GRAVADO",
-            )],
+        # Creamos factura directamente en la DB para bypass la validación de tasa_bs>0
+        from app.models.invoice import Factura, MonedaEnum as ME, TipoDocumentoEnum as TDE
+        from datetime import date
+        factura = Factura(
+            proveedor_id=sup.id, numero_factura="F-TASA0",
+            tipo_documento=TDE.FACTURA, fecha_factura=date.today(),
+            usuario_id=user.id, moneda_principal=ME.BS,
+            tasa_bs=Decimal("0"), aplica_iva=True,
         )
-        factura = create_invoice(db, data, usuario_id=user.id)
+        db.add(factura)
+        db.flush()
+
+        from app.models.invoice import DetalleFactura, TipoEmpaqueFactura as TEF
+        db.add(DetalleFactura(
+            factura_id=factura.id, producto_id=prod.id,
+            tipo_empaque=TEF.CAJA, cantidad=2,
+            costo_unitario_usd=Decimal("50"), costo_unitario_bs=Decimal("2000"),
+            tipo_iva="GRAVADO",
+        ))
+        db.commit()
+        db.refresh(factura)
 
         total_usd, total_bs = _calcular_total_con_iva(factura, db)
 
-        # tasa=0: IVA se calcula pero USD se mantiene el original
+        # total_bs = 2000*2 + IVA(4000*0.16) = 4640
         assert total_bs == Decimal("4640.00")
+        # tasa=0: total_usd se mantiene el original de la DB
         assert total_usd == factura.total_usd
 
 
@@ -850,7 +859,12 @@ class TestDeleteInvoicePayment:
 
     def test_delete_wrong_invoice(self, db):
         factura1 = self._make_factura(db, total_usd=Decimal("100"))
-        factura2 = self._make_factura(db, total_usd=Decimal("200"))
+        # Crear factura2 con numero diferente
+        sup = _sup(db, nombre="Proveedor Y")
+        prod = _prod(db)
+        user = _user(db, username="deluser2")
+        data2 = _factura_data(sup, prod, "F-DEL-002", cajas=1, costo_usd=Decimal("200"))
+        factura2 = create_invoice(db, data2, usuario_id=user.id)
         mp = _metodo_pago(db)
 
         pago = register_invoice_payment(
