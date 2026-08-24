@@ -258,7 +258,7 @@ def _factura_to_out(factura) -> FacturaOut:
 async def create_payment(
     invoice_id: int,
     data: str = Form(...),
-    comprobantes: list[UploadFile] | None = File(default=None),
+    comprobantes: UploadFile | list[UploadFile] | None = File(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
@@ -266,10 +266,14 @@ async def create_payment(
 
     Recibe: multipart/form-data con:
       - data: JSON string con InvoicePaymentCreate
-      - comprobantes: (opcional) archivos de comprobante
+      - comprobantes: (opcional) archivo o archivos de comprobante
     Devuelve: 201 + InvoicePaymentOut | 404 | 409
     """
     parsed = InvoicePaymentCreate(**json.loads(data))
+
+    # Normalizar: un solo archivo también se maneja como lista
+    if comprobantes is not None and not isinstance(comprobantes, list):
+        comprobantes = [comprobantes]
 
     files_data = []
     if comprobantes:
