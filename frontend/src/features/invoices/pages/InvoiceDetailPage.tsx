@@ -135,89 +135,91 @@ export default function InvoiceDetailPage() {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-6">
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tipo</p>
-          <p className="text-sm font-medium mt-1">
+      {/* ─── Metadata compacta ───────────────────────────────────────── */}
+      <div className="mb-6 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
+          <span className="font-medium text-slate-800">
             {invoice.tipo_documento === "FACTURA" ? "Factura" : "Nota de Entrega"}
-          </p>
-        </div>
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Proveedor</p>
-          <p className="text-sm font-medium mt-1">{invoice.supplier?.nombre || "—"}</p>
-        </div>
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Fecha</p>
-          <p className="text-sm font-medium mt-1">
-            {new Date(invoice.fecha_factura).toLocaleDateString("es-VE")}
-          </p>
-        </div>
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Límite de Pago</p>
-          {invoice.fecha_limite_pago ? (() => {
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            const limite = new Date(invoice.fecha_limite_pago + "T00:00:00");
-            const diffMs = limite.getTime() - hoy.getTime();
-            const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-            const esPagada = invoice.estado_pago === "PAGADA";
-            return (
-              <div className="mt-1">
-                <p className="text-sm font-medium">
-                  {limite.toLocaleDateString("es-VE")}
-                </p>
-                {!esPagada && (
-                  <span className={`inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                    diffDias < 0
-                      ? "bg-red-100 text-red-700"
-                      : diffDias === 0
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-emerald-100 text-emerald-700"
-                  }`}>
-                    {diffDias < 0
-                      ? `Vencida hace ${Math.abs(diffDias)} día${Math.abs(diffDias) !== 1 ? "s" : ""}`
-                      : diffDias === 0
-                        ? "Vence hoy"
-                        : `${diffDias} día${diffDias !== 1 ? "s" : ""} restante${diffDias !== 1 ? "s" : ""}`
-                    }
-                  </span>
-                )}
-              </div>
-            );
-          })() : (
-            <p className="text-sm text-slate-400 mt-1">Sin definir</p>
+          </span>
+          <span className="text-slate-300">•</span>
+          <span>{new Date(invoice.fecha_factura).toLocaleDateString("es-VE")}</span>
+          <span className="text-slate-300">•</span>
+          <span>{invoice.supplier?.nombre || "—"}</span>
+          {invoice.aplica_iva && (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">IVA 16%</span>
+            </>
           )}
         </div>
+        {invoice.fecha_limite_pago && (() => {
+          const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0);
+          const limite = new Date(invoice.fecha_limite_pago + "T00:00:00");
+          const diffMs = limite.getTime() - hoy.getTime();
+          const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          const esPagada = invoice.estado_pago === "PAGADA";
+          return (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-slate-500">Límite de pago:</span>
+              <span className="font-medium">{limite.toLocaleDateString("es-VE")}</span>
+              {!esPagada && (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  diffDias < 0
+                    ? "bg-red-100 text-red-700"
+                    : diffDias === 0
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  {diffDias < 0
+                    ? `Vencida hace ${Math.abs(diffDias)} día${Math.abs(diffDias) !== 1 ? "s" : ""}`
+                    : diffDias === 0
+                      ? "Vence hoy"
+                      : `${diffDias} día${diffDias !== 1 ? "s" : ""} restante${diffDias !== 1 ? "s" : ""}`
+                  }
+                </span>
+              )}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* ─── Cards financieras ─────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="p-4 rounded-xl bg-surface border border-slate-200">
           <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
             Total USD
-            <Badge variant="info" className="ml-2">{invoice.moneda_principal === "USD" ? "Principal" : "Auto-calc"}</Badge>
+            <span className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+              invoice.moneda_principal === "USD" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
+            }`}>
+              {invoice.moneda_principal === "USD" ? "PRINCIPAL" : "AUTO-CALC"}
+            </span>
           </p>
-          <p className="text-sm font-bold mt-1 font-mono">
+          <p className="text-lg font-bold mt-1 font-mono">
             {formatUsd(Number(invoice.total_usd))}
           </p>
         </div>
         <div className="p-4 rounded-xl bg-surface border border-slate-200">
           <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
             Total Bs.
-            <Badge variant="warning" className="ml-2">{invoice.moneda_principal === "BS" ? "Principal" : "Auto-calc"}</Badge>
+            <span className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+              invoice.moneda_principal === "BS" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
+            }`}>
+              {invoice.moneda_principal === "BS" ? "PRINCIPAL" : "AUTO-CALC"}
+            </span>
           </p>
-          <p className="text-sm font-bold mt-1 font-mono">
+          <p className="text-lg font-bold mt-1 font-mono">
             Bs. {formatBs(Number(invoice.total_bs))}
           </p>
         </div>
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tasa BCV</p>
-          <p className="text-sm font-bold mt-1 font-mono">
-            {Number(invoice.tasa_bs) > 0 ? formatBs(Number(invoice.tasa_bs)) : "—"}
-          </p>
-        </div>
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">IVA</p>
-          <p className="text-sm font-medium mt-1">
-            {invoice.aplica_iva ? "Con IVA" : "Sin IVA"}
-          </p>
-        </div>
+        {Number(invoice.tasa_bs) > 0 && (
+          <div className="p-4 rounded-xl bg-surface border border-slate-200">
+            <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tasa BCV</p>
+            <p className="text-lg font-bold mt-1 font-mono">
+              {formatBs(Number(invoice.tasa_bs))}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Panel de Estado de Pago */}
@@ -527,16 +529,10 @@ export default function InvoiceDetailPage() {
           invoice.aplica_iva,
         );
         const exento = invoice.moneda_principal === "USD"
-          ? Number(invoice.total_usd)
+          ? resumen.exento
           : resumen.exento;
         const baseImponible = resumen.base_imponible;
         const iva = resumen.iva;
-        const totalUsd = invoice.moneda_principal === "USD"
-          ? Number(invoice.total_usd)
-          : 0;
-        const totalBs = invoice.moneda_principal === "BS"
-          ? Math.round((baseImponible + iva) * 100) / 100
-          : 0;
 
         return (
           <div className="p-4 rounded-xl bg-surface border border-slate-200 mb-6">
@@ -544,28 +540,30 @@ export default function InvoiceDetailPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Exento</span>
-                <span className="font-mono font-medium">{formatUsd(exento)}</span>
+                <span className="font-mono font-medium">
+                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(exento)}` : formatUsd(exento)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Base imponible</span>
                 <span className="font-mono font-medium">
-                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(baseImponible)}` : formatUsd(0)}
+                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(baseImponible)}` : formatUsd(baseImponible)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">IVA (16%)</span>
                 <span className="font-mono font-medium">
-                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(iva)}` : formatUsd(0)}
+                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(iva)}` : formatUsd(iva)}
                 </span>
               </div>
               <div className="border-t border-slate-200 pt-2 mt-2">
                 <div className="flex justify-between">
                   <span className="text-slate-700 font-bold">Total USD</span>
-                  <span className="font-mono font-bold">{formatUsd(totalUsd || exento)}</span>
+                  <span className="font-mono font-bold">{formatUsd(Number(invoice.total_usd))}</span>
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-slate-700 font-bold">Total Bs.</span>
-                  <span className="font-mono font-bold">Bs. {formatBs(totalBs)}</span>
+                  <span className="font-mono font-bold">Bs. {formatBs(Number(invoice.total_bs))}</span>
                 </div>
               </div>
             </div>
