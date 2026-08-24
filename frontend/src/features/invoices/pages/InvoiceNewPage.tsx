@@ -937,10 +937,10 @@ export default function InvoiceNewPage() {
                   <thead>
                     <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-500">
                       <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-3">Producto</th>
-                      <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-3">Código</th>
                       <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-3">Tipo</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Cant</th>
-                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">$/Unid</th>
+                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">$/Caja</th>
+                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3 hidden md:table-cell">$/Und</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">USD</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Bs.</th>
                       <th className="text-center text-xs font-medium uppercase tracking-wider px-3 py-3 w-16">Acciones</th>
@@ -951,13 +951,6 @@ export default function InvoiceNewPage() {
                       <tr key={item.key} className="hover:bg-slate-50/80 transition-colors">
                         <td className="px-4 py-3 text-text-main font-medium max-w-[220px] truncate">
                           {item.nombre}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 font-mono text-xs">
-                          {item.codigo_barra ? (
-                            item.codigo_barra
-                          ) : (
-                            <span className="text-slate-300 font-light">—</span>
-                          )}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex flex-col items-center">
@@ -997,11 +990,21 @@ export default function InvoiceNewPage() {
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
                           {item.cantidad}
                         </td>
-                        <td className="px-4 py-3 text-right text-text-main font-mono text-xs">
-                          <div>{formatUsd(item.costo_unitario_usd)}</div>
-                          <div className="text-[10px] text-slate-400">
-                            /{item.tipo_empaque === "CAJA" ? "caja" : "und"}
-                          </div>
+                        <td className="px-4 py-3 text-right text-text-main font-mono">
+                          {item.tipo_empaque === "CAJA" ? (
+                            <span className="font-semibold text-sm">{formatUsd(item.costo_unitario_usd)}</span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right text-text-main font-mono hidden md:table-cell">
+                          {item.tipo_empaque === "UNIDAD" ? (
+                            <span className="font-semibold text-sm">{formatUsd(item.costo_unitario_usd)}</span>
+                          ) : item.unidades_por_caja > 0 ? (
+                            <span className="text-xs text-slate-400">{formatUsd(item.costo_unitario_usd / item.unidades_por_caja)}</span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
                           {formatUsd(item.subtotal_usd)}
@@ -1027,11 +1030,11 @@ export default function InvoiceNewPage() {
                     <tr className="bg-slate-100/70 border-t-2 border-slate-200 font-semibold text-text-main">
                       <td className="px-4 py-3.5">Totales</td>
                       <td />
-                      <td />
                       <td className="px-4 py-3.5 text-right tabular-nums text-xs">
                         {ivaBreakdown.totalUnidades} unds
                       </td>
                       <td />
+                      <td className="hidden md:table-cell" />
                       <td className="px-4 py-3.5 text-right tabular-nums">
                         {formatUsd(total_usd)}
                       </td>

@@ -392,16 +392,16 @@ export default function InvoiceDetailPage() {
             },
             { key: "cantidad", header: "Cant" },
             {
-              key: "costo_unitario_usd",
-              header: "$ / Unid",
-              render: (d) => (
-                <div className="text-right">
-                  <span className="font-mono">{formatUsd(Number(d.costo_unitario_usd))}</span>
-                  <div className="text-[10px] text-slate-400">
-                    /{d.tipo_empaque === "CAJA" ? "caja" : "und"}
+              key: "costo_caja_usd",
+              header: "$ / Caja",
+              render: (d) => {
+                if (d.tipo_empaque !== "CAJA") return <span className="text-slate-300">—</span>;
+                return (
+                  <div className="text-right">
+                    <span className="font-mono font-semibold text-sm">{formatUsd(Number(d.costo_unitario_usd))}</span>
                   </div>
-                </div>
-              ),
+                );
+              },
             },
             {
               key: "costo_unidad_usd",
@@ -410,7 +410,10 @@ export default function InvoiceDetailPage() {
               render: (d) => {
                 if (d.tipo_empaque === "CAJA" && d.product?.unidades_por_caja && d.product.unidades_por_caja > 1) {
                   const costoUnitario = Number(d.costo_unitario_usd) / d.product.unidades_por_caja;
-                  return <span className="font-mono text-xs text-slate-500">{formatUsd(costoUnitario)}</span>;
+                  return <span className="font-mono text-xs text-slate-400">{formatUsd(costoUnitario)}</span>;
+                }
+                if (d.tipo_empaque === "UNIDAD") {
+                  return <span className="font-mono font-semibold text-sm">{formatUsd(Number(d.costo_unitario_usd))}</span>;
                 }
                 return <span className="text-slate-300">—</span>;
               },
