@@ -708,8 +708,8 @@ export default function InvoiceNewPage() {
                                 className="w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between border-b border-slate-50 last:border-0"
                               >
                                 <div className="flex flex-col">
-                                  <span className="text-sm font-medium text-text-main">USD {Number(rate.tasa_usd).toFixed(2)}</span>
-                                  <span className="text-[10px] text-slate-400">EUR {Number(rate.tasa_eur).toFixed(2)}</span>
+                                  <span className="text-sm font-medium text-text-main">USD {formatBs(Number(rate.tasa_usd))}</span>
+                                  <span className="text-[10px] text-slate-400">EUR {formatBs(Number(rate.tasa_eur))}</span>
                                 </div>
                                 <span className="text-xs text-slate-400">
                                   {new Date(rate.fecha_registro).toLocaleDateString("es-VE")}
@@ -941,6 +941,7 @@ export default function InvoiceNewPage() {
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Cant</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">$/Caja</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3 hidden md:table-cell">$/Und</th>
+                      <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3 hidden md:table-cell">Bs./Unid</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">USD</th>
                       <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Bs.</th>
                       <th className="text-center text-xs font-medium uppercase tracking-wider px-3 py-3 w-16">Acciones</th>
@@ -1006,6 +1007,9 @@ export default function InvoiceNewPage() {
                             <span className="text-slate-300">—</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-right text-text-main font-mono hidden md:table-cell">
+                          <span className="text-xs">Bs. {formatBs(item.costo_unitario_bs)}</span>
+                        </td>
                         <td className="px-4 py-3 text-right text-text-main tabular-nums">
                           {formatUsd(item.subtotal_usd)}
                         </td>
@@ -1034,6 +1038,7 @@ export default function InvoiceNewPage() {
                         {ivaBreakdown.totalUnidades} unds
                       </td>
                       <td />
+                      <td className="hidden md:table-cell" />
                       <td className="hidden md:table-cell" />
                       <td className="px-4 py-3.5 text-right tabular-nums">
                         {formatUsd(total_usd)}
