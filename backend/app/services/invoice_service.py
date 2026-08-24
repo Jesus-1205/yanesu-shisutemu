@@ -17,6 +17,41 @@ from app.services.product_service import _accent_fold, _accent_fold_pattern
 from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, MatchedProduct, MatchedSupplier, ObsequioFacturaCreate
 from app.schemas.product import ProductOut as ProductOutSchema
 
+IVA_RATE = Decimal("16")
+
+
+def _calcular_total_con_iva(factura: Factura, db: Session) -> tuple[Decimal, Decimal]:
+    """Calcula el total de la factura incluyendo IVA.
+
+    Retorna (total_usd_con_iva, total_bs_con_iva).
+    El IVA solo aplica cuando moneda_principal=BS y aplica_iva=True.
+    """
+    if factura.moneda_principal != MonedaEnum.BS or not factura.aplica_iva:
+        return (factura.total_usd, factura.total_bs)
+
+    stmt = select(DetalleFactura).where(DetalleFactura.factura_id == factura.id)
+    detalles = db.execute(stmt).scalars().all()
+
+    base_bs = Decimal("0")
+    exento_bs = Decimal("0")
+
+    for d in detalles:
+        subtotal_bs = Decimal(str(d.cantidad)) * d.costo_unitario_bs
+        if d.tipo_iva == "EXENTO":
+            exento_bs += subtotal_bs
+        else:
+            base_bs += subtotal_bs
+
+    iva_bs = (base_bs * IVA_RATE / Decimal("100")).quantize(Decimal("0.01"))
+    total_bs = (exento_bs + base_bs + iva_bs).quantize(Decimal("0.01"))
+
+    if factura.tasa_bs > 0:
+        total_usd = (total_bs / factura.tasa_bs).quantize(Decimal("0.01"))
+    else:
+        total_usd = factura.total_usd
+
+    return (total_usd, total_bs)
+
 # ── System Prompt para el modelo de Visión ────────────────────────────────
 
 INVOICE_METADATA_PROMPT = """Eres un extractor de datos de facturas comerciales venezolanas.
@@ -840,7 +875,9 @@ def _recalculate_invoice_payment_status(db: Session, factura: Factura) -> None:
     if factura.tasa_bs > 0:
         total_pagado_usd += (total_pagado_bs / factura.tasa_bs).quantize(Decimal("0.01"))
 
-    if total_pagado_usd >= factura.total_usd:
+    total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
+
+    if total_pagado_usd >= total_con_iva_usd:
         factura.estado_pago = "PAGADA"
     elif total_pagado_usd > 0:
         factura.estado_pago = "PARCIALMENTE_PAGADA"
@@ -883,7 +920,8 @@ def register_invoice_payment(
         pagado_actual_bs = Decimal(str(db.execute(stmt_pagado_bs).scalar()))
         pagado_actual += (pagado_actual_bs / factura.tasa_bs).quantize(Decimal("0.01"))
 
-    saldo = factura.total_usd - pagado_actual
+    total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
+    saldo = total_con_iva_usd - pagado_actual
     if data.monto_usd > saldo:
         raise ConflictError(
             f"El monto (${data.monto_usd}) excede el saldo pendiente (${saldo})"
@@ -951,18 +989,20 @@ def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentS
     if factura.tasa_bs > 0:
         total_pagado_usd += (total_pagado_bs / factura.tasa_bs).quantize(Decimal("0.01"))
 
-    saldo_usd = factura.total_usd - total_pagado_usd
-    saldo_bs = factura.total_bs - total_pagado_bs
+    total_con_iva_usd, total_con_iva_bs = _calcular_total_con_iva(factura, db)
 
-    pct = float(total_pagado_usd / factura.total_usd * 100) if factura.total_usd > 0 else 0.0
+    saldo_usd = total_con_iva_usd - total_pagado_usd
+    saldo_bs = total_con_iva_bs - total_pagado_bs
+
+    pct = float(total_pagado_usd / total_con_iva_usd * 100) if total_con_iva_usd > 0 else 0.0
 
     stmt_count = select(func.count()).where(InvoicePayment.factura_id == factura_id)
     count = db.execute(stmt_count).scalar() or 0
 
     return InvoicePaymentSummary(
         estado_pago=factura.estado_pago,
-        total_factura_usd=factura.total_usd,
-        total_factura_bs=factura.total_bs,
+        total_factura_usd=total_con_iva_usd.quantize(Decimal("0.01")),
+        total_factura_bs=total_con_iva_bs.quantize(Decimal("0.01")),
         total_pagado_usd=total_pagado_usd.quantize(Decimal("0.01")),
         total_pagado_bs=total_pagado_bs.quantize(Decimal("0.01")),
         saldo_pendiente_usd=max(saldo_usd, Decimal("0")).quantize(Decimal("0.01")),

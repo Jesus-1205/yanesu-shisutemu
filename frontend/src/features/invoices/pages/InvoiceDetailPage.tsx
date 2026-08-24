@@ -14,7 +14,7 @@ import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
 import { calcularResumenFiscal } from "@/lib/iva";
-import PaymentDrawer from "../components/PaymentDrawer";
+import PaymentModal from "../components/PaymentModal";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +27,7 @@ export default function InvoiceDetailPage() {
   const [downloading, setDownloading] = useState(false);
   const [payments, setPayments] = useState<InvoicePaymentOut[]>([]);
   const [paymentSummary, setPaymentSummary] = useState<InvoicePaymentSummary | null>(null);
-  const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [searchParams] = useSearchParams();
 
   const fetchInvoice = useCallback(async () => {
@@ -65,7 +65,7 @@ export default function InvoiceDetailPage() {
 
   useEffect(() => {
     if (searchParams.get("action") === "pay" && invoice && invoice.estado_pago !== "PAGADA") {
-      setPaymentDrawerOpen(true);
+      setPaymentModalOpen(true);
     }
   }, [searchParams, invoice]);
 
@@ -265,7 +265,7 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Estado de Pago</h3>
             {invoice.estado_pago !== "PAGADA" && (
-              <Button variant="accent" size="sm" onClick={() => setPaymentDrawerOpen(true)}>
+              <Button variant="accent" size="sm" onClick={() => setPaymentModalOpen(true)}>
                 <DollarSign className="w-4 h-4" />
                 Registrar Pago
               </Button>
@@ -669,10 +669,11 @@ export default function InvoiceDetailPage() {
         })()}
       </Modal>
 
-      <PaymentDrawer
-        open={paymentDrawerOpen}
-        onClose={() => setPaymentDrawerOpen(false)}
+      <PaymentModal
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
         invoice={invoice}
+        paymentSummary={paymentSummary}
         onSuccess={() => {
           fetchPayments();
           fetchInvoice();
