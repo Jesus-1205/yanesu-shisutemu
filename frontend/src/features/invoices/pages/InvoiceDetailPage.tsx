@@ -381,6 +381,9 @@ export default function InvoiceDetailPage() {
                   }`}>
                     {d.tipo_empaque === "CAJA" ? "Caja" : "Und"}
                   </span>
+                  {d.tipo_empaque === "CAJA" && d.product?.unidades_por_caja && d.product.unidades_por_caja > 1 && (
+                    <span className="text-[10px] text-slate-400 mt-0.5">{d.product.unidades_por_caja} unds/caja</span>
+                  )}
                   {d.tipo_iva === "EXENTO" && (
                     <span className="text-[10px] text-orange-600 font-semibold mt-0.5">Exento</span>
                   )}
@@ -401,15 +404,23 @@ export default function InvoiceDetailPage() {
               ),
             },
             {
+              key: "costo_unidad_usd",
+              header: "$ / Und",
+              hideOnMobile: true,
+              render: (d) => {
+                if (d.tipo_empaque === "CAJA" && d.product?.unidades_por_caja && d.product.unidades_por_caja > 1) {
+                  const costoUnitario = Number(d.costo_unitario_usd) / d.product.unidades_por_caja;
+                  return <span className="font-mono text-xs text-slate-500">{formatUsd(costoUnitario)}</span>;
+                }
+                return <span className="text-slate-300">—</span>;
+              },
+            },
+            {
               key: "costo_unitario_bs",
               header: "Bs. / Unid",
+              hideOnMobile: true,
               render: (d) => (
-                <div className="text-right">
-                  <span className="font-mono">Bs. {formatBs(Number(d.costo_unitario_bs))}</span>
-                  <div className="text-[10px] text-slate-400">
-                    /{d.tipo_empaque === "CAJA" ? "caja" : "und"}
-                  </div>
-                </div>
+                <span className="font-mono">Bs. {formatBs(Number(d.costo_unitario_bs))}</span>
               ),
             },
             {
@@ -431,6 +442,36 @@ export default function InvoiceDetailPage() {
           keyExtractor={(d) => d.id}
           loading={false}
           emptyMessage="Sin productos"
+          footer={invoice.detalles.length > 0 ? (() => {
+            let totalCajas = 0;
+            let totalUnidades = 0;
+            for (const d of invoice.detalles) {
+              if (d.tipo_empaque === "CAJA") {
+                totalCajas += d.cantidad;
+                totalUnidades += d.cantidad * (d.product?.unidades_por_caja || 1);
+              } else {
+                totalUnidades += d.cantidad;
+              }
+            }
+            return (
+              <tr className="bg-slate-100/70 border-t-2 border-slate-200 font-semibold text-text-main">
+                <td className="px-4 py-3.5" colSpan={2}>Totales</td>
+                <td className="px-4 py-3.5 text-right tabular-nums text-xs">
+                  {totalCajas > 0 && <div>{totalCajas} cajas</div>}
+                  <div>{totalUnidades} unds</div>
+                </td>
+                <td />
+                <td className="hidden md:table-cell" />
+                <td className="hidden md:table-cell" />
+                <td className="px-4 py-3.5 text-right tabular-nums">
+                  {formatUsd(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_usd), 0))}
+                </td>
+                <td className="px-4 py-3.5 text-right tabular-nums">
+                  Bs. {formatBs(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0))}
+                </td>
+              </tr>
+            );
+          })() : undefined}
         />
       </div>
 

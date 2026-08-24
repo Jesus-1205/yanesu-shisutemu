@@ -37,6 +37,7 @@ interface TableProps<T> {
   menuDirection?: "up" | "down";
   singleExport?: boolean;
   onExported?: (filename: string) => void;
+  footer?: ReactNode;
 }
 
 function SkeletonRow({ cols }: { cols: number }) {
@@ -67,6 +68,7 @@ function Table<T>({
   menuDirection = "up",
   singleExport = false,
   onExported,
+  footer,
 }: TableProps<T>) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportingAll, setExportingAll] = useState(false);
@@ -274,6 +276,9 @@ function Table<T>({
             ))
           )}
         </tbody>
+        {footer && (
+          <tfoot>{footer}</tfoot>
+        )}
       </table>
       </div>
     </div>
