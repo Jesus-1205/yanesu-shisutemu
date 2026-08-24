@@ -107,9 +107,11 @@ class TestCreatePayment:
         assert "id" in data
 
     def test_create_payment_unauthenticated(self, client):
+        _login(client)
         sup = _create_supplier(client).json()
         prod = _create_product(client).json()
         inv = _create_invoice(client, sup["id"], prod["id"], "F-CP-UA").json()
+        client.cookies.clear()
 
         resp = _register_payment(client, inv["id"], monto_usd="50")
         assert resp.status_code == 401

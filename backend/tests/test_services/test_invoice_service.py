@@ -577,7 +577,7 @@ class TestRegisterInvoicePayment:
         db.refresh(factura)
         assert factura.estado_pago == "PAGADA"
 
-    def test_payment_with_rece(self):
+    def test_payment_with_rece(self, db):
         """Pago con archivo comprobante guardado."""
         factura = self._make_factura(db, total_usd=Decimal("100"))
         mp = _metodo_pago(db)
