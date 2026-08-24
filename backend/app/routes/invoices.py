@@ -372,3 +372,30 @@ def payment_summary(
     """
     summary = get_invoice_payment_summary(db, invoice_id)
     return summary
+
+
+@router.get("/{invoice_id}/payments/{payment_id}/receipts/{receipt_id}", status_code=status.HTTP_200_OK)
+def download_payment_receipt(
+    invoice_id: int,
+    payment_id: int,
+    receipt_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /invoices/{id}/payments/{pid}/receipts/{rid} - Descargar comprobante de pago"""
+    from app.models.invoice_payment import InvoicePaymentReceipt, InvoicePayment
+
+    receipt = db.get(InvoicePaymentReceipt, receipt_id)
+    if not receipt or receipt.pago_id != payment_id:
+        raise HTTPException(status_code=404, detail="Comprobante no encontrado")
+
+    from pathlib import Path
+    file_path = Path(receipt.archivo_path)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado en disco")
+
+    return FileResponse(
+        path=str(file_path),
+        media_type=receipt.tipo_archivo,
+        filename=receipt.nombre_original,
+    )
