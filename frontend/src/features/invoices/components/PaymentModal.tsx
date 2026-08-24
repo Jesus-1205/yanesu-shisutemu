@@ -36,7 +36,6 @@ export default function PaymentModal({ open, onClose, invoice, paymentSummary, o
   const totalPagado = isBs
     ? Number(paymentSummary?.total_pagado_bs ?? 0)
     : Number(paymentSummary?.total_pagado_usd ?? 0);
-  const prefix = isBs ? "Bs." : "$";
   const formatFn = isBs ? formatBs : formatUsd;
 
   useEffect(() => {
@@ -73,7 +72,7 @@ export default function PaymentModal({ open, onClose, invoice, paymentSummary, o
         },
         comprobantes.length > 0 ? comprobantes : undefined,
       );
-      toast(`Pago de ${prefix} ${formatFn(montoNum)} registrado`, "success");
+      toast(`Pago de ${formatFn(montoNum)} registrado`, "success");
       onSuccess();
       onClose();
     } catch (err) {
@@ -81,7 +80,7 @@ export default function PaymentModal({ open, onClose, invoice, paymentSummary, o
     } finally {
       setSaving(false);
     }
-  }, [isValid, saving, invoice.id, selectedMethodId, montoNum, isBs, referencia, observaciones, comprobantes, prefix, formatFn, toast, onSuccess, onClose]);
+  }, [isValid, saving, invoice.id, selectedMethodId, montoNum, isBs, referencia, observaciones, comprobantes, formatFn, toast, onSuccess, onClose]);
 
   return (
     <Modal open={open} onClose={onClose} title="Registrar Pago" className="max-w-md">
@@ -97,15 +96,15 @@ export default function PaymentModal({ open, onClose, invoice, paymentSummary, o
           <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-slate-200">
             <div>
               <p className="text-slate-500">Total</p>
-              <p className="font-bold font-mono text-sm text-text-main">{prefix} {formatFn(totalFactura)}</p>
+              <p className="font-bold font-mono text-sm text-text-main">{isBs ? `Bs. ${formatBs(totalFactura)}` : formatUsd(totalFactura)}</p>
             </div>
             <div>
               <p className="text-green-600">Pagado</p>
-              <p className="font-bold font-mono text-sm text-green-700">{prefix} {formatFn(totalPagado)}</p>
+              <p className="font-bold font-mono text-sm text-green-700">{isBs ? `Bs. ${formatBs(totalPagado)}` : formatUsd(totalPagado)}</p>
             </div>
             <div>
               <p className="text-red-600">Pendiente</p>
-              <p className="font-bold font-mono text-sm text-red-700">{prefix} {formatFn(saldoPendiente)}</p>
+              <p className="font-bold font-mono text-sm text-red-700">{isBs ? `Bs. ${formatBs(saldoPendiente)}` : formatUsd(saldoPendiente)}</p>
             </div>
           </div>
         </div>
@@ -114,7 +113,7 @@ export default function PaymentModal({ open, onClose, invoice, paymentSummary, o
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1">Monto a pagar</label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono">{prefix}</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono">{isBs ? "Bs." : "$"}</span>
             <input
               type="number"
               step="0.01"
