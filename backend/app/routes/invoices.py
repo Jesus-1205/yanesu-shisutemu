@@ -282,7 +282,11 @@ async def create_payment(
         for f in comprobantes:
             if not f.content_type or f.content_type not in ALLOWED:
                 raise HTTPException(status_code=400, detail=f"Tipo no soportado: {f.content_type}")
-            raw = await f.file.read()
+            raw = f.file.read()
+            if isinstance(raw, bytes):
+                pass
+            else:
+                raw = await raw
             if len(raw) > MAX_SIZE:
                 raise HTTPException(status_code=400, detail=f"Archivo {f.filename} supera 5MB")
             files_data.append((raw, f.content_type, f.filename or "comprobante"))
