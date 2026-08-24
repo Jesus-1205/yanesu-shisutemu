@@ -289,7 +289,12 @@ async def create_payment(
                 raw = await raw
             if len(raw) > MAX_SIZE:
                 raise HTTPException(status_code=400, detail=f"Archivo {f.filename} supera 5MB")
-            files_data.append((raw, f.content_type, f.filename or "comprobante"))
+            # Optimizar imágenes (resize + compresión JPEG) — PDFs pasan tal cual
+            if f.content_type != "application/pdf":
+                raw, content_type = optimize_image(raw, f.content_type)
+            else:
+                content_type = f.content_type
+            files_data.append((raw, content_type, f.filename or "comprobante"))
 
     try:
         pago = register_invoice_payment(
