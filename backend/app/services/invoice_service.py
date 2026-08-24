@@ -660,6 +660,7 @@ def create_invoice(
             cantidad=item.cantidad,
             costo_unitario_usd=costo_usd,
             costo_unitario_bs=costo_bs,
+            tipo_iva=item.tipo_iva,
         )
         detalles.append(detalle)
 

@@ -345,7 +345,7 @@ export default function InvoiceDetailPage() {
                   }`}>
                     {d.tipo_empaque === "CAJA" ? "Caja" : "Und"}
                   </span>
-                  {d.product?.tipo_iva === "EXENTO" && (
+                  {d.tipo_iva === "EXENTO" && (
                     <span className="text-[10px] text-orange-600 font-semibold mt-0.5">Exento</span>
                   )}
                 </div>
@@ -441,7 +441,7 @@ export default function InvoiceDetailPage() {
           invoice.detalles.map(d => ({
             subtotal_usd: d.cantidad * Number(d.costo_unitario_usd),
             subtotal_bs: d.cantidad * Number(d.costo_unitario_bs),
-            tipo_iva: d.product?.tipo_iva ?? "GRAVADO",
+            tipo_iva: d.tipo_iva ?? "GRAVADO",
           })),
           invoice.moneda_principal,
           invoice.aplica_iva,

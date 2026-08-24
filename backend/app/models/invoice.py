@@ -92,6 +92,7 @@ class DetalleFactura(Base):
     cantidad: Mapped[int] = mapped_column(Integer, nullable=False)
     costo_unitario_usd: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
     costo_unitario_bs: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    tipo_iva: Mapped[str] = mapped_column(String(10), nullable=False, default="GRAVADO")
 
     __table_args__ = (
         CheckConstraint("cantidad > 0", name="ck_detalle_factura_cantidad_positivo"),
@@ -100,6 +101,10 @@ class DetalleFactura(Base):
         CheckConstraint(
             "tipo_empaque IN ('UNIDAD', 'CAJA')",
             name="ck_detalle_factura_tipo_empaque_valido",
+        ),
+        CheckConstraint(
+            "tipo_iva IN ('GRAVADO', 'EXENTO')",
+            name="ck_detalle_factura_tipo_iva_valido",
         ),
     )
 

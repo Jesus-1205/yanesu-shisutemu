@@ -456,6 +456,7 @@ export interface DetalleFacturaCreate {
   costo_unitario_usd: number;
   costo_unitario_bs: number;
   unidades_por_caja?: number | null;
+  tipo_iva?: "GRAVADO" | "EXENTO";
 }
 
 export interface FacturaCreate {
@@ -479,6 +480,7 @@ export interface DetalleFacturaOut {
   cantidad: number;
   costo_unitario_usd: number;
   costo_unitario_bs: number;
+  tipo_iva: "GRAVADO" | "EXENTO";
   product: ProductOut | null;
 }
 

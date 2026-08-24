@@ -20,6 +20,7 @@ class DetalleFacturaCreate(BaseModel):
     costo_unitario_usd: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
     costo_unitario_bs: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
     unidades_por_caja: int | None = Field(gt=0, default=None)
+    tipo_iva: Literal["GRAVADO", "EXENTO"] = "GRAVADO"
 
 
 class FacturaCreate(BaseModel):
@@ -47,6 +48,7 @@ class DetalleFacturaOut(BaseModel):
     cantidad: int
     costo_unitario_usd: Decimal
     costo_unitario_bs: Decimal
+    tipo_iva: str
     product: ProductOut | None = None
 
 
