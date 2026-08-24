@@ -186,32 +186,49 @@ export default function InvoiceDetailPage() {
 
       {/* ─── Cards financieras ─────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-            Total USD
-            <span className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-              invoice.moneda_principal === "USD" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
-            }`}>
-              {invoice.moneda_principal === "USD" ? "PRINCIPAL" : "AUTO-CALC"}
-            </span>
-          </p>
-          <p className="text-lg font-bold mt-1 font-mono">
-            {formatUsd(Number(invoice.total_usd))}
-          </p>
-        </div>
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-            Total Bs.
-            <span className={`ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-              invoice.moneda_principal === "BS" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
-            }`}>
-              {invoice.moneda_principal === "BS" ? "PRINCIPAL" : "AUTO-CALC"}
-            </span>
-          </p>
-          <p className="text-lg font-bold mt-1 font-mono">
-            Bs. {formatBs(Number(invoice.total_bs))}
-          </p>
-        </div>
+        {invoice.moneda_principal === "BS" ? (
+          <>
+            <div className="p-4 rounded-xl bg-surface border border-slate-200">
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+                Total Bs.
+                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">PRINCIPAL</span>
+              </p>
+              <p className="text-lg font-bold mt-1 font-mono">
+                Bs. {formatBs(Number(invoice.total_bs))}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-surface border border-slate-200">
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+                Total USD
+                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">AUTO-CALC</span>
+              </p>
+              <p className="text-lg font-bold mt-1 font-mono">
+                {formatUsd(Number(invoice.total_usd))}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="p-4 rounded-xl bg-surface border border-slate-200">
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+                Total USD
+                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">PRINCIPAL</span>
+              </p>
+              <p className="text-lg font-bold mt-1 font-mono">
+                {formatUsd(Number(invoice.total_usd))}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-surface border border-slate-200">
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+                Total Bs.
+                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">AUTO-CALC</span>
+              </p>
+              <p className="text-lg font-bold mt-1 font-mono">
+                Bs. {formatBs(Number(invoice.total_bs))}
+              </p>
+            </div>
+          </>
+        )}
         {Number(invoice.tasa_bs) > 0 && (
           <div className="p-4 rounded-xl bg-surface border border-slate-200">
             <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tasa BCV</p>
@@ -528,11 +545,6 @@ export default function InvoiceDetailPage() {
           invoice.moneda_principal,
           invoice.aplica_iva,
         );
-        const exento = invoice.moneda_principal === "USD"
-          ? resumen.exento
-          : resumen.exento;
-        const baseImponible = resumen.base_imponible;
-        const iva = resumen.iva;
 
         return (
           <div className="p-4 rounded-xl bg-surface border border-slate-200 mb-6">
@@ -541,29 +553,37 @@ export default function InvoiceDetailPage() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Exento</span>
                 <span className="font-mono font-medium">
-                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(exento)}` : formatUsd(exento)}
+                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(resumen.exento)}` : formatUsd(resumen.exento)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Base imponible</span>
                 <span className="font-mono font-medium">
-                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(baseImponible)}` : formatUsd(baseImponible)}
+                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(resumen.base_imponible)}` : formatUsd(resumen.base_imponible)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">IVA (16%)</span>
                 <span className="font-mono font-medium">
-                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(iva)}` : formatUsd(iva)}
+                  {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(resumen.iva)}` : formatUsd(resumen.iva)}
                 </span>
               </div>
               <div className="border-t border-slate-200 pt-2 mt-2">
                 <div className="flex justify-between">
                   <span className="text-slate-700 font-bold">Total USD</span>
-                  <span className="font-mono font-bold">{formatUsd(Number(invoice.total_usd))}</span>
+                  <span className="font-mono font-bold">
+                    {invoice.moneda_principal === "BS"
+                      ? formatUsd(Number(invoice.total_usd))
+                      : formatUsd(resumen.total)}
+                  </span>
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-slate-700 font-bold">Total Bs.</span>
-                  <span className="font-mono font-bold">Bs. {formatBs(Number(invoice.total_bs))}</span>
+                  <span className="font-mono font-bold">
+                    {invoice.moneda_principal === "BS"
+                      ? `Bs. ${formatBs(resumen.total)}`
+                      : `Bs. ${formatBs(Number(invoice.total_bs))}`}
+                  </span>
                 </div>
               </div>
             </div>
