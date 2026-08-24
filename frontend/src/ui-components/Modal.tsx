@@ -43,7 +43,7 @@ export default function Modal({
       }}
     >
       <div
-        className={`bg-surface rounded-xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden motion-safe:animate-[scaleIn_200ms_cubic-bezier(0.16,1,0.3,1)] ${className}`}
+        className={`bg-surface rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] flex flex-col overflow-hidden motion-safe:animate-[scaleIn_200ms_cubic-bezier(0.16,1,0.3,1)] ${className}`}
       >
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
@@ -57,7 +57,7 @@ export default function Modal({
             </button>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
