@@ -112,17 +112,21 @@ export default function ObsequioForm({ products, onSearchProducts, onAdd }: Obse
         </div>
       </div>
       <div className="lg:col-span-2">
-        <label className="block text-xs font-medium text-slate-700 mb-1">Justificación * <span className="text-slate-400 font-normal">(mín. 3 caracteres)</span></label>
-        <textarea
-          rows={1}
-          value={justificacion}
-          onChange={(e) => setJustificacion(e.target.value)}
-          placeholder="Motivo del obsequio..."
-          className="w-full h-9 rounded-lg border border-slate-300 bg-surface px-2.5 text-sm outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 resize-none"
-        />
-        {justificacion.length > 0 && justificacion.length < 3 && (
-          <p className="text-[10px] text-red-500 mt-0.5">{justificacion.length}/3</p>
-        )}
+        <label className="block text-xs font-medium text-slate-700 mb-1">Justificación</label>
+        <div className="relative">
+          <input
+            type="text"
+            value={justificacion}
+            onChange={(e) => setJustificacion(e.target.value)}
+            placeholder="Mín. 3 caracteres..."
+            className={`${inputBase} ${justificacion.length > 0 && justificacion.length < 3 ? "pr-8" : ""}`}
+          />
+          {justificacion.length > 0 && justificacion.length < 3 && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-red-500 font-mono pointer-events-none">
+              {justificacion.length}/3
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex justify-end">
         <Button
