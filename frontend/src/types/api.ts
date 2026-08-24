@@ -464,6 +464,7 @@ export interface FacturaCreate {
   numero_factura: string;
   tipo_documento?: TipoDocumento;
   fecha_factura?: string | null;
+  fecha_limite_pago?: string | null;
   observaciones?: string | null;
   moneda_principal: MonedaEnum;
   tasa_bs: number;
@@ -499,6 +500,7 @@ export interface FacturaOut {
   total_bs: number;
   aplica_iva: boolean;
   estado_pago: EstadoPago;
+  fecha_limite_pago: string | null;
   created_at: string;
   procesada_por_ia?: boolean;
   raw_json_ia?: Record<string, unknown> | null;

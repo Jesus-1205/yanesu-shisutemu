@@ -31,6 +31,7 @@ class Factura(Base):
         String(15), nullable=False, default=TipoDocumentoEnum.FACTURA
     )
     fecha_factura: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    fecha_limite_pago: Mapped[date | None] = mapped_column(Date, nullable=True)
     image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     usuario_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False

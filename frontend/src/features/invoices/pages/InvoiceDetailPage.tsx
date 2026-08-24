@@ -135,7 +135,7 @@ export default function InvoiceDetailPage() {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-6">
         <div className="p-4 rounded-xl bg-surface border border-slate-200">
           <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tipo</p>
           <p className="text-sm font-medium mt-1">
@@ -151,6 +151,42 @@ export default function InvoiceDetailPage() {
           <p className="text-sm font-medium mt-1">
             {new Date(invoice.fecha_factura).toLocaleDateString("es-VE")}
           </p>
+        </div>
+        <div className="p-4 rounded-xl bg-surface border border-slate-200">
+          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Límite de Pago</p>
+          {invoice.fecha_limite_pago ? (() => {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const limite = new Date(invoice.fecha_limite_pago + "T00:00:00");
+            const diffMs = limite.getTime() - hoy.getTime();
+            const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            const esPagada = invoice.estado_pago === "PAGADA";
+            return (
+              <div className="mt-1">
+                <p className="text-sm font-medium">
+                  {limite.toLocaleDateString("es-VE")}
+                </p>
+                {!esPagada && (
+                  <span className={`inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    diffDias < 0
+                      ? "bg-red-100 text-red-700"
+                      : diffDias === 0
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-emerald-100 text-emerald-700"
+                  }`}>
+                    {diffDias < 0
+                      ? `Vencida hace ${Math.abs(diffDias)} día${Math.abs(diffDias) !== 1 ? "s" : ""}`
+                      : diffDias === 0
+                        ? "Vence hoy"
+                        : `${diffDias} día${diffDias !== 1 ? "s" : ""} restante${diffDias !== 1 ? "s" : ""}`
+                    }
+                  </span>
+                )}
+              </div>
+            );
+          })() : (
+            <p className="text-sm text-slate-400 mt-1">Sin definir</p>
+          )}
         </div>
         <div className="p-4 rounded-xl bg-surface border border-slate-200">
           <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">

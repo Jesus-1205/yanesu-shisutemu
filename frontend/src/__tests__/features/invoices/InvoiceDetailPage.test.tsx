@@ -43,6 +43,7 @@ const baseInvoice: FacturaOut = {
   supplier: { id: 1, nombre: "Inversiones CG, C.A", telefono: null, email: null },
   detalles: [],
   obsequios: [],
+  fecha_limite_pago: null,
 };
 
 const invoiceWithAI: FacturaOut = {

@@ -30,6 +30,7 @@ class FacturaCreate(BaseModel):
     numero_factura: str
     tipo_documento: TipoDocumentoEnum = TipoDocumentoEnum.FACTURA
     fecha_factura: date | None = None
+    fecha_limite_pago: date | None = None
     observaciones: str | None = None
     moneda_principal: MonedaEnum = MonedaEnum.USD
     tasa_bs: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
@@ -69,6 +70,7 @@ class FacturaOut(BaseModel):
     total_bs: Decimal
     aplica_iva: bool
     estado_pago: str = "PENDIENTE"
+    fecha_limite_pago: date | None = None
     created_at: datetime
     procesada_por_ia: bool = False
     raw_json_ia: dict | None = None

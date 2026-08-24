@@ -49,6 +49,7 @@ const mockInvoices: FacturaOut[] = [
     supplier: { id: 1, nombre: "Proveedor A", telefono: null, email: null },
     detalles: [],
     obsequios: [],
+    fecha_limite_pago: null,
   },
   {
     id: 2,
@@ -71,6 +72,7 @@ const mockInvoices: FacturaOut[] = [
     supplier: { id: 2, nombre: "Proveedor B", telefono: null, email: null },
     detalles: [],
     obsequios: [],
+    fecha_limite_pago: null,
   },
 ];
 

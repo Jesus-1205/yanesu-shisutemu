@@ -629,6 +629,7 @@ def create_invoice(
         numero_factura=data.numero_factura,
         tipo_documento=data.tipo_documento,
         fecha_factura=data.fecha_factura or date.today(),
+        fecha_limite_pago=data.fecha_limite_pago,
         image_path=image_path,
         usuario_id=usuario_id,
         observaciones=data.observaciones,

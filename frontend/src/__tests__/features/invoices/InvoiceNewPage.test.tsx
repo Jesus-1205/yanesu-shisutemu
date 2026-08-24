@@ -19,12 +19,27 @@ vi.mock("@/services/api", () => ({
       pages: 0,
     }),
     createInvoice: vi.fn(),
+    getRateHistory: vi.fn().mockResolvedValue({ history: [] }),
+    analyzeInvoice: vi.fn(),
   },
 }));
 
 // ─── Mock Toast ────────────────────────────────────────────────────────────
 vi.mock("@/ui-components/Toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
+}));
+
+// ─── Mock Exchange Rate Store ──────────────────────────────────────────────
+vi.mock("@/stores/exchangeRateStore", () => ({
+  useExchangeRateStore: vi.fn(() => ({
+    tasa: 742.81,
+    tasaEUR: 805.32,
+    loading: false,
+    fechaUltimaActualizacion: "2026-08-24T12:00:00",
+    needsUpdate: false,
+    loadTasa: vi.fn().mockResolvedValue(undefined),
+    checkDailyStatus: vi.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 // ─── Mock AsyncCombobox (functional for testing) ───────────────────────────
