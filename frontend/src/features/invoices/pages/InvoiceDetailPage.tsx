@@ -114,6 +114,26 @@ export default function InvoiceDetailPage() {
 
   if (!invoice) return null;
 
+  const resumen = invoice.detalles.length > 0
+    ? calcularResumenFiscal(
+        invoice.detalles.map(d => ({
+          subtotal_usd: d.cantidad * Number(d.costo_unitario_usd),
+          subtotal_bs: d.cantidad * Number(d.costo_unitario_bs),
+          tipo_iva: d.tipo_iva ?? "GRAVADO",
+        })),
+        invoice.moneda_principal,
+        invoice.aplica_iva,
+      )
+    : null;
+
+  const totalPrincipal = resumen?.total ?? 0;
+  const nTasa = Number(invoice.tasa_bs);
+  const totalSecundario = nTasa > 0
+    ? (invoice.moneda_principal === "BS"
+      ? Math.round((totalPrincipal / nTasa) * 100) / 100
+      : Math.round((totalPrincipal * nTasa) * 100) / 100)
+    : 0;
+
   return (
     <div>
       <PageHeader
@@ -194,7 +214,7 @@ export default function InvoiceDetailPage() {
                 <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">PRINCIPAL</span>
               </p>
               <p className="text-lg font-bold mt-1 font-mono">
-                Bs. {formatBs(Number(invoice.total_bs))}
+                Bs. {formatBs(totalPrincipal)}
               </p>
             </div>
             <div className="p-4 rounded-xl bg-surface border border-slate-200">
@@ -203,7 +223,7 @@ export default function InvoiceDetailPage() {
                 <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">AUTO-CALC</span>
               </p>
               <p className="text-lg font-bold mt-1 font-mono">
-                {formatUsd(Number(invoice.total_usd))}
+                {formatUsd(totalSecundario)}
               </p>
             </div>
           </>
@@ -215,7 +235,7 @@ export default function InvoiceDetailPage() {
                 <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">PRINCIPAL</span>
               </p>
               <p className="text-lg font-bold mt-1 font-mono">
-                {formatUsd(Number(invoice.total_usd))}
+                {formatUsd(totalPrincipal)}
               </p>
             </div>
             <div className="p-4 rounded-xl bg-surface border border-slate-200">
@@ -224,16 +244,16 @@ export default function InvoiceDetailPage() {
                 <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">AUTO-CALC</span>
               </p>
               <p className="text-lg font-bold mt-1 font-mono">
-                Bs. {formatBs(Number(invoice.total_bs))}
+                Bs. {formatBs(totalSecundario)}
               </p>
             </div>
           </>
         )}
-        {Number(invoice.tasa_bs) > 0 && (
+        {nTasa > 0 && (
           <div className="p-4 rounded-xl bg-surface border border-slate-200">
             <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tasa BCV</p>
             <p className="text-lg font-bold mt-1 font-mono">
-              {formatBs(Number(invoice.tasa_bs))}
+              {formatBs(nTasa)}
             </p>
           </div>
         )}
@@ -535,18 +555,7 @@ export default function InvoiceDetailPage() {
         </div>
       )}
 
-      {invoice.detalles.length > 0 && (() => {
-        const resumen = calcularResumenFiscal(
-          invoice.detalles.map(d => ({
-            subtotal_usd: d.cantidad * Number(d.costo_unitario_usd),
-            subtotal_bs: d.cantidad * Number(d.costo_unitario_bs),
-            tipo_iva: d.tipo_iva ?? "GRAVADO",
-          })),
-          invoice.moneda_principal,
-          invoice.aplica_iva,
-        );
-
-        return (
+      {resumen && (
           <div className="p-4 rounded-xl bg-surface border border-slate-200 mb-6">
             <h3 className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">Resumen Fiscal y Total</h3>
             <div className="space-y-2 text-sm">
@@ -573,23 +582,22 @@ export default function InvoiceDetailPage() {
                   <span className="text-slate-700 font-bold">Total USD</span>
                   <span className="font-mono font-bold">
                     {invoice.moneda_principal === "BS"
-                      ? formatUsd(Number(invoice.total_usd))
-                      : formatUsd(resumen.total)}
+                      ? formatUsd(totalSecundario)
+                      : formatUsd(totalPrincipal)}
                   </span>
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-slate-700 font-bold">Total Bs.</span>
                   <span className="font-mono font-bold">
                     {invoice.moneda_principal === "BS"
-                      ? `Bs. ${formatBs(resumen.total)}`
-                      : `Bs. ${formatBs(Number(invoice.total_bs))}`}
+                      ? `Bs. ${formatBs(totalPrincipal)}`
+                      : `Bs. ${formatBs(totalSecundario)}`}
                   </span>
                 </div>
               </div>
             </div>
           </div>
-        );
-      })()}
+      )}
 
       {invoice.observaciones && (
         <div className="p-4 rounded-xl bg-surface border border-slate-200">
