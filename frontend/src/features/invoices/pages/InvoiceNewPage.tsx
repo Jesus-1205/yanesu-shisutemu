@@ -662,12 +662,12 @@ export default function InvoiceNewPage() {
                     type="button"
                     onClick={() => {
                       if (exchangeRateStore.tasa > 0) {
-                        setTasa(String(exchangeRateStore.tasa));
+                        setTasa(String(Math.round(exchangeRateStore.tasa * 100) / 100));
                         toast("Tasa del día aplicada", "success");
                       } else {
                         exchangeRateStore.loadTasa().then(() => {
                           if (exchangeRateStore.tasa > 0) {
-                            setTasa(String(exchangeRateStore.tasa));
+                            setTasa(String(Math.round(exchangeRateStore.tasa * 100) / 100));
                             toast("Tasa del día aplicada", "success");
                           }
                         });
@@ -701,7 +701,7 @@ export default function InvoiceNewPage() {
                                 key={rate.id}
                                 type="button"
                                 onClick={() => {
-                                  setTasa(rate.tasa_usd.toString());
+                                  setTasa(String(Math.round(Number(rate.tasa_usd) * 100) / 100));
                                   setShowRateHistory(false);
                                   toast(`Tasa del ${new Date(rate.fecha_registro).toLocaleDateString("es-VE")} aplicada`, "success");
                                 }}
