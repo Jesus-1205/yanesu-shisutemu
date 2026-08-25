@@ -101,6 +101,7 @@ vi.mock("@/ui-components/Combobox", () => ({
 
 // ─── Imports after mocks ──────────────────────────────────────────────────
 import { api } from "@/services/api";
+import { useInvoiceFormStore } from "@/features/invoices/store/invoiceFormStore";
 
 // ─── Test Data ────────────────────────────────────────────────────────────
 const mockSuppliers: SupplierOut[] = [
@@ -200,6 +201,7 @@ function clickAdd() {
 describe("InvoiceNewPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useInvoiceFormStore.getState().reset();
     (api.getSuppliers as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockSuppliers,
     );
