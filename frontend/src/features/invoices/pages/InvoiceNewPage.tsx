@@ -300,6 +300,7 @@ export default function InvoiceNewPage() {
                 ivaBreakdown={ivaBreakdown}
                 totalUsd={totalUsd}
                 totalBs={totalBs}
+                tasa={nTasa}
               />
             </div>
           ) : (

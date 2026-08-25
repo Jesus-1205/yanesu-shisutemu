@@ -1,4 +1,5 @@
 import { formatBs, formatUsd } from "@/lib/text";
+import { toCents } from "@/lib/money";
 
 interface InvoiceSummaryPanelProps {
   esBs: boolean;
@@ -10,9 +11,10 @@ interface InvoiceSummaryPanelProps {
   };
   totalUsd: number;
   totalBs: number;
+  tasa: number;
 }
 
-export default function InvoiceSummaryPanel({ esBs, ivaBreakdown, totalUsd, totalBs }: InvoiceSummaryPanelProps) {
+export default function InvoiceSummaryPanel({ esBs, ivaBreakdown, totalUsd, totalBs, tasa }: InvoiceSummaryPanelProps) {
   return (
     <div className="flex justify-end">
       <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-slate-50/70 p-5 space-y-3">
@@ -54,7 +56,7 @@ export default function InvoiceSummaryPanel({ esBs, ivaBreakdown, totalUsd, tota
               </div>
               <div className="flex justify-between items-center font-bold text-text-main text-base">
                 <span>Total USD</span>
-                <span className="font-mono text-lg">{formatUsd(totalUsd)}</span>
+                <span className="font-mono text-lg">{formatUsd(tasa > 0 ? toCents(ivaBreakdown.total / tasa) : totalUsd)}</span>
               </div>
             </>
           ) : (
