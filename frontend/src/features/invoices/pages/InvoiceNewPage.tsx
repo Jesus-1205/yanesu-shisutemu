@@ -818,7 +818,7 @@ export default function InvoiceNewPage() {
             <div className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
               Agregar Ítem
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 items-end">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 items-end">
               <div className="col-span-2 sm:col-span-3 lg:col-span-2">
                 <AsyncCombobox
                   label="Buscar producto"
@@ -878,6 +878,32 @@ export default function InvoiceNewPage() {
                   autoComplete="off"
                   placeholder="—"
                 />
+              </div>
+              <div>
+                <label htmlFor={fid("unds-caja")} className={labelBase}>Unds/Caja</label>
+                {newTipoEmpaque === "CAJA" ? (
+                  <input
+                    id={fid("unds-caja")}
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={newUnidadesPorCaja}
+                    onChange={(e) => setNewUnidadesPorCaja(e.target.value)}
+                    autoComplete="off"
+                    className={inputBase}
+                    placeholder="24"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value="—"
+                    className={`${inputReadOnly} cursor-not-allowed text-slate-400 text-center`}
+                    readOnly
+                    tabIndex={-1}
+                    aria-readonly="true"
+                    autoComplete="off"
+                  />
+                )}
               </div>
               <div>
                 <label className={labelBase}>Empaque</label>
