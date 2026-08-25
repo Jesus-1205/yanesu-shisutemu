@@ -179,6 +179,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
           <div className="flex rounded-lg border border-slate-300 overflow-hidden h-10">
             <button
               type="button"
+              data-testid="empaque-caja"
               onClick={() => {
                 setNewTipoEmpaque("CAJA");
                 if (selectedProduct) setNewUnidadesPorCaja(String(selectedProduct.unidades_por_caja));
@@ -193,6 +194,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
             </button>
             <button
               type="button"
+              data-testid="empaque-unid"
               onClick={() => {
                 setNewTipoEmpaque("UNIDAD");
                 setNewUnidadesPorCaja("");
