@@ -28,7 +28,7 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
   const StatusIcon = status.icon;
 
   const isPaid = invoice.estado_pago === "PAGADA";
-  const hasDeadline = !isPaid && invoice.fecha_limite_pago;
+  const hasDeadline = !!invoice.fecha_limite_pago;
   const daysRemaining = hasDeadline ? getDaysUntil(invoice.fecha_limite_pago!) : null;
 
   const formatAmount = (usd: number | undefined, bs: number | undefined) =>
@@ -47,11 +47,30 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
         ${invoice.estado_pago === "PAGADA" ? "border-l-green-400" : ""}
       `}
     >
-      {/* Header: factura + estado */}
+      {/* Header: factura + vencimiento + estado */}
       <div className="flex items-center justify-between mb-2">
-        <span className="font-mono text-sm font-semibold text-text-main">
-          {invoice.numero_factura}
-        </span>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-mono text-sm font-semibold text-text-main truncate">
+            {invoice.numero_factura}
+          </span>
+          {hasDeadline && daysRemaining !== null && !isPaid && (
+            <span
+              className={`shrink-0 text-xs font-medium px-1.5 py-0.5 rounded ${
+                daysRemaining < 0
+                  ? "bg-red-50 text-danger"
+                  : daysRemaining <= 3
+                    ? "bg-orange-50 text-accent-orange"
+                    : "bg-green-50 text-success"
+              }`}
+            >
+              {daysRemaining < 0
+                ? `Vencida ${Math.abs(daysRemaining)}d`
+                : daysRemaining === 0
+                  ? "Vence hoy"
+                  : `${daysRemaining}d`}
+            </span>
+          )}
+        </div>
         <Badge variant={status.variant}>
           <StatusIcon className="w-3 h-3 mr-1" />
           {status.label}
@@ -82,63 +101,34 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
             {formatAmount(invoice.total_usd, invoice.total_bs)}
           </span>
         </div>
-        {!isPaid && (
-          <>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Pagado</span>
-              <span className="font-mono tabular-nums text-slate-600">
-                {formatAmount(invoice.total_pagado_usd, invoice.total_pagado_bs)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Pendiente</span>
-              <span className="font-mono tabular-nums font-medium text-danger">
-                {formatAmount(invoice.saldo_pendiente_usd, invoice.saldo_pendiente_bs)}
-              </span>
-            </div>
-          </>
-        )}
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-500">Pagado</span>
+          <span className="font-mono tabular-nums text-slate-600">
+            {formatAmount(invoice.total_pagado_usd, invoice.total_pagado_bs)}
+          </span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-500">Pendiente</span>
+          <span className={`font-mono tabular-nums font-medium ${isPaid ? "text-slate-400" : "text-danger"}`}>
+            {formatAmount(invoice.saldo_pendiente_usd, invoice.saldo_pendiente_bs)}
+          </span>
+        </div>
       </div>
 
       {/* Barra de progreso */}
-      {!isPaid && (
-        <div className="mb-3">
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${
-                (invoice.porcentaje_pagado || 0) >= 50
-                  ? "bg-blue-500"
-                  : "bg-orange-400"
-              }`}
-              style={{ width: `${Math.min(invoice.porcentaje_pagado || 0, 100)}%` }}
-            />
-          </div>
-          <p className="text-[10px] text-slate-400 mt-1 text-right">
-            {Math.round(invoice.porcentaje_pagado || 0)}% pagado
-          </p>
+      <div className="mb-3">
+        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${
+              isPaid ? "bg-green-500" : "bg-blue-500"
+            }`}
+            style={{ width: `${Math.min(invoice.porcentaje_pagado || 0, 100)}%` }}
+          />
         </div>
-      )}
-
-      {/* Vencimiento */}
-      {hasDeadline && daysRemaining !== null && (
-        <div
-          className={`text-xs mb-3 px-2 py-1 rounded ${
-            daysRemaining < 0
-              ? "bg-red-50 text-danger"
-              : daysRemaining <= 3
-                ? "bg-orange-50 text-accent-orange"
-                : "bg-slate-50 text-slate-500"
-          }`}
-        >
-          {daysRemaining < 0
-            ? `Vencida hace ${Math.abs(daysRemaining)} día${Math.abs(daysRemaining) !== 1 ? "s" : ""}`
-            : daysRemaining === 0
-              ? "Vence hoy"
-              : daysRemaining <= 3
-                ? `Vence en ${daysRemaining} día${daysRemaining !== 1 ? "s" : ""}`
-                : `Vence: ${new Date(invoice.fecha_limite_pago!).toLocaleDateString("es-VE")}`}
-        </div>
-      )}
+        <p className="text-[10px] text-slate-400 mt-1 text-right">
+          {Math.min(Math.round(invoice.porcentaje_pagado || 0), 100)}% pagado
+        </p>
+      </div>
 
       {/* Acciones */}
       <div className="flex items-center gap-2 pt-3 border-t border-slate-100">

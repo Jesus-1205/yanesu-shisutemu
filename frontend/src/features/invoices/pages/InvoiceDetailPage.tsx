@@ -28,7 +28,7 @@ export default function InvoiceDetailPage() {
   const [payments, setPayments] = useState<InvoicePaymentOut[]>([]);
   const [paymentSummary, setPaymentSummary] = useState<InvoicePaymentSummary | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchInvoice = useCallback(async () => {
     if (!id) return;
@@ -66,8 +66,9 @@ export default function InvoiceDetailPage() {
   useEffect(() => {
     if (searchParams.get("action") === "pay" && invoice && invoice.estado_pago !== "PAGADA") {
       setPaymentModalOpen(true);
+      setSearchParams({}, { replace: true });
     }
-  }, [searchParams, invoice]);
+  }, [searchParams, invoice, setSearchParams]);
 
   const handleDownloadImage = async () => {
     if (!invoice) return;
@@ -187,8 +188,8 @@ export default function InvoiceDetailPage() {
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                   diffDias < 0
                     ? "bg-red-100 text-red-700"
-                    : diffDias === 0
-                      ? "bg-yellow-100 text-yellow-700"
+                    : diffDias <= 3
+                      ? "bg-orange-100 text-orange-700"
                       : "bg-emerald-100 text-emerald-700"
                 }`}>
                   {diffDias < 0
@@ -329,6 +330,15 @@ export default function InvoiceDetailPage() {
               {
                 key: "metodo_pago_nombre",
                 header: "Método",
+              },
+              {
+                key: "monto",
+                header: "Monto",
+                render: (p: InvoicePaymentOut) => (
+                  <span className="font-mono">
+                    {p.monto_usd > 0 ? formatUsd(p.monto_usd) : `Bs. ${formatBs(p.monto_bs)}`}
+                  </span>
+                ),
               },
               {
                 key: "monto_usd",

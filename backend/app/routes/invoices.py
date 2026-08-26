@@ -1,6 +1,7 @@
 import json
 import time
 from collections import defaultdict
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
@@ -268,11 +269,12 @@ def _factura_to_out(factura) -> FacturaOut:
         total_pagado_bs = sum(p.monto_bs for p in factura.payments)
         out.total_pagado_usd = total_pagado_usd
         out.total_pagado_bs = total_pagado_bs
-        out.saldo_pendiente_usd = out.total_usd - total_pagado_usd
-        out.saldo_pendiente_bs = out.total_bs - total_pagado_bs
-        out.porcentaje_pagado = float(
-            (total_pagado_usd / out.total_usd * 100) if out.total_usd > 0 else 0
-        )
+        if out.moneda_principal == "BS" and out.total_bs > 0:
+            out.porcentaje_pagado = min(float(total_pagado_bs / out.total_bs * 100), 100.0)
+        elif out.total_usd > 0:
+            out.porcentaje_pagado = min(float(total_pagado_usd / out.total_usd * 100), 100.0)
+    out.saldo_pendiente_usd = max(out.total_usd - out.total_pagado_usd, Decimal("0"))
+    out.saldo_pendiente_bs = max(out.total_bs - out.total_pagado_bs, Decimal("0"))
     return out
 
 
