@@ -119,7 +119,7 @@ class TestCreateInvoice:
         assert factura.total_usd == Decimal("100.00")
         assert factura.total_bs == Decimal("100.00")
 
-    def test_create_invoice_updates_weighted_average_cost(self, db):
+    def test_create_invoice_updates_cost_with_invoice_price(self, db):
         sup = _sup(db)
         unidades_caja = 12
         stock_inicial_cajas = 5
@@ -145,14 +145,8 @@ class TestCreateInvoice:
         create_invoice(db, data, usuario_id=user.id)
         db.refresh(prod)
 
-        promedio_esperado = (
-            (Decimal(stock_inicial_cajas) * precio_caja_anterior)
-            + (Decimal(cajas_nuevas) * precio_caja_nuevo)
-        ) / Decimal(stock_inicial_cajas + cajas_nuevas)
-        promedio_esperado = promedio_esperado.quantize(Decimal("0.01"))
-
-        assert prod.precio_costo_caja_usd == promedio_esperado
-        assert prod.precio_costo_usd == (promedio_esperado / Decimal(unidades_caja)).quantize(Decimal("0.01"))
+        assert prod.precio_costo_caja_usd == precio_caja_nuevo
+        assert prod.precio_costo_usd == (precio_caja_nuevo / Decimal(unidades_caja)).quantize(Decimal("0.01"))
 
     def test_create_invoice_updates_proveedor_id(self, db):
         sup = _sup(db)

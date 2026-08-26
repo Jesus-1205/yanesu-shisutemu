@@ -717,29 +717,12 @@ def create_invoice(
         )
         total_unidades = stock_total_actual + Decimal(unidades_ingresadas)
 
-        if total_unidades > 0:
-            if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
-                cajas_equivalentes = stock_total_actual / Decimal(product.unidades_por_caja)
-                nuevo_costo_caja = (
-                    (cajas_equivalentes * product.precio_costo_caja_usd)
-                    + (Decimal(item.cantidad) * costo_usd)
-                ) / (cajas_equivalentes + Decimal(item.cantidad))
-                nuevo_costo_caja = nuevo_costo_caja.quantize(Decimal("0.01"))
-                nuevo_costo_unidad = (nuevo_costo_caja / Decimal(unidades_por_caja)).quantize(
-                    Decimal("0.01")
-                )
-            else:
-                nuevo_costo_unidad = (
-                    (stock_total_actual * product.precio_costo_usd)
-                    + (Decimal(item.cantidad) * costo_usd)
-                ) / total_unidades
-                nuevo_costo_unidad = nuevo_costo_unidad.quantize(Decimal("0.01"))
-                nuevo_costo_caja = (nuevo_costo_unidad * Decimal(unidades_por_caja)).quantize(
-                    Decimal("0.01")
-                )
+        if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
+            nuevo_costo_caja = costo_usd
+            nuevo_costo_unidad = (costo_usd / Decimal(unidades_por_caja)).quantize(Decimal("0.01"))
         else:
-            nuevo_costo_unidad = product.precio_costo_usd
-            nuevo_costo_caja = product.precio_costo_caja_usd
+            nuevo_costo_unidad = costo_usd
+            nuevo_costo_caja = (costo_usd * Decimal(unidades_por_caja)).quantize(Decimal("0.01"))
 
         if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
             product.stock_cajas += item.cantidad
