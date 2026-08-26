@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type { TipoEmpaque, ProductOut } from "@/types/api";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import Button from "@/ui-components/Button";
+import { generateUUID } from "@/lib/utils";
 
 interface ObsequioFormProps {
   products: ProductOut[];
@@ -43,7 +44,7 @@ export default function ObsequioForm({ products, onSearchProducts, onAdd }: Obse
   const handleAdd = useCallback(() => {
     if (!isValid || !selectedProduct) return;
     onAdd({
-      key: crypto.randomUUID(),
+      key: generateUUID(),
       producto_id: productoId!,
       nombre: selectedProduct.nombre,
       tipo_empaque: tipoEmpaque,

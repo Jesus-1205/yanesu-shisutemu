@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { MonedaEnum } from "@/types/api";
 import { convertirCostos, calcularSubtotal } from "@/lib/money";
+import { generateUUID } from "@/lib/utils";
 import type { LineItem, ObsequioItem } from "../types";
 
 interface InvoiceFormState {
@@ -58,7 +59,7 @@ export const useInvoiceFormStore = create<InvoiceFormState & InvoiceFormActions>
     const costos = convertirCostos(item.costo_ingresado, item.moneda_ingreso, nTasa);
     const newItem: LineItem = {
       ...item,
-      key: crypto.randomUUID(),
+      key: generateUUID(),
       costo_unitario_usd: costos.usd,
       costo_unitario_bs: costos.bs,
       subtotal_usd: calcularSubtotal(item.cantidad, costos.usd),
@@ -98,7 +99,7 @@ export const useInvoiceFormStore = create<InvoiceFormState & InvoiceFormActions>
   })),
 
   addObsequio: (item) => set((s) => ({
-    obsequioItems: [...s.obsequioItems, { ...item, key: crypto.randomUUID() }],
+    obsequioItems: [...s.obsequioItems, { ...item, key: generateUUID() }],
   })),
 
   removeObsequio: (key) => set((s) => ({

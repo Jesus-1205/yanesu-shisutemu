@@ -7,6 +7,7 @@ import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import Badge from "@/ui-components/Badge";
 import { formatBs, formatUsd } from "@/lib/text";
 import { toCents } from "@/lib/money";
+import { generateUUID } from "@/lib/utils";
 import type { LineItem } from "../types";
 import { useInvoiceFormStore } from "../store/invoiceFormStore";
 import CreateSupplierModal from "@/features/shared/components/CreateSupplierModal";
@@ -106,7 +107,7 @@ export default function AIReviewPanel({
       const precioUnitario = toCents(Number(item.precio_unitario));
       const unidadesPorCaja = prod?.unidades_por_caja ?? 1;
       return {
-        key: crypto.randomUUID(),
+        key: generateUUID(),
         producto_id: item.resolved_producto_id!,
         nombre: item.resolved_nombre,
         codigo_barra: prod?.codigo_barra ?? null,

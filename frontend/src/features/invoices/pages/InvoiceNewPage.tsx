@@ -248,28 +248,28 @@ export default function InvoiceNewPage() {
         />
 
         <div className="rounded-xl border border-slate-200 bg-surface p-5 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-text-main uppercase tracking-wide">
               Productos de la Factura
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => setProductModalOpen(true)}
-                className="flex items-center gap-1 rounded-lg border border-dashed border-slate-300 bg-surface px-2.5 py-1.5 text-xs text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
+                className="flex items-center gap-1 rounded-lg border border-dashed border-slate-300 bg-surface px-2 sm:px-2.5 py-1.5 text-xs text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
                 title="Crear nuevo producto"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-                Producto
+                <span className="hidden sm:inline">Producto</span>
               </button>
               <button
                 type="button"
                 onClick={() => setCategoryModalOpen(true)}
-                className="flex items-center gap-1 rounded-lg border border-dashed border-slate-300 bg-surface px-2.5 py-1.5 text-xs text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
+                className="flex items-center gap-1 rounded-lg border border-dashed border-slate-300 bg-surface px-2 sm:px-2.5 py-1.5 text-xs text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
                 title="Crear nueva categoría"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-                Categoría
+                <span className="hidden sm:inline">Categoría</span>
               </button>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                 {store.lineItems.length} item{store.lineItems.length !== 1 ? "s" : ""}

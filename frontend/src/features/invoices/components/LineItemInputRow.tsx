@@ -111,7 +111,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
             className={inputBase}
           />
         </div>
-        <div className="relative">
+        <div>
           <label htmlFor={fid("costo-prim")} className={labelBase}>
             {newTipoEmpaque === "CAJA" ? "$/Caja" : "$/Unid"} <span className="text-slate-400 font-normal">({esBs ? "Bs" : "USD"})</span>
           </label>
@@ -126,11 +126,6 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
             className={inputBase}
             placeholder="0.00"
           />
-          {newTipoEmpaque === "CAJA" && nUndsCaja > 0 && nCostoPrim > 0 && (
-            <p className="absolute -bottom-4 left-0 text-[10px] text-slate-400 whitespace-nowrap">
-              = {formatUsd(nCostoPrim / nUndsCaja)}/und ({nUndsCaja} unds/caja)
-            </p>
-          )}
         </div>
         <div>
           <label htmlFor={fid("costo-sec")} className={labelBase}>
@@ -174,7 +169,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
             />
           )}
         </div>
-        <div>
+        <div className="col-span-2 sm:col-span-1">
           <label className={labelBase}>Empaque</label>
           <div className="flex rounded-lg border border-slate-300 overflow-hidden h-10">
             <button
@@ -209,8 +204,9 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
             </button>
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="col-span-2 sm:col-span-1">
           <Button
+            type="button"
             variant="accent"
             onClick={handleAddLine}
             disabled={!canAdd}
@@ -222,6 +218,11 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
           </Button>
         </div>
       </div>
+      {newTipoEmpaque === "CAJA" && nUndsCaja > 0 && nCostoPrim > 0 && (
+        <p className="text-[10px] text-slate-400 whitespace-nowrap mt-1">
+          = {formatUsd((esBs ? newCostoSecundario : nCostoPrim) / nUndsCaja)}/und ({nUndsCaja} unds/caja)
+        </p>
+      )}
     </div>
   );
 }
