@@ -24,6 +24,7 @@ import type {
   InvoicePaymentCreate,
   InvoicePaymentOut,
   InvoicePaymentSummary,
+  InvoiceStatsOut,
   PaymentMethodCreate,
   PaymentMethodOut,
   PaymentMethodUpdate,
@@ -513,6 +514,9 @@ export const api = {
 
   getInvoice: (id: number) =>
     request<FacturaOut>(`/invoices/${id}`),
+
+  getInvoiceStats: () =>
+    request<InvoiceStatsOut>("/invoices/stats"),
 
   createInvoice: (
     data: FacturaCreate,

@@ -75,6 +75,12 @@ class FacturaOut(BaseModel):
     procesada_por_ia: bool = False
     raw_json_ia: dict | None = None
 
+    total_pagado_usd: Decimal = Decimal("0")
+    total_pagado_bs: Decimal = Decimal("0")
+    saldo_pendiente_usd: Decimal = Decimal("0")
+    saldo_pendiente_bs: Decimal = Decimal("0")
+    porcentaje_pagado: float = 0.0
+
     supplier: SupplierOut | None = None
     detalles: list[DetalleFacturaOut] = []
     obsequios: list["ObsequioFacturaOut"] = []
@@ -88,6 +94,14 @@ class FacturaPaginationOut(BaseModel):
     page: int
     page_size: int
     pages: int
+
+
+class InvoiceStatsOut(BaseModel):
+    """Conteo de facturas por estado de pago."""
+    pendientes: int = 0
+    parciales: int = 0
+    pagadas: int = 0
+    total: int = 0
 
 
 # ── Schemas para Análisis IA ──────────────────────────────────────────────

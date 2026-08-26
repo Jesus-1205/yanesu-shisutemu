@@ -15,6 +15,12 @@ vi.mock("@/services/api", () => ({
       pages: 0,
     }),
     getSuppliers: vi.fn().mockResolvedValue([]),
+    getInvoiceStats: vi.fn().mockResolvedValue({
+      pendientes: 0,
+      parciales: 0,
+      pagadas: 0,
+      total: 0,
+    }),
   },
 }));
 
@@ -46,6 +52,11 @@ const mockInvoices: FacturaOut[] = [
     created_at: "2026-08-20T12:00:00",
     procesada_por_ia: false,
     raw_json_ia: null,
+    total_pagado_usd: 0,
+    total_pagado_bs: 0,
+    saldo_pendiente_usd: 100,
+    saldo_pendiente_bs: 75000,
+    porcentaje_pagado: 0,
     supplier: { id: 1, nombre: "Proveedor A", telefono: null, email: null },
     detalles: [],
     obsequios: [],
@@ -69,6 +80,11 @@ const mockInvoices: FacturaOut[] = [
     created_at: "2026-08-21T12:00:00",
     procesada_por_ia: false,
     raw_json_ia: null,
+    total_pagado_usd: 0,
+    total_pagado_bs: 0,
+    saldo_pendiente_usd: 50,
+    saldo_pendiente_bs: 37500,
+    porcentaje_pagado: 0,
     supplier: { id: 2, nombre: "Proveedor B", telefono: null, email: null },
     detalles: [],
     obsequios: [],
@@ -106,6 +122,12 @@ describe("InvoicesPage", () => {
     (api.getSuppliers as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockSuppliers,
     );
+    (api.getInvoiceStats as ReturnType<typeof vi.fn>).mockResolvedValue({
+      pendientes: 2,
+      parciales: 0,
+      pagadas: 0,
+      total: 2,
+    });
   });
 
   it("renders page with 'Facturas de Proveedor' header", () => {

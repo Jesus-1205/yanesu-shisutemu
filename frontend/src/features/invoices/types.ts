@@ -1,6 +1,6 @@
 import type { TipoEmpaque, MonedaEnum } from "@/types/api";
 
-export type { FacturaOut as Invoice, FacturaCreate as CreateInvoiceData, DetalleFacturaCreate as CreateInvoiceDetailData, FacturaPaginationOut as InvoicePagination } from "@/types/api";
+export type { FacturaOut as Invoice, FacturaCreate as CreateInvoiceData, DetalleFacturaCreate as CreateInvoiceDetailData, FacturaPaginationOut as InvoicePagination, InvoiceStatsOut } from "@/types/api";
 
 export interface LineItem {
   key: string;

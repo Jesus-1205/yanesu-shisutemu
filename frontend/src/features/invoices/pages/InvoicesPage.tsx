@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye, DollarSign } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { api } from "@/services/api";
-import type { Invoice } from "../types";
+import type { Invoice, InvoiceStatsOut } from "../types";
 import type { SupplierOut } from "@/types/api";
-import Table from "@/ui-components/Table";
 import Button from "@/ui-components/Button";
+import Combobox from "@/ui-components/Combobox";
 import Select from "@/ui-components/Select";
 import PageHeader from "@/ui-components/PageHeader";
 import ErrorBanner from "@/ui-components/ErrorBanner";
@@ -14,14 +14,23 @@ import SearchInput from "@/ui-components/SearchInput";
 import Spinner from "@/ui-components/Spinner";
 import EmptyState from "@/ui-components/EmptyState";
 import Badge from "@/ui-components/Badge";
-import { formatBs, formatUsd } from "@/lib/text";
+import Tabs from "@/ui-components/Tabs";
+import InvoiceCard from "../components/InvoiceCard";
 
 const PAGE_SIZE = 20;
+
+const statusTabs = [
+  { value: "", label: "Todas" },
+  { value: "PENDIENTE", label: "Pendientes" },
+  { value: "PARCIALMENTE_PAGADA", label: "Parciales" },
+  { value: "PAGADA", label: "Pagadas" },
+];
 
 export default function InvoicesPage() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierOut[]>([]);
+  const [stats, setStats] = useState<InvoiceStatsOut>({ pendientes: 0, parciales: 0, pagadas: 0, total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -52,9 +61,22 @@ export default function InvoicesPage() {
     }
   }, [proveedorId, tipoDocumento, estadoPago, search, page]);
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await api.getInvoiceStats();
+      setStats(data);
+    } catch {
+      // Silenciar error de stats
+    }
+  }, []);
+
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   useEffect(() => {
     api.getSuppliers().then(setSuppliers).catch(() => {});
@@ -63,6 +85,27 @@ export default function InvoicesPage() {
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setProveedorId(null);
+    setTipoDocumento("");
+    setEstadoPago("");
+    setPage(1);
+  };
+
+  const tabsWithCounts = statusTabs.map((tab) => ({
+    ...tab,
+    badge: tab.value === ""
+      ? stats.total
+      : tab.value === "PENDIENTE"
+        ? stats.pendientes
+        : tab.value === "PARCIALMENTE_PAGADA"
+          ? stats.parciales
+          : stats.pagadas,
+  }));
+
+  const hasActiveFilters = search || proveedorId || tipoDocumento || estadoPago;
 
   return (
     <div>
@@ -83,8 +126,17 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative min-w-[200px] flex-1 max-w-xs">
+      {/* Tabs de estado */}
+      <Tabs
+        tabs={tabsWithCounts}
+        value={estadoPago}
+        onChange={(v) => { setEstadoPago(v); setPage(1); }}
+        className="mb-4"
+      />
+
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-3">
+        <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-xs">
           <SearchInput
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -92,17 +144,17 @@ export default function InvoicesPage() {
             placeholder="Buscar factura..."
           />
         </div>
-        <div className="w-56">
-          <Select
-            value={proveedorId ?? ""}
-            onChange={(e) => { setProveedorId(e.target.value ? Number(e.target.value) : null); setPage(1); }}
-            options={[
-              { value: "", label: "Todos los proveedores" },
-              ...suppliers.map((s) => ({ value: String(s.id), label: s.nombre })),
-            ]}
+        <div className="w-full sm:w-56">
+          <Combobox
+            value={proveedorId}
+            options={suppliers.map((s) => ({ value: s.id, label: s.nombre }))}
+            onChange={(v) => { setProveedorId(v ? Number(v) : null); setPage(1); }}
+            placeholder="Buscar proveedor..."
+            allowClear
+            clearLabel="Todos"
           />
         </div>
-        <div className="w-44">
+        <div className="w-full sm:w-44">
           <Select
             value={tipoDocumento}
             onChange={(e) => { setTipoDocumento(e.target.value); setPage(1); }}
@@ -113,20 +165,43 @@ export default function InvoicesPage() {
             ]}
           />
         </div>
-        <div className="w-44">
-          <Select
-            value={estadoPago}
-            onChange={(e) => { setEstadoPago(e.target.value); setPage(1); }}
-            options={[
-              { value: "", label: "Todos los estados" },
-              { value: "PENDIENTE", label: "Pendiente" },
-              { value: "PARCIALMENTE_PAGADA", label: "Parcial" },
-              { value: "PAGADA", label: "Pagada" },
-            ]}
-          />
-        </div>
       </div>
 
+      {/* Filtros activos */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <span className="text-xs text-slate-500">Filtros activos:</span>
+          {search && (
+            <Badge variant="neutral" className="gap-1">
+              &quot;{search}&quot;
+              <button onClick={() => { setSearch(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {proveedorId && (
+            <Badge variant="neutral" className="gap-1">
+              {suppliers.find((s) => s.id === proveedorId)?.nombre}
+              <button onClick={() => { setProveedorId(null); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {tipoDocumento && (
+            <Badge variant="neutral" className="gap-1">
+              {tipoDocumento === "FACTURA" ? "Factura" : "Nota de Entrega"}
+              <button onClick={() => { setTipoDocumento(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+            Limpiar todo
+          </Button>
+        </div>
+      )}
+
+      {/* Contenido */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Spinner size="lg" />
@@ -140,101 +215,16 @@ export default function InvoicesPage() {
         />
       ) : (
         <>
-          <Table
-            columns={[
-              { key: "numero_factura", header: "Factura" },
-              {
-                key: "tipo_documento",
-                header: "Tipo",
-                render: (inv: Invoice) => (
-                  <Badge variant={inv.tipo_documento === "FACTURA" ? "info" : "warning"}>
-                    {inv.tipo_documento === "FACTURA" ? "Factura" : "Nota Entrega"}
-                  </Badge>
-                ),
-              },
-              {
-                key: "supplier",
-                header: "Proveedor",
-                render: (inv: Invoice) => inv.supplier?.nombre || "—",
-              },
-              {
-                key: "fecha_factura",
-                header: "Fecha",
-                hideOnMobile: true,
-                render: (inv: Invoice) => new Date(inv.fecha_factura).toLocaleDateString("es-VE"),
-              },
-              {
-                key: "moneda_principal",
-                header: "Moneda",
-                hideOnMobile: true,
-                render: (inv: Invoice) => (
-                  <Badge variant={inv.moneda_principal === "USD" ? "info" : "warning"}>
-                    {inv.moneda_principal}
-                  </Badge>
-                ),
-              },
-              {
-                key: "total_usd",
-                header: "Total USD",
-                hideOnMobile: true,
-                render: (inv: Invoice) => (
-                  <span className="font-mono tabular-nums">{formatUsd(Number(inv.total_usd))}</span>
-                ),
-              },
-              {
-                key: "total_bs",
-                header: "Total Bs.",
-                hideOnMobile: true,
-                render: (inv: Invoice) => (
-                  <span className="font-mono tabular-nums">Bs. {formatBs(Number(inv.total_bs))}</span>
-                ),
-              },
-              {
-                key: "estado_pago",
-                header: "Estado",
-                hideOnMobile: true,
-                render: (inv: Invoice) => {
-                  const config = {
-                    PAGADA: { variant: "success" as const, label: "Pagada" },
-                    PARCIALMENTE_PAGADA: { variant: "warning" as const, label: "Parcial" },
-                    PENDIENTE: { variant: "danger" as const, label: "Pendiente" },
-                  };
-                  const c = config[inv.estado_pago] || config.PENDIENTE;
-                  return <Badge variant={c.variant}>{c.label}</Badge>;
-                },
-              },
-              {
-                key: "acciones",
-                header: "Acciones",
-                exportable: false,
-                render: (inv: Invoice) => (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/invoices/${inv.id}`)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {inv.estado_pago !== "PAGADA" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/invoices/${inv.id}?action=pay`)}
-                        title="Registrar pago"
-                      >
-                        <DollarSign className="w-4 h-4 text-green-600" />
-                      </Button>
-                    )}
-                  </div>
-                ),
-              },
-            ]}
-            data={invoices}
-            keyExtractor={(inv) => inv.id}
-            loading={false}
-            emptyMessage="No hay facturas registradas"
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {invoices.map((inv) => (
+              <InvoiceCard
+                key={inv.id}
+                invoice={inv}
+                onView={() => navigate(`/invoices/${inv.id}`)}
+                onPay={inv.estado_pago !== "PAGADA" ? () => navigate(`/invoices/${inv.id}?action=pay`) : undefined}
+              />
+            ))}
+          </div>
           <Pagination
             page={page}
             totalPages={totalPages}

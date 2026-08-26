@@ -824,6 +824,26 @@ def get_invoices(
     }
 
 
+def get_invoice_stats(db: Session) -> dict:
+    """Retorna conteo de facturas por estado de pago."""
+    pendientes = db.execute(
+        select(func.count()).where(Factura.estado_pago == "PENDIENTE")
+    ).scalar() or 0
+    parciales = db.execute(
+        select(func.count()).where(Factura.estado_pago == "PARCIALMENTE_PAGADA")
+    ).scalar() or 0
+    pagadas = db.execute(
+        select(func.count()).where(Factura.estado_pago == "PAGADA")
+    ).scalar() or 0
+    total = pendientes + parciales + pagadas
+    return {
+        "pendientes": pendientes,
+        "parciales": parciales,
+        "pagadas": pagadas,
+        "total": total,
+    }
+
+
 def get_invoice(db: Session, invoice_id: int) -> Factura:
     stmt = (
         select(Factura)

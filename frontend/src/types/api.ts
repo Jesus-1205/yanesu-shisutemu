@@ -504,6 +504,11 @@ export interface FacturaOut {
   created_at: string;
   procesada_por_ia?: boolean;
   raw_json_ia?: Record<string, unknown> | null;
+  total_pagado_usd: number;
+  total_pagado_bs: number;
+  saldo_pendiente_usd: number;
+  saldo_pendiente_bs: number;
+  porcentaje_pagado: number;
   supplier: SupplierOut | null;
   detalles: DetalleFacturaOut[];
   obsequios: ObsequioFacturaOut[];
@@ -515,6 +520,13 @@ export interface FacturaPaginationOut {
   page: number;
   page_size: number;
   pages: number;
+}
+
+export interface InvoiceStatsOut {
+  pendientes: number;
+  parciales: number;
+  pagadas: number;
+  total: number;
 }
 
 // ─── Pagos de Factura ──────────────────────────────────────────────────────

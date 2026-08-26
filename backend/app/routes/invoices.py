@@ -19,6 +19,7 @@ from app.schemas.invoice import (
     InvoicePaymentOut,
     InvoicePaymentReceiptOut,
     InvoicePaymentSummary,
+    InvoiceStatsOut,
 )
 from app.services.audit_service import log_action
 from app.services.invoice_service import (
@@ -28,6 +29,7 @@ from app.services.invoice_service import (
     get_invoice,
     get_invoice_payment_summary,
     get_invoice_payments,
+    get_invoice_stats,
     get_invoices,
     optimize_image,
     register_invoice_payment,
@@ -212,6 +214,18 @@ def list_all(
     }
 
 
+@router.get("/stats", status_code=status.HTTP_200_OK)
+def stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /invoices/stats - Conteo de facturas por estado de pago
+
+    Devuelve: 200 + InvoiceStatsOut (pendientes, parciales, pagadas, total)
+    """
+    return get_invoice_stats(db)
+
+
 @router.get("/{invoice_id}", status_code=status.HTTP_200_OK)
 def get_by_id(
     invoice_id: int,
@@ -248,7 +262,18 @@ def get_image(
 
 
 def _factura_to_out(factura) -> FacturaOut:
-    return FacturaOut.model_validate(factura)
+    out = FacturaOut.model_validate(factura)
+    if factura.payments:
+        total_pagado_usd = sum(p.monto_usd for p in factura.payments)
+        total_pagado_bs = sum(p.monto_bs for p in factura.payments)
+        out.total_pagado_usd = total_pagado_usd
+        out.total_pagado_bs = total_pagado_bs
+        out.saldo_pendiente_usd = out.total_usd - total_pagado_usd
+        out.saldo_pendiente_bs = out.total_bs - total_pagado_bs
+        out.porcentaje_pagado = float(
+            (total_pagado_usd / out.total_usd * 100) if out.total_usd > 0 else 0
+        )
+    return out
 
 
 # ── Pagos de Factura ────────────────────────────────────────────────────────
