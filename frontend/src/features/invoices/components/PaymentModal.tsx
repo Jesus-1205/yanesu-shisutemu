@@ -165,6 +165,11 @@ export default function PaymentModal({ open, onClose, invoice, paymentSummary, o
             {excedeSaldo && (
               <p className="text-xs text-red-500 mt-1">El monto excede el saldo pendiente</p>
             )}
+            {montoNum > 0 && !excedeSaldo && (
+              <p className="text-xs text-slate-500 mt-1">
+                Quedaría por pagar: <span className="font-mono font-medium text-slate-700">{formatPay(Math.round((saldoEnMonedaPago - montoNum) * 100) / 100)}</span>
+              </p>
+            )}
             {/* Botones rápidos */}
             <div className="flex gap-2 mt-2">
               <button
