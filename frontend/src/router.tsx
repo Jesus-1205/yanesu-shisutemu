@@ -97,6 +97,10 @@ export const router = createBrowserRouter([
             lazy: adminOnly(() => import("./features/invoices/pages/InvoiceDetailPage")),
           },
           {
+            path: "invoices/:id/pay",
+            lazy: adminOnly(() => import("./features/invoices/pages/InvoicePaymentPage")),
+          },
+          {
             path: "sales",
             lazy: lazyRoute(() => import("./features/sales/pages/SalesPage")),
           },

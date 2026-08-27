@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Download, Bot, DollarSign, Paperclip } from "lucide-react";
 import { api } from "@/services/api";
 import type { Invoice } from "../types";
@@ -14,7 +14,6 @@ import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
 import { calcularResumenFiscal } from "@/lib/iva";
-import PaymentModal from "../components/PaymentModal";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,8 +26,6 @@ export default function InvoiceDetailPage() {
   const [downloading, setDownloading] = useState(false);
   const [payments, setPayments] = useState<InvoicePaymentOut[]>([]);
   const [paymentSummary, setPaymentSummary] = useState<InvoicePaymentSummary | null>(null);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchInvoice = useCallback(async () => {
     if (!id) return;
@@ -62,13 +59,6 @@ export default function InvoiceDetailPage() {
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
-
-  useEffect(() => {
-    if (searchParams.get("action") === "pay" && invoice && invoice.estado_pago !== "PAGADA") {
-      setPaymentModalOpen(true);
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, invoice, setSearchParams]);
 
   const handleDownloadImage = async () => {
     if (!invoice) return;
@@ -266,7 +256,7 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Estado de Pago</h3>
             {invoice.estado_pago !== "PAGADA" && (
-              <Button variant="accent" size="sm" onClick={() => setPaymentModalOpen(true)}>
+              <Button variant="accent" size="sm" onClick={() => navigate(`/invoices/${id}/pay`)}>
                 <DollarSign className="w-4 h-4" />
                 Registrar Pago
               </Button>
@@ -678,17 +668,6 @@ export default function InvoiceDetailPage() {
           );
         })()}
       </Modal>
-
-      <PaymentModal
-        open={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
-        invoice={invoice}
-        paymentSummary={paymentSummary}
-        onSuccess={() => {
-          fetchPayments();
-          fetchInvoice();
-        }}
-      />
     </div>
   );
 }
