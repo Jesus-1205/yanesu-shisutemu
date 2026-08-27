@@ -133,7 +133,6 @@ export default function InvoicePaymentPage() {
   useEffect(() => {
     fetchInvoice();
     fetchPaymentData();
-    return () => { store.reset(); };
   }, [fetchInvoice, fetchPaymentData]);
 
   const handleSubmit = useCallback(async () => {
