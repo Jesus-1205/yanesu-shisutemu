@@ -1,5 +1,14 @@
+from datetime import date, datetime, timedelta, timezone
+
 from sqlalchemy.sql.expression import ClauseElement, ColumnElement
 from sqlalchemy.ext.compiler import compiles
+
+VE_TZ = timezone(timedelta(hours=-4))
+
+
+def ve_today() -> date:
+    """Retorna la fecha actual en America/Caracas (UTC-4)."""
+    return datetime.now(VE_TZ).date()
 
 
 class VE_NOWClause(ClauseElement):

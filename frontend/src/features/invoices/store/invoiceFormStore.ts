@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { MonedaEnum } from "@/types/api";
 import { convertirCostos, calcularSubtotal } from "@/lib/money";
-import { generateUUID } from "@/lib/utils";
+import { generateUUID, getTodayInCaracas } from "@/lib/utils";
 import type { LineItem, ObsequioItem } from "../types";
 
 interface InvoiceFormState {
@@ -37,12 +37,12 @@ const INITIAL_STATE: InvoiceFormState = {
   proveedorId: null,
   numeroFactura: "",
   tipoDocumento: "FACTURA",
-  fechaFactura: "",
+  fechaFactura: getTodayInCaracas(),
   fechaLimitePago: null,
   observaciones: "",
   moneda: "USD",
   tasa: "",
-  aplicaIva: true,
+  aplicaIva: false,
   invoiceFiles: [],
   lineItems: [],
   obsequioItems: [],

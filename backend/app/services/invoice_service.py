@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_uploads_dir, get_comprobantes_pago_dir
 from app.core.exceptions import ConflictError, EntityNotFoundError
+from app.core.timezone import ve_today
 from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoEmpaqueFactura, ObsequioFactura
 from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.product import Product
@@ -663,7 +664,7 @@ def create_invoice(
         proveedor_id=data.proveedor_id,
         numero_factura=data.numero_factura,
         tipo_documento=data.tipo_documento,
-        fecha_factura=data.fecha_factura or date.today(),
+        fecha_factura=data.fecha_factura or ve_today(),
         fecha_limite_pago=data.fecha_limite_pago,
         image_path=image_path,
         usuario_id=usuario_id,

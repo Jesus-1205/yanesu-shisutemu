@@ -6,7 +6,7 @@ from sqlalchemy import String, Integer, DECIMAL, Date, DateTime, Text, ForeignKe
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.core.timezone import VE_NOW
+from app.core.timezone import VE_NOW, ve_today
 
 
 class MonedaEnum(str, enum.Enum):
@@ -30,7 +30,7 @@ class Factura(Base):
     tipo_documento: Mapped[TipoDocumentoEnum] = mapped_column(
         String(15), nullable=False, default=TipoDocumentoEnum.FACTURA
     )
-    fecha_factura: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    fecha_factura: Mapped[date] = mapped_column(Date, nullable=False, default=ve_today)
     fecha_limite_pago: Mapped[date | None] = mapped_column(Date, nullable=True)
     image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     usuario_id: Mapped[int] = mapped_column(
