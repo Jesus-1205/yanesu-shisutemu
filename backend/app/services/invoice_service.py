@@ -1,10 +1,10 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
 from rapidfuzz import fuzz, process
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_uploads_dir, get_comprobantes_pago_dir
@@ -778,6 +778,7 @@ def get_invoices(
     tipo_documento: str | None = None,
     estado_pago: str | None = None,
     search: str | None = None,
+    sort_by: str | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> dict:
@@ -798,7 +799,12 @@ def get_invoices(
             )
         )
 
-    stmt = stmt.order_by(Factura.created_at.desc())
+    if sort_by == "fecha_limite_pago":
+        has_deadline = case((Factura.fecha_limite_pago.isnot(None), 0), else_=1)
+        sort_date = func.coalesce(Factura.fecha_limite_pago, func.date(Factura.created_at))
+        stmt = stmt.order_by(has_deadline, sort_date.asc())
+    else:
+        stmt = stmt.order_by(Factura.created_at.desc())
 
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = db.execute(count_stmt).scalar() or 0

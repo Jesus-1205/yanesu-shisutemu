@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ArrowUpDown, CalendarClock } from "lucide-react";
 import { api } from "@/services/api";
 import type { Invoice, InvoiceStatsOut } from "../types";
 import type { SupplierOut } from "@/types/api";
@@ -37,6 +37,7 @@ export default function InvoicesPage() {
   const [proveedorId, setProveedorId] = useState<number | null>(null);
   const [tipoDocumento, setTipoDocumento] = useState<string>("");
   const [estadoPago, setEstadoPago] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -49,6 +50,7 @@ export default function InvoicesPage() {
         tipo_documento: tipoDocumento || undefined,
         estado_pago: estadoPago || undefined,
         search: search || undefined,
+        sort_by: sortBy || undefined,
         page,
         page_size: PAGE_SIZE,
       });
@@ -59,7 +61,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [proveedorId, tipoDocumento, estadoPago, search, page]);
+  }, [proveedorId, tipoDocumento, estadoPago, search, sortBy, page]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -91,6 +93,7 @@ export default function InvoicesPage() {
     setProveedorId(null);
     setTipoDocumento("");
     setEstadoPago("");
+    setSortBy("");
     setPage(1);
   };
 
@@ -165,6 +168,34 @@ export default function InvoicesPage() {
             ]}
           />
         </div>
+        {estadoPago !== "PAGADA" && (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => { setSortBy(""); setPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
+                sortBy === ""
+                  ? "border-brand-blue bg-blue-50 text-brand-blue"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              Recientes
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSortBy("fecha_limite_pago"); setPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
+                sortBy === "fecha_limite_pago"
+                  ? "border-brand-blue bg-blue-50 text-brand-blue"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              <CalendarClock className="w-3.5 h-3.5" />
+              Por vencer
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filtros activos */}

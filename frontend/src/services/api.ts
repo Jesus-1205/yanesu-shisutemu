@@ -498,6 +498,7 @@ export const api = {
     tipo_documento?: string;
     estado_pago?: string;
     search?: string;
+    sort_by?: string;
     page?: number;
     page_size?: number;
   }) => {
@@ -506,6 +507,7 @@ export const api = {
     if (params?.tipo_documento) qs.set("tipo_documento", params.tipo_documento);
     if (params?.estado_pago) qs.set("estado_pago", params.estado_pago);
     if (params?.search) qs.set("search", params.search);
+    if (params?.sort_by) qs.set("sort_by", params.sort_by);
     if (params?.page) qs.set("page", String(params.page));
     if (params?.page_size) qs.set("page_size", String(params.page_size));
     const q = qs.toString();
