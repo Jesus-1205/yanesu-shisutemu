@@ -800,9 +800,10 @@ def get_invoices(
         )
 
     if sort_by == "fecha_limite_pago":
+        is_paid = case((Factura.estado_pago == "PAGADA", 1), else_=0)
         has_deadline = case((Factura.fecha_limite_pago.isnot(None), 0), else_=1)
         sort_date = func.coalesce(Factura.fecha_limite_pago, func.date(Factura.created_at))
-        stmt = stmt.order_by(has_deadline, sort_date.asc())
+        stmt = stmt.order_by(is_paid, has_deadline, sort_date.asc())
     else:
         stmt = stmt.order_by(Factura.created_at.desc())
 
