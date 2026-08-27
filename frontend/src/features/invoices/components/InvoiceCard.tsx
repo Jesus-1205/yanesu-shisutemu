@@ -20,9 +20,27 @@ function getDaysUntil(dateStr: string): number {
 
 export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps) {
   const statusConfig = {
-    PAGADA: { variant: "success" as const, label: "Pagada", icon: CheckCircle },
-    PARCIALMENTE_PAGADA: { variant: "warning" as const, label: "Parcial", icon: AlertCircle },
-    PENDIENTE: { variant: "danger" as const, label: "Pendiente", icon: Clock },
+    PAGADA: {
+      variant: "success" as const,
+      label: "Pagada",
+      icon: CheckCircle,
+      gradient: "from-green-400 via-emerald-300 to-teal-200",
+      tint: "bg-green-50/30",
+    },
+    PARCIALMENTE_PAGADA: {
+      variant: "warning" as const,
+      label: "Parcial",
+      icon: AlertCircle,
+      gradient: "from-orange-400 via-amber-300 to-yellow-200",
+      tint: "bg-orange-50/30",
+    },
+    PENDIENTE: {
+      variant: "danger" as const,
+      label: "Pendiente",
+      icon: Clock,
+      gradient: "from-red-400 via-red-300 to-red-200",
+      tint: "bg-red-50/30",
+    },
   };
   const status = statusConfig[invoice.estado_pago] || statusConfig.PENDIENTE;
   const StatusIcon = status.icon;
@@ -39,16 +57,18 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
   return (
     <div
       className={`
-        bg-surface rounded-xl border shadow-sm p-4
-        hover:shadow-md hover:-translate-y-0.5 transition-all duration-200
-        border-l-4
-        ${invoice.estado_pago === "PENDIENTE" ? "border-l-red-400" : ""}
-        ${invoice.estado_pago === "PARCIALMENTE_PAGADA" ? "border-l-orange-400" : ""}
-        ${invoice.estado_pago === "PAGADA" ? "border-l-green-400" : ""}
+        relative overflow-hidden rounded-xl border border-slate-200 bg-surface shadow-sm
+        hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-4
       `}
     >
+      {/* Barra de estado superior */}
+      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${status.gradient}`} />
+
+      {/* Tinte de fondo sutil */}
+      <div className={`absolute inset-0 ${status.tint} pointer-events-none`} />
+
       {/* Header: factura + vencimiento + estado */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="relative flex items-center justify-between mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-mono text-sm font-semibold text-text-main truncate">
             {invoice.numero_factura}
@@ -57,10 +77,10 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
             <span
               className={`shrink-0 text-xs font-medium px-1.5 py-0.5 rounded ${
                 daysRemaining < 0
-                  ? "bg-red-50 text-danger"
+                  ? "bg-red-100 text-red-700"
                   : daysRemaining <= 3
-                    ? "bg-orange-50 text-accent-orange"
-                    : "bg-green-50 text-success"
+                    ? "bg-orange-100 text-orange-700"
+                    : "bg-green-100 text-green-700"
               }`}
             >
               {daysRemaining < 0
@@ -78,12 +98,12 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
       </div>
 
       {/* Proveedor */}
-      <p className="text-sm text-slate-600 truncate mb-2">
+      <p className="relative text-sm text-slate-600 truncate mb-2">
         {invoice.supplier?.nombre || "Sin proveedor"}
       </p>
 
       {/* Tipo + moneda + fecha */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="relative flex items-center gap-2 mb-3">
         <Badge variant="neutral">
           {invoice.tipo_documento === "FACTURA" ? "Factura" : "Nota Entrega"}
         </Badge>
@@ -94,7 +114,7 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
       </div>
 
       {/* Montos */}
-      <div className="space-y-1 mb-3">
+      <div className="relative space-y-1 mb-3">
         <div className="flex justify-between text-sm">
           <span className="text-slate-500">Total</span>
           <span className="font-mono tabular-nums font-medium text-text-main">
@@ -116,8 +136,8 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
       </div>
 
       {/* Barra de progreso */}
-      <div className="mb-3">
-        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+      <div className="relative mb-3">
+        <div className="w-full h-1.5 bg-slate-200/60 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${
               isPaid ? "bg-green-500" : "bg-blue-500"
@@ -131,7 +151,7 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+      <div className="relative flex items-center gap-2 pt-3 border-t border-slate-200/60">
         <Button variant="ghost" size="sm" onClick={onView} className="flex-1">
           <Eye className="w-4 h-4" />
           Ver detalle
