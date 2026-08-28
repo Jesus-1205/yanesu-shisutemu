@@ -96,21 +96,27 @@ export default function InvoicePaymentPage() {
   }, [invoice, paymentSummary]);
 
   // Saldo pendiente en la moneda del método de pago
+  // Saldo en la moneda del método de pago
   const saldoEnMonedaPago = useMemo(() => {
     if (!selectedMethod) return saldoPendienteUsd;
     if (payInUsd) return saldoPendienteUsd;
+    // Si BS=0 pero USD>0, calcular BS equivalente con tasa actual
+    if (saldoPendienteBs <= 0 && saldoPendienteUsd > 0 && tasaBs > 0) {
+      return toCents(saldoPendienteUsd * tasaBs);
+    }
     return saldoPendienteBs;
-  }, [selectedMethod, payInUsd, saldoPendienteUsd, saldoPendienteBs]);
+  }, [selectedMethod, payInUsd, saldoPendienteUsd, saldoPendienteBs, tasaBs]);
 
   const montoNum = Number(store.monto) || 0;
   const excedeSaldo = toCents(montoNum) > toCents(saldoEnMonedaPago);
   const isValid = montoNum > 0 && store.selectedMethodId !== null && !excedeSaldo;
 
   // Cálculos de conversión
+  // BS→USD se redondea hacia abajo (floor) para no sobre-pagar en USD
   const montoUsd = useMemo(() => {
     if (montoNum <= 0) return 0;
     if (payInUsd) return toCents(montoNum);
-    if (tasaBs > 0) return toCents(montoNum / tasaBs);
+    if (tasaBs > 0) return Math.floor((montoNum / tasaBs) * 100) / 100;
     return 0;
   }, [montoNum, payInUsd, tasaBs]);
 
@@ -121,14 +127,22 @@ export default function InvoicePaymentPage() {
     return 0;
   }, [montoNum, payInUsd, tasaBs]);
 
-  // Saldo restante después del pago (en ambas monedas)
+  // Saldo restante calculado directo en la moneda del pago (exacto al input del usuario)
+  const saldoRestanteEnMonedaPago = useMemo(() => {
+    return Math.max(0, toCents(saldoEnMonedaPago - montoNum));
+  }, [saldoEnMonedaPago, montoNum]);
+
   const saldoRestanteUsd = useMemo(() => {
-    return Math.max(0, toCents(saldoPendienteUsd - montoUsd));
-  }, [saldoPendienteUsd, montoUsd]);
+    if (payInUsd) return saldoRestanteEnMonedaPago;
+    if (tasaBs > 0) return toCents(saldoRestanteEnMonedaPago / tasaBs);
+    return 0;
+  }, [payInUsd, saldoRestanteEnMonedaPago, tasaBs]);
 
   const saldoRestanteBs = useMemo(() => {
-    return Math.max(0, toCents(saldoPendienteBs - montoBs));
-  }, [saldoPendienteBs, montoBs]);
+    if (!payInUsd) return saldoRestanteEnMonedaPago;
+    if (tasaBs > 0) return toCents(saldoRestanteEnMonedaPago * tasaBs);
+    return 0;
+  }, [payInUsd, saldoRestanteEnMonedaPago, tasaBs]);
 
   // Mora
   const montoMoraBs = useMemo(() => {
@@ -195,8 +209,8 @@ export default function InvoicePaymentPage() {
       const items = ratesData.history ?? [];
       setExchangeRates(items.slice(0, 10));
       const current = exchangeRateStore.tasa > 0
-        ? exchangeRateStore.tasa
-        : items.length > 0 ? Number(items[0].tasa_usd) : 0;
+        ? Math.round(exchangeRateStore.tasa * 100) / 100
+        : items.length > 0 ? Math.round(Number(items[0].tasa_usd) * 100) / 100 : 0;
       if (current > 0) {
         setTasaBs(current);
         setTasaBsInput(String(current));
@@ -454,17 +468,17 @@ export default function InvoicePaymentPage() {
                   <div className="relative flex-1">
                     <input
                       type="number"
-                      step="0.0001"
+                      step="0.01"
                       min="0"
                       value={tasaBsInput}
                       onChange={(e) => {
                         const val = e.target.value;
                         setTasaBsInput(val);
                         const num = Number(val);
-                        if (!isNaN(num) && num > 0) setTasaBs(num);
+                        if (!isNaN(num) && num > 0) setTasaBs(Math.round(num * 100) / 100);
                       }}
                       className="w-full h-11 rounded-xl border-2 border-slate-200 bg-surface pl-4 pr-10 text-sm font-mono text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-                      placeholder="Ej: 791.3248"
+                      placeholder="Ej: 791.32"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
                       Bs./USD
@@ -486,8 +500,9 @@ export default function InvoicePaymentPage() {
                         key={rate.id}
                         type="button"
                         onClick={() => {
-                          setTasaBs(Number(rate.tasa_usd));
-                          setTasaBsInput(String(rate.tasa_usd));
+                          const rounded = Math.round(Number(rate.tasa_usd) * 100) / 100;
+                          setTasaBs(rounded);
+                          setTasaBsInput(String(rounded));
                           setShowRateDropdown(false);
                         }}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex justify-between items-center cursor-pointer"
