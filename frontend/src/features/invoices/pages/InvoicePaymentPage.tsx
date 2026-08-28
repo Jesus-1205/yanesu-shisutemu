@@ -62,7 +62,9 @@ export default function InvoicePaymentPage() {
   const selectedMethod = methods.find((m) => m.id === store.selectedMethodId);
   const payInUsd = selectedMethod?.moneda_default === "USD";
 
-  // Saldo pendiente en ambas monedas (usando el saldo del summary que ya viene en la moneda de la factura)
+  // Saldo pendiente en ambas monedas
+  // USD: valor del backend (fuente de verdad)
+  // BS: calculado desde USD × tasa, para mantener sincronización
   const saldoPendienteUsd = useMemo(() => {
     if (!invoice) return 0;
     return Number(paymentSummary?.saldo_pendiente_usd ?? invoice.total_usd);
@@ -70,8 +72,9 @@ export default function InvoicePaymentPage() {
 
   const saldoPendienteBs = useMemo(() => {
     if (!invoice) return 0;
+    if (tasaBs > 0) return toCents(saldoPendienteUsd * tasaBs);
     return Number(paymentSummary?.saldo_pendiente_bs ?? invoice.total_bs);
-  }, [invoice, paymentSummary]);
+  }, [invoice, paymentSummary, saldoPendienteUsd, tasaBs]);
 
   // Total factura en ambas monedas
   const totalFacturaUsd = useMemo(() => {
@@ -371,7 +374,7 @@ export default function InvoicePaymentPage() {
                   {payInUsd ? formatUsd(saldoEnMonedaPago) : `Bs. ${formatBs(saldoEnMonedaPago)}`}
                 </span>
                 <span className="text-slate-400 ml-1">
-                  ({payInUsd ? formatUsd(saldoPendienteUsd) : `Bs. ${formatBs(saldoPendienteUsd)}`} / {payInUsd ? `Bs. ${formatBs(saldoPendienteBs)}` : formatUsd(saldoPendienteUsd)})
+                  ({formatUsd(saldoPendienteUsd)} / Bs. {formatBs(saldoPendienteBs)})
                 </span>
               </p>
               <div className="relative">
