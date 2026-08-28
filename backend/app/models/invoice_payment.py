@@ -24,6 +24,12 @@ class InvoicePayment(Base):
     monto_bs: Mapped[Decimal] = mapped_column(
         DECIMAL(14, 2), nullable=False, default=Decimal("0.00")
     )
+    tasa_bs: Mapped[Decimal | None] = mapped_column(
+        DECIMAL(10, 2), nullable=True, default=None
+    )
+    monto_mora: Mapped[Decimal] = mapped_column(
+        DECIMAL(14, 2), nullable=False, default=Decimal("0.00")
+    )
     referencia: Mapped[str | None] = mapped_column(String(100), nullable=True)
     observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
     fecha_pago: Mapped[datetime] = mapped_column(

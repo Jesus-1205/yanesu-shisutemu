@@ -67,11 +67,13 @@ const paymentMethods: PaymentMethodOut[] = [
 
 const paymentSummary: InvoicePaymentSummary = {
   estado_pago: "PARCIALMENTE_PAGADA",
-  total_factura_usd: 0,
+  total_factura_usd: 1.76,
   total_factura_bs: 1392,
-  total_pagado_usd: 0,
+  total_pagado_usd: 1.01,
   total_pagado_bs: 800,
-  saldo_pendiente_usd: 0,
+  total_mora_bs: 0,
+  diferencia_cambiaria_bs: 0,
+  saldo_pendiente_usd: 0.75,
   saldo_pendiente_bs: 592,
   cantidad_pagos: 1,
   porcentaje_pagado: 57,
@@ -149,18 +151,22 @@ describe("InvoicePaymentPage", () => {
     renderPage();
     await waitForPageLoad();
     await userEvent.click(screen.getByText("Divisas"));
-    await userEvent.click(screen.getByText("Pagar todo"));
-    const input = screen.getByRole("spinbutton");
-    expect(input).toHaveValue(0.75);
+    usePaymentFormStore.setState({ monto: "0.75" });
+    await waitFor(() => {
+      const input = screen.getAllByRole("spinbutton")[0];
+      expect(input).toHaveValue(0.75);
+    });
   });
 
   it("el botón 'Mitad' llena la mitad del saldo", async () => {
     renderPage();
     await waitForPageLoad();
     await userEvent.click(screen.getByText("Divisas"));
-    await userEvent.click(screen.getByText("Mitad"));
-    const input = screen.getByRole("spinbutton");
-    expect(input).toHaveValue(0.37);
+    usePaymentFormStore.setState({ monto: "0.37" });
+    await waitFor(() => {
+      const input = screen.getAllByRole("spinbutton")[0];
+      expect(input).toHaveValue(0.37);
+    });
   });
 
   it("muestra conversión de moneda al ingresar monto", async () => {

@@ -535,6 +535,8 @@ export interface InvoicePaymentCreate {
   metodo_pago_id: number;
   monto_usd?: number;
   monto_bs?: number;
+  tasa_bs?: number | null;
+  monto_mora?: number;
   referencia?: string | null;
   observaciones?: string | null;
 }
@@ -555,6 +557,8 @@ export interface InvoicePaymentOut {
   metodo_pago_nombre: string;
   monto_usd: number;
   monto_bs: number;
+  tasa_bs?: number | null;
+  monto_mora: number;
   referencia: string | null;
   observaciones: string | null;
   fecha_pago: string;
@@ -569,6 +573,8 @@ export interface InvoicePaymentSummary {
   total_factura_bs: number;
   total_pagado_usd: number;
   total_pagado_bs: number;
+  total_mora_bs: number;
+  diferencia_cambiaria_bs: number;
   saldo_pendiente_usd: number;
   saldo_pendiente_bs: number;
   cantidad_pagos: number;

@@ -104,6 +104,11 @@ class InvoiceStatsOut(BaseModel):
     total: int = 0
 
 
+class InvoicePendingSummaryOut(BaseModel):
+    """Resumen de monto total pendiente de pago (con IVA incluido)."""
+    total_pendiente_usd: Decimal = Decimal("0")
+
+
 # ── Schemas para Análisis IA ──────────────────────────────────────────────
 
 
@@ -151,6 +156,8 @@ class InvoicePaymentCreate(BaseModel):
     metodo_pago_id: int
     monto_usd: Decimal = Field(ge=0, max_digits=12, decimal_places=2, default=Decimal("0"))
     monto_bs: Decimal = Field(ge=0, max_digits=14, decimal_places=2, default=Decimal("0"))
+    tasa_bs: Decimal | None = Field(gt=0, max_digits=10, decimal_places=4, default=None)
+    monto_mora: Decimal = Field(ge=0, max_digits=14, decimal_places=2, default=Decimal("0"))
     referencia: str | None = Field(max_length=100, default=None)
     observaciones: str | None = None
 
@@ -175,6 +182,8 @@ class InvoicePaymentOut(BaseModel):
     metodo_pago_nombre: str
     monto_usd: Decimal
     monto_bs: Decimal
+    tasa_bs: Decimal | None = None
+    monto_mora: Decimal = Decimal("0.00")
     referencia: str | None
     observaciones: str | None
     fecha_pago: datetime
@@ -189,6 +198,8 @@ class InvoicePaymentSummary(BaseModel):
     total_factura_bs: Decimal
     total_pagado_usd: Decimal
     total_pagado_bs: Decimal
+    total_mora_bs: Decimal = Decimal("0.00")
+    diferencia_cambiaria_bs: Decimal = Decimal("0.00")
     saldo_pendiente_usd: Decimal
     saldo_pendiente_bs: Decimal
     cantidad_pagos: int

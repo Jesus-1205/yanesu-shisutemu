@@ -303,6 +303,24 @@ export default function InvoiceDetailPage() {
               </Badge>
             </div>
           </div>
+          {(paymentSummary.diferencia_cambiaria_bs > 0 || paymentSummary.total_mora_bs > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mt-3">
+              {paymentSummary.diferencia_cambiaria_bs > 0 && (
+                <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                  <p className="text-amber-600 font-medium">Diferencia cambiaria</p>
+                  <p className="font-bold font-mono text-amber-700 mt-0.5">Bs. {formatBs(paymentSummary.diferencia_cambiaria_bs)}</p>
+                  <p className="text-[10px] text-amber-500 mt-1">Por cambio de tasa BCV</p>
+                </div>
+              )}
+              {paymentSummary.total_mora_bs > 0 && (
+                <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
+                  <p className="text-orange-600 font-medium">Mora</p>
+                  <p className="font-bold font-mono text-orange-700 mt-0.5">Bs. {formatBs(paymentSummary.total_mora_bs)}</p>
+                  <p className="text-[10px] text-orange-500 mt-1">Recargo por pago tardío</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

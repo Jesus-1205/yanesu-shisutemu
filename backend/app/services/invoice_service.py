@@ -852,6 +852,36 @@ def get_invoice_stats(db: Session) -> dict:
     }
 
 
+def get_pending_invoices_summary(db: Session) -> dict:
+    """Retorna el total USD pendiente de pago considerando IVA dinámico.
+
+    Itera facturas PENDIENTE/PARCIALMENTE_PAGADA, calcula el total con IVA
+    usando _calcular_total_con_iva, resta lo ya pagado, y suma todo.
+    """
+    facturas = db.execute(
+        select(Factura).where(
+            Factura.estado_pago.in_(["PENDIENTE", "PARCIALMENTE_PAGADA"])
+        )
+    ).scalars().all()
+
+    total_pendiente = Decimal("0")
+
+    for factura in facturas:
+        total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
+
+        pagos = db.execute(
+            select(InvoicePayment).where(InvoicePayment.factura_id == factura.id)
+        ).scalars().all()
+
+        total_pagado_usd = sum(p.monto_usd for p in pagos)
+
+        saldo = total_con_iva_usd - total_pagado_usd
+        if saldo > 0:
+            total_pendiente += saldo
+
+    return {"total_pendiente_usd": total_pendiente.quantize(Decimal("0.01"))}
+
+
 def get_invoice(db: Session, invoice_id: int) -> Factura:
     stmt = (
         select(Factura)
@@ -883,8 +913,14 @@ def _recalculate_invoice_payment_status(db: Session, factura: Factura) -> None:
     )
     total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar()))
 
-    if factura.tasa_bs > 0:
-        total_pagado_usd += (total_pagado_bs / factura.tasa_bs).quantize(Decimal("0.01"))
+    stmt_bs_only = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
+        InvoicePayment.factura_id == factura.id,
+        InvoicePayment.monto_usd == 0,
+    )
+    total_pagado_bs_only = Decimal(str(db.execute(stmt_bs_only).scalar()))
+
+    if factura.tasa_bs > 0 and total_pagado_bs_only > 0:
+        total_pagado_usd += (total_pagado_bs_only / factura.tasa_bs).quantize(Decimal("0.01"))
 
     total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
 
@@ -926,7 +962,8 @@ def register_invoice_payment(
     pagado_actual = Decimal(str(db.execute(stmt_pagado).scalar()))
     if factura.tasa_bs > 0:
         stmt_pagado_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
-            InvoicePayment.factura_id == factura_id
+            InvoicePayment.factura_id == factura_id,
+            InvoicePayment.monto_usd == 0,
         )
         pagado_actual_bs = Decimal(str(db.execute(stmt_pagado_bs).scalar()))
         pagado_actual += (pagado_actual_bs / factura.tasa_bs).quantize(Decimal("0.01"))
@@ -938,11 +975,21 @@ def register_invoice_payment(
             f"El monto (${data.monto_usd}) excede el saldo pendiente (${saldo})"
         )
 
+    tasa_usada = data.tasa_bs if data.tasa_bs and data.tasa_bs > 0 else factura.tasa_bs
+
+    monto_bs_calculado = data.monto_bs
+    if data.tasa_bs and data.tasa_bs > 0 and data.monto_usd > 0:
+        monto_bs_calculado = (data.monto_usd * data.tasa_bs).quantize(Decimal("0.01"))
+
+    monto_mora = data.monto_mora.quantize(Decimal("0.01")) if data.monto_mora > 0 else Decimal("0.00")
+
     pago = InvoicePayment(
         factura_id=factura_id,
         metodo_pago_id=data.metodo_pago_id,
         monto_usd=data.monto_usd,
-        monto_bs=data.monto_bs,
+        monto_bs=monto_bs_calculado,
+        tasa_bs=tasa_usada,
+        monto_mora=monto_mora,
         referencia=data.referencia,
         observaciones=data.observaciones,
         usuario_id=usuario_id,
@@ -997,10 +1044,26 @@ def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentS
     )
     total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar()))
 
-    if factura.tasa_bs > 0:
-        total_pagado_usd += (total_pagado_bs / factura.tasa_bs).quantize(Decimal("0.01"))
+    stmt_mora = select(func.coalesce(func.sum(InvoicePayment.monto_mora), 0)).where(
+        InvoicePayment.factura_id == factura_id
+    )
+    total_mora_bs = Decimal(str(db.execute(stmt_mora).scalar()))
+
+    stmt_bs_only = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
+        InvoicePayment.factura_id == factura_id,
+        InvoicePayment.monto_usd == 0,
+    )
+    total_pagado_bs_only = Decimal(str(db.execute(stmt_bs_only).scalar()))
+
+    if factura.tasa_bs > 0 and total_pagado_bs_only > 0:
+        total_pagado_usd += (total_pagado_bs_only / factura.tasa_bs).quantize(Decimal("0.01"))
 
     total_con_iva_usd, total_con_iva_bs = _calcular_total_con_iva(factura, db)
+
+    diferencia_cambiaria_bs = Decimal("0")
+    if factura.tasa_bs > 0 and total_pagado_usd > 0:
+        esperado_bs = (total_pagado_usd * factura.tasa_bs).quantize(Decimal("0.01"))
+        diferencia_cambiaria_bs = total_pagado_bs - esperado_bs
 
     saldo_usd = total_con_iva_usd - total_pagado_usd
     saldo_bs = total_con_iva_bs - total_pagado_bs
@@ -1016,6 +1079,8 @@ def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentS
         total_factura_bs=total_con_iva_bs.quantize(Decimal("0.01")),
         total_pagado_usd=total_pagado_usd.quantize(Decimal("0.01")),
         total_pagado_bs=total_pagado_bs.quantize(Decimal("0.01")),
+        total_mora_bs=total_mora_bs.quantize(Decimal("0.01")),
+        diferencia_cambiaria_bs=diferencia_cambiaria_bs.quantize(Decimal("0.01")),
         saldo_pendiente_usd=max(saldo_usd, Decimal("0")).quantize(Decimal("0.01")),
         saldo_pendiente_bs=max(saldo_bs, Decimal("0")).quantize(Decimal("0.01")),
         cantidad_pagos=count,

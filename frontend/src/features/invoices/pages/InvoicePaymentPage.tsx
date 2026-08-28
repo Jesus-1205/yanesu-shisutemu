@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, DollarSign, Landmark, Smartphone } from "lucide-react";
+import { ArrowLeft, ChevronDown, CreditCard, DollarSign, Landmark, Plus, Smartphone } from "lucide-react";
 import { api } from "@/services/api";
-import type { FacturaOut as Invoice } from "@/types/api";
+import type { FacturaOut as Invoice, ExchangeRateOut } from "@/types/api";
 import type { PaymentMethodOut, InvoicePaymentSummary } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Badge from "@/ui-components/Badge";
@@ -14,6 +14,7 @@ import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
 import { toCents } from "@/lib/money";
 import { usePaymentFormStore } from "../store/paymentFormStore";
+import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 
 const METHOD_ICONS: Record<string, typeof CreditCard> = {
   "transferencia": Landmark,
@@ -46,54 +47,107 @@ export default function InvoicePaymentPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const paidToastShown = useRef(false);
 
-  const isBs = invoice?.moneda_principal === "BS";
-  const tasaBs = Number(invoice?.tasa_bs) || 1;
+  // Tasa BS
+  const exchangeRateStore = useExchangeRateStore();
+  const [tasaBs, setTasaBs] = useState<number>(0);
+  const [tasaBsInput, setTasaBsInput] = useState<string>("");
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRateOut[]>([]);
+  const [showRateDropdown, setShowRateDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const saldoPendiente = useMemo(() => {
-    if (!invoice) return 0;
-    return isBs
-      ? Number(paymentSummary?.saldo_pendiente_bs ?? invoice.total_bs)
-      : Number(paymentSummary?.saldo_pendiente_usd ?? invoice.total_usd);
-  }, [invoice, paymentSummary, isBs]);
-
-  const totalFactura = useMemo(() => {
-    if (!invoice) return 0;
-    return isBs
-      ? Number(paymentSummary?.total_factura_bs ?? invoice.total_bs)
-      : Number(paymentSummary?.total_factura_usd ?? invoice.total_usd);
-  }, [invoice, paymentSummary, isBs]);
-
-  const totalPagado = useMemo(() => {
-    if (!invoice) return 0;
-    return isBs
-      ? Number(paymentSummary?.total_pagado_bs ?? 0)
-      : Number(paymentSummary?.total_pagado_usd ?? 0);
-  }, [invoice, paymentSummary, isBs]);
+  // Mora
+  const [showMoraSection, setShowMoraSection] = useState(false);
+  const [totalAPagar, setTotalAPagar] = useState<string>("");
 
   const selectedMethod = methods.find((m) => m.id === store.selectedMethodId);
   const payInUsd = selectedMethod?.moneda_default === "USD";
 
-  const saldoEnMonedaPago = useMemo(() => {
-    if (!selectedMethod) return saldoPendiente;
-    if (isBs && payInUsd) return saldoPendiente / tasaBs;
-    if (!isBs && !payInUsd) return saldoPendiente * tasaBs;
-    return saldoPendiente;
-  }, [isBs, payInUsd, saldoPendiente, tasaBs, selectedMethod]);
+  // Saldo pendiente en ambas monedas (usando el saldo del summary que ya viene en la moneda de la factura)
+  const saldoPendienteUsd = useMemo(() => {
+    if (!invoice) return 0;
+    return Number(paymentSummary?.saldo_pendiente_usd ?? invoice.total_usd);
+  }, [invoice, paymentSummary]);
 
-  const formatPay = payInUsd ? formatUsd : formatBs;
-  const payPrefix = payInUsd ? "$" : "Bs.";
+  const saldoPendienteBs = useMemo(() => {
+    if (!invoice) return 0;
+    return Number(paymentSummary?.saldo_pendiente_bs ?? invoice.total_bs);
+  }, [invoice, paymentSummary]);
+
+  // Total factura en ambas monedas
+  const totalFacturaUsd = useMemo(() => {
+    if (!invoice) return 0;
+    return Number(paymentSummary?.total_factura_usd ?? invoice.total_usd);
+  }, [invoice, paymentSummary]);
+
+  const totalFacturaBs = useMemo(() => {
+    if (!invoice) return 0;
+    return Number(paymentSummary?.total_factura_bs ?? invoice.total_bs);
+  }, [invoice, paymentSummary]);
+
+  // Total pagado en ambas monedas
+  const totalPagadoUsd = useMemo(() => {
+    if (!invoice) return 0;
+    return Number(paymentSummary?.total_pagado_usd ?? 0);
+  }, [invoice, paymentSummary]);
+
+  const totalPagadoBs = useMemo(() => {
+    if (!invoice) return 0;
+    return Number(paymentSummary?.total_pagado_bs ?? 0);
+  }, [invoice, paymentSummary]);
+
+  // Saldo pendiente en la moneda del método de pago
+  const saldoEnMonedaPago = useMemo(() => {
+    if (!selectedMethod) return saldoPendienteUsd;
+    if (payInUsd) return saldoPendienteUsd;
+    return saldoPendienteBs;
+  }, [selectedMethod, payInUsd, saldoPendienteUsd, saldoPendienteBs]);
 
   const montoNum = Number(store.monto) || 0;
   const excedeSaldo = toCents(montoNum) > toCents(saldoEnMonedaPago);
   const isValid = montoNum > 0 && store.selectedMethodId !== null && !excedeSaldo;
 
-  const montoConvertido = useMemo(() => {
-    if (!selectedMethod || montoNum <= 0) return null;
-    if (isBs && payInUsd) return toCents(montoNum * tasaBs);
-    if (!isBs && !payInUsd) return toCents(montoNum / tasaBs);
-    return null;
-  }, [isBs, payInUsd, montoNum, tasaBs, selectedMethod]);
+  // Cálculos de conversión
+  const montoUsd = useMemo(() => {
+    if (montoNum <= 0) return 0;
+    if (payInUsd) return toCents(montoNum);
+    if (tasaBs > 0) return toCents(montoNum / tasaBs);
+    return 0;
+  }, [montoNum, payInUsd, tasaBs]);
 
+  const montoBs = useMemo(() => {
+    if (montoNum <= 0) return 0;
+    if (!payInUsd) return toCents(montoNum);
+    if (tasaBs > 0) return toCents(montoNum * tasaBs);
+    return 0;
+  }, [montoNum, payInUsd, tasaBs]);
+
+  // Saldo restante después del pago (en ambas monedas)
+  const saldoRestanteUsd = useMemo(() => {
+    return Math.max(0, toCents(saldoPendienteUsd - montoUsd));
+  }, [saldoPendienteUsd, montoUsd]);
+
+  const saldoRestanteBs = useMemo(() => {
+    return Math.max(0, toCents(saldoPendienteBs - montoBs));
+  }, [saldoPendienteBs, montoBs]);
+
+  // Mora
+  const montoMoraBs = useMemo(() => {
+    const parsed = Number(totalAPagar);
+    if (!totalAPagar || isNaN(parsed) || parsed <= 0) return 0;
+    const diff = toCents(parsed) - montoBs;
+    return diff > 0 ? toCents(diff) : 0;
+  }, [totalAPagar, montoBs]);
+
+  // Validación de mora
+  const totalAPagarNum = useMemo(() => {
+    const parsed = Number(totalAPagar);
+    if (!totalAPagar || isNaN(parsed) || parsed <= 0) return montoBs;
+    return toCents(parsed);
+  }, [totalAPagar, montoBs]);
+
+  const excedeTotal = totalAPagarNum > 0 && totalAPagarNum < montoBs;
+
+  // Fetch invoice
   const fetchInvoice = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -116,6 +170,7 @@ export default function InvoicePaymentPage() {
     }
   }, [id, navigate, toast]);
 
+  // Fetch payment data
   const fetchPaymentData = useCallback(async () => {
     if (!id) return;
     try {
@@ -130,11 +185,55 @@ export default function InvoicePaymentPage() {
     }
   }, [id]);
 
+  // Fetch exchange rates
+  const fetchExchangeRates = useCallback(async () => {
+    try {
+      const ratesData = await api.getRateHistory({ days: 30 });
+      if (exchangeRateStore.tasa === 0) {
+        await exchangeRateStore.loadTasa();
+      }
+      const items = ratesData.history ?? [];
+      setExchangeRates(items.slice(0, 10));
+      const current = exchangeRateStore.tasa > 0
+        ? exchangeRateStore.tasa
+        : items.length > 0 ? Number(items[0].tasa_usd) : 0;
+      if (current > 0) {
+        setTasaBs(current);
+        setTasaBsInput(String(current));
+      }
+    } catch {
+      // silently fail
+    }
+  }, [exchangeRateStore]);
+
   useEffect(() => {
     fetchInvoice();
     fetchPaymentData();
   }, [fetchInvoice, fetchPaymentData]);
 
+  useEffect(() => {
+    fetchExchangeRates();
+  }, [fetchExchangeRates]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowRateDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Reset totalAPagar when montoBs changes
+  useEffect(() => {
+    if (!showMoraSection) {
+      setTotalAPagar("");
+    }
+  }, [montoBs, showMoraSection]);
+
+  // Submit
   const handleSubmit = useCallback(async () => {
     if (!isValid || submitting || !invoice) return;
     setSubmitting(true);
@@ -144,21 +243,23 @@ export default function InvoicePaymentPage() {
         invoice.id,
         {
           metodo_pago_id: store.selectedMethodId!,
-          monto_usd: payInUsd ? toCents(montoNum) : 0,
-          monto_bs: payInUsd ? 0 : toCents(montoNum),
+          monto_usd: montoUsd,
+          monto_bs: montoBs,
+          tasa_bs: tasaBs > 0 ? tasaBs : null,
+          monto_mora: montoMoraBs,
           referencia: store.referencia.trim() || null,
           observaciones: store.observaciones.trim() || null,
         },
         store.comprobantes.length > 0 ? store.comprobantes : undefined,
       );
-      toast(`Pago de ${formatPay(montoNum)} registrado`, "success");
+      toast(`Pago de ${payInUsd ? formatUsd(montoNum) : `Bs. ${formatBs(montoNum)}`} registrado`, "success");
       navigate(`/invoices/${id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Error al registrar pago");
     } finally {
       setSubmitting(false);
     }
-  }, [isValid, submitting, invoice, store, payInUsd, montoNum, formatPay, toast, navigate, id]);
+  }, [isValid, submitting, invoice, store, montoUsd, montoBs, montoNum, montoMoraBs, tasaBs, payInUsd, toast, navigate, id]);
 
   if (loading) {
     return (
@@ -201,7 +302,7 @@ export default function InvoicePaymentPage() {
       />
 
       <div className="flex flex-col lg:flex-row gap-6 max-w-5xl">
-        {/* ─── Columna izquierda: Formulario ──────────────────────── */}
+        {/* Columna izquierda: Formulario */}
         <div className="flex-1 space-y-6 min-w-0">
           {/* Método de pago */}
           <section>
@@ -244,18 +345,24 @@ export default function InvoicePaymentPage() {
             </div>
           </section>
 
-          {/* Monto */}
+          {/* Monto a pagar */}
           {store.selectedMethodId && (
             <section>
               <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-1">
                 Monto a pagar
               </label>
               <p className="text-xs text-slate-500 mb-2">
-                Saldo pendiente: <span className="font-mono font-medium text-slate-700">{formatPay(saldoEnMonedaPago)}</span>
+                Saldo pendiente:{" "}
+                <span className="font-mono font-medium text-slate-700">
+                  {payInUsd ? formatUsd(saldoEnMonedaPago) : `Bs. ${formatBs(saldoEnMonedaPago)}`}
+                </span>
+                <span className="text-slate-400 ml-1">
+                  ({payInUsd ? formatUsd(saldoPendienteUsd) : `Bs. ${formatBs(saldoPendienteUsd)}`} / {payInUsd ? `Bs. ${formatBs(saldoPendienteBs)}` : formatUsd(saldoPendienteUsd)})
+                </span>
               </p>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-500 font-mono font-semibold">
-                  {payPrefix}
+                  {payInUsd ? "$" : "Bs."}
                 </span>
                 <input
                   type="number"
@@ -271,13 +378,21 @@ export default function InvoicePaymentPage() {
               {excedeSaldo && (
                 <p className="text-xs text-red-500 mt-1.5">El monto excede el saldo pendiente</p>
               )}
+
+              {/* Quedaría por pagar - ambos montos */}
               {montoNum > 0 && !excedeSaldo && (
-                <p className="text-xs text-slate-500 mt-1.5">
-                  Quedaría por pagar:{" "}
-                  <span className="font-mono font-medium text-slate-700">
-                    {formatPay(Math.max(0, toCents(saldoEnMonedaPago - montoNum)))}
-                  </span>
-                </p>
+                <div className="mt-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <p className="text-xs text-slate-500 font-medium mb-1">Quedaría por pagar</p>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold text-sm text-green-700">
+                      {formatUsd(saldoRestanteUsd)}
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span className="font-mono font-bold text-sm text-green-700">
+                      Bs. {formatBs(saldoRestanteBs)}
+                    </span>
+                  </div>
+                </div>
               )}
 
               {/* Botones rápidos */}
@@ -305,21 +420,151 @@ export default function InvoicePaymentPage() {
                 </button>
               </div>
 
-              {/* Conversión de moneda */}
-              {montoConvertido !== null && montoNum > 0 && (
+              {/* Conversión de moneda - siempre muestra ambos */}
+              {tasaBs > 0 && montoNum > 0 && (
                 <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-amber-700 font-medium">
-                      {payPrefix}{formatPay(montoNum)}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-amber-700">
+                      {payInUsd ? formatUsd(montoNum) : `Bs. ${formatBs(montoNum)}`}
                     </span>
                     <span className="text-amber-400">→</span>
                     <span className="text-amber-800 font-bold font-mono">
-                      {payInUsd ? `Bs. ${formatBs(montoConvertido)}` : formatUsd(montoConvertido)}
+                      {payInUsd ? `Bs. ${formatBs(montoBs)}` : formatUsd(montoUsd)}
                     </span>
                   </div>
                   <p className="text-[10px] text-amber-600 mt-1">
                     Tasa BCV: {formatBs(tasaBs)}
                   </p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Tasa de cambio */}
+          {store.selectedMethodId && (
+            <section>
+              <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-1">
+                Tasa de cambio (BS/USD)
+              </label>
+              <p className="text-xs text-slate-500 mb-2">
+                Usa la tasa BCV actual o selecciona una reciente
+              </p>
+              <div className="relative" ref={dropdownRef}>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={tasaBsInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setTasaBsInput(val);
+                        const num = Number(val);
+                        if (!isNaN(num) && num > 0) setTasaBs(num);
+                      }}
+                      className="w-full h-11 rounded-xl border-2 border-slate-200 bg-surface pl-4 pr-10 text-sm font-mono text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+                      placeholder="Ej: 791.3248"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
+                      Bs./USD
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRateDropdown(!showRateDropdown)}
+                    className="h-11 px-3 rounded-xl border-2 border-slate-200 bg-surface hover:border-slate-300 transition-colors cursor-pointer flex items-center gap-1"
+                    title="Ver tasas recientes"
+                  >
+                    <ChevronDown className="w-4 h-4 text-slate-500" />
+                  </button>
+                </div>
+                {showRateDropdown && exchangeRates.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+                    {exchangeRates.map((rate) => (
+                      <button
+                        key={rate.id}
+                        type="button"
+                        onClick={() => {
+                          setTasaBs(Number(rate.tasa_usd));
+                          setTasaBsInput(String(rate.tasa_usd));
+                          setShowRateDropdown(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex justify-between items-center cursor-pointer"
+                      >
+                        <span className="font-mono font-medium text-text-main">
+                          {formatBs(Number(rate.tasa_usd))}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {new Date(rate.fecha_registro).toLocaleDateString("es-VE")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Mora - hidden por defecto */}
+          {store.selectedMethodId && tasaBs > 0 && montoNum > 0 && (
+            <section>
+              {!showMoraSection ? (
+                <button
+                  type="button"
+                  onClick={() => setShowMoraSection(true)}
+                  className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar mora (opcional)
+                </button>
+              ) : (
+                <div className="p-4 rounded-xl border-2 border-amber-200 bg-amber-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                      Mora (opcional)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoraSection(false);
+                        setTotalAPagar("");
+                      }}
+                      className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      Ocultar
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Si el proveedor cobra recargo por pago tardío, ingrésalo aquí. No afecta el total original de la factura.
+                  </p>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">
+                      Monto calculado: <span className="font-mono font-medium text-slate-700">Bs. {formatBs(montoBs)}</span>
+                    </p>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono font-semibold">
+                        Bs.
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={montoBs}
+                        value={totalAPagar}
+                        onChange={(e) => setTotalAPagar(e.target.value)}
+                        className="w-full h-11 rounded-xl border-2 border-slate-200 bg-surface pl-10 pr-4 text-sm font-mono text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+                        placeholder={`Mínimo: ${formatBs(montoBs)}`}
+                      />
+                    </div>
+                    {montoMoraBs > 0 && (
+                      <p className="text-xs text-amber-600 mt-1.5 font-medium">
+                        Mora: <span className="font-mono">Bs. {formatBs(montoMoraBs)}</span>
+                      </p>
+                    )}
+                    {excedeTotal && (
+                      <p className="text-xs text-red-500 mt-1.5">El total no puede ser menor al monto del pago</p>
+                    )}
+                  </div>
                 </div>
               )}
             </section>
@@ -372,7 +617,7 @@ export default function InvoicePaymentPage() {
           </section>
         </div>
 
-        {/* ─── Columna derecha: Sidebar sticky ────────────────────── */}
+        {/* Columna derecha: Sidebar sticky */}
         <div className="lg:w-80 shrink-0">
           <div className="lg:sticky lg:top-6 space-y-4">
             {/* Resumen de factura */}
@@ -392,24 +637,28 @@ export default function InvoicePaymentPage() {
                 />
               </div>
 
+              {/* Total en ambas monedas */}
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Total</span>
-                  <span className="font-bold font-mono text-sm text-text-main">
-                    {isBs ? `Bs. ${formatBs(totalFactura)}` : formatUsd(totalFactura)}
-                  </span>
+                  <div className="text-right">
+                    <div className="font-bold font-mono text-sm text-text-main">{formatUsd(totalFacturaUsd)}</div>
+                    <div className="font-mono text-xs text-slate-400">Bs. {formatBs(totalFacturaBs)}</div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-green-600">Pagado</span>
-                  <span className="font-bold font-mono text-sm text-green-700">
-                    {isBs ? `Bs. ${formatBs(totalPagado)}` : formatUsd(totalPagado)}
-                  </span>
+                  <div className="text-right">
+                    <div className="font-bold font-mono text-sm text-green-700">{formatUsd(totalPagadoUsd)}</div>
+                    <div className="font-mono text-xs text-green-600">Bs. {formatBs(totalPagadoBs)}</div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                   <span className="text-red-600 font-medium">Pendiente</span>
-                  <span className="font-bold font-mono text-sm text-red-700">
-                    {isBs ? `Bs. ${formatBs(saldoPendiente)}` : formatUsd(saldoPendiente)}
-                  </span>
+                  <div className="text-right">
+                    <div className="font-bold font-mono text-sm text-red-700">{formatUsd(saldoPendienteUsd)}</div>
+                    <div className="font-mono text-xs text-red-600">Bs. {formatBs(saldoPendienteBs)}</div>
+                  </div>
                 </div>
               </div>
 
