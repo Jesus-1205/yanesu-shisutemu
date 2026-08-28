@@ -45,14 +45,7 @@ const adminSidebarItems: SidebarItem[] = [
       { label: "Precios Div.", to: "/price-rules" },
     ],
   },
-  {
-    label: "COMPRAS",
-    icon: <Truck size={18} />,
-    items: [
-      { label: "Facturas de Compra", to: "/invoices" },
-      { label: "Proveedores", to: "/suppliers" },
-    ],
-  },
+  { label: "Facturas", icon: <Truck size={18} />, to: "/compras" },
   { label: "Tasas de Cambio", icon: <DollarSign size={18} />, to: "/exchange-rates" },
   { label: "Reportes", icon: <BarChart3 size={18} />, to: "/reports" },
 ];
@@ -79,6 +72,7 @@ function getSidebarItems(rolNombre: string | undefined): SidebarItem[] {
 
 const breadcrumbMap: Record<string, string> = {
   dashboard: "Dashboard",
+  compras: "Compras",
   products: "Productos",
   categories: "Categorías",
   suppliers: "Proveedores",

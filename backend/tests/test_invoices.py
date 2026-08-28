@@ -239,3 +239,167 @@ class TestAnalyzeInvoice:
             files={"files": ("test.exe", b"fake", "application/exe")},
         )
         assert response.status_code == 400
+
+
+class TestPendingSummary:
+
+    def test_pending_summary_unauthenticated(self, client):
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 401
+
+    def test_pending_summary_empty(self, client):
+        _login(client)
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_pendiente_usd"] == "0.00"
+
+    def test_pending_summary_single_pending_invoice(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-PEND-001", cajas=2, costo_usd=50, costo_bs=50)
+        )})
+
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 200
+        data = response.json()
+        # 2 cajas * $50 = $100 total, no IVA (USD), no payments
+        assert data["total_pendiente_usd"] == "100.00"
+
+    def test_pending_summary_excludes_paid_invoices(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = client.post("/api/payment-methods", json={
+            "nombre": "Transferencia", "moneda_default": "USD",
+            "acepta_referencia": True, "activo": True,
+        }).json()
+
+        # Create invoice for $100
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-PAID-001", cajas=2, costo_usd=50, costo_bs=50)
+        )}).json()
+
+        # Pay it in full
+        client.post(
+            f"/api/invoices/{invoice['id']}/payments",
+            data={"data": json.dumps({
+                "metodo_pago_id": pm["id"],
+                "monto_usd": 100,
+                "monto_bs": 0,
+            })},
+        )
+
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_pendiente_usd"] == "0.00"
+
+    def test_pending_summary_partial_payment(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = client.post("/api/payment-methods", json={
+            "nombre": "Transferencia", "moneda_default": "USD",
+            "acepta_referencia": True, "activo": True,
+        }).json()
+
+        # Create invoice for $100
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-PARTIAL-001", cajas=2, costo_usd=50, costo_bs=50)
+        )}).json()
+
+        # Pay $40
+        client.post(
+            f"/api/invoices/{invoice['id']}/payments",
+            data={"data": json.dumps({
+                "metodo_pago_id": pm["id"],
+                "monto_usd": 40,
+                "monto_bs": 0,
+            })},
+        )
+
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 200
+        data = response.json()
+        # $100 total - $40 paid = $60 pending
+        assert data["total_pendiente_usd"] == "60.00"
+
+    def test_pending_summary_multiple_invoices(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        # Two pending invoices: $100 + $200
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-MULTI-001", cajas=2, costo_usd=50, costo_bs=50)
+        )})
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-MULTI-002", cajas=4, costo_usd=50, costo_bs=50)
+        )})
+
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_pendiente_usd"] == "300.00"
+
+    def test_pending_summary_iva_calculation_bs(self, client):
+        """IVA solo aplica en BS con aplica_iva=True"""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = {
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-IVA-001",
+            "moneda_principal": "BS",
+            "tasa_bs": 100,
+            "aplica_iva": True,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 1,
+                "costo_unitario_usd": 50,
+                "costo_unitario_bs": 5000,
+                "tipo_iva": "GRAVADO",
+            }],
+        }
+        client.post("/api/invoices", data={"data": json.dumps(payload)})
+
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 200
+        data = response.json()
+        # base_bs=5000, iva=800 (16%), total_bs=5800, total_usd=5800/100=58.00
+        assert data["total_pendiente_usd"] == "58.00"
+
+    def test_pending_summary_iva_exento_bs(self, client):
+        """Items EXENTOS no generan IVA"""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = {
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-EXENTO-001",
+            "moneda_principal": "BS",
+            "tasa_bs": 100,
+            "aplica_iva": True,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 1,
+                "costo_unitario_usd": 50,
+                "costo_unitario_bs": 5000,
+                "tipo_iva": "EXENTO",
+            }],
+        }
+        client.post("/api/invoices", data={"data": json.dumps(payload)})
+
+        response = client.get("/api/invoices/pending-summary")
+        assert response.status_code == 200
+        data = response.json()
+        # EXENTO: no IVA, total_bs=5000, total_usd=5000/100=50.00
+        assert data["total_pendiente_usd"] == "50.00"

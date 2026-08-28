@@ -24,6 +24,7 @@ import type {
   InvoicePaymentCreate,
   InvoicePaymentOut,
   InvoicePaymentSummary,
+  InvoicePendingSummaryOut,
   InvoiceStatsOut,
   PaymentMethodCreate,
   PaymentMethodOut,
@@ -519,6 +520,9 @@ export const api = {
 
   getInvoiceStats: () =>
     request<InvoiceStatsOut>("/invoices/stats"),
+
+  getInvoicePendingSummary: () =>
+    request<InvoicePendingSummaryOut>("/invoices/pending-summary"),
 
   createInvoice: (
     data: FacturaCreate,

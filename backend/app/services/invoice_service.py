@@ -852,6 +852,36 @@ def get_invoice_stats(db: Session) -> dict:
     }
 
 
+def get_pending_invoices_summary(db: Session) -> dict:
+    """Retorna el total USD pendiente de pago considerando IVA dinámico.
+
+    Itera facturas PENDIENTE/PARCIALMENTE_PAGADA, calcula el total con IVA
+    usando _calcular_total_con_iva, resta lo ya pagado, y suma todo.
+    """
+    facturas = db.execute(
+        select(Factura).where(
+            Factura.estado_pago.in_(["PENDIENTE", "PARCIALMENTE_PAGADA"])
+        )
+    ).scalars().all()
+
+    total_pendiente = Decimal("0")
+
+    for factura in facturas:
+        total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
+
+        pagos = db.execute(
+            select(InvoicePayment).where(InvoicePayment.factura_id == factura.id)
+        ).scalars().all()
+
+        total_pagado_usd = sum(p.monto_usd for p in pagos)
+
+        saldo = total_con_iva_usd - total_pagado_usd
+        if saldo > 0:
+            total_pendiente += saldo
+
+    return {"total_pendiente_usd": total_pendiente.quantize(Decimal("0.01"))}
+
+
 def get_invoice(db: Session, invoice_id: int) -> Factura:
     stmt = (
         select(Factura)

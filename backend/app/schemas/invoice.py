@@ -104,6 +104,11 @@ class InvoiceStatsOut(BaseModel):
     total: int = 0
 
 
+class InvoicePendingSummaryOut(BaseModel):
+    """Resumen de monto total pendiente de pago (con IVA incluido)."""
+    total_pendiente_usd: Decimal = Decimal("0")
+
+
 # ── Schemas para Análisis IA ──────────────────────────────────────────────
 
 

@@ -20,6 +20,7 @@ from app.schemas.invoice import (
     InvoicePaymentOut,
     InvoicePaymentReceiptOut,
     InvoicePaymentSummary,
+    InvoicePendingSummaryOut,
     InvoiceStatsOut,
 )
 from app.services.audit_service import log_action
@@ -32,6 +33,7 @@ from app.services.invoice_service import (
     get_invoice_payments,
     get_invoice_stats,
     get_invoices,
+    get_pending_invoices_summary,
     optimize_image,
     register_invoice_payment,
 )
@@ -227,6 +229,20 @@ def stats(
     Devuelve: 200 + InvoiceStatsOut (pendientes, parciales, pagadas, total)
     """
     return get_invoice_stats(db)
+
+
+@router.get("/pending-summary", status_code=status.HTTP_200_OK)
+def pending_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /invoices/pending-summary - Total USD pendiente de pago (con IVA)
+
+    Calcula dinámicamente el IVA de cada factura pendiente/parcial
+    y retorna la suma total del saldo pendiente en USD.
+    Devuelve: 200 + InvoicePendingSummaryOut
+    """
+    return InvoicePendingSummaryOut(**get_pending_invoices_summary(db))
 
 
 @router.get("/{invoice_id}", status_code=status.HTTP_200_OK)

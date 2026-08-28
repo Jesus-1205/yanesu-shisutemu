@@ -529,6 +529,10 @@ export interface InvoiceStatsOut {
   total: number;
 }
 
+export interface InvoicePendingSummaryOut {
+  total_pendiente_usd: number;
+}
+
 // ─── Pagos de Factura ──────────────────────────────────────────────────────
 
 export interface InvoicePaymentCreate {
