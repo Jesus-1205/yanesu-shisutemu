@@ -499,7 +499,7 @@ export default function InvoiceDetailPage() {
                   ? Math.round(subUsd * nTasa * 100) / 100
                   : d.cantidad * Number(d.costo_unitario_bs);
                 return (
-                  <span className={`font-mono ${invoice.moneda_principal === "BS" ? "font-semibold" : ""}`}>{invoice.moneda_principal !== "BS" && "≈ "}Bs. {formatBs(subBs)}</span>
+                  <span className={`font-mono ${invoice.moneda_principal === "BS" ? "font-semibold" : ""}`}>Bs. {formatBs(subBs)}</span>
                 );
               },
             },
@@ -530,19 +530,14 @@ export default function InvoiceDetailPage() {
                 <td className="hidden md:table-cell" />
                 <td className="hidden md:table-cell" />
                 <td className="px-4 py-3.5 text-right tabular-nums">
-                  {(() => {
-                    const totalBsLines = Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0) * 100) / 100;
-                    const footerUsd = invoice.moneda_principal === "BS" && nTasa > 0
-                      ? Math.round((totalBsLines / nTasa) * 100) / 100
-                      : Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_usd), 0) * 100) / 100;
-                    return <span className={invoice.moneda_principal !== "BS" ? "font-semibold" : ""}>{formatUsd(footerUsd)}</span>;
-                  })()}
+                  <span className={invoice.moneda_principal !== "BS" ? "font-semibold" : ""}>
+                    {formatUsd(invoice.moneda_principal === "BS" ? totalSecundario : totalPrincipal)}
+                  </span>
                 </td>
                 <td className="px-4 py-3.5 text-right tabular-nums">
-                  {(() => {
-                    const totalBsLines = Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0) * 100) / 100;
-                    return <span className={invoice.moneda_principal === "BS" ? "font-semibold" : ""}>{invoice.moneda_principal !== "BS" && "≈ "}Bs. {formatBs(totalBsLines)}</span>;
-                  })()}
+                  <span className={invoice.moneda_principal === "BS" ? "font-semibold" : ""}>
+                    Bs. {formatBs(invoice.moneda_principal === "BS" ? totalPrincipal : totalSecundario)}
+                  </span>
                 </td>
               </tr>
             );

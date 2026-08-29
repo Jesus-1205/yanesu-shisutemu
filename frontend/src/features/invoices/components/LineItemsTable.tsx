@@ -101,7 +101,7 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
                   <span className={!esBs ? "font-semibold" : ""}>{formatUsd(item.subtotal_usd)}</span>
                 </td>
                 <td className="px-4 py-3 text-right text-text-main tabular-nums">
-                  {!esBs && "≈ "}<span className={esBs ? "font-semibold" : ""}>Bs. {formatBs(item.subtotal_bs)}</span>
+                  <span className={esBs ? "font-semibold" : ""}>Bs. {formatBs(item.subtotal_bs)}</span>
                 </td>
                 <td className="px-3 py-3 text-center">
                   <button
@@ -131,7 +131,7 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
                 <span>{formatUsd(totalUsd)}</span>
               </td>
               <td className="px-4 py-3.5 text-right tabular-nums">
-                {!esBs && "≈ "}Bs. {formatBs(totalBs)}
+                Bs. {formatBs(totalBs)}
               </td>
               <td />
             </tr>
