@@ -270,6 +270,7 @@ export default function InvoicePaymentPage() {
         store.comprobantes.length > 0 ? store.comprobantes : undefined,
       );
       toast(`Pago de ${payInUsd ? formatUsd(montoNum) : `Bs. ${formatBs(montoNum)}`} registrado`, "success");
+      store.reset();
       navigate(`/invoices/${id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Error al registrar pago");
@@ -637,7 +638,7 @@ export default function InvoicePaymentPage() {
 
         {/* Columna derecha: Sidebar sticky */}
         <div className="lg:w-80 shrink-0">
-          <div className="lg:sticky lg:top-6 space-y-4">
+          <div className="lg:sticky lg:top-20 space-y-4">
             {/* Resumen de factura */}
             <div className="rounded-xl border border-slate-200 bg-surface p-4 space-y-3">
               <div>
