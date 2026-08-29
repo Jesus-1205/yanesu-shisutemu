@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Copy, Clock, ScanLine, Loader2 } from "lucide-react";
+import { Clock, ScanLine, Loader2 } from "lucide-react";
 import type { SupplierOut, ExchangeRateOut } from "@/types/api";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import FileUpload from "@/ui-components/FileUpload";
@@ -39,22 +39,14 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
     });
   }, []);
 
+  useEffect(() => {
+    if (exchangeRateStore.tasa > 0 && (store.tasa === "" || store.tasa === "0")) {
+      store.setField("tasa", String(Math.round(exchangeRateStore.tasa * 100) / 100));
+    }
+  }, [exchangeRateStore.tasa, store]);
+
   const uid = "invoice-info";
   const fid = (name: string) => `${uid}-${name}`;
-
-  const handleApplyTodayRate = useCallback(() => {
-    if (exchangeRateStore.tasa > 0) {
-      store.setField("tasa", String(Math.round(exchangeRateStore.tasa * 100) / 100));
-      toast("Tasa del día aplicada", "success");
-    } else {
-      exchangeRateStore.loadTasa().then(() => {
-        if (exchangeRateStore.tasa > 0) {
-          store.setField("tasa", String(Math.round(exchangeRateStore.tasa * 100) / 100));
-          toast("Tasa del día aplicada", "success");
-        }
-      });
-    }
-  }, [exchangeRateStore, store, toast]);
 
   const handleSupplierCreated = useCallback((supplier: SupplierOut) => {
     store.setField("proveedorId", supplier.id);
@@ -193,15 +185,6 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
                 autoComplete="off"
                 className={`${inputBase} flex-1`}
               />
-              <button
-                type="button"
-                onClick={handleApplyTodayRate}
-                className="shrink-0 h-10 px-3 rounded-lg border border-slate-300 bg-surface text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-brand-blue transition-colors cursor-pointer flex items-center gap-1"
-                title="Usar tasa del día de hoy"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                Hoy
-              </button>
               <div className="relative">
                 <button
                   type="button"
