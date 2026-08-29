@@ -67,7 +67,7 @@ export default function InvoiceSummaryPanel({ esBs, ivaBreakdown, totalUsd, tota
               </div>
               <div className="flex justify-between items-center font-bold text-text-main text-base">
                 <span>Total Bs.</span>
-                <span className="font-mono text-lg">Bs. {formatBs(totalBs)}</span>
+                <span className="font-mono text-lg">Bs. {formatBs(tasa > 0 ? toCents(ivaBreakdown.total * tasa) : totalBs)}</span>
               </div>
             </>
           )}

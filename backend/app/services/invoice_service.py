@@ -764,7 +764,12 @@ def create_invoice(
     factura.detalles = detalles
     factura.obsequios = obsequios
     factura.total_usd = total_usd.quantize(Decimal("0.01"))
-    factura.total_bs = total_bs.quantize(Decimal("0.01"))
+    if data.moneda_principal == MonedaEnum.USD and tasa > 0:
+        factura.total_bs = (total_usd * tasa).quantize(Decimal("0.01"))
+    else:
+        factura.total_bs = total_bs.quantize(Decimal("0.01"))
+        if tasa > 0:
+            factura.total_usd = (total_bs / tasa).quantize(Decimal("0.01"))
     db.add(factura)
     db.commit()
     db.refresh(factura)

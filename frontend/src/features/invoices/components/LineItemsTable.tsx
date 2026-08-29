@@ -83,21 +83,25 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
                 </td>
                 <td className="px-4 py-3 text-right text-text-main font-mono hidden md:table-cell">
                   {item.tipo_empaque === "UNIDAD" ? (
-                    <span className="font-semibold text-sm">{formatUsd(item.costo_unitario_usd)}</span>
+                    <span className={esBs ? "text-xs text-slate-400" : "font-semibold text-sm"}>
+                      {esBs && "≈ "}{formatUsd(item.costo_unitario_usd)}
+                    </span>
                   ) : item.unidades_por_caja > 0 ? (
-                    <span className="text-xs text-slate-400">{formatUsd(item.costo_unitario_usd / item.unidades_por_caja)}</span>
+                    <span className="text-xs text-slate-400">{esBs && "≈ "}{formatUsd(item.costo_unitario_usd / item.unidades_por_caja)}</span>
                   ) : (
                     <span className="text-slate-300">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right text-text-main font-mono hidden md:table-cell">
-                  <span className="text-xs">Bs. {formatBs(item.costo_unitario_bs)}</span>
+                  <span className={esBs ? "font-semibold text-sm" : "text-xs"}>
+                    {!esBs && "≈ "}Bs. {formatBs(item.costo_unitario_bs)}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-right text-text-main tabular-nums">
-                  {formatUsd(item.subtotal_usd)}
+                  <span className={!esBs ? "font-semibold" : ""}>{formatUsd(item.subtotal_usd)}</span>
                 </td>
                 <td className="px-4 py-3 text-right text-text-main tabular-nums">
-                  Bs. {formatBs(item.subtotal_bs)}
+                  {!esBs && "≈ "}<span className={esBs ? "font-semibold" : ""}>Bs. {formatBs(item.subtotal_bs)}</span>
                 </td>
                 <td className="px-3 py-3 text-center">
                   <button
@@ -124,10 +128,10 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
               <td className="hidden md:table-cell" />
               <td className="hidden md:table-cell" />
               <td className="px-4 py-3.5 text-right tabular-nums">
-                {formatUsd(totalUsd)}
+                <span>{formatUsd(totalUsd)}</span>
               </td>
               <td className="px-4 py-3.5 text-right tabular-nums">
-                Bs. {formatBs(totalBs)}
+                {!esBs && "≈ "}Bs. {formatBs(totalBs)}
               </td>
               <td />
             </tr>

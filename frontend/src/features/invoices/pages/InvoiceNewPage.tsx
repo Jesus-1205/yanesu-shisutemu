@@ -43,14 +43,17 @@ export default function InvoiceNewPage() {
   const esBs = store.moneda === "BS";
   const nTasa = store.tasa === "" ? 0 : Number(store.tasa);
 
-  const totalUsd = useMemo(
-    () => Math.round(store.lineItems.reduce((acc, d) => acc + d.subtotal_usd, 0) * 100) / 100,
-    [store.lineItems],
-  );
-  const totalBs = useMemo(
-    () => Math.round(store.lineItems.reduce((acc, d) => acc + d.subtotal_bs, 0) * 100) / 100,
-    [store.lineItems],
-  );
+  const totalUsd = useMemo(() => {
+    if (esBs && nTasa > 0) {
+      const totalBsExact = Math.round(store.lineItems.reduce((acc, d) => acc + d.subtotal_bs, 0) * 100) / 100;
+      return Math.round((totalBsExact / nTasa) * 100) / 100;
+    }
+    return Math.round(store.lineItems.reduce((acc, d) => acc + d.subtotal_usd, 0) * 100) / 100;
+  }, [store.lineItems, nTasa, esBs]);
+  const totalBs = useMemo(() => {
+    if (!esBs && nTasa > 0) return Math.round(totalUsd * nTasa * 100) / 100;
+    return Math.round(store.lineItems.reduce((acc, d) => acc + d.subtotal_bs, 0) * 100) / 100;
+  }, [store.lineItems, totalUsd, nTasa, esBs]);
 
   const ivaBreakdown = useMemo(() => {
     let totalUnidades = 0;

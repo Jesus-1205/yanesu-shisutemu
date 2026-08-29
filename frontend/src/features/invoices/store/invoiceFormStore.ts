@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { MonedaEnum } from "@/types/api";
-import { convertirCostos, calcularSubtotal } from "@/lib/money";
+import { convertirCostos, calcularSubtotal, toCents } from "@/lib/money";
 import { generateUUID, getTodayInCaracas } from "@/lib/utils";
 import type { LineItem, ObsequioItem } from "../types";
 
@@ -56,14 +56,24 @@ export const useInvoiceFormStore = create<InvoiceFormState & InvoiceFormActions>
 
   addLineItem: (item) => {
     const nTasa = Number(get().tasa) || 0;
+    const esBs = get().moneda === "BS";
     const costos = convertirCostos(item.costo_ingresado, item.moneda_ingreso, nTasa);
+    let subtotalUsd: number;
+    let subtotalBs: number;
+    if (esBs) {
+      subtotalBs = calcularSubtotal(item.cantidad, costos.bs);
+      subtotalUsd = nTasa > 0 ? toCents(subtotalBs / nTasa) : 0;
+    } else {
+      subtotalUsd = calcularSubtotal(item.cantidad, costos.usd);
+      subtotalBs = nTasa > 0 ? toCents(subtotalUsd * nTasa) : 0;
+    }
     const newItem: LineItem = {
       ...item,
       key: generateUUID(),
       costo_unitario_usd: costos.usd,
       costo_unitario_bs: costos.bs,
-      subtotal_usd: calcularSubtotal(item.cantidad, costos.usd),
-      subtotal_bs: calcularSubtotal(item.cantidad, costos.bs),
+      subtotal_usd: subtotalUsd,
+      subtotal_bs: subtotalBs,
     };
     set((s) => ({ lineItems: [...s.lineItems, newItem] }));
   },
@@ -80,15 +90,25 @@ export const useInvoiceFormStore = create<InvoiceFormState & InvoiceFormActions>
 
   recalcAllItems: (tasa) => {
     if (tasa <= 0) return;
+    const esBs = get().moneda === "BS";
     set((s) => ({
       lineItems: s.lineItems.map((item) => {
         const costos = convertirCostos(item.costo_ingresado, item.moneda_ingreso, tasa);
+        let subtotalUsd: number;
+        let subtotalBs: number;
+        if (esBs) {
+          subtotalBs = calcularSubtotal(item.cantidad, costos.bs);
+          subtotalUsd = toCents(subtotalBs / tasa);
+        } else {
+          subtotalUsd = calcularSubtotal(item.cantidad, costos.usd);
+          subtotalBs = toCents(subtotalUsd * tasa);
+        }
         return {
           ...item,
           costo_unitario_usd: costos.usd,
           costo_unitario_bs: costos.bs,
-          subtotal_usd: calcularSubtotal(item.cantidad, costos.usd),
-          subtotal_bs: calcularSubtotal(item.cantidad, costos.bs),
+          subtotal_usd: subtotalUsd,
+          subtotal_bs: subtotalBs,
         };
       }),
     }));

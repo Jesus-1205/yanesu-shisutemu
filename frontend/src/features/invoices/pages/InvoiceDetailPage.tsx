@@ -467,10 +467,10 @@ export default function InvoiceDetailPage() {
               render: (d) => {
                 if (d.tipo_empaque === "CAJA" && d.product?.unidades_por_caja && d.product.unidades_por_caja > 1) {
                   const costoUnitario = Number(d.costo_unitario_usd) / d.product.unidades_por_caja;
-                  return <span className="font-mono text-xs text-slate-400">{formatUsd(costoUnitario)}</span>;
+                  return <span className="font-mono text-xs text-slate-400">{invoice.moneda_principal === "BS" && "≈ "}{formatUsd(costoUnitario)}</span>;
                 }
                 if (d.tipo_empaque === "UNIDAD") {
-                  return <span className="font-mono font-semibold text-sm">{formatUsd(Number(d.costo_unitario_usd))}</span>;
+                  return <span className={`font-mono ${invoice.moneda_principal === "BS" ? "text-xs text-slate-400" : "font-semibold text-sm"}`}>{invoice.moneda_principal === "BS" && "≈ "}{formatUsd(Number(d.costo_unitario_usd))}</span>;
                 }
                 return <span className="text-slate-300">—</span>;
               },
@@ -480,22 +480,28 @@ export default function InvoiceDetailPage() {
               header: "Bs. / Unid",
               hideOnMobile: true,
               render: (d) => (
-                <span className="font-mono">Bs. {formatBs(Number(d.costo_unitario_bs))}</span>
+                <span className={`font-mono ${invoice.moneda_principal === "BS" ? "font-semibold text-sm" : "text-xs"}`}>{invoice.moneda_principal !== "BS" && "≈ "}Bs. {formatBs(Number(d.costo_unitario_bs))}</span>
               ),
             },
             {
               key: "subtotal_usd",
               header: "Subtotal USD",
               render: (d) => (
-                <span className="font-mono">{formatUsd(d.cantidad * Number(d.costo_unitario_usd))}</span>
+                <span className={`font-mono ${invoice.moneda_principal !== "BS" ? "font-semibold" : ""}`}>{formatUsd(d.cantidad * Number(d.costo_unitario_usd))}</span>
               ),
             },
             {
               key: "subtotal_bs",
               header: "Subtotal Bs.",
-              render: (d) => (
-                <span className="font-mono">Bs. {formatBs(d.cantidad * Number(d.costo_unitario_bs))}</span>
-              ),
+              render: (d) => {
+                const subUsd = d.cantidad * Number(d.costo_unitario_usd);
+                const subBs = invoice.moneda_principal !== "BS" && nTasa > 0
+                  ? Math.round(subUsd * nTasa * 100) / 100
+                  : d.cantidad * Number(d.costo_unitario_bs);
+                return (
+                  <span className={`font-mono ${invoice.moneda_principal === "BS" ? "font-semibold" : ""}`}>{invoice.moneda_principal !== "BS" && "≈ "}Bs. {formatBs(subBs)}</span>
+                );
+              },
             },
           ]}
           data={invoice.detalles}
@@ -524,10 +530,19 @@ export default function InvoiceDetailPage() {
                 <td className="hidden md:table-cell" />
                 <td className="hidden md:table-cell" />
                 <td className="px-4 py-3.5 text-right tabular-nums">
-                  {formatUsd(Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_usd), 0) * 100) / 100)}
+                  {(() => {
+                    const totalBsLines = Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0) * 100) / 100;
+                    const footerUsd = invoice.moneda_principal === "BS" && nTasa > 0
+                      ? Math.round((totalBsLines / nTasa) * 100) / 100
+                      : Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_usd), 0) * 100) / 100;
+                    return <span className={invoice.moneda_principal !== "BS" ? "font-semibold" : ""}>{formatUsd(footerUsd)}</span>;
+                  })()}
                 </td>
                 <td className="px-4 py-3.5 text-right tabular-nums">
-                  Bs. {formatBs(Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0) * 100) / 100)}
+                  {(() => {
+                    const totalBsLines = Math.round(invoice.detalles.reduce((acc, d) => acc + d.cantidad * Number(d.costo_unitario_bs), 0) * 100) / 100;
+                    return <span className={invoice.moneda_principal === "BS" ? "font-semibold" : ""}>{invoice.moneda_principal !== "BS" && "≈ "}Bs. {formatBs(totalBsLines)}</span>;
+                  })()}
                 </td>
               </tr>
             );
