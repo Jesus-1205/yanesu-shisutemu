@@ -3,6 +3,7 @@ import type { Invoice } from "../types";
 import Button from "@/ui-components/Button";
 import Badge from "@/ui-components/Badge";
 import { formatBs, formatUsd } from "@/lib/text";
+import { formatDateVE } from "@/lib/utils";
 
 interface InvoiceCardProps {
   invoice: Invoice;
@@ -109,7 +110,7 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
         </Badge>
         <Badge variant="neutral">{invoice.moneda_principal}</Badge>
         <span className="text-xs text-slate-400 ml-auto">
-          {new Date(invoice.fecha_factura).toLocaleDateString("es-VE")}
+          {formatDateVE(invoice.fecha_factura)}
         </span>
       </div>
 

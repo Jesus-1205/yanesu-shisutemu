@@ -13,6 +13,7 @@ import PageHeader from "@/ui-components/PageHeader";
 import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
+import { formatDateVE } from "@/lib/utils";
 import { calcularResumenFiscal } from "@/lib/iva";
 
 export default function InvoiceDetailPage() {
@@ -153,7 +154,7 @@ export default function InvoiceDetailPage() {
             {invoice.tipo_documento === "FACTURA" ? "Factura" : "Nota de Entrega"}
           </span>
           <span className="text-slate-300">•</span>
-          <span>{new Date(invoice.fecha_factura).toLocaleDateString("es-VE")}</span>
+          <span>{formatDateVE(invoice.fecha_factura)}</span>
           <span className="text-slate-300">•</span>
           <span>{invoice.supplier?.nombre || "—"}</span>
           {invoice.aplica_iva && (
@@ -303,9 +304,9 @@ export default function InvoiceDetailPage() {
               </Badge>
             </div>
           </div>
-          {(paymentSummary.diferencia_cambiaria_bs > 0 || paymentSummary.total_mora_bs > 0) && (
+          {(Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 0.10 || paymentSummary.total_mora_bs > 0) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mt-3">
-              {paymentSummary.diferencia_cambiaria_bs > 0 && (
+              {Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 0.10 && (
                 <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
                   <p className="text-amber-600 font-medium">Diferencia cambiaria</p>
                   <p className="font-bold font-mono text-amber-700 mt-0.5">Bs. {formatBs(paymentSummary.diferencia_cambiaria_bs)}</p>
@@ -344,7 +345,7 @@ export default function InvoiceDetailPage() {
                 header: "Monto",
                 render: (p: InvoicePaymentOut) => (
                   <span className="font-mono">
-                    {p.monto_usd > 0 ? formatUsd(p.monto_usd) : `Bs. ${formatBs(p.monto_bs)}`}
+                    {p.monto_bs > 0 ? `Bs. ${formatBs(p.monto_bs)}` : formatUsd(p.monto_usd)}
                   </span>
                 ),
               },

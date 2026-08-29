@@ -56,7 +56,10 @@ const veDateFmt = new Intl.DateTimeFormat("es-VE", {
 function toCaracasDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
   const hasOffset = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso);
-  const normalized = hasOffset ? iso : `${iso}${CARACAS_OFFSET}`;
+  const hasTime = /T\d{2}/.test(iso);
+  const normalized = hasOffset ? iso
+    : hasTime ? `${iso}${CARACAS_OFFSET}`
+    : `${iso}T00:00:00${CARACAS_OFFSET}`;
   const d = new Date(normalized);
   return isNaN(d.getTime()) ? null : d;
 }
