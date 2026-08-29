@@ -93,6 +93,14 @@ export function getTodayInCaracas(): string {
   return caracasDayKey.format(new Date());
 }
 
+/** Retorna un Date en midnight de zona horaria America/Caracas. */
+export function todayInCaracas(): Date {
+  const now = new Date();
+  const veDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+  veDate.setHours(0, 0, 0, 0);
+  return veDate;
+}
+
 /** Verifica si un timestamp (naive en hora de Caracas) corresponde al día actual en Caracas. */
 export function isTodayInCaracas(iso: string | null | undefined): boolean {
   const d = toCaracasDate(iso);

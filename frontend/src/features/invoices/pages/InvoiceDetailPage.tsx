@@ -13,7 +13,7 @@ import PageHeader from "@/ui-components/PageHeader";
 import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
 import { formatBs, formatUsd } from "@/lib/text";
-import { formatDateVE } from "@/lib/utils";
+import { formatDateVE, todayInCaracas } from "@/lib/utils";
 import { calcularResumenFiscal } from "@/lib/iva";
 
 export default function InvoiceDetailPage() {
@@ -165,8 +165,7 @@ export default function InvoiceDetailPage() {
           )}
         </div>
         {invoice.fecha_limite_pago && (() => {
-          const hoy = new Date();
-          hoy.setHours(0, 0, 0, 0);
+          const hoy = todayInCaracas();
           const limite = new Date(invoice.fecha_limite_pago + "T00:00:00");
           const diffMs = limite.getTime() - hoy.getTime();
           const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));

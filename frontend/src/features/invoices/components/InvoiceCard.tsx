@@ -3,7 +3,7 @@ import type { Invoice } from "../types";
 import Button from "@/ui-components/Button";
 import Badge from "@/ui-components/Badge";
 import { formatBs, formatUsd } from "@/lib/text";
-import { formatDateVE } from "@/lib/utils";
+import { formatDateVE, todayInCaracas } from "@/lib/utils";
 
 interface InvoiceCardProps {
   invoice: Invoice;
@@ -12,9 +12,8 @@ interface InvoiceCardProps {
 }
 
 function getDaysUntil(dateStr: string): number {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const fecha = new Date(dateStr);
+  const hoy = todayInCaracas();
+  const fecha = new Date(dateStr + "T00:00:00");
   fecha.setHours(0, 0, 0, 0);
   return Math.ceil((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
 }
