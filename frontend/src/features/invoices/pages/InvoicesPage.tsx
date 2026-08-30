@@ -252,7 +252,7 @@ export default function InvoicesPage() {
                 key={inv.id}
                 invoice={inv}
                 onView={() => navigate(`/invoices/${inv.id}`)}
-                onPay={inv.estado_pago !== "PAGADA" ? () => navigate(`/invoices/${inv.id}?action=pay`) : undefined}
+                onPay={inv.estado_pago !== "PAGADA" ? () => navigate(`/invoices/${inv.id}/pay`) : undefined}
               />
             ))}
           </div>
