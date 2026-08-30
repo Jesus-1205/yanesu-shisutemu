@@ -316,7 +316,10 @@ export default function InvoiceDetailPage() {
                 <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
                   <p className="text-orange-600 font-medium">Mora</p>
                   <p className="font-bold font-mono text-orange-700 mt-0.5">Bs. {formatBs(paymentSummary.total_mora_bs)}</p>
-                  <p className="text-[10px] text-orange-500 mt-1">Recargo por pago tardío</p>
+                  {nTasa > 0 && (
+                    <p className="font-mono text-xs text-orange-500 mt-0.5">{formatUsd(paymentSummary.total_mora_bs / nTasa)}</p>
+                  )}
+                  <p className="text-[10px] text-orange-400 mt-1">Recargo por pago tardío</p>
                 </div>
               )}
             </div>
@@ -362,6 +365,14 @@ export default function InvoiceDetailPage() {
                 hideOnMobile: true,
                 render: (p: InvoicePaymentOut) => (
                   <span className="font-mono">Bs. {formatBs(p.monto_bs)}</span>
+                ),
+              },
+              {
+                key: "tasa_bs",
+                header: "Tasa",
+                hideOnMobile: true,
+                render: (p: InvoicePaymentOut) => (
+                  p.tasa_bs ? <span className="font-mono text-xs">{formatBs(p.tasa_bs)}</span> : <span className="text-slate-400">—</span>
                 ),
               },
               {

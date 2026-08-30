@@ -109,11 +109,17 @@ export default function InvoicePaymentPage() {
   const montoNum = Number(store.monto) || 0;
 
   // Mora: si incluirMora está activo, la diferencia entre el monto ingresado y el saldo pendiente es mora
-  const montoMoraBs = useMemo(() => {
+  const montoMoraUsd = useMemo(() => {
     if (!store.incluirMora || montoNum <= 0) return 0;
     const diff = toCents(montoNum - saldoEnMonedaPago);
     return diff > 0 ? diff : 0;
   }, [store.incluirMora, montoNum, saldoEnMonedaPago]);
+
+  const montoMoraBs = useMemo(() => {
+    if (montoMoraUsd <= 0) return 0;
+    if (payInUsd && tasaBs > 0) return toCents(montoMoraUsd * tasaBs);
+    return montoMoraUsd;
+  }, [montoMoraUsd, payInUsd, tasaBs]);
 
   // El monto del pago es siempre lo que el usuario ingresó (incluye mora si aplica)
   const montoPagoBs = useMemo(() => {
@@ -123,10 +129,11 @@ export default function InvoicePaymentPage() {
   // Validación: con mora, el monto debe ser >= total factura; sin mora, no puede exceder el saldo
   const excedeSaldo = useMemo(() => {
     if (store.incluirMora) {
-      return montoNum > 0 && montoNum < totalFacturaBs;
+      const totalEnMoneda = payInUsd ? totalFacturaUsd : totalFacturaBs;
+      return montoNum > 0 && montoNum < totalEnMoneda;
     }
     return toCents(montoNum) > toCents(saldoEnMonedaPago);
-  }, [store.incluirMora, montoNum, saldoEnMonedaPago, totalFacturaBs]);
+  }, [store.incluirMora, montoNum, saldoEnMonedaPago, totalFacturaBs, totalFacturaUsd, payInUsd]);
 
   const isValid = montoNum > 0 && store.selectedMethodId !== null && !excedeSaldo;
 
@@ -400,7 +407,7 @@ export default function InvoicePaymentPage() {
               {excedeSaldo && (
                 <p className="text-xs text-red-500 mt-1.5">
                   {store.incluirMora
-                    ? `El monto mínimo con mora es Bs. ${formatBs(totalFacturaBs)}`
+                    ? `El monto mínimo con mora es ${payInUsd ? formatUsd(totalFacturaUsd) : `Bs. ${formatBs(totalFacturaBs)}`}`
                     : "El monto excede el saldo pendiente"}
                 </p>
               )}
@@ -414,7 +421,13 @@ export default function InvoicePaymentPage() {
                       {montoMoraBs > 0 ? `Bs. ${formatBs(montoMoraBs)}` : "Bs. 0,00"}
                     </span>
                   </div>
-                  {montoMoraBs > 0 && (
+                  {payInUsd && montoMoraUsd > 0 && (
+                    <div className="flex items-center justify-between text-xs mt-1">
+                      <span className="text-amber-500">Recargo por pago tardío</span>
+                      <span className="font-mono text-amber-600">{formatUsd(montoMoraUsd)}</span>
+                    </div>
+                  )}
+                  {!payInUsd && montoMoraBs > 0 && (
                     <p className="text-[10px] text-amber-500 mt-1">Recargo por pago tardío</p>
                   )}
                 </div>
