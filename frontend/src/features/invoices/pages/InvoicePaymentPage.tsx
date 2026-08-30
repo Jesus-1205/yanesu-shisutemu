@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronDown, CreditCard, DollarSign, Landmark, Plus, Smartphone } from "lucide-react";
+import { ArrowLeft, ChevronDown, CreditCard, DollarSign, Landmark, Smartphone } from "lucide-react";
 import { api } from "@/services/api";
 import type { FacturaOut as Invoice, ExchangeRateOut } from "@/types/api";
 import type { PaymentMethodOut, InvoicePaymentSummary } from "@/types/api";
@@ -55,10 +55,6 @@ export default function InvoicePaymentPage() {
   const [showRateDropdown, setShowRateDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Mora
-  const [showMoraSection, setShowMoraSection] = useState(false);
-  const [totalAPagar, setTotalAPagar] = useState<string>("");
-
   const selectedMethod = methods.find((m) => m.id === store.selectedMethodId);
   const payInUsd = selectedMethod?.moneda_default === "USD";
 
@@ -111,29 +107,48 @@ export default function InvoicePaymentPage() {
   }, [selectedMethod, payInUsd, saldoPendienteUsd, saldoPendienteBs, tasaBs]);
 
   const montoNum = Number(store.monto) || 0;
-  const excedeSaldo = toCents(montoNum) > toCents(saldoEnMonedaPago);
+
+  // Mora: si incluirMora está activo, la diferencia entre el monto ingresado y el saldo pendiente es mora
+  const montoMoraBs = useMemo(() => {
+    if (!store.incluirMora || montoNum <= 0) return 0;
+    const diff = toCents(montoNum - saldoEnMonedaPago);
+    return diff > 0 ? diff : 0;
+  }, [store.incluirMora, montoNum, saldoEnMonedaPago]);
+
+  // El monto del pago es siempre lo que el usuario ingresó (incluye mora si aplica)
+  const montoPagoBs = useMemo(() => {
+    return toCents(montoNum);
+  }, [montoNum]);
+
+  // Validación: con mora, el monto debe ser >= total factura; sin mora, no puede exceder el saldo
+  const excedeSaldo = useMemo(() => {
+    if (store.incluirMora) {
+      return montoNum > 0 && montoNum < totalFacturaBs;
+    }
+    return toCents(montoNum) > toCents(saldoEnMonedaPago);
+  }, [store.incluirMora, montoNum, saldoEnMonedaPago, totalFacturaBs]);
+
   const isValid = montoNum > 0 && store.selectedMethodId !== null && !excedeSaldo;
 
-  // Cálculos de conversión
-  // BS→USD se redondea hacia abajo (floor) para no sobre-pagar en USD
+  // Cálculos de conversión (usar montoPagoBs que ya descuenta mora si aplica)
   const montoUsd = useMemo(() => {
-    if (montoNum <= 0) return 0;
+    if (montoPagoBs <= 0) return 0;
     if (payInUsd) return toCents(montoNum);
-    if (tasaBs > 0) return Math.floor((montoNum / tasaBs) * 100) / 100;
+    if (tasaBs > 0) return Math.floor((montoPagoBs / tasaBs) * 100) / 100;
     return 0;
-  }, [montoNum, payInUsd, tasaBs]);
+  }, [montoPagoBs, montoNum, payInUsd, tasaBs]);
 
   const montoBs = useMemo(() => {
-    if (montoNum <= 0) return 0;
-    if (!payInUsd) return toCents(montoNum);
+    if (montoPagoBs <= 0) return 0;
+    if (!payInUsd) return montoPagoBs;
     if (tasaBs > 0) return toCents(montoNum * tasaBs);
     return 0;
-  }, [montoNum, payInUsd, tasaBs]);
+  }, [montoPagoBs, montoNum, payInUsd, tasaBs]);
 
-  // Saldo restante calculado directo en la moneda del pago (exacto al input del usuario)
+  // Saldo restante calculado directo en la moneda del pago
   const saldoRestanteEnMonedaPago = useMemo(() => {
-    return Math.max(0, toCents(saldoEnMonedaPago - montoNum));
-  }, [saldoEnMonedaPago, montoNum]);
+    return Math.max(0, toCents(saldoEnMonedaPago - montoPagoBs));
+  }, [saldoEnMonedaPago, montoPagoBs]);
 
   const saldoRestanteUsd = useMemo(() => {
     if (payInUsd) return saldoRestanteEnMonedaPago;
@@ -146,23 +161,6 @@ export default function InvoicePaymentPage() {
     if (tasaBs > 0) return toCents(saldoRestanteEnMonedaPago * tasaBs);
     return 0;
   }, [payInUsd, saldoRestanteEnMonedaPago, tasaBs]);
-
-  // Mora
-  const montoMoraBs = useMemo(() => {
-    const parsed = Number(totalAPagar);
-    if (!totalAPagar || isNaN(parsed) || parsed <= 0) return 0;
-    const diff = toCents(parsed) - montoBs;
-    return diff > 0 ? toCents(diff) : 0;
-  }, [totalAPagar, montoBs]);
-
-  // Validación de mora
-  const totalAPagarNum = useMemo(() => {
-    const parsed = Number(totalAPagar);
-    if (!totalAPagar || isNaN(parsed) || parsed <= 0) return montoBs;
-    return toCents(parsed);
-  }, [totalAPagar, montoBs]);
-
-  const excedeTotal = totalAPagarNum > 0 && totalAPagarNum < montoBs;
 
   // Fetch invoice
   const fetchInvoice = useCallback(async () => {
@@ -243,13 +241,6 @@ export default function InvoicePaymentPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Reset totalAPagar when montoBs changes
-  useEffect(() => {
-    if (!showMoraSection) {
-      setTotalAPagar("");
-    }
-  }, [montoBs, showMoraSection]);
-
   // Submit
   const handleSubmit = useCallback(async () => {
     if (!isValid || submitting || !invoice) return;
@@ -269,7 +260,9 @@ export default function InvoicePaymentPage() {
         },
         store.comprobantes.length > 0 ? store.comprobantes : undefined,
       );
-      toast(`Pago de ${payInUsd ? formatUsd(montoNum) : `Bs. ${formatBs(montoNum)}`} registrado`, "success");
+      const montoStr = payInUsd ? formatUsd(montoNum) : `Bs. ${formatBs(montoPagoBs)}`;
+      const moraStr = montoMoraBs > 0 ? ` + mora Bs. ${formatBs(montoMoraBs)}` : "";
+      toast(`Pago de ${montoStr}${moraStr} registrado`, "success");
       store.reset();
       navigate(`/invoices/${id}`);
     } catch (err) {
@@ -366,9 +359,20 @@ export default function InvoicePaymentPage() {
           {/* Monto a pagar */}
           {store.selectedMethodId && (
             <section>
-              <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-1">
-                Monto a pagar
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                  Monto a pagar
+                </label>
+                <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={store.incluirMora}
+                    onChange={(e) => store.setField("incluirMora", e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400 cursor-pointer"
+                  />
+                  Incluir mora
+                </label>
+              </div>
               <p className="text-xs text-slate-500 mb-2">
                 Saldo pendiente:{" "}
                 <span className="font-mono font-medium text-slate-700">
@@ -386,7 +390,7 @@ export default function InvoicePaymentPage() {
                   type="number"
                   step="0.01"
                   min="0"
-                  max={toCents(saldoEnMonedaPago)}
+                  max={store.incluirMora ? undefined : toCents(saldoEnMonedaPago)}
                   value={store.monto}
                   onChange={(e) => store.setMonto(e.target.value)}
                   className="w-full h-14 rounded-xl border-2 border-slate-200 bg-surface pl-12 pr-4 text-xl font-mono font-semibold text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
@@ -394,7 +398,26 @@ export default function InvoicePaymentPage() {
                 />
               </div>
               {excedeSaldo && (
-                <p className="text-xs text-red-500 mt-1.5">El monto excede el saldo pendiente</p>
+                <p className="text-xs text-red-500 mt-1.5">
+                  {store.incluirMora
+                    ? `El monto mínimo con mora es Bs. ${formatBs(totalFacturaBs)}`
+                    : "El monto excede el saldo pendiente"}
+                </p>
+              )}
+
+              {/* Mora inline - solo cuando incluirMora está activo y hay monto */}
+              {store.incluirMora && montoNum > 0 && !excedeSaldo && (
+                <div className="mt-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-amber-600 font-medium">Mora</span>
+                    <span className="font-mono font-bold text-amber-700">
+                      {montoMoraBs > 0 ? `Bs. ${formatBs(montoMoraBs)}` : "Bs. 0,00"}
+                    </span>
+                  </div>
+                  {montoMoraBs > 0 && (
+                    <p className="text-[10px] text-amber-500 mt-1">Recargo por pago tardío</p>
+                  )}
+                </div>
               )}
 
               {/* Quedaría por pagar - ambos montos */}
@@ -522,70 +545,6 @@ export default function InvoicePaymentPage() {
                   </div>
                 )}
               </div>
-            </section>
-          )}
-
-          {/* Mora - hidden por defecto */}
-          {store.selectedMethodId && tasaBs > 0 && montoNum > 0 && (
-            <section>
-              {!showMoraSection ? (
-                <button
-                  type="button"
-                  onClick={() => setShowMoraSection(true)}
-                  className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar mora (opcional)
-                </button>
-              ) : (
-                <div className="p-4 rounded-xl border-2 border-amber-200 bg-amber-50/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                      Mora (opcional)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowMoraSection(false);
-                        setTotalAPagar("");
-                      }}
-                      className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
-                    >
-                      Ocultar
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Si el proveedor cobra recargo por pago tardío, ingrésalo aquí. No afecta el total original de la factura.
-                  </p>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">
-                      Monto calculado: <span className="font-mono font-medium text-slate-700">Bs. {formatBs(montoBs)}</span>
-                    </p>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono font-semibold">
-                        Bs.
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min={montoBs}
-                        value={totalAPagar}
-                        onChange={(e) => setTotalAPagar(e.target.value)}
-                        className="w-full h-11 rounded-xl border-2 border-slate-200 bg-surface pl-10 pr-4 text-sm font-mono text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-                        placeholder={`Mínimo: ${formatBs(montoBs)}`}
-                      />
-                    </div>
-                    {montoMoraBs > 0 && (
-                      <p className="text-xs text-amber-600 mt-1.5 font-medium">
-                        Mora: <span className="font-mono">Bs. {formatBs(montoMoraBs)}</span>
-                      </p>
-                    )}
-                    {excedeTotal && (
-                      <p className="text-xs text-red-500 mt-1.5">El total no puede ser menor al monto del pago</p>
-                    )}
-                  </div>
-                </div>
-              )}
             </section>
           )}
 

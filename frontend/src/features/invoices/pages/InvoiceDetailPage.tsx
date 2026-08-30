@@ -303,9 +303,9 @@ export default function InvoiceDetailPage() {
               </Badge>
             </div>
           </div>
-          {(Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 0.10 || paymentSummary.total_mora_bs > 0) && (
+          {(Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 1 || paymentSummary.total_mora_bs > 0) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mt-3">
-              {Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 0.10 && (
+              {Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 1 && (
                 <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
                   <p className="text-amber-600 font-medium">Diferencia cambiaria</p>
                   <p className="font-bold font-mono text-amber-700 mt-0.5">Bs. {formatBs(paymentSummary.diferencia_cambiaria_bs)}</p>

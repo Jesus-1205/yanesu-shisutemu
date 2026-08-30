@@ -6,9 +6,11 @@ interface PaymentFormState {
   referencia: string;
   comprobantes: File[];
   observaciones: string;
+  incluirMora: boolean;
 }
 
 interface PaymentFormActions {
+  setField: <K extends keyof PaymentFormState>(field: K, value: PaymentFormState[K]) => void;
   setMethod: (id: number | null) => void;
   setMonto: (value: string) => void;
   setReferencia: (value: string) => void;
@@ -24,12 +26,14 @@ const INITIAL_STATE: PaymentFormState = {
   referencia: "",
   comprobantes: [],
   observaciones: "",
+  incluirMora: false,
 };
 
 export const usePaymentFormStore = create<PaymentFormState & PaymentFormActions>((set) => ({
   ...INITIAL_STATE,
 
-  setMethod: (id) => set({ selectedMethodId: id, monto: "" }),
+  setField: (field, value) => set({ [field]: value } as Partial<PaymentFormState>),
+  setMethod: (id) => set({ selectedMethodId: id, monto: "", incluirMora: false }),
   setMonto: (value) => set({ monto: value }),
   setReferencia: (value) => set({ referencia: value }),
   addComprobantes: (files) => set((s) => ({ comprobantes: [...s.comprobantes, ...files] })),

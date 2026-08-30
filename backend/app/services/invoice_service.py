@@ -975,7 +975,7 @@ def register_invoice_payment(
 
     total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
     saldo = total_con_iva_usd - pagado_actual
-    if data.monto_usd > saldo:
+    if data.monto_mora <= 0 and data.monto_usd > saldo:
         raise ConflictError(
             f"El monto (${data.monto_usd}) excede el saldo pendiente (${saldo})"
         )
@@ -983,7 +983,7 @@ def register_invoice_payment(
     tasa_usada = data.tasa_bs if data.tasa_bs and data.tasa_bs > 0 else factura.tasa_bs
 
     monto_bs_calculado = data.monto_bs
-    if data.tasa_bs and data.tasa_bs > 0 and data.monto_usd > 0:
+    if data.tasa_bs and data.tasa_bs > 0 and data.monto_usd > 0 and (not data.monto_bs or data.monto_bs <= 0):
         monto_bs_calculado = (data.monto_usd * data.tasa_bs).quantize(Decimal("0.01"))
 
     monto_mora = data.monto_mora.quantize(Decimal("0.01")) if data.monto_mora > 0 else Decimal("0.00")
@@ -1066,9 +1066,22 @@ def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentS
     total_con_iva_usd, total_con_iva_bs = _calcular_total_con_iva(factura, db)
 
     diferencia_cambiaria_bs = Decimal("0")
-    if factura.tasa_bs > 0 and total_pagado_usd > 0:
-        esperado_bs = (total_pagado_usd * factura.tasa_bs).quantize(Decimal("0.01"))
-        diferencia_cambiaria_bs = total_pagado_bs - esperado_bs
+    if factura.tasa_bs > 0:
+        stmt_diff_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
+            InvoicePayment.factura_id == factura_id,
+            InvoicePayment.tasa_bs != factura.tasa_bs,
+            InvoicePayment.tasa_bs > 0,
+        )
+        total_bs_tasa_diferente = Decimal(str(db.execute(stmt_diff_bs).scalar()))
+        if total_bs_tasa_diferente > 0:
+            stmt_diff_usd = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
+                InvoicePayment.factura_id == factura_id,
+                InvoicePayment.tasa_bs != factura.tasa_bs,
+                InvoicePayment.tasa_bs > 0,
+            )
+            usd_tasa_diferente = Decimal(str(db.execute(stmt_diff_usd).scalar()))
+            esperado_bs = (usd_tasa_diferente * factura.tasa_bs).quantize(Decimal("0.01"))
+            diferencia_cambiaria_bs = total_bs_tasa_diferente - esperado_bs
 
     saldo_usd = total_con_iva_usd - total_pagado_usd
     saldo_bs = total_con_iva_bs - total_pagado_bs
