@@ -45,7 +45,7 @@ const adminSidebarItems: SidebarItem[] = [
       { label: "Precios Div.", to: "/price-rules" },
     ],
   },
-  { label: "Facturas", icon: <Truck size={18} />, to: "/compras" },
+  { label: "Facturas", icon: <Truck size={18} />, to: "/buys" },
   { label: "Tasas de Cambio", icon: <DollarSign size={18} />, to: "/exchange-rates" },
   { label: "Reportes", icon: <BarChart3 size={18} />, to: "/reports" },
 ];

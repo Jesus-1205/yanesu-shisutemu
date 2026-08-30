@@ -7,10 +7,11 @@ import {
   CheckCircle,
   Clock,
   Building2,
+  Trophy,
 } from "lucide-react";
 import { api } from "@/services/api";
-import type { FacturaOut, SupplierOut } from "@/types/api";
-import type { InvoiceStatsOut, InvoicePendingSummaryOut } from "@/types/api";
+import type { FacturaOut } from "@/types/api";
+import type { InvoiceStatsOut, InvoicePendingSummaryOut, TopSupplier } from "@/types/api";
 import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import StatCard from "@/ui-components/StatCard";
@@ -18,7 +19,6 @@ import Spinner from "@/ui-components/Spinner";
 import InvoiceCard from "../components/InvoiceCard";
 
 const NEARBY_INVOICES_LIMIT = 5;
-const NEARBY_SUPPLIERS_LIMIT = 6;
 const DAYS_AHEAD = 7;
 
 function getDaysUntil(dateStr: string): number {
@@ -34,7 +34,7 @@ export default function ComprasHubPage() {
   const [pending, setPending] = useState<InvoicePendingSummaryOut | null>(null);
   const [stats, setStats] = useState<InvoiceStatsOut | null>(null);
   const [nearbyInvoices, setNearbyInvoices] = useState<FacturaOut[]>([]);
-  const [nearbySuppliers, setNearbySuppliers] = useState<SupplierOut[]>([]);
+  const [topSuppliers, setTopSuppliers] = useState<TopSupplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,12 +51,12 @@ export default function ComprasHubPage() {
           page_size: NEARBY_INVOICES_LIMIT,
           page: 1,
         }),
-        api.getSuppliers(),
+        api.getTopSuppliers(),
       ]);
       setPending(pendingRes);
       setStats(statsRes);
       setNearbyInvoices(invoicesRes.items);
-      setNearbySuppliers(suppliersRes.slice(0, NEARBY_SUPPLIERS_LIMIT));
+      setTopSuppliers(suppliersRes);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar datos de compras");
     } finally {
@@ -139,7 +139,7 @@ export default function ComprasHubPage() {
         />
         <StatCard
           label="Proveedores"
-          value={String(nearbySuppliers.length)}
+          value={String(stats?.total ?? 0)}
           icon={<Building2 className="w-5 h-5" />}
           variant="default"
         />
@@ -167,7 +167,7 @@ export default function ComprasHubPage() {
                 onView={() => navigate(`/invoices/${inv.id}`)}
                 onPay={
                   inv.estado_pago !== "PAGADA"
-                    ? () => navigate(`/invoices/${inv.id}?action=pay`)
+                    ? () => navigate(`/invoices/${inv.id}/pay`)
                     : undefined
                 }
               />
@@ -176,40 +176,46 @@ export default function ComprasHubPage() {
         )}
       </section>
 
-      {/* Proveedores */}
+      {/* Top Proveedores */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-text-main">Proveedores</h2>
+          <h2 className="text-lg font-semibold text-text-main">Top Proveedores</h2>
           <Button variant="ghost" size="sm" onClick={() => navigate("/suppliers")}>
             Ver todos
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
-        {nearbySuppliers.length === 0 ? (
+        {topSuppliers.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-surface p-8 text-center">
-            <p className="text-sm text-slate-500">No hay proveedores registrados</p>
+            <p className="text-sm text-slate-500">No hay proveedores con compras registradas</p>
           </div>
         ) : (
           <div className="rounded-xl border border-slate-200 bg-surface overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Nombre</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Teléfono</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 hidden md:table-cell">Email</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 w-12">#</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600">Proveedor</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600">Compras</th>
                   <th className="text-right px-4 py-3 font-medium text-slate-600">Acción</th>
                 </tr>
               </thead>
               <tbody>
-                {nearbySuppliers.map((s) => (
+                {topSuppliers.map((s, idx) => (
                   <tr
-                    key={s.id}
+                    key={s.supplier_id}
                     className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/suppliers/${s.id}`)}
+                    onClick={() => navigate(`/suppliers?open=${s.supplier_id}`)}
                   >
-                    <td className="px-4 py-3 font-medium text-text-main">{s.nombre}</td>
-                    <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">{s.telefono || "—"}</td>
-                    <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{s.email || "—"}</td>
+                    <td className="px-4 py-3">
+                      {idx === 0 ? (
+                        <Trophy className="w-4 h-4 text-amber-500" />
+                      ) : (
+                        <span className="text-slate-400 font-mono text-xs">{idx + 1}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-text-main">{s.supplier_name}</td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold text-slate-700">{s.invoice_count}</td>
                     <td className="px-4 py-3 text-right">
                       <Button variant="ghost" size="sm">
                         Ver

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ComprasHubPage from "@/features/invoices/pages/ComprasHubPage";
-import type { FacturaOut, SupplierOut } from "@/types/api";
+import type { FacturaOut, TopSupplier } from "@/types/api";
 
 // ─── Mock API ──────────────────────────────────────────────────────────────
 vi.mock("@/services/api", () => ({
@@ -21,7 +21,7 @@ vi.mock("@/services/api", () => ({
       page_size: 5,
       pages: 0,
     }),
-    getSuppliers: vi.fn().mockResolvedValue([]),
+    getTopSuppliers: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -34,9 +34,9 @@ vi.mock("@/ui-components/Toast", () => ({
 import { api } from "@/services/api";
 
 // ─── Test Data ────────────────────────────────────────────────────────────
-const mockSuppliers: SupplierOut[] = [
-  { id: 1, nombre: "Proveedor A", telefono: "0412-1234567", email: "provA@test.com" },
-  { id: 2, nombre: "Proveedor B", telefono: null, email: null },
+const mockTopSuppliers: TopSupplier[] = [
+  { supplier_id: 1, supplier_name: "Proveedor A", invoice_count: 12 },
+  { supplier_id: 2, supplier_name: "Proveedor B", invoice_count: 8 },
 ];
 
 const mockInvoices: FacturaOut[] = [
@@ -74,7 +74,7 @@ const mockInvoices: FacturaOut[] = [
 
 function renderPage() {
   return render(
-    <MemoryRouter initialEntries={["/compras"]}>
+    <MemoryRouter initialEntries={["/buys"]}>
       <ComprasHubPage />
     </MemoryRouter>,
   );
@@ -101,7 +101,7 @@ describe("ComprasHubPage", () => {
       page_size: 5,
       pages: 1,
     });
-    (api.getSuppliers as ReturnType<typeof vi.fn>).mockResolvedValue(mockSuppliers);
+    (api.getTopSuppliers as ReturnType<typeof vi.fn>).mockResolvedValue(mockTopSuppliers);
   });
 
   it("renders page with 'Compras' header", async () => {
@@ -132,26 +132,28 @@ describe("ComprasHubPage", () => {
     });
   });
 
-  it("shows suppliers section", async () => {
+  it("shows top suppliers section", async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Proveedores" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Top Proveedores" })).toBeInTheDocument();
     });
   });
 
-  it("renders supplier names in the table", async () => {
+  it("renders supplier names and purchase counts", async () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getAllByText("Proveedor A").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Proveedor B").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText("12")).toBeInTheDocument();
+      expect(screen.getByText("8")).toBeInTheDocument();
     });
   });
 
   it("shows empty state when no suppliers exist", async () => {
-    (api.getSuppliers as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (api.getTopSuppliers as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText("No hay proveedores registrados")).toBeInTheDocument();
+      expect(screen.getByText("No hay proveedores con compras registradas")).toBeInTheDocument();
     });
   });
 
@@ -161,7 +163,7 @@ describe("ComprasHubPage", () => {
       expect(api.getInvoicePendingSummary).toHaveBeenCalledTimes(1);
       expect(api.getInvoiceStats).toHaveBeenCalledTimes(1);
       expect(api.getInvoices).toHaveBeenCalledTimes(1);
-      expect(api.getSuppliers).toHaveBeenCalledTimes(1);
+      expect(api.getTopSuppliers).toHaveBeenCalledTimes(1);
     });
   });
 });

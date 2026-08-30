@@ -22,6 +22,7 @@ from app.schemas.invoice import (
     InvoicePaymentSummary,
     InvoicePendingSummaryOut,
     InvoiceStatsOut,
+    TopSupplierOut,
 )
 from app.services.audit_service import log_action
 from app.services.invoice_service import (
@@ -34,6 +35,7 @@ from app.services.invoice_service import (
     get_invoice_stats,
     get_invoices,
     get_pending_invoices_summary,
+    get_top_suppliers_by_purchases,
     optimize_image,
     register_invoice_payment,
 )
@@ -229,6 +231,18 @@ def stats(
     Devuelve: 200 + InvoiceStatsOut (pendientes, parciales, pagadas, total)
     """
     return get_invoice_stats(db)
+
+
+@router.get("/top-suppliers", status_code=status.HTTP_200_OK)
+def top_suppliers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /invoices/top-suppliers - Top proveedores por cantidad de facturas
+
+    Devuelve: 200 + list[TopSupplierOut]
+    """
+    return get_top_suppliers_by_purchases(db)
 
 
 @router.get("/pending-summary", status_code=status.HTTP_200_OK)

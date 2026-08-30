@@ -852,6 +852,32 @@ def get_invoice_stats(db: Session) -> dict:
     }
 
 
+def get_top_suppliers_by_purchases(db: Session, limit: int = 5) -> list[dict]:
+    """Retorna los proveedores con más facturas, ordenados por cantidad de compras descendente."""
+    stmt = (
+        select(
+            Factura.proveedor_id,
+            func.count(Factura.id).label("invoice_count"),
+        )
+        .group_by(Factura.proveedor_id)
+        .order_by(func.count(Factura.id).desc())
+        .limit(limit)
+    )
+    rows = db.execute(stmt).all()
+
+    result = []
+    for proveedor_id, invoice_count in rows:
+        supplier = db.execute(
+            select(Supplier).where(Supplier.id == proveedor_id)
+        ).scalars().first()
+        result.append({
+            "supplier_id": proveedor_id,
+            "supplier_name": supplier.nombre if supplier else "Desconocido",
+            "invoice_count": invoice_count,
+        })
+    return result
+
+
 def get_pending_invoices_summary(db: Session) -> dict:
     """Retorna el total USD pendiente de pago considerando IVA dinámico.
 
