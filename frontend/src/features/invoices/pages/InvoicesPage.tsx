@@ -16,6 +16,7 @@ import EmptyState from "@/ui-components/EmptyState";
 import Badge from "@/ui-components/Badge";
 import Tabs from "@/ui-components/Tabs";
 import InvoiceCard from "../components/InvoiceCard";
+import { useInvoiceFiltersStore } from "../store/invoiceFiltersStore";
 
 const PAGE_SIZE = 20;
 
@@ -33,15 +34,18 @@ export default function InvoicesPage() {
   const [stats, setStats] = useState<InvoiceStatsOut>({ pendientes: 0, parciales: 0, pagadas: 0, total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [proveedorId, setProveedorId] = useState<number | null>(null);
-  const [tipoDocumento, setTipoDocumento] = useState<string>("");
-  const [estadoPago, setEstadoPago] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("");
-  const [fechaDesde, setFechaDesde] = useState("");
-  const [fechaHasta, setFechaHasta] = useState("");
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+
+  const search = useInvoiceFiltersStore((s) => s.search);
+  const proveedorId = useInvoiceFiltersStore((s) => s.proveedorId);
+  const tipoDocumento = useInvoiceFiltersStore((s) => s.tipoDocumento);
+  const estadoPago = useInvoiceFiltersStore((s) => s.estadoPago);
+  const sortBy = useInvoiceFiltersStore((s) => s.sortBy);
+  const fechaDesde = useInvoiceFiltersStore((s) => s.fechaDesde);
+  const fechaHasta = useInvoiceFiltersStore((s) => s.fechaHasta);
+  const page = useInvoiceFiltersStore((s) => s.page);
+  const setField = useInvoiceFiltersStore((s) => s.setField);
+  const clearAll = useInvoiceFiltersStore((s) => s.clearAll);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -89,18 +93,11 @@ export default function InvoicesPage() {
   }, []);
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    setField("page", newPage);
   };
 
   const clearAllFilters = () => {
-    setSearch("");
-    setProveedorId(null);
-    setTipoDocumento("");
-    setEstadoPago("");
-    setSortBy("");
-    setFechaDesde("");
-    setFechaHasta("");
-    setPage(1);
+    clearAll();
   };
 
   const tabsWithCounts = statusTabs.map((tab) => ({
@@ -139,7 +136,7 @@ export default function InvoicesPage() {
       <Tabs
         tabs={tabsWithCounts}
         value={estadoPago}
-        onChange={(v) => { setEstadoPago(v); setPage(1); }}
+        onChange={(v) => { setField("estadoPago", v); setField("page", 1); }}
         className="mb-4"
       />
 
@@ -148,8 +145,8 @@ export default function InvoicesPage() {
         <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-xs">
           <SearchInput
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            onClear={() => { setSearch(""); setPage(1); }}
+            onChange={(e) => { setField("search", e.target.value); setField("page", 1); }}
+            onClear={() => { setField("search", ""); setField("page", 1); }}
             placeholder="Buscar factura..."
           />
         </div>
@@ -157,7 +154,7 @@ export default function InvoicesPage() {
           <Combobox
             value={proveedorId}
             options={suppliers.map((s) => ({ value: s.id, label: s.nombre }))}
-            onChange={(v) => { setProveedorId(v ? Number(v) : null); setPage(1); }}
+            onChange={(v) => { setField("proveedorId", v ? Number(v) : null); setField("page", 1); }}
             placeholder="Buscar proveedor..."
             allowClear
             clearLabel="Todos"
@@ -166,7 +163,7 @@ export default function InvoicesPage() {
         <div className="w-full sm:w-44">
           <Select
             value={tipoDocumento}
-            onChange={(e) => { setTipoDocumento(e.target.value); setPage(1); }}
+            onChange={(e) => { setField("tipoDocumento", e.target.value); setField("page", 1); }}
             options={[
               { value: "", label: "Todos los tipos" },
               { value: "FACTURA", label: "Factura" },
@@ -177,7 +174,7 @@ export default function InvoicesPage() {
         <div className="w-full sm:w-44">
           <Select
             value={sortBy}
-            onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+            onChange={(e) => { setField("sortBy", e.target.value); setField("page", 1); }}
             options={[
               { value: "", label: "Fecha" },
               { value: "fecha_limite_pago", label: "Por vencer" },
@@ -195,7 +192,7 @@ export default function InvoicesPage() {
           <input
             type="date"
             value={fechaDesde}
-            onChange={(e) => { setFechaDesde(e.target.value); setPage(1); }}
+            onChange={(e) => { setField("fechaDesde", e.target.value); setField("page", 1); }}
             className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             autoComplete="off"
           />
@@ -205,13 +202,13 @@ export default function InvoicesPage() {
           <input
             type="date"
             value={fechaHasta}
-            onChange={(e) => { setFechaHasta(e.target.value); setPage(1); }}
+            onChange={(e) => { setField("fechaHasta", e.target.value); setField("page", 1); }}
             className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             autoComplete="off"
           />
         </div>
         {(fechaDesde || fechaHasta) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFechaDesde(""); setFechaHasta(""); setPage(1); }}>
+          <Button variant="ghost" size="sm" onClick={() => { setField("fechaDesde", ""); setField("fechaHasta", ""); setField("page", 1); }}>
             Limpiar fechas
           </Button>
         )}
@@ -224,7 +221,7 @@ export default function InvoicesPage() {
           {search && (
             <Badge variant="neutral" className="gap-1">
               &quot;{search}&quot;
-              <button onClick={() => { setSearch(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+              <button onClick={() => { setField("search", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </Badge>
@@ -232,7 +229,7 @@ export default function InvoicesPage() {
           {proveedorId && (
             <Badge variant="neutral" className="gap-1">
               {suppliers.find((s) => s.id === proveedorId)?.nombre}
-              <button onClick={() => { setProveedorId(null); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+              <button onClick={() => { setField("proveedorId", null); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </Badge>
@@ -240,7 +237,7 @@ export default function InvoicesPage() {
           {tipoDocumento && (
             <Badge variant="neutral" className="gap-1">
               {tipoDocumento === "FACTURA" ? "Factura" : "Nota de Entrega"}
-              <button onClick={() => { setTipoDocumento(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+              <button onClick={() => { setField("tipoDocumento", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </Badge>
@@ -248,7 +245,7 @@ export default function InvoicesPage() {
           {fechaDesde && (
             <Badge variant="neutral" className="gap-1">
               Desde: {fechaDesde}
-              <button onClick={() => { setFechaDesde(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+              <button onClick={() => { setField("fechaDesde", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </Badge>
@@ -256,7 +253,7 @@ export default function InvoicesPage() {
           {fechaHasta && (
             <Badge variant="neutral" className="gap-1">
               Hasta: {fechaHasta}
-              <button onClick={() => { setFechaHasta(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+              <button onClick={() => { setField("fechaHasta", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </Badge>
