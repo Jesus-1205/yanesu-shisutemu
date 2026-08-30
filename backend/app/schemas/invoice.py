@@ -109,6 +109,13 @@ class InvoicePendingSummaryOut(BaseModel):
     total_pendiente_usd: Decimal = Decimal("0")
 
 
+class TopSupplierOut(BaseModel):
+    """Proveedor con más facturas compradas."""
+    supplier_id: int
+    supplier_name: str
+    invoice_count: int
+
+
 # ── Schemas para Análisis IA ──────────────────────────────────────────────
 
 

@@ -529,6 +529,16 @@ export interface InvoiceStatsOut {
   total: number;
 }
 
+export interface InvoicePendingSummaryOut {
+  total_pendiente_usd: number;
+}
+
+export interface TopSupplier {
+  supplier_id: number;
+  supplier_name: string;
+  invoice_count: number;
+}
+
 // ─── Pagos de Factura ──────────────────────────────────────────────────────
 
 export interface InvoicePaymentCreate {

@@ -252,7 +252,7 @@ class TestPendingSummary:
         response = client.get("/api/invoices/pending-summary")
         assert response.status_code == 200
         data = response.json()
-        assert data["total_pendiente_usd"] == 0.0
+        assert data["total_pendiente_usd"] == "0.00"
 
     def test_pending_summary_single_pending_invoice(self, client):
         _login(client)
@@ -267,7 +267,7 @@ class TestPendingSummary:
         assert response.status_code == 200
         data = response.json()
         # 2 cajas * $50 = $100 total, no IVA (USD), no payments
-        assert data["total_pendiente_usd"] == 100.0
+        assert data["total_pendiente_usd"] == "100.00"
 
     def test_pending_summary_excludes_paid_invoices(self, client):
         _login(client)
@@ -296,7 +296,7 @@ class TestPendingSummary:
         response = client.get("/api/invoices/pending-summary")
         assert response.status_code == 200
         data = response.json()
-        assert data["total_pendiente_usd"] == 0.0
+        assert data["total_pendiente_usd"] == "0.00"
 
     def test_pending_summary_partial_payment(self, client):
         _login(client)
@@ -326,7 +326,7 @@ class TestPendingSummary:
         assert response.status_code == 200
         data = response.json()
         # $100 total - $40 paid = $60 pending
-        assert data["total_pendiente_usd"] == 60.0
+        assert data["total_pendiente_usd"] == "60.00"
 
     def test_pending_summary_multiple_invoices(self, client):
         _login(client)
@@ -344,7 +344,7 @@ class TestPendingSummary:
         response = client.get("/api/invoices/pending-summary")
         assert response.status_code == 200
         data = response.json()
-        assert data["total_pendiente_usd"] == 300.0
+        assert data["total_pendiente_usd"] == "300.00"
 
     def test_pending_summary_iva_calculation_bs(self, client):
         """IVA solo aplica en BS con aplica_iva=True"""
@@ -373,7 +373,7 @@ class TestPendingSummary:
         assert response.status_code == 200
         data = response.json()
         # base_bs=5000, iva=800 (16%), total_bs=5800, total_usd=5800/100=58.00
-        assert data["total_pendiente_usd"] == 58.0
+        assert data["total_pendiente_usd"] == "58.00"
 
     def test_pending_summary_iva_exento_bs(self, client):
         """Items EXENTOS no generan IVA"""
@@ -402,4 +402,4 @@ class TestPendingSummary:
         assert response.status_code == 200
         data = response.json()
         # EXENTO: no IVA, total_bs=5000, total_usd=5000/100=50.00
-        assert data["total_pendiente_usd"] == 50.0
+        assert data["total_pendiente_usd"] == "50.00"

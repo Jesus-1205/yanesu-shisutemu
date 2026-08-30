@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Pencil, Trash2, Download } from "lucide-react";
 import { api } from "@/services/api";
 import type { Supplier } from "../types";
@@ -21,6 +21,7 @@ const PAGE_SIZE = 20;
 
 export default function SuppliersPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,21 @@ export default function SuppliersPage() {
   useEffect(() => {
     fetchSuppliers();
   }, [fetchSuppliers]);
+
+  // Auto-abrir drawer desde URL ?open=<supplier_id>
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (openId && suppliers.length > 0) {
+      const id = Number(openId);
+      const supplier = suppliers.find((s) => s.id === id);
+      if (supplier) {
+        setSelectedSupplierId(id);
+        setSelectedSupplierName(supplier.nombre);
+        setDrawerOpen(true);
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, suppliers, setSearchParams]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;

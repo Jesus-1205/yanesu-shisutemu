@@ -91,7 +91,7 @@ export default function InvoiceDetailPage() {
         <PageHeader
           title="Detalle de Factura"
           actions={
-            <Button variant="ghost" onClick={() => navigate("/invoices")}>
+            <Button variant="ghost" onClick={() => navigate("/buys")}>
               <ArrowLeft className="w-4 h-4" />
               Volver
             </Button>
@@ -139,7 +139,7 @@ export default function InvoiceDetailPage() {
                 Resultado IA
               </Button>
             )}
-            <Button variant="ghost" onClick={() => navigate("/invoices")}>
+            <Button variant="ghost" onClick={() => navigate("/buys")}>
               <ArrowLeft className="w-4 h-4" />
               Volver
             </Button>
