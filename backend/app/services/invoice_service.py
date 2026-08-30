@@ -784,9 +784,13 @@ def get_invoices(
     estado_pago: str | None = None,
     search: str | None = None,
     sort_by: str | None = None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> dict:
+    from datetime import date as _date
+
     stmt = select(Factura)
 
     if proveedor_id is not None:
@@ -803,12 +807,18 @@ def get_invoices(
                 _accent_fold(Factura.observaciones).ilike(pattern),
             )
         )
+    if fecha_desde:
+        stmt = stmt.where(Factura.fecha_factura >= _date.fromisoformat(fecha_desde))
+    if fecha_hasta:
+        stmt = stmt.where(Factura.fecha_factura <= _date.fromisoformat(fecha_hasta))
 
     if sort_by == "fecha_limite_pago":
         is_paid = case((Factura.estado_pago == "PAGADA", 1), else_=0)
         has_deadline = case((Factura.fecha_limite_pago.isnot(None), 0), else_=1)
         sort_date = func.coalesce(Factura.fecha_limite_pago, func.date(Factura.created_at))
         stmt = stmt.order_by(is_paid, has_deadline, sort_date.asc())
+    elif sort_by in ("precio_desc", "precio_asc"):
+        stmt = stmt.order_by(Factura.total_usd.desc() if sort_by == "precio_desc" else Factura.total_usd.asc())
     else:
         stmt = stmt.order_by(Factura.created_at.desc())
 

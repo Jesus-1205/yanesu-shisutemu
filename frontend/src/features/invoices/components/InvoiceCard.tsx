@@ -4,11 +4,31 @@ import Button from "@/ui-components/Button";
 import Badge from "@/ui-components/Badge";
 import { formatBs, formatUsd } from "@/lib/text";
 import { formatDateVE, todayInCaracas } from "@/lib/utils";
+import { calcularResumenFiscal } from "@/lib/iva";
 
 interface InvoiceCardProps {
   invoice: Invoice;
   onView: () => void;
   onPay?: () => void;
+}
+
+function calcTotalUsdConIva(invoice: Invoice): number {
+  if (invoice.moneda_principal === "USD") return invoice.total_usd;
+  if (!invoice.aplica_iva) return invoice.total_usd;
+  if (invoice.detalles.length === 0) return invoice.total_usd;
+  const resumen = calcularResumenFiscal(
+    invoice.detalles.map((d) => ({
+      subtotal_usd: d.cantidad * Number(d.costo_unitario_usd),
+      subtotal_bs: d.cantidad * Number(d.costo_unitario_bs),
+      tipo_iva: d.tipo_iva ?? "GRAVADO",
+    })),
+    invoice.moneda_principal,
+    invoice.aplica_iva,
+  );
+  if (invoice.tasa_bs > 0) {
+    return Math.round((resumen.total / invoice.tasa_bs) * 100) / 100;
+  }
+  return invoice.total_usd;
 }
 
 function getDaysUntil(dateStr: string): number {
@@ -121,6 +141,14 @@ export default function InvoiceCard({ invoice, onView, onPay }: InvoiceCardProps
             {formatAmount(invoice.total_usd, invoice.total_bs)}
           </span>
         </div>
+        {invoice.moneda_principal === "BS" && (
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Total USD </span>
+            <span className="font-mono tabular-nums text-slate-600">
+              {formatUsd(calcTotalUsdConIva(invoice))}
+            </span>
+          </div>
+        )}
         <div className="flex justify-between text-sm">
           <span className="text-slate-500">Pagado</span>
           <span className="font-mono tabular-nums text-slate-600">

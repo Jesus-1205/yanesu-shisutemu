@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, X, ArrowUpDown, CalendarClock } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { api } from "@/services/api";
 import type { Invoice, InvoiceStatsOut } from "../types";
 import type { SupplierOut } from "@/types/api";
@@ -38,6 +38,8 @@ export default function InvoicesPage() {
   const [tipoDocumento, setTipoDocumento] = useState<string>("");
   const [estadoPago, setEstadoPago] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -51,6 +53,8 @@ export default function InvoicesPage() {
         estado_pago: estadoPago || undefined,
         search: search || undefined,
         sort_by: sortBy || undefined,
+        fecha_desde: fechaDesde || undefined,
+        fecha_hasta: fechaHasta || undefined,
         page,
         page_size: PAGE_SIZE,
       });
@@ -61,7 +65,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [proveedorId, tipoDocumento, estadoPago, search, sortBy, page]);
+  }, [proveedorId, tipoDocumento, estadoPago, search, sortBy, fechaDesde, fechaHasta, page]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -94,6 +98,8 @@ export default function InvoicesPage() {
     setTipoDocumento("");
     setEstadoPago("");
     setSortBy("");
+    setFechaDesde("");
+    setFechaHasta("");
     setPage(1);
   };
 
@@ -108,7 +114,7 @@ export default function InvoicesPage() {
           : stats.pagadas,
   }));
 
-  const hasActiveFilters = search || proveedorId || tipoDocumento || estadoPago;
+  const hasActiveFilters = search || proveedorId || tipoDocumento || estadoPago || fechaDesde || fechaHasta;
 
   return (
     <div>
@@ -137,7 +143,7 @@ export default function InvoicesPage() {
         className="mb-4"
       />
 
-      {/* Filtros */}
+      {/* Filtros - Fila 1 */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-3">
         <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-xs">
           <SearchInput
@@ -168,33 +174,46 @@ export default function InvoicesPage() {
             ]}
           />
         </div>
-        {estadoPago !== "PAGADA" && (
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => { setSortBy(""); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
-                sortBy === ""
-                  ? "border-brand-blue bg-blue-50 text-brand-blue"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              <ArrowUpDown className="w-3.5 h-3.5" />
-              Recientes
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSortBy("fecha_limite_pago"); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
-                sortBy === "fecha_limite_pago"
-                  ? "border-brand-blue bg-blue-50 text-brand-blue"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              <CalendarClock className="w-3.5 h-3.5" />
-              Por vencer
-            </button>
-          </div>
+        <div className="w-full sm:w-44">
+          <Select
+            value={sortBy}
+            onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+            options={[
+              { value: "", label: "Fecha" },
+              { value: "fecha_limite_pago", label: "Por vencer" },
+              { value: "precio_desc", label: "Mayor a menor precio" },
+              { value: "precio_asc", label: "Menor a mayor precio" },
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* Filtros - Fila 2: fechas */}
+      <div className="flex items-end gap-3 mb-3">
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Desde</label>
+          <input
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => { setFechaDesde(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            autoComplete="off"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Hasta</label>
+          <input
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => { setFechaHasta(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            autoComplete="off"
+          />
+        </div>
+        {(fechaDesde || fechaHasta) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFechaDesde(""); setFechaHasta(""); setPage(1); }}>
+            Limpiar fechas
+          </Button>
         )}
       </div>
 
@@ -222,6 +241,22 @@ export default function InvoicesPage() {
             <Badge variant="neutral" className="gap-1">
               {tipoDocumento === "FACTURA" ? "Factura" : "Nota de Entrega"}
               <button onClick={() => { setTipoDocumento(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {fechaDesde && (
+            <Badge variant="neutral" className="gap-1">
+              Desde: {fechaDesde}
+              <button onClick={() => { setFechaDesde(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {fechaHasta && (
+            <Badge variant="neutral" className="gap-1">
+              Hasta: {fechaHasta}
+              <button onClick={() => { setFechaHasta(""); setPage(1); }} className="ml-1 hover:text-text-main cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </Badge>

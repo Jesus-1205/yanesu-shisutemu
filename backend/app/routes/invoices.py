@@ -192,6 +192,8 @@ def list_all(
     estado_pago: str | None = None,
     search: str | None = None,
     sort_by: str | None = None,
+    fecha_desde: str | None = None,
+    fecha_hasta: str | None = None,
     page: int = 1,
     page_size: int = 20,
     db: Session = Depends(get_db),
@@ -199,7 +201,7 @@ def list_all(
 ):
     """GET /invoices - Listar facturas de proveedores
 
-    Recibe: query params (proveedor_id, tipo_documento, estado_pago, search, sort_by, page, page_size)
+    Recibe: query params (proveedor_id, tipo_documento, estado_pago, search, sort_by, fecha_desde, fecha_hasta, page, page_size)
     Hace:   consulta facturas con filtros, ordenamiento y paginación
     Devuelve: 200 + FacturaPaginationOut
     """
@@ -210,6 +212,8 @@ def list_all(
         estado_pago=estado_pago,
         search=search,
         sort_by=sort_by,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
         page=page,
         page_size=page_size,
     )

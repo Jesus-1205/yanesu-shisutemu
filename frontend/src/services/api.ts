@@ -501,6 +501,8 @@ export const api = {
     estado_pago?: string;
     search?: string;
     sort_by?: string;
+    fecha_desde?: string;
+    fecha_hasta?: string;
     page?: number;
     page_size?: number;
   }) => {
@@ -510,6 +512,8 @@ export const api = {
     if (params?.estado_pago) qs.set("estado_pago", params.estado_pago);
     if (params?.search) qs.set("search", params.search);
     if (params?.sort_by) qs.set("sort_by", params.sort_by);
+    if (params?.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
+    if (params?.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
     if (params?.page) qs.set("page", String(params.page));
     if (params?.page_size) qs.set("page_size", String(params.page_size));
     const q = qs.toString();
