@@ -916,6 +916,11 @@ def get_pending_invoices_summary(db: Session) -> dict:
 
         total_pagado_usd = sum(p.monto_usd for p in pagos)
 
+        pagos_bs_only = [p for p in pagos if p.monto_usd <= 0 and p.monto_bs > 0]
+        if factura.tasa_bs > 0 and pagos_bs_only:
+            total_pagado_bs_only = sum(p.monto_bs for p in pagos_bs_only)
+            total_pagado_usd += (Decimal(str(total_pagado_bs_only)) / factura.tasa_bs).quantize(Decimal("0.01"))
+
         saldo = total_con_iva_usd - total_pagado_usd
         if saldo > 0:
             total_pendiente += saldo
