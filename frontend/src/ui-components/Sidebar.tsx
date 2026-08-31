@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronDown, Search, LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useState, useRef, useCallback, type ReactNode } from "react";
+import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 export interface SidebarItem {
@@ -226,6 +226,13 @@ export default function Sidebar({
       item.label.toLowerCase().includes(search.toLowerCase()) ||
       item.items?.some((sub) => sub.label.toLowerCase().includes(search.toLowerCase()))
   );
+
+  useEffect(() => {
+    if (!collapsed) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [collapsed]);
 
   return (
     <aside

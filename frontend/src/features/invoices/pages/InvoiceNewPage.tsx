@@ -88,6 +88,13 @@ export default function InvoiceNewPage() {
     }
   }, [store.aplicaIva, esBs]);
 
+  useEffect(() => {
+    if (aiLoading) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [aiLoading]);
+
   // ── Search handlers ──
   const handleSearchProducts = useCallback(async (query: string) => {
     const data = await api.getProducts({ search: query || undefined });
