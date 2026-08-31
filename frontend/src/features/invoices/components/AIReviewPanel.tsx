@@ -58,13 +58,6 @@ export default function AIReviewPanel({
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [productModalNombre, setProductModalNombre] = useState("");
 
-  const proveedorInitialOptions = [
-    ...(aiAnalysis.proveedor_nombre
-      ? [{ value: -1, label: `${aiAnalysis.proveedor_nombre} (extraído por IA)` }]
-      : []),
-    ...suppliers.map((s) => ({ value: s.id, label: s.nombre })),
-  ];
-
   const [items, setItems] = useState<ReviewItem[]>(() =>
     aiAnalysis.productos.map((p) => ({
       extracted: p,
@@ -203,13 +196,16 @@ export default function AIReviewPanel({
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <div className="col-span-2 md:col-span-3">
           <label className={labelSmall}>Proveedor</label>
+          {aiAnalysis.proveedor_nombre && (
+            <p className="text-xs text-slate-600 font-medium mb-1" title={aiAnalysis.proveedor_nombre}>
+              {aiAnalysis.proveedor_nombre}
+            </p>
+          )}
           <div className="flex gap-1.5">
             <AsyncCombobox
               value={proveedorId}
               onChange={(val) => {
-                if (val === -1) {
-                  setProveedorId(null);
-                } else if (val) {
+                if (val) {
                   setProveedorId(val as number);
                   const found = suppliers.find((s) => s.id === val);
                   if (found) setProveedorNombre(found.nombre);
@@ -222,7 +218,7 @@ export default function AIReviewPanel({
                 const data = await api.getSuppliers({ search: q || undefined });
                 return data.map((s) => ({ value: s.id, label: s.nombre }));
               }}
-              initialOptions={proveedorInitialOptions}
+              initialOptions={suppliers.map((s) => ({ value: s.id, label: s.nombre }))}
               placeholder="Buscar proveedor..."
               allowClear
               className="flex-1"
