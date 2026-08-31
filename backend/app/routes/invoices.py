@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from collections import defaultdict
 from decimal import Decimal
@@ -119,9 +120,10 @@ def analyze_invoice(
             detail="La IA no pudo leer la factura correctamente. Intenta con otra imagen.",
         )
     except Exception as e:
+        logging.exception("Error en análisis IA")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error al procesar archivos con la IA",
+            detail=f"Error al procesar archivos con la IA: {str(e)}",
         )
 
     return result
