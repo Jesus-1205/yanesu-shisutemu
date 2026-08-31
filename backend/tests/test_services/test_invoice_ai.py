@@ -1,44 +1,11 @@
-"""Tests para funciones puras de invoice_service: _strip_unidades, optimize_image, _save_invoice_image."""
+"""Tests para funciones puras de invoice_service: optimize_image, _save_invoice_image."""
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from app.services.invoice_service import _strip_unidades, optimize_image, _save_invoice_image
-
-
-class TestStripUnidades:
-
-    def test_removes_24unid(self):
-        assert _strip_unidades("MEDIA ANIS CARTUJO 350ML 24UNID.") == "MEDIA ANIS CARTUJO 350ML"
-
-    def test_removes_12_unid(self):
-        assert _strip_unidades("L/R CARTA ROJA 1L 12 UNID.") == "L/R CARTA ROJA 1L"
-
-    def test_removes_12und(self):
-        assert _strip_unidades("CANELITA 1L 12UND") == "CANELITA 1L"
-
-    def test_removes_6_unidades(self):
-        assert _strip_unidades("SANGRIA 1.5L 6 UNIDADES") == "SANGRIA 1.5L"
-
-    def test_removes_12_uds(self):
-        assert _strip_unidades("DRAGON 1L 12 uds.") == "DRAGON 1L"
-
-    def test_no_change_when_no_units(self):
-        assert _strip_unidades("MEDIA ANIS CARTUJO 350ML") == "MEDIA ANIS CARTUJO 350ML"
-
-    def test_empty_string(self):
-        assert _strip_unidades("") == ""
-
-    def test_only_units(self):
-        assert _strip_unidades(" 24UNID.") == ""
-
-    def test_case_insensitive(self):
-        assert _strip_unidades("prod 1L 12unid.") == "prod 1L"
-
-    def test_preserves_internal_numbers(self):
-        assert _strip_unidades("350ML 24UNID.") == "350ML"
+from app.services.invoice_service import optimize_image, _save_invoice_image
 
 
 class TestOptimizeImage:
