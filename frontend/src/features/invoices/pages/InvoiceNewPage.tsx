@@ -132,7 +132,6 @@ export default function InvoiceNewPage() {
   const handleCancelAiReview = useCallback(() => {
     setAiState("idle");
     setAiAnalysis(null);
-    setAiRawJsonIa(null);
   }, []);
 
   const handleSupplierCreated = useCallback((supplier: SupplierOut) => {
@@ -196,6 +195,7 @@ export default function InvoiceNewPage() {
       );
       toast(`Factura #${factura.numero_factura} registrada con éxito`, "success");
       store.reset();
+      setAiRawJsonIa(null);
       navigate(`/invoices/${factura.id}`);
     } catch (err) {
       toast(err instanceof Error ? err.message : "Error al registrar factura", "error");
