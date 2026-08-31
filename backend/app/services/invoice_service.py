@@ -313,8 +313,24 @@ def _call_gemini(
             )
 
     ia_response = response.json()
+
+    # Verificar si Gemini bloqueó la respuesta (safety filters)
+    prompt_feedback = ia_response.get("promptFeedback", {})
+    if prompt_feedback.get("blockReason"):
+        raise ValueError(
+            "La IA bloqueó la respuesta por razones de seguridad. "
+            "Intenta con otra imagen."
+        )
+
+    # Extraer contenido de candidates (puede estar vacío)
+    candidates = ia_response.get("candidates", [])
+    if not candidates:
+        raise ValueError(
+            "Gemini no retornó contenido. Intenta con otra imagen."
+        )
+
     raw_content = (
-        ia_response.get("candidates", [{}])[0]
+        candidates[0]
         .get("content", {})
         .get("parts", [{}])[0]
         .get("text", "")
