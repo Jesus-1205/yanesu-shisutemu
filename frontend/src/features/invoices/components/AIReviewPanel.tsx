@@ -97,25 +97,36 @@ export default function AIReviewPanel({
     setProductModalNombre("");
   }, [productModalNombre, onProductCreated]);
 
-  const handleItemProductSelect = useCallback((index: number, productoId: number | null) => {
-    setItems((prev) => {
-      const updated = [...prev];
-      if (productoId === null) {
+  const handleItemProductSelect = useCallback(async (index: number, productoId: number | null) => {
+    if (productoId === null) {
+      setItems((prev) => {
+        const updated = [...prev];
         updated[index] = {
           ...updated[index],
           producto_id: null,
           producto_nombre: "",
           unidades_por_caja: 1,
         };
-      } else {
-        const prod = products.find((p) => p.id === productoId);
-        updated[index] = {
-          ...updated[index],
-          producto_id: productoId,
-          producto_nombre: prod?.nombre ?? "",
-          unidades_por_caja: prod?.unidades_por_caja ?? 1,
-        };
-      }
+        return updated;
+      });
+      return;
+    }
+    let prod = products.find((p) => p.id === productoId);
+    if (!prod) {
+      try {
+        const { api } = await import("@/services/api");
+        const data = await api.getProducts({ search: "" });
+        prod = data.items.find((p) => p.id === productoId);
+      } catch { /* ignore */ }
+    }
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        producto_id: productoId,
+        producto_nombre: prod?.nombre ?? "",
+        unidades_por_caja: prod?.unidades_por_caja ?? 1,
+      };
       return updated;
     });
   }, [products]);
@@ -392,10 +403,17 @@ export default function AIReviewPanel({
                   <label className={labelSmall}>Unds/Caja</label>
                   <input
                     type="number"
-                    value={String(item.unidades_por_caja)}
+                    value={item.unidades_por_caja || ""}
                     onChange={(e) => {
-                      const parsed = parseInt(e.target.value, 10);
-                      handleUpdateItem(idx, "unidades_por_caja", isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                      const val = e.target.value;
+                      if (val === "") {
+                        handleUpdateItem(idx, "unidades_por_caja", 0);
+                      } else {
+                        const parsed = parseInt(val, 10);
+                        if (!isNaN(parsed) && parsed >= 0) {
+                          handleUpdateItem(idx, "unidades_por_caja", parsed);
+                        }
+                      }
                     }}
                     min="1"
                     className={`${inputBase} w-20`}
