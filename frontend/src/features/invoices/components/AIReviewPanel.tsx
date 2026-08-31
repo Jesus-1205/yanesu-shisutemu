@@ -33,7 +33,7 @@ interface AIReviewPanelProps {
 }
 
 const inputBase = "h-9 rounded-lg border border-slate-300 bg-surface px-2 text-sm text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20";
-const labelSmall = "text-[10px] font-medium text-slate-500 uppercase";
+const labelSmall = "text-[10px] font-medium text-slate-500 uppercase mb-1 block";
 
 export default function AIReviewPanel({
   aiAnalysis,
@@ -57,6 +57,13 @@ export default function AIReviewPanel({
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [productModalNombre, setProductModalNombre] = useState("");
+
+  const proveedorInitialOptions = [
+    ...(aiAnalysis.proveedor_nombre
+      ? [{ value: -1, label: `${aiAnalysis.proveedor_nombre} (extraído por IA)` }]
+      : []),
+    ...suppliers.map((s) => ({ value: s.id, label: s.nombre })),
+  ];
 
   const [items, setItems] = useState<ReviewItem[]>(() =>
     aiAnalysis.productos.map((p) => ({
@@ -200,7 +207,9 @@ export default function AIReviewPanel({
             <AsyncCombobox
               value={proveedorId}
               onChange={(val) => {
-                if (val) {
+                if (val === -1) {
+                  setProveedorId(null);
+                } else if (val) {
                   setProveedorId(val as number);
                   const found = suppliers.find((s) => s.id === val);
                   if (found) setProveedorNombre(found.nombre);
@@ -213,7 +222,7 @@ export default function AIReviewPanel({
                 const data = await api.getSuppliers({ search: q || undefined });
                 return data.map((s) => ({ value: s.id, label: s.nombre }));
               }}
-              initialOptions={suppliers.map((s) => ({ value: s.id, label: s.nombre }))}
+              initialOptions={proveedorInitialOptions}
               placeholder="Buscar proveedor..."
               allowClear
               className="flex-1"

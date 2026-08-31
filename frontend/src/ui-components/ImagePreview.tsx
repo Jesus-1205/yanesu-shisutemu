@@ -22,13 +22,16 @@ export default function ImagePreview({ file, alt = "Vista previa", className = "
   return (
     <>
       <div
-        className={`relative group rounded-lg border border-slate-200 bg-slate-50 overflow-hidden cursor-pointer hover:border-brand-blue transition-colors ${className}`}
+        className={`relative group rounded-lg border border-slate-200 bg-slate-50 overflow-hidden hover:border-brand-blue transition-colors ${className}`}
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(true)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded(true); }}
       >
         <img
           src={url}
           alt={alt}
-          className="w-full h-48 object-contain"
+          className="w-full h-48 object-contain cursor-pointer"
         />
         <div className="absolute top-2 right-2 p-1.5 rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
