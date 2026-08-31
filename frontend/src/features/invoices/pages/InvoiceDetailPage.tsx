@@ -24,6 +24,7 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [payments, setPayments] = useState<InvoicePaymentOut[]>([]);
   const [paymentSummary, setPaymentSummary] = useState<InvoicePaymentSummary | null>(null);
@@ -425,20 +426,26 @@ export default function InvoiceDetailPage() {
               Descargar
             </Button>
           </div>
-          <a
-            href={api.getInvoiceImageUrl(invoice.id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-xl overflow-hidden border border-slate-200 hover:border-brand-blue transition-colors"
+          <div
+            className="rounded-xl overflow-hidden border border-slate-200 hover:border-brand-blue transition-colors cursor-pointer"
+            onClick={() => setImagePreviewOpen(true)}
           >
             <img
               src={api.getInvoiceImageUrl(invoice.id)}
               alt={`Factura #${invoice.numero_factura}`}
               className="max-h-80 w-full object-contain bg-slate-50"
             />
-          </a>
+          </div>
         </div>
       )}
+
+      <Modal open={imagePreviewOpen} onClose={() => setImagePreviewOpen(false)} title="Imagen de Factura" className="max-w-3xl">
+        <img
+          src={api.getInvoiceImageUrl(invoice.id)}
+          alt={`Factura #${invoice.numero_factura}`}
+          className="w-full object-contain rounded-lg"
+        />
+      </Modal>
 
       <div className="mb-6">
         <h3 className="text-sm font-medium text-slate-700 mb-3">Productos</h3>
