@@ -382,6 +382,14 @@ export default function InvoiceDetailPage() {
                 render: (p: InvoicePaymentOut) => p.referencia || "—",
               },
               {
+                key: "observaciones",
+                header: "Obs.",
+                hideOnMobile: true,
+                render: (p: InvoicePaymentOut) => (
+                  <ObsCell text={p.observaciones} />
+                ),
+              },
+              {
                 key: "comprobantes",
                 header: "Comprobante",
                 exportable: false,
@@ -718,5 +726,22 @@ export default function InvoiceDetailPage() {
         })()}
       </Modal>
     </div>
+  );
+}
+
+function ObsCell({ text }: { text: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return <span className="text-slate-400">—</span>;
+  return (
+    <button
+      type="button"
+      onClick={() => setExpanded((v) => !v)}
+      className={`text-xs text-left cursor-pointer hover:text-brand-blue transition-colors ${
+        expanded ? "text-slate-700" : "text-slate-500 truncate max-w-[150px]"
+      }`}
+      title={expanded ? "Click para contraer" : "Click para expandir"}
+    >
+      {text}
+    </button>
   );
 }
