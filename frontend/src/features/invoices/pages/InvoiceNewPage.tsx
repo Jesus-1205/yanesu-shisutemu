@@ -351,6 +351,7 @@ export default function InvoiceNewPage() {
         open={productModalOpen}
         onClose={() => setProductModalOpen(false)}
         onCreated={handleProductCreated}
+        compact
       />
 
       {aiLoading && (

@@ -162,8 +162,8 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
       const precioCajaFinal = compact ? 0.01 : n(precioCaja);
       const product = await api.createProduct({
         nombre: toTitleCase(nombre.trim()),
-        codigo_barra: compact ? null : (codigoBarra.trim() || null),
-        categoria_ids: compact ? [] : categoriaIds,
+        codigo_barra: codigoBarra.trim() || null,
+        categoria_ids: categoriaIds,
         unidades_por_caja: unds || 1,
         stock_unidades: compact ? 0 : n(stock),
         stock_minimo: compact ? 5 : n(stockMinimo),
@@ -185,7 +185,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
   const fid = (name: string) => `cp-${name}`;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Nuevo Producto" className={compact ? "!max-w-md" : "!max-w-7xl"}>
+    <Modal open={open} onClose={handleClose} title="Nuevo Producto" className={compact ? "!max-w-lg" : "!max-w-7xl"}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className={compact ? "" : "max-h-[60vh] overflow-y-auto -mx-6 px-6"}>
           {compact ? (
@@ -198,6 +198,20 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
                 placeholder="ej: Ron Santa Teresa Añejo"
                 required
                 autoFocus
+              />
+              <Input
+                label="Código de barra"
+                id={fid("codigo")}
+                value={codigoBarra}
+                onChange={(e) => setCodigoBarra(e.target.value)}
+                placeholder="Opcional"
+              />
+              <MultiSelectTags
+                label="Categorías"
+                selected={categoriaIds}
+                options={categoryOptions}
+                onChange={setCategoriaIds}
+                placeholder="Seleccionar categorías..."
               />
               <div>
                 <label htmlFor={fid("uds-caja")} className="block text-xs font-medium text-slate-700 mb-1">Unidades por caja</label>
