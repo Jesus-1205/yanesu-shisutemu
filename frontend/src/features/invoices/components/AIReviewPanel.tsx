@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { ScanLine, Check, X, Loader2 } from "lucide-react";
-import type { ProductOut, SupplierOut, InvoiceAnalysisOut, ExtractedProduct, TipoEmpaque, MonedaEnum } from "@/types/api";
+import { ScanLine, Check } from "lucide-react";
+import type { ProductOut, SupplierOut, InvoiceAnalysisOut, ExtractedProduct, TipoEmpaque } from "@/types/api";
 import Button from "@/ui-components/Button";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import ImagePreview from "@/ui-components/ImagePreview";
@@ -48,6 +48,7 @@ export default function AIReviewPanel({
   const nTasa = tasa === "" ? 0 : Number(tasa);
 
   const [proveedorNombre, setProveedorNombre] = useState(aiAnalysis.proveedor_nombre);
+  const [proveedorId, setProveedorId] = useState<number | null>(null);
   const [numeroFactura, setNumeroFactura] = useState(aiAnalysis.numero_factura);
   const [fechaFactura, setFechaFactura] = useState(aiAnalysis.fecha_factura ?? "");
   const [fechaLimitePago, setFechaLimitePago] = useState(aiAnalysis.fecha_limite_pago ?? "");
@@ -71,6 +72,7 @@ export default function AIReviewPanel({
 
   const handleSupplierCreated = useCallback((supplier: SupplierOut) => {
     setProveedorNombre(supplier.nombre);
+    setProveedorId(supplier.id);
     onSupplierCreated(supplier);
     setSupplierModalOpen(false);
   }, [onSupplierCreated]);
@@ -126,14 +128,6 @@ export default function AIReviewPanel({
     });
   }, []);
 
-  const handleAcceptItem = useCallback((index: number) => {
-    setItems((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], producto_id: updated[index].producto_id };
-      return updated;
-    });
-  }, []);
-
   const allAccepted = items.every((i) => i.producto_id !== null);
 
   const handleAcceptAll = useCallback(() => {
@@ -173,12 +167,13 @@ export default function AIReviewPanel({
 
     setField("moneda", moneda);
     setField("tipoDocumento", tipoDocumento);
-    if (proveedorNombre) setField("numeroFactura", numeroFactura);
+    if (proveedorId) setField("proveedorId", proveedorId);
+    if (numeroFactura) setField("numeroFactura", numeroFactura);
     if (fechaFactura) setField("fechaFactura", fechaFactura);
     if (fechaLimitePago) setField("fechaLimitePago", fechaLimitePago);
     setLineItems(newLineItems);
     onCancel();
-  }, [items, allAccepted, moneda, nTasa, tipoDocumento, proveedorNombre, numeroFactura, fechaFactura, fechaLimitePago, setField, setLineItems, onCancel]);
+  }, [items, allAccepted, moneda, nTasa, tipoDocumento, proveedorId, numeroFactura, fechaFactura, fechaLimitePago, setField, setLineItems, onCancel]);
 
   const resolvedCount = items.filter((i) => i.producto_id !== null).length;
 
@@ -198,15 +193,30 @@ export default function AIReviewPanel({
         <ImagePreview file={invoiceFile} alt="Factura a revisar" />
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="col-span-2">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="col-span-2 md:col-span-3">
           <label className={labelSmall}>Proveedor</label>
           <div className="flex gap-1.5">
-            <input
-              value={proveedorNombre}
-              onChange={(e) => setProveedorNombre(e.target.value)}
-              className={`${inputBase} flex-1`}
-              placeholder="Nombre del proveedor"
+            <AsyncCombobox
+              value={proveedorId}
+              onChange={(val) => {
+                if (val) {
+                  setProveedorId(val as number);
+                  const found = suppliers.find((s) => s.id === val);
+                  if (found) setProveedorNombre(found.nombre);
+                } else {
+                  setProveedorId(null);
+                }
+              }}
+              onSearch={async (q) => {
+                const { api } = await import("@/services/api");
+                const data = await api.getSuppliers({ search: q || undefined });
+                return data.map((s) => ({ value: s.id, label: s.nombre }));
+              }}
+              initialOptions={suppliers.map((s) => ({ value: s.id, label: s.nombre }))}
+              placeholder="Buscar proveedor..."
+              allowClear
+              className="flex-1"
             />
             <button
               type="button"
@@ -314,6 +324,7 @@ export default function AIReviewPanel({
                       const data = await api.getProducts({ search: q || undefined });
                       return data.items.map((p) => ({ value: p.id, label: p.nombre, subtitle: p.codigo_barra || undefined }));
                     }}
+                    initialOptions={products.map((p) => ({ value: p.id, label: p.nombre, subtitle: p.codigo_barra || undefined }))}
                     placeholder="Buscar producto..."
                     allowClear
                   />
@@ -376,8 +387,11 @@ export default function AIReviewPanel({
                   <label className={labelSmall}>Unds/Caja</label>
                   <input
                     type="number"
-                    value={item.unidades_por_caja || ""}
-                    onChange={(e) => handleUpdateItem(idx, "unidades_por_caja", parseInt(e.target.value, 10) || 1)}
+                    value={String(item.unidades_por_caja)}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value, 10);
+                      handleUpdateItem(idx, "unidades_por_caja", isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                    }}
                     min="1"
                     className={`${inputBase} w-20`}
                   />
