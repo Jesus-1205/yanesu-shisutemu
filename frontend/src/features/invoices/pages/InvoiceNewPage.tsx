@@ -4,6 +4,7 @@ import { ArrowLeft, Package } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut } from "@/types/api";
 import Button from "@/ui-components/Button";
+import Spinner from "@/ui-components/Spinner";
 import { useToast } from "@/ui-components/Toast";
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
@@ -11,7 +12,6 @@ import PageHeader from "@/ui-components/PageHeader";
 import Textarea from "@/ui-components/Textarea";
 import { calcularResumenFiscal } from "@/lib/iva";
 import { useInvoiceFormStore } from "../store/invoiceFormStore";
-import type { AIAnalysisItem } from "../components/AIReviewPanel";
 import InvoiceInfoCard from "../components/InvoiceInfoCard";
 import LineItemInputRow from "../components/LineItemInputRow";
 import LineItemsTable from "../components/LineItemsTable";
@@ -34,9 +34,7 @@ export default function InvoiceNewPage() {
   // ── IA ──
   const [aiState, setAiState] = useState<"idle" | "analyzing" | "reviewing">("idle");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<InvoiceAnalysisOut | null>(null);
-  const [aiItems, setAiItems] = useState<AIAnalysisItem[]>([]);
   const [aiRawJsonIa, setAiRawJsonIa] = useState<Record<string, unknown> | null>(null);
 
   // ── Derived ──
@@ -118,46 +116,22 @@ export default function InvoiceNewPage() {
       return;
     }
     setAiLoading(true);
-    setAiError(null);
     try {
       const result = await api.analyzeInvoice(invoiceFiles);
-      if (result.proveedor.match_status === "EXACT") {
-        store.setField("proveedorId", result.proveedor.id);
-      }
-      if (result.fecha_factura) {
-        store.setField("fechaFactura", result.fecha_factura);
-      }
-      if (result.numero_factura) {
-        store.setField("numeroFactura", result.numero_factura);
-      }
-      const items: AIAnalysisItem[] = result.productos.map((p) => ({
-        ...p,
-        resolved_producto_id: p.producto_id,
-        resolved_nombre: p.producto_id
-          ? products.find((prod) => prod.id === p.producto_id)?.nombre ?? p.nombre_extraido
-          : p.nombre_extraido,
-      }));
-      setAiItems(items);
       setAiAnalysis(result);
       setAiRawJsonIa(result.raw_json_ia);
       setAiState("reviewing");
-      const exactCount = result.productos.filter((p) => p.match_status === "EXACT").length;
-      const partialCount = result.productos.filter((p) => p.match_status === "PARTIAL").length;
-      const notFoundCount = result.productos.filter((p) => p.match_status === "NOT_FOUND").length;
-      toast(`IA: ${exactCount} exactos, ${partialCount} parciales, ${notFoundCount} no encontrados`, "success");
+      toast(`IA: ${result.productos.length} productos extraídos`, "success");
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : "Error al analizar imagen");
+      toast(err instanceof Error ? err.message : "Error al analizar imagen", "error");
     } finally {
       setAiLoading(false);
     }
-  }, [products, store, toast]);
+  }, [toast]);
 
   const handleCancelAiReview = useCallback(() => {
     setAiState("idle");
     setAiAnalysis(null);
-    setAiItems([]);
-    setAiRawJsonIa(null);
-    setAiError(null);
   }, []);
 
   const handleSupplierCreated = useCallback((supplier: SupplierOut) => {
@@ -221,6 +195,7 @@ export default function InvoiceNewPage() {
       );
       toast(`Factura #${factura.numero_factura} registrada con éxito`, "success");
       store.reset();
+      setAiRawJsonIa(null);
       navigate(`/invoices/${factura.id}`);
     } catch (err) {
       toast(err instanceof Error ? err.message : "Error al registrar factura", "error");
@@ -323,27 +298,13 @@ export default function InvoiceNewPage() {
         {aiState === "reviewing" && aiAnalysis && (
           <AIReviewPanel
             aiAnalysis={aiAnalysis}
-            aiItems={aiItems}
-            setAiItems={setAiItems}
             products={products}
             suppliers={suppliers}
+            invoiceFile={useInvoiceFormStore.getState().invoiceFiles[0]}
             onSupplierCreated={handleSupplierCreated}
             onProductCreated={handleProductCreated}
             onCancel={handleCancelAiReview}
           />
-        )}
-
-        {aiError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {aiError}
-            <button
-              type="button"
-              onClick={() => { setAiError(null); handleAnalyzeImage(); }}
-              className="ml-2 underline hover:text-red-900"
-            >
-              Reintentar
-            </button>
-          </div>
         )}
 
         <Textarea
@@ -374,7 +335,18 @@ export default function InvoiceNewPage() {
         open={productModalOpen}
         onClose={() => setProductModalOpen(false)}
         onCreated={handleProductCreated}
+        compact
       />
+
+      {aiLoading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/70">
+          <div className="bg-white rounded-2xl px-8 py-10 flex flex-col items-center shadow-2xl">
+            <Spinner size="lg" />
+            <p className="mt-5 text-sm font-semibold text-slate-700">Analizando factura con IA...</p>
+            <p className="mt-1 text-xs text-slate-400">Esto puede tomar unos segundos</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,5 +17,4 @@ beautifulsoup4==4.12.3
 Pillow==11.1.0; python_version < "3.14"
 tzdata==2025.2
 cryptography==44.0.3
-rapidfuzz>=3.10.0
 pyinstaller>=6.0

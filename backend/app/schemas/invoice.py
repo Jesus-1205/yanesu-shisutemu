@@ -8,8 +8,6 @@ from app.models.invoice import MonedaEnum, TipoDocumentoEnum
 from app.schemas.product import ProductOut
 from app.schemas.supplier import SupplierOut
 
-MatchStatus = Literal["EXACT", "PARTIAL", "NOT_FOUND"]
-
 
 class DetalleFacturaCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -119,37 +117,23 @@ class TopSupplierOut(BaseModel):
 # ── Schemas para Análisis IA ──────────────────────────────────────────────
 
 
-class MatchedSupplier(BaseModel):
-    """Proveedor resultante del fuzzy matching."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
+class ExtractedProduct(BaseModel):
+    """Producto extraído por la IA (sin matching — el usuario selecciona manualmente)."""
     nombre: str
-    match_status: MatchStatus
-    confidence: float = Field(ge=0.0, le=1.0)
-
-
-class MatchedProduct(BaseModel):
-    """Producto resultante del fuzzy matching por cada ítem de la factura."""
-    model_config = ConfigDict(from_attributes=True)
-
-    producto_id: int | None = None
-    nombre_extraido: str
     tipo_empaque: Literal["UNIDAD", "CAJA"] = "CAJA"
     cantidad: int
     precio_unitario: Decimal
-    match_status: MatchStatus
-    confidence: float = Field(ge=0.0, le=1.0)
-    suggestions: list[ProductOut] = Field(default_factory=list)
 
 
 class InvoiceAnalysisOut(BaseModel):
     """Respuesta del endpoint de análisis IA."""
-    proveedor: MatchedSupplier
+    proveedor_nombre: str
     numero_factura: str
     fecha_factura: date | None = None
+    fecha_limite_pago: date | None = None
     moneda: MonedaEnum = MonedaEnum.USD
-    productos: list[MatchedProduct]
+    tipo_documento: TipoDocumentoEnum = TipoDocumentoEnum.FACTURA
+    productos: list[ExtractedProduct]
     raw_json_ia: dict
 
 

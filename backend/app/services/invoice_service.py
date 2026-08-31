@@ -3,22 +3,21 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
-from rapidfuzz import fuzz, process
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_uploads_dir, get_comprobantes_pago_dir
 from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.core.timezone import ve_today
-from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoEmpaqueFactura, ObsequioFactura
+from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoDocumentoEnum, TipoEmpaqueFactura, ObsequioFactura
 from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.product import Product
 from app.models.supplier import Supplier
 from app.services.product_service import _accent_fold, _accent_fold_pattern
-from app.schemas.invoice import FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, MatchedProduct, MatchedSupplier, ObsequioFacturaCreate
-from app.schemas.product import ProductOut as ProductOutSchema
+from app.schemas.invoice import ExtractedProduct, FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, ObsequioFacturaCreate
 
 IVA_RATE = Decimal("16")
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 
 def _calcular_total_con_iva(factura: Factura, db: Session) -> tuple[Decimal, Decimal]:
@@ -53,10 +52,10 @@ def _calcular_total_con_iva(factura: Factura, db: Session) -> tuple[Decimal, Dec
 
     return (total_usd, total_bs)
 
-# ── System Prompt para el modelo de Visión ────────────────────────────────
+# ── System Prompts para el modelo de Visión ────────────────────────────────
 
-INVOICE_METADATA_PROMPT = """Eres un extractor de datos de facturas comerciales venezolanas.
-Tu ÚNICO trabajo es extraer: proveedor, número de factura, fecha y moneda.
+INVOICE_METADATA_PROMPT = """Eres un extractor de metadatos de facturas comerciales venezolanas.
+Tu ÚNICO trabajo es extraer los datos del encabezado y pie de la factura.
 Devuelve EXCLUSIVAMENTE un JSON válido sin texto adicional.
 
 Formato requerido:
@@ -66,71 +65,71 @@ Formato requerido:
   },
   "numero_factura": "string - número o código de la factura",
   "fecha_factura": "string|null - fecha en formato YYYY-MM-DD o null si no se detecta",
-  "moneda": "USD o BS"
+  "fecha_limite_pago": "string|null - fecha de vencimiento/pago en formato YYYY-MM-DD o null si no se detecta",
+  "moneda": "USD o BS",
+  "tipo_documento": "FACTURA o NOTA_ENTREGA"
 }
 
-Reglas para el PROVEEDOR (LO MÁS IMPORTANTE):
-- El nombre del proveedor está en el ENCABEZADO de la factura (parte superior).
-- Generalmente está en LETRA GRANDE, BOLD, o en un recuadro destacado.
-- Incluye TODAS las palabras del nombre del proveedor. No acortes.
-- Ejemplos: "DISTRIBUIDORA CAMACHO MIRANDA, C.A.", "ABASTOS Y DISTRIBUCIONES C.A."
-- NO confundas con nombres de productos (POLAR, PILSEN, SOLERA, etc.).
+Reglas para PROVEEDOR:
+- Está en el ENCABEZADO (parte superior, letra grande, bold, recuadro destacado).
+- Incluye TODAS las palabras del nombre. No acortes.
+- NO confundas con nombres de productos (POLAR, PILSEN, SOLERA).
 - NO confundas con direcciones, teléfonos o RIF.
-- Si ves "DISTRIBUIDORA X Y Z, C.A." en el encabezado, ese es el proveedor.
 
-Reglas para la MONEDA:
-- Si los precios son montos bajos (5, 10, 25, 68) → USD
-- Si los precios son montos altos (1000, 9533, 18206) → BS
-- Si dice "Bs", "Bs.S", "bolívares" → BS
-- Si dice "TOTAL US$" o "$" → USD
+Reglas para MONEDA:
+- Montos bajos (5, 10, 25, 68) → USD
+- Montos altos (1000, 9533, 18206) → BS
+- "Bs", "Bs.S", "bolívares" → BS
+- "TOTAL US$" o "$" → USD
+
+Reglas para TIPO_DOCUMENTO:
+- Si dice "FACTURA" o "FACT" → FACTURA
+- Si dice "NOTA DE ENTREGA" o "N/E" → NOTA_ENTREGA
+- Si no es claro → FACTURA
 
 Reglas generales:
 - Si un campo no es legible, usa null.
-- NO incluyas productos, cantidades ni precios en este request.
+- NO incluyas productos, cantidades ni precios.
 """
 
 INVOICE_PRODUCTS_PROMPT = """Eres un extractor de productos de facturas comerciales venezolanas.
-Tu ÚNICO trabajo es extraer la lista de productos con sus cantidades, tipo de empaque y precios.
+Tu ÚNICO trabajo es extraer la lista de productos EN EL ORDEN EXACTO en que aparecen en la factura (de arriba a abajo).
 Devuelve EXCLUSIVAMENTE un JSON válido sin texto adicional.
 
 Formato requerido:
 {
   "productos": [
     {
-      "nombre": "string - nombre/descripción del producto",
-      "tipo_empaque": "CAJA o UNIDAD - indica si el producto se vende por cajas completas o por unidades sueltas",
+      "nombre": "string - descripción del producto tal como aparece en la factura",
+      "tipo_empaque": "CAJA o UNIDAD",
       "cantidad": "number - cantidad de cajas o unidades compradas",
-      "precio_unitario": "number - precio por caja o por unidad sin impuestos CON DECIMALES EXACTOS"
+      "precio_unitario": "number - precio por caja o por unidad SIN impuestos, CON DECIMALES EXACTOS"
     }
   ]
 }
 
-Reglas para tablas complejas con variantes:
-- Si un producto tiene variantes (ej: "36 BOTELLAS RETORNABLES", "12 BOTELLAS N/R", "24 LATAS"), crea un ítem por cada variante.
-- El nombre del producto debe incluir la variante: "POLAR PILSEN 36 BOTELLAS RETORNABLES".
-- SI el producto tiene variantes con diferentes VOLUMENES (0.222 Lts, 0.355 Lts, 0.250 Lts), incluye el volumen en el nombre para diferenciarlos: "POLAR PILSEN 24 LATAS 0.355L" y "POLAR PILSEN 24 LATAS 0.250L".
-- La columna de "CANTIDAD EN CAJAS" es la cantidad de cajas compradas.
-- Si hay columna de "PRECIO POR CAJAS" o "PRECIO UNITARIO", úsala directamente CON SUS DECIMALES EXACTOS (ej: 14991.77, NO redondees a 14992).
-- Si hay columna de "TOTAL SIN IMPUESTOS", calcula: total / cantidad = precio_unitario CON DECIMALES.
-- Ignora anotaciones manuscritas, tachaduras y texto superpuesto a mano.
-- Ignora columnas de "LITROS", "ALICUOTA" (IVA), "TOTAL CON IMPUESTOS".
-- Unidades de medida (BOTELLAS, LATAS, PET) van en el nombre del producto.
-- NO agrupes productos que tengan diferente volumen o tipo de envase, aunque tengan el mismo nombre base.
+Reglas de ORDEN (LO MÁS IMPORTANTE):
+- Extrae los productos EN EL ORDEN EXACTO de la factura (arriba → abajo).
+- NO reordenes, NO agrupes, NO saltes ítems.
+- Si un producto tiene variantes (ej: "36 BOTELLAS RETORNABLES", "12 BOTELLAS N/R"), crea un ítem por cada variante EN EL ORDEN que aparecen.
 
-Reglas para tipo_empaque:
-- Si la factura muestra cantidades en CAJAS (multiplicado por unidades_por_caja implícitamente), usa "CAJA".
-- Si la factura muestra cantidades en UNIDADES sueltas (piezas individuales), usa "UNIDAD".
-- Si el producto se vende por piezas individuales (ej: 24 piezas de refresco, 12 unidades de snack), usa "UNIDAD".
-- Si el producto se vende por cajas/bultos/bandas completas, usa "CAJA".
-- El precio_unitario debe ser el precio por el tipo de empaque indicado (precio por caja si CAJA, precio por unidad si UNIDAD).
+Reglas para PRECIO:
+- Si hay columna "PRECIO POR CAJAS" o "PRECIO UNITARIO", úsala directamente CON SUS DECIMALES EXACTOS (ej: 14991.77, NO 14992).
+- Si hay "TOTAL SIN IMPUESTOS", calcula: total / cantidad = precio_unitario CON DECIMALES.
+- Ignora columnas de LITROS, ALICUOTA (IVA), TOTAL CON IMPUESTOS.
 
-Reglas para nombres correctos:
-- Si un producto está bajo una categoría (ej: "SANGRÍA"), incluye la categoría en el nombre: "SANGRÍA VERANO LATA", NO solo "VERANO LATA".
+Reglas para TIPO_EMPAQUE:
+- CAJA si se vende por cajas/bultos/bandas completas.
+- UNIDAD si son piezas individuales sueltas.
+- El precio_unitario debe ser el precio por el tipo de empaque indicado.
+
+Reglas para NOMBRES:
 - Respeta el nombre exacto del producto como aparece en la factura.
-- NO inventes nombres que no aparezcan en la factura.
+- Si hay categoría (ej: "SANGRÍA"), inclúyela: "SANGRÍA VERANO LATA".
+- Incluye volumen si hay variantes: "POLAR PILSEN 24 LATAS 0.355L".
 
 Reglas estrictas:
-- NO incluyas totales, subtotales ni impuestos. Solo precio unitario.
+- NO incluyas totales, subtotales ni impuestos.
 - NO incluyas datos del proveedor, fecha ni número de factura.
 - El precio unitario DEBE tener decimales exactos (ej: 14991.77, NO 14992).
 - Si un producto no es legible, omítelo.
@@ -173,225 +172,6 @@ def _save_invoice_image(
     dest = dest_dir / saved_name
     dest.write_bytes(file_bytes)
     return str(dest)
-
-
-# ── Fuzzy Matching con rapidfuzz ──────────────────────────────────────────
-
-def _similarity_threshold() -> float:
-    """Umbral mínimo de similitud para considerar PARTIAL.
-
-    Escala: 0-100 (rapidfuzz). 50.0 ≈ 50% de similitud.
-    """
-    return 50.0
-
-
-def _strip_unidades(nombre: str) -> str:
-    """Elimina patrones de unidades al final del nombre para mejorar matching.
-
-    Ejemplos:
-      "MEDIA ANIS CARTUJO 350ML 24UNID." → "MEDIA ANIS CARTUJO 350ML"
-      "L/R CARTA ROJA 1L 12 UNID." → "L/R CARTA ROJA 1L"
-      "CANELITA 1L 12UND" → "CANELITA 1L"
-    """
-    import re
-    cleaned = re.sub(
-        r"\s+\d+\s*(?:UNID(?:\.|ADES)?|UND(?:\.|ES)?|UDS\.?)\.?\s*$",
-        "",
-        nombre,
-        flags=re.IGNORECASE,
-    )
-    return cleaned.strip()
-
-
-def fuzzy_match_proveedor(
-    db: Session, nombre_ia: str
-) -> MatchedSupplier:
-    """Busca proveedor por similitud usando rapidfuzz token_set_ratio.
-
-    Lógica:
-      1. Intento EXACT (case-insensitive)
-      2. Carga todos los proveedores a memoria (tabla pequeña)
-      3. process.extract con token_set_ratio, limit=3
-      4. Si el mejor supera umbral → PARTIAL, si no → NOT_FOUND
-    """
-    nombre_ia_lower = nombre_ia.strip().lower()
-
-    # 1. Intento EXACT
-    stmt_exact = select(Supplier).where(
-        func.lower(Supplier.nombre) == nombre_ia_lower
-    )
-    exacto = db.execute(stmt_exact).scalars().first()
-    if exacto:
-        return MatchedSupplier(
-            id=exacto.id,
-            nombre=exacto.nombre,
-            match_status="EXACT",
-            confidence=1.0,
-        )
-
-    # 2. Cargar todos los proveedores a memoria
-    stmt = select(Supplier)
-    proveedores = db.execute(stmt).scalars().all()
-    if not proveedores:
-        return MatchedSupplier(
-            id=0,
-            nombre=nombre_ia,
-            match_status="NOT_FOUND",
-            confidence=0.0,
-        )
-
-    # 3. Construir diccionario {nombre: Supplier}
-    choices = {p.nombre: p for p in proveedores}
-
-    # 4. Buscar los 3 más similares con token_set_ratio
-    matches = process.extract(
-        nombre_ia,
-        choices.keys(),
-        scorer=fuzz.token_set_ratio,
-        limit=3,
-    )
-
-    if not matches:
-        return MatchedSupplier(
-            id=0,
-            nombre=nombre_ia,
-            match_status="NOT_FOUND",
-            confidence=0.0,
-        )
-
-    # 5. Evaluar mejor resultado
-    best_nombre, best_score, _ = matches[0]
-    best_supplier = choices[best_nombre]
-
-    if best_score >= _similarity_threshold():
-        return MatchedSupplier(
-            id=best_supplier.id,
-            nombre=best_supplier.nombre,
-            match_status="PARTIAL",
-            confidence=best_score / 100.0,
-        )
-
-    return MatchedSupplier(
-        id=0,
-        nombre=nombre_ia,
-        match_status="NOT_FOUND",
-        confidence=best_score / 100.0,
-    )
-
-
-def fuzzy_match_productos_batch(
-    db: Session, productos_ia: list[dict]
-) -> list[MatchedProduct]:
-    """Match de productos en BATCH usando rapidfuzz.
-
-    Estrategia de memoria eficiente:
-      1. UNA sola query: cargar todos los productos activos (id, nombre)
-      2. Construir diccionario {nombre: Product} en memoria
-      3. Para cada ítem de IA: process.extract con token_set_ratio
-      4. Clasificar EXACT/PARTIAL/NOT_FOUND en memoria
-    """
-    if not productos_ia:
-        return []
-
-    umbral = _similarity_threshold()
-
-    # ── 1. UNA sola query: catálogo completo ──────────────────────────
-    stmt = select(Product)
-    all_products = db.execute(stmt).scalars().all()
-
-    if not all_products:
-        return [
-            MatchedProduct(
-                producto_id=None,
-                nombre_extraido=item["nombre"],
-                tipo_empaque=item.get("tipo_empaque", "CAJA"),
-                cantidad=item["cantidad"],
-                precio_unitario=Decimal(str(item["precio_unitario"])),
-                match_status="NOT_FOUND",
-                confidence=0.0,
-                suggestions=[],
-            )
-            for item in productos_ia
-        ]
-
-    # ── 2. Diccionario {nombre: Product} para lookup rápido ──────────
-    catalogo = {p.nombre: p for p in all_products}
-
-    # ── 3. Para cada ítem de IA, buscar top 3 matches ────────────────
-    resultados: list[MatchedProduct] = []
-    for item in productos_ia:
-        nombre_ia = item["nombre"]
-        nombre_limpio = _strip_unidades(nombre_ia)
-
-        # Buscar top 3 matches en el catálogo
-        matches = process.extract(
-            nombre_limpio,
-            catalogo.keys(),
-            scorer=fuzz.token_set_ratio,
-            limit=3,
-        )
-
-        if not matches:
-            resultados.append(MatchedProduct(
-                producto_id=None,
-                nombre_extraido=nombre_ia,
-                tipo_empaque=item.get("tipo_empaque", "CAJA"),
-                cantidad=item["cantidad"],
-                precio_unitario=Decimal(str(item["precio_unitario"])),
-                match_status="NOT_FOUND",
-                confidence=0.0,
-                suggestions=[],
-            ))
-            continue
-
-        # ── 4. Evaluar mejor resultado ──────────────────────────────
-        best_nombre, best_score, _ = matches[0]
-        best_product = catalogo[best_nombre]
-
-        # Intento EXACT: comparar nombres normalizados
-        if best_product.nombre.lower() == nombre_limpio.lower():
-            resultados.append(MatchedProduct(
-                producto_id=best_product.id,
-                nombre_extraido=nombre_ia,
-                tipo_empaque=item.get("tipo_empaque", "CAJA"),
-                cantidad=item["cantidad"],
-                precio_unitario=Decimal(str(item["precio_unitario"])),
-                match_status="EXACT",
-                confidence=1.0,
-                suggestions=[],
-            ))
-            continue
-
-        if best_score >= umbral:
-            # PARTIAL: construir suggestions con top 3
-            suggestions = []
-            for match_nombre, match_score, _ in matches:
-                p = catalogo[match_nombre]
-                suggestions.append(ProductOutSchema.model_validate(p))
-
-            resultados.append(MatchedProduct(
-                producto_id=None,
-                nombre_extraido=nombre_ia,
-                tipo_empaque=item.get("tipo_empaque", "CAJA"),
-                cantidad=item["cantidad"],
-                precio_unitario=Decimal(str(item["precio_unitario"])),
-                match_status="PARTIAL",
-                confidence=best_score / 100.0,
-                suggestions=suggestions,
-            ))
-        else:
-            resultados.append(MatchedProduct(
-                producto_id=None,
-                nombre_extraido=nombre_ia,
-                tipo_empaque=item.get("tipo_empaque", "CAJA"),
-                cantidad=item["cantidad"],
-                precio_unitario=Decimal(str(item["precio_unitario"])),
-                match_status="NOT_FOUND",
-                confidence=best_score / 100.0,
-                suggestions=[],
-            ))
-
-    return resultados
 
 
 MAX_IMAGE_DIMENSION = 2000  # px — Gemini no necesita más
@@ -496,7 +276,7 @@ def _call_gemini(
 
     url = (
         "https://generativelanguage.googleapis.com/v1beta/"
-        "models/gemini-3.1-flash-lite:generateContent"
+        f"models/{GEMINI_MODEL}:generateContent"
     )
 
     payload = {
@@ -534,8 +314,24 @@ def _call_gemini(
             )
 
     ia_response = response.json()
+
+    # Verificar si Gemini bloqueó la respuesta (safety filters)
+    prompt_feedback = ia_response.get("promptFeedback", {})
+    if prompt_feedback.get("blockReason"):
+        raise ValueError(
+            "La IA bloqueó la respuesta por razones de seguridad. "
+            "Intenta con otra imagen."
+        )
+
+    # Extraer contenido de candidates (puede estar vacío)
+    candidates = ia_response.get("candidates", [])
+    if not candidates:
+        raise ValueError(
+            "Gemini no retornó contenido. Intenta con otra imagen."
+        )
+
     raw_content = (
-        ia_response.get("candidates", [{}])[0]
+        candidates[0]
         .get("content", {})
         .get("parts", [{}])[0]
         .get("text", "")
@@ -555,61 +351,45 @@ def analyze_invoice_from_image(
     db: Session,
     files: list[tuple[bytes, str]],
 ) -> InvoiceAnalysisOut:
-    """Punto de entrada principal: analiza factura con IA + fuzzy matching.
+    """Punto de entrada principal: analiza factura con IA (2 llamadas separadas).
 
-    Hace DOS requests separados a Gemini:
-      1. Metadata (proveedor, factura, fecha, moneda)
-      2. Productos (nombre, cantidad, precio)
+    Hace DOS requests a Gemini para reducir alucinaciones:
+      1. Metadata (proveedor, factura, fecha, moneda, tipo_documento)
+      2. Productos (nombre, cantidad, precio — en orden exacto)
+
+    No hace fuzzy matching — el usuario selecciona productos manualmente.
 
     Args:
         files: Lista de tuplas (bytes, content_type) — puede ser 1 o más archivos
     """
-    # ── Optimizar archivos antes de enviar a Gemini ───────────────────
     optimized_files: list[tuple[bytes, str]] = []
     for file_bytes, content_type in files:
         opt_bytes, opt_type = optimize_image(file_bytes, content_type)
         optimized_files.append((opt_bytes, opt_type))
 
-    # ── Request 1: Metadata (proveedor, factura, fecha, moneda) ─────
+    # ── Request 1: Metadata ───────────────────────────────────────────
     metadata = _call_gemini(
         optimized_files,
         INVOICE_METADATA_PROMPT,
-        "Extrae el nombre del proveedor, número de factura, fecha y moneda de esta factura.",
+        "Extrae los metadatos de esta factura: proveedor, número, fecha, moneda, tipo de documento.",
         max_output_tokens=300,
         db=db,
     )
 
-    # ── Request 2: Productos ─────────────────────────────────────────
+    # ── Request 2: Productos (en orden) ──────────────────────────────
     productos_data = _call_gemini(
         optimized_files,
         INVOICE_PRODUCTS_PROMPT,
-        "Extrae la lista de productos con sus cantidades y precios de esta factura.",
+        "Extrae la lista de productos en el orden exacto en que aparecen en la factura, con cantidades y precios.",
         max_output_tokens=2000,
         db=db,
     )
 
-    # ── Fuzzy matching ───────────────────────────────────────────────
-    proveedor_match = fuzzy_match_proveedor(
-        db, (metadata.get("proveedor") or {}).get("nombre", "")
-    )
+    # ── Parse metadata ────────────────────────────────────────────────
+    proveedor_nombre = (metadata.get("proveedor") or {}).get("nombre", "")
+    if not proveedor_nombre:
+        raise ValueError("La IA no pudo identificar el proveedor en la factura.")
 
-    if not proveedor_match.nombre or proveedor_match.match_status == "NOT_FOUND":
-        if not (metadata.get("proveedor") or {}).get("nombre"):
-            raise ValueError("La IA no pudo identificar el proveedor en la factura.")
-
-    productos_raw = []
-    for p in productos_data.get("productos", []):
-        tipo_empaque_raw = str(p.get("tipo_empaque", "CAJA")).upper()
-        productos_raw.append({
-            "nombre": p.get("nombre", ""),
-            "tipo_empaque": tipo_empaque_raw if tipo_empaque_raw in ("CAJA", "UNIDAD") else "CAJA",
-            "cantidad": p.get("cantidad", 1),
-            "precio_unitario": p.get("precio_unitario", 0),
-        })
-
-    productos_match = fuzzy_match_productos_batch(db, productos_raw)
-
-    # ── Armar respuesta ──────────────────────────────────────────────
     fecha = None
     if metadata.get("fecha_factura"):
         try:
@@ -617,15 +397,42 @@ def analyze_invoice_from_image(
         except (ValueError, TypeError):
             pass
 
+    fecha_limite = None
+    if metadata.get("fecha_limite_pago"):
+        try:
+            fecha_limite = date.fromisoformat(metadata["fecha_limite_pago"])
+        except (ValueError, TypeError):
+            pass
+
     moneda_raw = metadata.get("moneda", "USD").upper()
     moneda = MonedaEnum.BS if moneda_raw == "BS" else MonedaEnum.USD
 
+    tipo_doc_raw = metadata.get("tipo_documento", "FACTURA").upper()
+    tipo_documento = (
+        TipoDocumentoEnum.NOTA_ENTREGA
+        if tipo_doc_raw == "NOTA_ENTREGA"
+        else TipoDocumentoEnum.FACTURA
+    )
+
+    # ── Parse productos (en orden, sin matching) ─────────────────────
+    productos: list[ExtractedProduct] = []
+    for p in productos_data.get("productos", []):
+        tipo_empaque_raw = str(p.get("tipo_empaque", "CAJA")).upper()
+        productos.append(ExtractedProduct(
+            nombre=p.get("nombre", ""),
+            tipo_empaque=tipo_empaque_raw if tipo_empaque_raw in ("CAJA", "UNIDAD") else "CAJA",
+            cantidad=p.get("cantidad", 1),
+            precio_unitario=Decimal(str(p.get("precio_unitario", 0))),
+        ))
+
     return InvoiceAnalysisOut(
-        proveedor=proveedor_match,
+        proveedor_nombre=proveedor_nombre,
         numero_factura=metadata.get("numero_factura", ""),
         fecha_factura=fecha,
+        fecha_limite_pago=fecha_limite,
         moneda=moneda,
-        productos=productos_match,
+        tipo_documento=tipo_documento,
+        productos=productos,
         raw_json_ia={"metadata": metadata, "productos": productos_data},
     )
 

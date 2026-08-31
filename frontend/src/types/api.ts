@@ -612,32 +612,21 @@ export interface ObsequioFacturaOut {
 }
 
 // ─── Análisis de Facturas por IA ──────────────────────────────
-export type MatchStatus = "EXACT" | "PARTIAL" | "NOT_FOUND";
-
-export interface MatchedSupplier {
-  id: number;
+export interface ExtractedProduct {
   nombre: string;
-  match_status: MatchStatus;
-  confidence: number;
-}
-
-export interface MatchedProduct {
-  producto_id: number | null;
-  nombre_extraido: string;
   tipo_empaque: TipoEmpaque;
   cantidad: number;
   precio_unitario: number;
-  match_status: MatchStatus;
-  confidence: number;
-  suggestions: ProductOut[];
 }
 
 export interface InvoiceAnalysisOut {
-  proveedor: MatchedSupplier;
+  proveedor_nombre: string;
   numero_factura: string;
   fecha_factura: string | null;
+  fecha_limite_pago: string | null;
   moneda: 'USD' | 'BS';
-  productos: MatchedProduct[];
+  tipo_documento: 'FACTURA' | 'NOTA_ENTREGA';
+  productos: ExtractedProduct[];
   raw_json_ia: Record<string, unknown>;
 }
 

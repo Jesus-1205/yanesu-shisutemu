@@ -3,6 +3,7 @@ import { Clock, ScanLine, Loader2 } from "lucide-react";
 import type { SupplierOut, ExchangeRateOut } from "@/types/api";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import FileUpload from "@/ui-components/FileUpload";
+import ImagePreview from "@/ui-components/ImagePreview";
 import { useToast } from "@/ui-components/Toast";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useInvoiceFormStore } from "../store/invoiceFormStore";
@@ -272,12 +273,17 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
               maxSize={10 * 1024 * 1024}
               onFilesChange={(files) => store.setField("invoiceFiles", files)}
             />
+            {store.invoiceFiles.length > 0 && store.invoiceFiles[0].type.startsWith("image/") && (
+              <div className="mt-2">
+                <ImagePreview file={store.invoiceFiles[0]} />
+              </div>
+            )}
             {store.invoiceFiles.length > 0 && aiState === "idle" && (
               <button
                 type="button"
                 onClick={onAnalyzeImage}
                 disabled={aiLoading}
-                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-surface text-slate-600 hover:bg-slate-50 hover:border-brand-blue transition-colors cursor-pointer disabled:opacity-50"
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-brand-blue text-white hover:bg-brand-blue/90 shadow-sm transition-all cursor-pointer disabled:opacity-50"
               >
                 {aiLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
