@@ -11,7 +11,6 @@ import PageHeader from "@/ui-components/PageHeader";
 import Textarea from "@/ui-components/Textarea";
 import { calcularResumenFiscal } from "@/lib/iva";
 import { useInvoiceFormStore } from "../store/invoiceFormStore";
-import type { AIAnalysisItem } from "../components/AIReviewPanel";
 import InvoiceInfoCard from "../components/InvoiceInfoCard";
 import LineItemInputRow from "../components/LineItemInputRow";
 import LineItemsTable from "../components/LineItemsTable";
@@ -36,7 +35,6 @@ export default function InvoiceNewPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<InvoiceAnalysisOut | null>(null);
-  const [aiItems, setAiItems] = useState<AIAnalysisItem[]>([]);
   const [aiRawJsonIa, setAiRawJsonIa] = useState<Record<string, unknown> | null>(null);
 
   // ── Derived ──
@@ -121,41 +119,20 @@ export default function InvoiceNewPage() {
     setAiError(null);
     try {
       const result = await api.analyzeInvoice(invoiceFiles);
-      if (result.proveedor.match_status === "EXACT") {
-        store.setField("proveedorId", result.proveedor.id);
-      }
-      if (result.fecha_factura) {
-        store.setField("fechaFactura", result.fecha_factura);
-      }
-      if (result.numero_factura) {
-        store.setField("numeroFactura", result.numero_factura);
-      }
-      const items: AIAnalysisItem[] = result.productos.map((p) => ({
-        ...p,
-        resolved_producto_id: p.producto_id,
-        resolved_nombre: p.producto_id
-          ? products.find((prod) => prod.id === p.producto_id)?.nombre ?? p.nombre_extraido
-          : p.nombre_extraido,
-      }));
-      setAiItems(items);
       setAiAnalysis(result);
       setAiRawJsonIa(result.raw_json_ia);
       setAiState("reviewing");
-      const exactCount = result.productos.filter((p) => p.match_status === "EXACT").length;
-      const partialCount = result.productos.filter((p) => p.match_status === "PARTIAL").length;
-      const notFoundCount = result.productos.filter((p) => p.match_status === "NOT_FOUND").length;
-      toast(`IA: ${exactCount} exactos, ${partialCount} parciales, ${notFoundCount} no encontrados`, "success");
+      toast(`IA: ${result.productos.length} productos extraídos`, "success");
     } catch (err) {
       setAiError(err instanceof Error ? err.message : "Error al analizar imagen");
     } finally {
       setAiLoading(false);
     }
-  }, [products, store, toast]);
+  }, [toast]);
 
   const handleCancelAiReview = useCallback(() => {
     setAiState("idle");
     setAiAnalysis(null);
-    setAiItems([]);
     setAiRawJsonIa(null);
     setAiError(null);
   }, []);
@@ -323,10 +300,9 @@ export default function InvoiceNewPage() {
         {aiState === "reviewing" && aiAnalysis && (
           <AIReviewPanel
             aiAnalysis={aiAnalysis}
-            aiItems={aiItems}
-            setAiItems={setAiItems}
             products={products}
             suppliers={suppliers}
+            invoiceFile={useInvoiceFormStore.getState().invoiceFiles[0]}
             onSupplierCreated={handleSupplierCreated}
             onProductCreated={handleProductCreated}
             onCancel={handleCancelAiReview}

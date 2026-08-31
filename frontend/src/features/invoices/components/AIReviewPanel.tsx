@@ -1,135 +1,186 @@
 import { useCallback, useState } from "react";
-import { ScanLine, CheckCircle2, AlertTriangle, XCircle, X, CirclePlus } from "lucide-react";
-import type { ProductOut, SupplierOut, InvoiceAnalysisOut, MatchedProduct } from "@/types/api";
+import { ScanLine, Check, X, Loader2 } from "lucide-react";
+import type { ProductOut, SupplierOut, InvoiceAnalysisOut, ExtractedProduct, TipoEmpaque, MonedaEnum } from "@/types/api";
 import Button from "@/ui-components/Button";
-import Combobox from "@/ui-components/Combobox";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
-import Badge from "@/ui-components/Badge";
-import { formatBs, formatUsd } from "@/lib/text";
+import ImagePreview from "@/ui-components/ImagePreview";
 import { toCents } from "@/lib/money";
+import { convertirCostos, calcularSubtotal } from "@/lib/money";
 import { generateUUID } from "@/lib/utils";
 import type { LineItem } from "../types";
 import { useInvoiceFormStore } from "../store/invoiceFormStore";
 import CreateSupplierModal from "@/features/shared/components/CreateSupplierModal";
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
 
-export interface AIAnalysisItem extends MatchedProduct {
-  resolved_producto_id: number | null;
-  resolved_nombre: string;
+interface ReviewItem {
+  extracted: ExtractedProduct;
+  producto_id: number | null;
+  producto_nombre: string;
+  tipo_empaque: TipoEmpaque;
+  cantidad: number;
+  costo: number;
+  unidades_por_caja: number;
 }
 
 interface AIReviewPanelProps {
   aiAnalysis: InvoiceAnalysisOut;
-  aiItems: AIAnalysisItem[];
-  setAiItems: React.Dispatch<React.SetStateAction<AIAnalysisItem[]>>;
   products: ProductOut[];
   suppliers: SupplierOut[];
+  invoiceFile?: File;
   onSupplierCreated: (supplier: SupplierOut) => void;
   onProductCreated: (product: ProductOut) => void;
   onCancel: () => void;
 }
 
+const inputBase = "h-9 rounded-lg border border-slate-300 bg-surface px-2 text-sm text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20";
+const labelSmall = "text-[10px] font-medium text-slate-500 uppercase";
+
 export default function AIReviewPanel({
   aiAnalysis,
-  aiItems,
-  setAiItems,
   products,
   suppliers,
+  invoiceFile,
   onSupplierCreated,
   onProductCreated,
   onCancel,
 }: AIReviewPanelProps) {
   const { setField, setLineItems, tasa } = useInvoiceFormStore();
-  const [selectedAiCurrency, setSelectedAiCurrency] = useState<"USD" | "BS">(aiAnalysis.moneda ?? "USD");
-  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
-  const [supplierModalNombre, setSupplierModalNombre] = useState("");
-  const [productModalForNew, setProductModalForNew] = useState<{ open: boolean; nombre: string; precio: number }>({ open: false, nombre: "", precio: 0 });
-
   const nTasa = tasa === "" ? 0 : Number(tasa);
 
+  const [proveedorNombre, setProveedorNombre] = useState(aiAnalysis.proveedor_nombre);
+  const [numeroFactura, setNumeroFactura] = useState(aiAnalysis.numero_factura);
+  const [fechaFactura, setFechaFactura] = useState(aiAnalysis.fecha_factura ?? "");
+  const [fechaLimitePago, setFechaLimitePago] = useState(aiAnalysis.fecha_limite_pago ?? "");
+  const [moneda, setMoneda] = useState<"USD" | "BS">(aiAnalysis.moneda);
+  const [tipoDocumento, setTipoDocumento] = useState<"FACTURA" | "NOTA_ENTREGA">(aiAnalysis.tipo_documento);
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [productModalNombre, setProductModalNombre] = useState("");
+
+  const [items, setItems] = useState<ReviewItem[]>(() =>
+    aiAnalysis.productos.map((p) => ({
+      extracted: p,
+      producto_id: null,
+      producto_nombre: "",
+      tipo_empaque: p.tipo_empaque,
+      cantidad: p.cantidad,
+      costo: Number(p.precio_unitario),
+      unidades_por_caja: 1,
+    }))
+  );
+
   const handleSupplierCreated = useCallback((supplier: SupplierOut) => {
-    setField("proveedorId", supplier.id);
+    setProveedorNombre(supplier.nombre);
     onSupplierCreated(supplier);
     setSupplierModalOpen(false);
-  }, [setField, onSupplierCreated]);
+  }, [onSupplierCreated]);
 
   const handleProductCreated = useCallback((product: ProductOut) => {
     onProductCreated(product);
-    if (productModalForNew.open && productModalForNew.nombre) {
-      setAiItems((prev) => {
-        const idx = prev.findIndex(
-          (i) => i.nombre_extraido === productModalForNew.nombre && i.resolved_producto_id === null,
-        );
+    if (productModalNombre) {
+      setItems((prev) => {
+        const idx = prev.findIndex((i) => i.extracted.nombre === productModalNombre && i.producto_id === null);
         if (idx === -1) return prev;
         const updated = [...prev];
         updated[idx] = {
           ...updated[idx],
-          resolved_producto_id: product.id,
-          resolved_nombre: product.nombre,
-          match_status: "EXACT",
+          producto_id: product.id,
+          producto_nombre: product.nombre,
+          unidades_por_caja: product.unidades_por_caja,
         };
         return updated;
       });
     }
-    setProductModalForNew({ open: false, nombre: "", precio: 0 });
-  }, [productModalForNew, onProductCreated, setAiItems]);
+    setProductModalOpen(false);
+    setProductModalNombre("");
+  }, [productModalNombre, onProductCreated]);
 
-  const handleAiItemSelect = useCallback((itemIndex: number, productoId: number | null) => {
-    setAiItems((prev) => {
+  const handleItemProductSelect = useCallback((index: number, productoId: number | null) => {
+    setItems((prev) => {
       const updated = [...prev];
-      const item = updated[itemIndex];
       if (productoId === null) {
-        updated[itemIndex] = {
-          ...item,
-          resolved_producto_id: null,
-          resolved_nombre: item.nombre_extraido,
+        updated[index] = {
+          ...updated[index],
+          producto_id: null,
+          producto_nombre: "",
+          unidades_por_caja: 1,
         };
       } else {
         const prod = products.find((p) => p.id === productoId);
-        updated[itemIndex] = {
-          ...item,
-          resolved_producto_id: productoId,
-          resolved_nombre: prod?.nombre ?? item.nombre_extraido,
-          match_status: "EXACT",
+        updated[index] = {
+          ...updated[index],
+          producto_id: productoId,
+          producto_nombre: prod?.nombre ?? "",
+          unidades_por_caja: prod?.unidades_por_caja ?? 1,
         };
       }
       return updated;
     });
-  }, [products, setAiItems]);
+  }, [products]);
 
-  const handleAcceptAiItems = useCallback(() => {
+  const handleUpdateItem = useCallback((index: number, field: keyof ReviewItem, value: string | number) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  }, []);
+
+  const handleAcceptItem = useCallback((index: number) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], producto_id: updated[index].producto_id };
+      return updated;
+    });
+  }, []);
+
+  const allAccepted = items.every((i) => i.producto_id !== null);
+
+  const handleAcceptAll = useCallback(() => {
+    if (!allAccepted) return;
     const aplicaIva = useInvoiceFormStore.getState().aplicaIva;
-    const unresolved = aiItems.filter((i) => i.resolved_producto_id === null);
-    if (unresolved.length > 0) return;
 
-    const newLineItems: LineItem[] = aiItems.map((item) => {
-      const prod = products.find((p) => p.id === item.resolved_producto_id);
-      const precioUnitario = toCents(Number(item.precio_unitario));
-      const unidadesPorCaja = prod?.unidades_por_caja ?? 1;
+    const newLineItems: LineItem[] = items.map((item) => {
+      const precioUnitario = toCents(item.costo);
+      const costos = convertirCostos(precioUnitario, moneda, nTasa);
+      let subtotalUsd: number;
+      let subtotalBs: number;
+      if (moneda === "BS") {
+        subtotalBs = calcularSubtotal(item.cantidad, costos.bs);
+        subtotalUsd = nTasa > 0 ? toCents(subtotalBs / nTasa) : 0;
+      } else {
+        subtotalUsd = calcularSubtotal(item.cantidad, costos.usd);
+        subtotalBs = nTasa > 0 ? toCents(subtotalUsd * nTasa) : 0;
+      }
+
       return {
         key: generateUUID(),
-        producto_id: item.resolved_producto_id!,
-        nombre: item.resolved_nombre,
-        codigo_barra: prod?.codigo_barra ?? null,
+        producto_id: item.producto_id!,
+        nombre: item.producto_nombre,
+        codigo_barra: null,
         tipo_empaque: item.tipo_empaque,
         cantidad: item.cantidad,
-        costo_unitario_usd: 0,
-        costo_unitario_bs: 0,
-        subtotal_usd: 0,
-        subtotal_bs: 0,
-        unidades_por_caja: unidadesPorCaja,
-        tipo_iva: aplicaIva ? "GRAVADO" : (prod?.tipo_iva ?? "GRAVADO"),
+        costo_unitario_usd: costos.usd,
+        costo_unitario_bs: costos.bs,
+        subtotal_usd: subtotalUsd,
+        subtotal_bs: subtotalBs,
+        unidades_por_caja: item.tipo_empaque === "CAJA" ? item.unidades_por_caja : 1,
+        tipo_iva: aplicaIva ? "GRAVADO" : "GRAVADO",
         costo_ingresado: precioUnitario,
-        moneda_ingreso: selectedAiCurrency,
+        moneda_ingreso: moneda,
       };
     });
 
-    setField("moneda", selectedAiCurrency);
+    setField("moneda", moneda);
+    setField("tipoDocumento", tipoDocumento);
+    if (proveedorNombre) setField("numeroFactura", numeroFactura);
+    if (fechaFactura) setField("fechaFactura", fechaFactura);
+    if (fechaLimitePago) setField("fechaLimitePago", fechaLimitePago);
     setLineItems(newLineItems);
     onCancel();
-  }, [aiItems, products, selectedAiCurrency, setField, setLineItems, onCancel]);
+  }, [items, allAccepted, moneda, nTasa, tipoDocumento, proveedorNombre, numeroFactura, fechaFactura, fechaLimitePago, setField, setLineItems, onCancel]);
 
-  const unresolved = aiItems.filter((i) => i.resolved_producto_id === null);
+  const resolvedCount = items.filter((i) => i.producto_id !== null).length;
 
   return (
     <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-5 space-y-4">
@@ -143,318 +194,237 @@ export default function AIReviewPanel({
         </Button>
       </div>
 
-      {/* Proveedor */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-slate-200">
-        <span className="text-xs font-medium text-slate-500">Proveedor:</span>
-        {aiAnalysis.proveedor.match_status === "EXACT" ? (
-          <span className="flex items-center gap-1.5 text-sm text-green-700">
-            <CheckCircle2 className="w-4 h-4" />
-            {aiAnalysis.proveedor.nombre}
-            <Badge variant="success">EXACT</Badge>
-          </span>
-        ) : aiAnalysis.proveedor.match_status === "PARTIAL" ? (
-          <div className="flex items-center gap-2 flex-1">
-            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-            <AsyncCombobox
-              value={aiAnalysis.proveedor.id || null}
-              onChange={(val) => {
-                if (val) {
-                  setField("proveedorId", val as number);
-                  const selected = suppliers.find((s) => s.id === val);
-                  if (selected) {
-                    onSupplierCreated(selected);
-                  }
-                }
-              }}
-              onSearch={async (q) => {
-                const data = await import("@/services/api").then(({ api }) => api.getSuppliers({ search: q || undefined }));
-                return data.map((s) => ({ value: s.id, label: s.nombre }));
-              }}
-              placeholder="Seleccionar proveedor..."
-              allowClear={false}
-              className="flex-1 min-w-0"
+      {invoiceFile && invoiceFile.type.startsWith("image/") && (
+        <ImagePreview file={invoiceFile} alt="Factura a revisar" />
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="col-span-2">
+          <label className={labelSmall}>Proveedor</label>
+          <div className="flex gap-1.5">
+            <input
+              value={proveedorNombre}
+              onChange={(e) => setProveedorNombre(e.target.value)}
+              className={`${inputBase} flex-1`}
+              placeholder="Nombre del proveedor"
             />
             <button
               type="button"
-              onClick={() => { setSupplierModalNombre(aiAnalysis.proveedor.nombre); setSupplierModalOpen(true); }}
-              className="shrink-0 h-10 flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-surface px-3 text-sm text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
+              onClick={() => setSupplierModalOpen(true)}
+              className="shrink-0 h-9 px-2 rounded-lg border border-dashed border-slate-300 bg-surface text-xs text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
               title="Crear nuevo proveedor"
             >
-              <CirclePlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Nuevo</span>
+              + Nuevo
             </button>
-            <Badge variant="warning">PARTIAL ({Math.round(aiAnalysis.proveedor.confidence * 100)}%)</Badge>
           </div>
-        ) : (
-          <span className="flex items-center gap-1.5 text-sm text-red-600">
-            <XCircle className="w-4 h-4" />
-            {aiAnalysis.proveedor.nombre}
-            <Badge variant="danger">NOT FOUND</Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setSupplierModalNombre(aiAnalysis.proveedor.nombre); setSupplierModalOpen(true); }}
-              className="ml-2"
+        </div>
+        <div>
+          <label className={labelSmall}>N° Factura</label>
+          <input value={numeroFactura} onChange={(e) => setNumeroFactura(e.target.value)} className={inputBase} />
+        </div>
+        <div>
+          <label className={labelSmall}>Fecha</label>
+          <input type="date" value={fechaFactura} onChange={(e) => setFechaFactura(e.target.value)} className={inputBase} />
+        </div>
+        <div>
+          <label className={labelSmall}>Fecha Límite</label>
+          <input type="date" value={fechaLimitePago} onChange={(e) => setFechaLimitePago(e.target.value)} className={inputBase} />
+        </div>
+        <div>
+          <label className={labelSmall}>Tipo</label>
+          <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setTipoDocumento("FACTURA")}
+              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+                tipoDocumento === "FACTURA" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+              }`}
             >
-              <CirclePlus className="w-3 h-3 mr-1" />
-              Crear
-            </Button>
-          </span>
-        )}
-      </div>
-
-      {/* Moneda detectada */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-slate-200">
-        <span className="text-xs font-medium text-slate-500">Moneda detectada:</span>
-        <div className="flex rounded-lg border border-slate-300 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setSelectedAiCurrency("USD")}
-            className={`px-3 h-8 text-xs font-medium transition-colors cursor-pointer ${
-              selectedAiCurrency === "USD"
-                ? "bg-brand-blue text-white"
-                : "bg-surface text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            USD $
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedAiCurrency("BS")}
-            className={`px-3 h-8 text-xs font-medium transition-colors cursor-pointer ${
-              selectedAiCurrency === "BS"
-                ? "bg-brand-blue text-white"
-                : "bg-surface text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Bs.
-          </button>
-        </div>
-        {selectedAiCurrency === "BS" && (
-          <div className="flex items-center gap-2 ml-2">
-            <label className="text-xs font-medium text-slate-500">Tasa BCV:</label>
-            <input
-              type="number"
-              value={tasa}
-              onChange={(e) => setField("tasa", e.target.value)}
-              placeholder="Ej: 742.81"
-              min="0"
-              step="0.01"
-              autoComplete="off"
-              className="w-28 h-8 rounded-lg border border-slate-300 bg-surface px-2 text-xs text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-            />
+              Factura
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipoDocumento("NOTA_ENTREGA")}
+              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+                tipoDocumento === "NOTA_ENTREGA" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              N. Entrega
+            </button>
           </div>
-        )}
-        <span className="text-xs text-slate-400">(ajustar si es necesario)</span>
-      </div>
-
-      {/* Productos */}
-      <div className="space-y-2">
-        <span className="text-xs font-medium text-slate-500">Productos ({aiItems.length}):</span>
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500">
-                <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Estado</th>
-                <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Producto IA</th>
-                <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-2">Tipo</th>
-                <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Cant</th>
-                <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Precio</th>
-                <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2 min-w-[200px]">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {aiItems.map((item, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/80">
-                  <td className="px-4 py-2">
-                    {item.match_status === "EXACT" ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : item.match_status === "PARTIAL" ? (
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-red-500" />
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-text-main font-medium">{item.nombre_extraido}</td>
-                  <td className="px-4 py-2 text-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      item.tipo_empaque === "CAJA"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-green-100 text-green-700"
-                    }`}>
-                      {item.tipo_empaque === "CAJA" ? "Caja" : "Und"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <input
-                      type="number"
-                      value={item.cantidad || ""}
-                      onChange={(e) => {
-                        setAiItems((prev) => {
-                          const updated = [...prev];
-                          updated[idx] = { ...updated[idx], cantidad: e.target.value === "" ? 0 : parseInt(e.target.value, 10) || 0 };
-                          return updated;
-                        });
-                      }}
-                      min="0"
-                      autoComplete="off"
-                      className="w-16 h-8 text-right text-sm font-mono rounded border border-slate-300 bg-surface px-1 outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
-                    />
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <div className="flex flex-col items-end gap-0.5">
-                      <input
-                        type="number"
-                        value={item.precio_unitario || ""}
-                        onChange={(e) => {
-                          setAiItems((prev) => {
-                            const updated = [...prev];
-                            updated[idx] = { ...updated[idx], precio_unitario: toCents(parseFloat(e.target.value) || 0) };
-                            return updated;
-                          });
-                        }}
-                        min="0"
-                        step="0.01"
-                        autoComplete="off"
-                        className="w-28 h-8 text-right text-sm font-mono rounded border border-slate-300 bg-surface px-1 outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
-                      />
-                      {selectedAiCurrency === "BS" && (
-                        <span className="text-[10px] text-slate-400">
-                          {nTasa > 0
-                            ? formatUsd(Number(item.precio_unitario) / nTasa)
-                            : formatUsd(Number(item.precio_unitario))
-                          }
-                        </span>
-                      )}
-                      {selectedAiCurrency !== "BS" && (
-                        <span className="text-[10px] text-slate-400">
-                          {nTasa > 0
-                            ? `${formatBs(Number(item.precio_unitario) * nTasa)} BS`
-                            : ""
-                          }
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-start gap-2">
-                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                        {item.match_status === "EXACT" ? (
-                          <span className="text-sm text-green-700 flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            {item.resolved_nombre}
-                          </span>
-                        ) : item.match_status === "PARTIAL" && item.suggestions.length > 0 ? (
-                          <>
-                            <Combobox
-                              value={item.resolved_producto_id}
-                              onChange={(val) => handleAiItemSelect(idx, val as number | null)}
-                              options={item.suggestions.map((s) => ({
-                                value: s.id,
-                                label: `${s.nombre}${s.codigo_barra ? ` (${s.codigo_barra})` : ""}`,
-                              }))}
-                              placeholder="Seleccionar producto..."
-                              allowClear
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (selectedAiCurrency === "BS" && nTasa <= 0) return;
-                                setProductModalForNew({ open: true, nombre: item.nombre_extraido, precio: item.precio_unitario });
-                              }}
-                              className="text-xs text-brand-blue hover:underline flex items-center gap-1 self-start"
-                            >
-                              <CirclePlus className="w-3 h-3" />
-                              Crear nuevo producto
-                            </button>
-                          </>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              if (selectedAiCurrency === "BS" && nTasa <= 0) return;
-                              setProductModalForNew({ open: true, nombre: item.nombre_extraido, precio: item.precio_unitario });
-                            }}
-                            className="gap-1"
-                          >
-                            <CirclePlus className="w-3.5 h-3.5" />
-                            Crear producto
-                          </Button>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setAiItems((prev) => prev.filter((_, i) => i !== idx))}
-                        className="shrink-0 p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        title="Descartar producto"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        </div>
+        <div>
+          <label className={labelSmall}>Moneda</label>
+          <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setMoneda("USD")}
+              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+                moneda === "USD" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              USD
+            </button>
+            <button
+              type="button"
+              onClick={() => setMoneda("BS")}
+              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+                moneda === "BS" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              Bs.
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Acciones */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-slate-500">
+            Productos extraídos ({resolvedCount}/{items.length} resueltos)
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {items.map((item, idx) => (
+            <div
+              key={idx}
+              className={`rounded-lg border p-3 transition-colors ${
+                item.producto_id !== null
+                  ? "border-green-200 bg-green-50/50"
+                  : "border-slate-200 bg-white"
+              }`}
+            >
+              <div className="flex items-start gap-2 mb-2">
+                <span className="text-[10px] font-bold text-slate-400 mt-1">#{idx + 1}</span>
+                <span className="text-xs text-slate-500 flex-1 truncate" title={item.extracted.nombre}>
+                  {item.extracted.nombre}
+                </span>
+                {item.producto_id !== null && <Check className="w-4 h-4 text-green-500 shrink-0" />}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
+                <div className="col-span-2">
+                  <label className={labelSmall}>Producto</label>
+                  <AsyncCombobox
+                    value={item.producto_id}
+                    onChange={(val) => handleItemProductSelect(idx, val as number | null)}
+                    onSearch={async (q) => {
+                      const { api } = await import("@/services/api");
+                      const data = await api.getProducts({ search: q || undefined });
+                      return data.items.map((p) => ({ value: p.id, label: p.nombre, subtitle: p.codigo_barra || undefined }));
+                    }}
+                    placeholder="Buscar producto..."
+                    allowClear
+                  />
+                </div>
+                <div>
+                  <label className={labelSmall}>Cant</label>
+                  <input
+                    type="number"
+                    value={item.cantidad || ""}
+                    onChange={(e) => handleUpdateItem(idx, "cantidad", e.target.value === "" ? 0 : parseInt(e.target.value, 10) || 0)}
+                    min="0"
+                    className={`${inputBase} w-full`}
+                  />
+                </div>
+                <div>
+                  <label className={labelSmall}>{moneda === "BS" ? "Costo Bs." : "Costo $"}</label>
+                  <input
+                    type="number"
+                    value={item.costo || ""}
+                    onChange={(e) => handleUpdateItem(idx, "costo", parseFloat(e.target.value) || 0)}
+                    min="0"
+                    step="0.01"
+                    className={`${inputBase} w-full`}
+                  />
+                </div>
+                <div>
+                  <label className={labelSmall}>Subtotal</label>
+                  <div className={`${inputBase} w-full bg-slate-50 flex items-center text-xs font-mono`}>
+                    {moneda === "BS" ? "Bs. " : "$ "}
+                    {calcularSubtotal(item.cantidad, item.costo).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <label className={labelSmall}>Tipo</label>
+                  <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateItem(idx, "tipo_empaque", "CAJA")}
+                      className={`flex-1 h-9 text-[10px] font-medium transition-colors cursor-pointer ${
+                        item.tipo_empaque === "CAJA" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      Caja
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateItem(idx, "tipo_empaque", "UNIDAD")}
+                      className={`flex-1 h-9 text-[10px] font-medium transition-colors cursor-pointer ${
+                        item.tipo_empaque === "UNIDAD" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      Und
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {item.tipo_empaque === "CAJA" && (
+                <div className="mt-2 flex items-center gap-2">
+                  <label className={labelSmall}>Unds/Caja</label>
+                  <input
+                    type="number"
+                    value={item.unidades_por_caja || ""}
+                    onChange={(e) => handleUpdateItem(idx, "unidades_por_caja", parseInt(e.target.value, 10) || 1)}
+                    min="1"
+                    className={`${inputBase} w-20`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductModalNombre(item.extracted.nombre);
+                      setProductModalOpen(true);
+                    }}
+                    className="text-[10px] text-brand-blue hover:underline cursor-pointer"
+                  >
+                    Crear producto
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="flex justify-end gap-2 pt-2">
-        {unresolved.length > 0 && (
+        {!allAccepted && (
           <span className="text-xs text-amber-600 self-center">
-            {unresolved.length} producto(s) sin resolver
+            {items.length - resolvedCount} producto(s) sin resolver
           </span>
         )}
-        <Button variant="accent" onClick={handleAcceptAiItems} disabled={unresolved.length > 0}>
+        <Button variant="accent" onClick={handleAcceptAll} disabled={!allAccepted}>
           Aceptar y Agregar a Factura
         </Button>
       </div>
 
-      {/* Modal proveedor inline */}
       {supplierModalOpen && (
-        <CrearProveedorInline
+        <CreateSupplierModal
           open={supplierModalOpen}
           onClose={() => setSupplierModalOpen(false)}
           onCreated={handleSupplierCreated}
-          initialNombre={supplierModalNombre}
+          initialNombre={proveedorNombre}
         />
       )}
-
-      {/* Modal producto inline */}
-      {productModalForNew.open && (
-        <CrearProductoInline
-          open={productModalForNew.open}
-          onClose={() => setProductModalForNew({ open: false, nombre: "", precio: 0 })}
+      {productModalOpen && (
+        <CreateProductModal
+          open={productModalOpen}
+          onClose={() => { setProductModalOpen(false); setProductModalNombre(""); }}
           onCreated={handleProductCreated}
-          initialNombre={productModalForNew.nombre}
-          initialPrecio={productModalForNew.precio}
-          initialMoneda={selectedAiCurrency as "USD" | "BS"}
-          tasaBs={nTasa}
+          initialNombre={productModalNombre}
         />
       )}
     </div>
   );
-}
-
-function CrearProveedorInline({ open, onClose, onCreated, initialNombre }: {
-  open: boolean;
-  onClose: () => void;
-  onCreated: (s: SupplierOut) => void;
-  initialNombre: string;
-}) {
-  return <CreateSupplierModal open={open} onClose={onClose} onCreated={onCreated} initialNombre={initialNombre} />;
-}
-
-function CrearProductoInline(props: {
-  open: boolean;
-  onClose: () => void;
-  onCreated: (p: ProductOut) => void;
-  initialNombre: string;
-  initialPrecio: number;
-  initialMoneda: "USD" | "BS";
-  tasaBs: number;
-}) {
-  return <CreateProductModal {...props} />;
 }

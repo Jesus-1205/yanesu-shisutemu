@@ -3,6 +3,7 @@ import { Clock, ScanLine, Loader2 } from "lucide-react";
 import type { SupplierOut, ExchangeRateOut } from "@/types/api";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import FileUpload from "@/ui-components/FileUpload";
+import ImagePreview from "@/ui-components/ImagePreview";
 import { useToast } from "@/ui-components/Toast";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useInvoiceFormStore } from "../store/invoiceFormStore";
@@ -272,6 +273,11 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
               maxSize={10 * 1024 * 1024}
               onFilesChange={(files) => store.setField("invoiceFiles", files)}
             />
+            {store.invoiceFiles.length > 0 && store.invoiceFiles[0].type.startsWith("image/") && (
+              <div className="mt-2">
+                <ImagePreview file={store.invoiceFiles[0]} />
+              </div>
+            )}
             {store.invoiceFiles.length > 0 && aiState === "idle" && (
               <button
                 type="button"
