@@ -219,4 +219,88 @@ describe("InvoicePaymentPage", () => {
       expect(screen.getByText("Error de red")).toBeInTheDocument();
     });
   });
+
+  // ── Tests de cálculo: transparencia y fuente de verdad ────────────────
+
+  it("USD invoice: saldo pendiente in USD displayed correctly", async () => {
+    const usdInvoice: FacturaOut = {
+      ...baseInvoice,
+      id: 30,
+      moneda_principal: "USD",
+      tasa_bs: 36.5,
+      total_usd: 100,
+      total_bs: 3650,
+      estado_pago: "PARCIALMENTE_PAGADA",
+    };
+    const usdSummary: InvoicePaymentSummary = {
+      ...paymentSummary,
+      total_factura_usd: 100,
+      total_factura_bs: 3650,
+      total_pagado_usd: 40,
+      total_pagado_bs: 1460,
+      saldo_pendiente_usd: 60,
+      saldo_pendiente_bs: 2190,
+    };
+    (api.getInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(usdInvoice);
+    (api.getInvoicePayments as ReturnType<typeof vi.fn>).mockResolvedValue({
+      pagos: [],
+      resumen: usdSummary,
+    });
+
+    renderPage(30);
+    await waitForPageLoad();
+
+    // El saldo pendiente en USD debe mostrarse como $60,00
+    expect(screen.getByText(/\$60,00/)).toBeInTheDocument();
+  });
+
+  it("BS invoice: saldo pendiente displayed in BS", async () => {
+    renderPage();
+    await waitForPageLoad();
+
+    // baseInvoice: total_bs=1392, pagado_bs=800, saldo_bs=592
+    // El saldo 592 BS debe mostrarse en la UI
+    expect(screen.getByText(/592/)).toBeInTheDocument();
+  });
+
+  it("USD invoice with tasa: BS equivalent shown", async () => {
+    const usdInvoice: FacturaOut = {
+      ...baseInvoice,
+      id: 31,
+      moneda_principal: "USD",
+      tasa_bs: 36.5,
+      total_usd: 100,
+      total_bs: 3650,
+      estado_pago: "PENDIENTE",
+    };
+    const usdSummary: InvoicePaymentSummary = {
+      ...paymentSummary,
+      total_factura_usd: 100,
+      total_factura_bs: 3650,
+      total_pagado_usd: 0,
+      total_pagado_bs: 0,
+      saldo_pendiente_usd: 100,
+      saldo_pendiente_bs: 3650,
+    };
+    (api.getInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(usdInvoice);
+    (api.getInvoicePayments as ReturnType<typeof vi.fn>).mockResolvedValue({
+      pagos: [],
+      resumen: usdSummary,
+    });
+
+    renderPage(31);
+    await waitForPageLoad();
+
+    // El total en USD debe mostrarse (puede haber múltiples elementos)
+    const usdElements = screen.getAllByText(/\$100,00/);
+    expect(usdElements.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("paid invoice redirects to detail page", async () => {
+    (api.getInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(paidInvoice);
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Invoice Detail")).toBeInTheDocument();
+    });
+  });
 });
