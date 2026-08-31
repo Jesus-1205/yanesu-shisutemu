@@ -196,10 +196,6 @@ class TestDiferenciaCambiaria:
 
         summary_response = client.get(f"/api/invoices/{invoice['id']}/payments/summary")
         summary = summary_response.json()
-        
-        with open('debug_summary.txt', 'w') as f:
-            json.dump(summary, f, indent=2)
-        
         assert summary["diferencia_cambiaria_bs"] == "1000.00"
 
     def test_diferencia_cambiaria_with_partial_payments(self, client):
@@ -238,12 +234,6 @@ class TestDiferenciaCambiaria:
         )
 
         summary = client.get(f"/api/invoices/{invoice['id']}/payments/summary").json()
-        
-        with open('debug_summary2.txt', 'w') as f:
-            f.write(f"resp1: {resp1.status_code} {resp1.json()}\n")
-            f.write(f"resp2: {resp2.status_code} {resp2.json()}\n")
-            f.write(f"summary: {summary}\n")
-        
         expected_diferencia = Decimal("4250") + Decimal("4500") - (Decimal("10") * Decimal("800"))
         assert summary["diferencia_cambiaria_bs"] == str(expected_diferencia.quantize(Decimal("0.01")))
 
@@ -272,3 +262,146 @@ class TestDiferenciaCambiaria:
 
         summary = client.get(f"/api/invoices/{invoice['id']}/payments/summary").json()
         assert summary["diferencia_cambiaria_bs"] == "0.00"
+
+
+# ── Tests NUEVOS: Pagos con diferentes monedas ────────────────────────────
+
+
+class TestPaymentCurrencyCombinations:
+
+    def test_payment_bs_only(self, client):
+        """Pago solo en BS (monto_usd=0) vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-BS-ONLY-001",
+                             tasa_bs=800, cajas=1, costo_usd=10)
+        )}).json()
+
+        payment_data = {
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 0,
+            "monto_bs": 8000,
+            "monto_mora": 0,
+        }
+        response = client.post(
+            f"/api/invoices/{invoice['id']}/payments",
+            data={"data": json.dumps(payment_data)},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["monto_usd"] == "0.00"
+        assert data["monto_bs"] == "8000.00"
+
+    def test_payment_mixed_usd_bs(self, client):
+        """Pago mixto USD+BS vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-MIXED-001",
+                             tasa_bs=1, cajas=1, costo_usd=100)
+        )}).json()
+
+        payment_data = {
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 50,
+            "monto_bs": 50,
+            "monto_mora": 0,
+        }
+        response = client.post(
+            f"/api/invoices/{invoice['id']}/payments",
+            data={"data": json.dumps(payment_data)},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["monto_usd"] == "50.00"
+        assert data["monto_bs"] == "50.00"
+
+
+class TestPaymentOnBsInvoice:
+
+    def test_payment_on_bs_invoice(self, client):
+        """Pago sobre factura BS vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload_bs(sup["id"], prod["id"], "F-BS-PAY-001",
+                                 tasa_bs=100, costo_bs=5000)
+        )}).json()
+        assert invoice["moneda_principal"] == "BS"
+
+        payment_data = {
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 25,
+            "monto_bs": 0,
+            "monto_mora": 0,
+        }
+        response = client.post(
+            f"/api/invoices/{invoice['id']}/payments",
+            data={"data": json.dumps(payment_data)},
+        )
+        assert response.status_code == 201
+
+    def test_payment_summary_bs_invoice(self, client):
+        """Summary de factura BS con IVA vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+
+        invoice = client.post("/api/invoices", data={"data": json.dumps({
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-BS-SUM-001",
+            "moneda_principal": "BS",
+            "tasa_bs": 100,
+            "aplica_iva": True,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 1,
+                "costo_unitario_usd": 50,
+                "costo_unitario_bs": 5000,
+                "tipo_iva": "GRAVADO",
+            }],
+        })}).json()
+
+        # Pago parcial
+        client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 29,
+            "monto_bs": 0,
+            "monto_mora": 0,
+        })})
+
+        summary = client.get(f"/api/invoices/{invoice['id']}/payments/summary").json()
+        # total_bs=5000, IVA=800, total=5800, USD=58.00
+        assert summary["total_factura_bs"] == "5800.00"
+        assert summary["total_factura_usd"] == "58.00"
+        assert summary["total_pagado_usd"] == "29.00"
+        assert summary["saldo_pendiente_usd"] == "29.00"
+
+
+def _invoice_payload_bs(sup_id, prod_id, num, tasa_bs=36.5, cajas=1, costo_bs=1825):
+    costo_usd = round(costo_bs / tasa_bs, 2)
+    return {
+        "proveedor_id": sup_id,
+        "numero_factura": num,
+        "moneda_principal": "BS",
+        "tasa_bs": tasa_bs,
+        "detalles": [{
+            "producto_id": prod_id,
+            "tipo_empaque": "CAJA",
+            "cantidad": cajas,
+            "costo_unitario_usd": costo_usd,
+            "costo_unitario_bs": costo_bs,
+        }],
+    }

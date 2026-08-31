@@ -403,3 +403,452 @@ class TestPendingSummary:
         data = response.json()
         # EXENTO: no IVA, total_bs=5000, total_usd=5000/100=50.00
         assert data["total_pendiente_usd"] == "50.00"
+
+
+# ── Tests NUEVOS: CreateInvoice - Monedas y conversiones ──────────────────
+
+
+def _invoice_payload_bs(sup_id, prod_id, num, tasa_bs=36.5, cajas=1, costo_bs=1825):
+    costo_usd = round(costo_bs / tasa_bs, 2)
+    return {
+        "proveedor_id": sup_id,
+        "numero_factura": num,
+        "moneda_principal": "BS",
+        "tasa_bs": tasa_bs,
+        "detalles": [{
+            "producto_id": prod_id,
+            "tipo_empaque": "CAJA",
+            "cantidad": cajas,
+            "costo_unitario_usd": costo_usd,
+            "costo_unitario_bs": costo_bs,
+        }],
+    }
+
+
+class TestCreateInvoiceCurrencyConversion:
+
+    def test_create_bs_invoice_via_http(self, client):
+        """Factura BS vía HTTP: conversión correcta de costos."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = _invoice_payload_bs(sup["id"], prod["id"], "F-BS-HTTP-001",
+                                       tasa_bs=36.5, costo_bs=1825)
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["moneda_principal"] == "BS"
+        assert data["tasa_bs"] == "36.50"
+        assert data["total_bs"] == "1825.00"
+        assert data["total_usd"] == "50.00"
+        assert data["detalles"][0]["costo_unitario_bs"] == "1825.00"
+
+    def test_create_invoice_with_real_tasa(self, client):
+        """Factura USD con tasa real: total_bs = total_usd * tasa."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = {
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-TASA-HTTP-001",
+            "moneda_principal": "USD",
+            "tasa_bs": 36.5,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 2,
+                "costo_unitario_usd": 50,
+                "costo_unitario_bs": 1825,
+            }],
+        }
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["total_usd"] == "100.00"
+        assert data["total_bs"] == "3650.00"
+
+    def test_create_invoice_with_iva(self, client):
+        """Factura BS + IVA vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = {
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-IVA-HTTP-001",
+            "moneda_principal": "BS",
+            "tasa_bs": 100,
+            "aplica_iva": True,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 1,
+                "costo_unitario_usd": 50,
+                "costo_unitario_bs": 5000,
+                "tipo_iva": "GRAVADO",
+            }],
+        }
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["aplica_iva"] is True
+        assert data["total_bs"] == "5000.00"
+
+    def test_create_invoice_with_obsequios(self, client):
+        """Factura con obsequios vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = {
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-OBS-HTTP-001",
+            "moneda_principal": "USD",
+            "tasa_bs": 1,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 2,
+                "costo_unitario_usd": 50,
+                "costo_unitario_bs": 50,
+            }],
+            "obsequios": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 1,
+                "justificacion": "Promoción proveedor",
+            }],
+        }
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["total_usd"] == "100.00"
+        assert data["total_bs"] == "100.00"
+        assert len(data["obsequios"]) == 1
+        assert data["obsequios"][0]["cantidad"] == 1
+
+    def test_create_invoice_with_observaciones(self, client):
+        """Campo observaciones persiste vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = _invoice_payload(sup["id"], prod["id"], "F-OBSV-HTTP-001")
+        payload["observaciones"] = "Factura de prueba con observaciones"
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["observaciones"] == "Factura de prueba con observaciones"
+
+    def test_create_invoice_with_fecha_limite_pago(self, client):
+        """Campo fecha_limite_pago persiste vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = _invoice_payload(sup["id"], prod["id"], "F-FLP-HTTP-001")
+        payload["fecha_limite_pago"] = "2026-12-31"
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["fecha_limite_pago"] == "2026-12-31"
+
+    def test_create_invoice_multiple_products(self, client):
+        """Factura con múltiples productos vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod1 = client.post("/api/products", json={
+            "nombre": "Producto 1",
+            "precio_costo_caja_usd": 50,
+            "precio_unidad_usd": 10,
+            "precio_caja_usd": 120,
+            "stock_unidades": 0,
+            "unidades_por_caja": 12,
+            "categoria_ids": [1],
+        }).json()
+        prod2 = client.post("/api/products", json={
+            "nombre": "Producto 2",
+            "precio_costo_caja_usd": 30,
+            "precio_unidad_usd": 5,
+            "precio_caja_usd": 60,
+            "stock_unidades": 0,
+            "unidades_por_caja": 12,
+            "categoria_ids": [1],
+        }).json()
+
+        payload = {
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-MULTI-HTTP-001",
+            "moneda_principal": "USD",
+            "tasa_bs": 1,
+            "detalles": [
+                {
+                    "producto_id": prod1["id"],
+                    "tipo_empaque": "CAJA",
+                    "cantidad": 2,
+                    "costo_unitario_usd": 50,
+                    "costo_unitario_bs": 50,
+                },
+                {
+                    "producto_id": prod2["id"],
+                    "tipo_empaque": "CAJA",
+                    "cantidad": 3,
+                    "costo_unitario_usd": 30,
+                    "costo_unitario_bs": 30,
+                },
+            ],
+        }
+        response = client.post("/api/invoices", data={"data": json.dumps(payload)})
+        assert response.status_code == 201
+        data = response.json()
+        assert data["total_usd"] == "190.00"
+        assert len(data["detalles"]) == 2
+
+
+# ── Tests NUEVOS: ListInvoices - Filtros y ordenamiento ───────────────────
+
+
+class TestListInvoicesFiltersAndSorting:
+
+    def test_list_filter_estado_pago(self, client):
+        """Filtrar por estado_pago vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        # Crear factura PENDIENTE
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-EST-001")
+        )})
+
+        # Crear factura PAGADA
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-EST-002")
+        )}).json()
+        pm = client.post("/api/payment-methods", json={
+            "nombre": "Transferencia", "moneda_default": "USD",
+            "acepta_referencia": True, "activo": True,
+        }).json()
+        client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 50,
+            "monto_bs": 0,
+        })})
+
+        resp = client.get("/api/invoices?estado_pago=PENDIENTE")
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) == 1
+        assert items[0]["numero_factura"] == "F-EST-001"
+
+        resp = client.get("/api/invoices?estado_pago=PAGADA")
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) == 1
+        assert items[0]["numero_factura"] == "F-EST-002"
+
+    def test_list_filter_fecha_desde_hasta(self, client):
+        """Filtrar por rango de fechas vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        for i, fecha in enumerate(["2026-01-15", "2026-06-20", "2026-12-25"]):
+            payload = _invoice_payload(sup["id"], prod["id"], f"F-FDATE-{i}")
+            payload["fecha_factura"] = fecha
+            client.post("/api/invoices", data={"data": json.dumps(payload)})
+
+        resp = client.get("/api/invoices?fecha_desde=2026-03-01&fecha_hasta=2026-09-30")
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        assert len(items) == 1
+        assert items[0]["numero_factura"] == "F-FDATE-1"
+
+    def test_list_sort_precio_desc(self, client):
+        """Ordenar por precio descendente vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        for i, precio in enumerate([30, 100, 60]):
+            client.post("/api/invoices", data={"data": json.dumps(
+                _invoice_payload(sup["id"], prod["id"], f"F-SORTD-{i}", costo_usd=precio)
+            )})
+
+        resp = client.get("/api/invoices?sort_by=precio_desc")
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        precios = [Decimal(item["total_usd"]) for item in items]
+        assert precios == [Decimal("100.00"), Decimal("60.00"), Decimal("30.00")]
+
+    def test_list_sort_fecha_limite_pago(self, client):
+        """Ordenar por fecha_limite_pago vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        for i, fecha in enumerate(["2026-12-31", "2026-06-15", "2026-09-01"]):
+            payload = _invoice_payload(sup["id"], prod["id"], f"F-SORTFLP-{i}")
+            payload["fecha_limite_pago"] = fecha
+            client.post("/api/invoices", data={"data": json.dumps(payload)})
+
+        resp = client.get("/api/invoices?sort_by=fecha_limite_pago")
+        assert resp.status_code == 200
+        items = resp.json()["items"]
+        # Primero los que tienen fecha_limite (ordenados asc), luego sin fecha
+        assert items[0]["fecha_limite_pago"] == "2026-06-15"
+        assert items[1]["fecha_limite_pago"] == "2026-09-01"
+        assert items[2]["fecha_limite_pago"] == "2026-12-31"
+
+
+# ── Tests NUEVOS: InvoiceStats ────────────────────────────────────────────
+
+
+class TestInvoiceStats:
+
+    def test_stats_endpoint(self, client):
+        """GET /invoices/stats retorna conteo por estado."""
+        _login(client)
+        response = client.get("/api/invoices/stats")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["pendientes"] == 0
+        assert data["parciales"] == 0
+        assert data["pagadas"] == 0
+        assert data["total"] == 0
+
+    def test_stats_with_mixed_statuses(self, client):
+        """Stats con estados variados vía HTTP."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = client.post("/api/payment-methods", json={
+            "nombre": "Transferencia", "moneda_default": "USD",
+            "acepta_referencia": True, "activo": True,
+        }).json()
+
+        # PENDIENTE
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-STAT-001", costo_usd=100)
+        )})
+
+        # PAGADA
+        invoice2 = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-STAT-002", costo_usd=50)
+        )}).json()
+        client.post(f"/api/invoices/{invoice2['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 50, "monto_bs": 0,
+        })})
+
+        # PARCIAL
+        invoice3 = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-STAT-003", costo_usd=200)
+        )}).json()
+        client.post(f"/api/invoices/{invoice3['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 50, "monto_bs": 0,
+        })})
+
+        resp = client.get("/api/invoices/stats")
+        data = resp.json()
+        assert data["pendientes"] == 1
+        assert data["pagadas"] == 1
+        assert data["parciales"] == 1
+        assert data["total"] == 3
+
+
+# ── Tests NUEVOS: TopSuppliers ────────────────────────────────────────────
+
+
+class TestTopSuppliers:
+
+    def test_top_suppliers_endpoint(self, client):
+        """GET /invoices/top-suppliers retorna ranking."""
+        _login(client)
+        sup1 = _create_supplier(client).json()
+        sup2 = client.post("/api/suppliers", json={"nombre": "Proveedor 2"}).json()
+        prod = _create_product(client).json()
+
+        # 2 facturas de sup1, 1 de sup2
+        for i in range(2):
+            client.post("/api/invoices", data={"data": json.dumps(
+                _invoice_payload(sup1["id"], prod["id"], f"F-TOP-{i}")
+            )})
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup2["id"], prod["id"], "F-TOP-2")
+        )})
+
+        resp = client.get("/api/invoices/top-suppliers")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 2
+        assert data[0]["supplier_id"] == sup1["id"]
+        assert data[0]["invoice_count"] == 2
+        assert data[1]["supplier_id"] == sup2["id"]
+        assert data[1]["invoice_count"] == 1
+
+
+# ── Tests NUEVOS: PendingSummary - BS-only payments ───────────────────────
+
+
+class TestPendingSummaryExtended:
+
+    def test_pending_summary_bs_only_payment(self, client):
+        """Pago BS-only se convierte a USD en el resumen de pendientes."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = client.post("/api/payment-methods", json={
+            "nombre": "Transferencia", "moneda_default": "USD",
+            "acepta_referencia": True, "activo": True,
+        }).json()
+
+        # Factura USD por $100, tasa=36.5
+        invoice = client.post("/api/invoices", data={"data": json.dumps({
+            "proveedor_id": sup["id"],
+            "numero_factura": "F-PEND-BS-001",
+            "moneda_principal": "USD",
+            "tasa_bs": 36.5,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "CAJA",
+                "cantidad": 1,
+                "costo_unitario_usd": 100,
+                "costo_unitario_bs": 3650,
+            }],
+        })}).json()
+
+        # Pago BS-only: 3650 BS = 100 USD
+        client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 0,
+            "monto_bs": 3650,
+        })})
+
+        resp = client.get("/api/invoices/pending-summary")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_pendiente_usd"] == "0.00"
+
+    def test_pending_summary_multiple_currencies(self, client):
+        """Facturas en diferentes monedas se suman correctamente."""
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        # Factura USD: $100
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-MULTI-CUR-001", costo_usd=100)
+        )})
+
+        # Factura BS: 5000 BS, tasa=100, sin IVA → $50
+        payload_bs = _invoice_payload_bs(sup["id"], prod["id"], "F-MULTI-CUR-002",
+                                         tasa_bs=100, costo_bs=5000)
+        payload_bs["aplica_iva"] = False
+        client.post("/api/invoices", data={"data": json.dumps(payload_bs)})
+
+        resp = client.get("/api/invoices/pending-summary")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_pendiente_usd"] == "150.00"

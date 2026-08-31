@@ -1,12 +1,13 @@
 """Tests unitarios para invoice_service: CRUD, IVA, pagos y estado."""
 import pytest
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import select
 
 from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.category import Category
-from app.models.invoice import Factura, MonedaEnum
+from app.models.invoice import DetalleFactura, Factura, MonedaEnum, ObsequioFactura, TipoDocumentoEnum, TipoEmpaqueFactura
 from app.models.invoice_payment import InvoicePayment
 from app.models.payment_method import PaymentMethod
 from app.models.product import Product
@@ -16,6 +17,7 @@ from app.schemas.invoice import (
     DetalleFacturaCreate,
     FacturaCreate,
     InvoicePaymentCreate,
+    ObsequioFacturaCreate,
 )
 from app.services.invoice_service import (
     _calcular_total_con_iva,
@@ -24,6 +26,9 @@ from app.services.invoice_service import (
     get_invoice,
     get_invoice_payment_summary,
     get_invoices,
+    get_invoice_stats,
+    get_pending_invoices_summary,
+    get_top_suppliers_by_purchases,
     register_invoice_payment,
 )
 
@@ -869,3 +874,1035 @@ class TestDeleteInvoicePayment:
 
         with pytest.raises(EntityNotFoundError, match="Pago no encontrado"):
             delete_invoice_payment(db, factura2.id, pago.id)
+
+
+# ── Tests NUEVOS: CreateInvoice - Monedas y conversiones ──────────────────
+
+
+class TestCreateInvoiceCurrencyConversion:
+    """Tests de creación de factura con conversión real USD/BS."""
+
+    def test_create_invoice_bs_moneda_converts_costs(self, db):
+        """BS primaria: costo_usd = costo_bs / tasa."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-BS-CONV-001",
+            moneda_principal=MonedaEnum.BS,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("1825"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        assert factura.moneda_principal == MonedaEnum.BS
+        assert factura.total_bs == Decimal("1825.00")
+        assert factura.total_usd == Decimal("50.00")
+
+        detalle = factura.detalles[0]
+        assert detalle.costo_unitario_bs == Decimal("1825.00")
+        assert detalle.costo_unitario_usd == Decimal("50.00")
+
+    def test_create_invoice_usd_moneda_with_real_tasa(self, db):
+        """USD primaria con tasa real: total_bs = total_usd * tasa."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-USD-CONV-001",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=2,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("1825"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        assert factura.total_usd == Decimal("100.00")
+        assert factura.total_bs == Decimal("3650.00")
+
+        detalle = factura.detalles[0]
+        assert detalle.costo_unitario_usd == Decimal("50.00")
+        assert detalle.costo_unitario_bs == Decimal("1825.00")
+
+    def test_create_invoice_bs_real_tasa_iva(self, db):
+        """BS + IVA + tasa real: IVA se calcula en BS, total_usd = total_bs / tasa."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12, tipo_iva="GRAVADO")
+        user = _user(db)
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-BS-IVA-REAL",
+            moneda_principal=MonedaEnum.BS,
+            tasa_bs=Decimal("36.5"),
+            aplica_iva=True,
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("1825"),
+                tipo_iva="GRAVADO",
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        total_usd_iva, total_bs_iva = _calcular_total_con_iva(factura, db)
+        # base_bs=1825, IVA=292, total_bs=2117, total_usd=2117/36.5=58.00
+        assert total_bs_iva == Decimal("2117.00")
+        assert total_usd_iva == Decimal("58.00")
+
+
+# ── Tests NUEVOS: CreateInvoice - Empaque UNIDAD ──────────────────────────
+
+
+class TestCreateInvoiceUnidadEmpaque:
+    """Tests de creación de factura con tipo_empaque=UNIDAD."""
+
+    def test_unidad_empaque_updates_stock_unidades(self, db):
+        """UNIDAD incrementa stock_unidades, no stock_cajas."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+        db.refresh(prod)
+        stock_inicial = prod.stock_unidades
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-UNI-001",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="UNIDAD", cantidad=10,
+                costo_unitario_usd=Decimal("5"),
+                costo_unitario_bs=Decimal("182.5"),
+            )],
+        )
+        create_invoice(db, data, usuario_id=user.id)
+        db.refresh(prod)
+
+        assert prod.stock_unidades == stock_inicial + 10
+        assert prod.stock_cajas == 0
+
+    def test_unidad_empaque_updates_cost(self, db):
+        """UNIDAD: precio_costo_usd = costo_usd, precio_costo_caja = costo_usd * upc."""
+        sup = _sup(db)
+        prod = _prod(db, unidades_caja=12)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-UNI-002",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="UNIDAD", cantidad=5,
+                costo_unitario_usd=Decimal("7.50"),
+                costo_unitario_bs=Decimal("7.50"),
+            )],
+        )
+        create_invoice(db, data, usuario_id=user.id)
+        db.refresh(prod)
+
+        assert prod.precio_costo_usd == Decimal("7.50")
+        assert prod.precio_costo_caja_usd == (Decimal("7.50") * Decimal("12")).quantize(Decimal("0.01"))
+
+
+# ── Tests NUEVOS: CreateInvoice - unidades_por_caja override ─────────────
+
+
+class TestCreateInvoiceUnidadesPorCaja:
+    """Tests de override de unidades_por_caja en producto."""
+
+    def test_unidades_por_caja_override_updates_product(self, db):
+        """Cuando item.unidades_por_caja difiere, se actualiza en producto."""
+        sup = _sup(db)
+        prod = _prod(db, unidades_caja=12)
+        user = _user(db)
+        assert prod.unidades_por_caja == 12
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-UPC-001",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("50"),
+                unidades_por_caja=24,
+            )],
+        )
+        create_invoice(db, data, usuario_id=user.id)
+        db.refresh(prod)
+
+        assert prod.unidades_por_caja == 24
+
+    def test_unidades_por_caja_same_does_not_change(self, db):
+        """Cuando item.unidades_por_caja es igual, no cambia el producto."""
+        sup = _sup(db)
+        prod = _prod(db, unidades_caja=12)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-UPC-002",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("50"),
+                unidades_por_caja=12,
+            )],
+        )
+        create_invoice(db, data, usuario_id=user.id)
+        db.refresh(prod)
+
+        assert prod.unidades_por_caja == 12
+
+
+# ── Tests NUEVOS: CreateInvoice - Múltiples productos ─────────────────────
+
+
+class TestCreateInvoiceMultipleProducts:
+    """Tests de factura con múltiples productos."""
+
+    def test_multiple_products_all_stock_increments(self, db):
+        """Cada producto recibe su incremento de stock independiente."""
+        sup = _sup(db)
+        prod1 = _prod(db, nombre="Prod1", precio=Decimal("50"), unidades_caja=12)
+        prod2 = _prod(db, nombre="Prod2", precio=Decimal("30"), unidades_caja=6)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-MULTI-001",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[
+                DetalleFacturaCreate(
+                    producto_id=prod1.id, tipo_empaque="CAJA", cantidad=2,
+                    costo_unitario_usd=Decimal("50"),
+                    costo_unitario_bs=Decimal("1825"),
+                ),
+                DetalleFacturaCreate(
+                    producto_id=prod2.id, tipo_empaque="CAJA", cantidad=3,
+                    costo_unitario_usd=Decimal("30"),
+                    costo_unitario_bs=Decimal("1095"),
+                ),
+            ],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        db.refresh(prod1)
+        db.refresh(prod2)
+        assert prod1.stock_cajas == 2
+        assert prod2.stock_cajas == 3
+        assert factura.total_usd == Decimal("190.00")
+        assert factura.total_bs == Decimal("6935.00")
+
+    def test_multiple_products_iva_mixed(self, db):
+        """Múltiples productos con IVA mixto: solo GRAVADO lleva IVA."""
+        sup = _sup(db)
+        prod_grav = _prod(db, nombre="Gravado", precio=Decimal("100"), unidades_caja=12, tipo_iva="GRAVADO")
+        prod_exent = _prod(db, nombre="Exento", precio=Decimal("50"), unidades_caja=12, tipo_iva="EXENTO")
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-MIX-IVA-001",
+            moneda_principal=MonedaEnum.BS,
+            tasa_bs=Decimal("36.5"),
+            aplica_iva=True,
+            detalles=[
+                DetalleFacturaCreate(
+                    producto_id=prod_grav.id, tipo_empaque="CAJA", cantidad=1,
+                    costo_unitario_usd=Decimal("100"),
+                    costo_unitario_bs=Decimal("3650"),
+                    tipo_iva="GRAVADO",
+                ),
+                DetalleFacturaCreate(
+                    producto_id=prod_exent.id, tipo_empaque="CAJA", cantidad=1,
+                    costo_unitario_usd=Decimal("50"),
+                    costo_unitario_bs=Decimal("1825"),
+                    tipo_iva="EXENTO",
+                ),
+            ],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        total_usd_iva, total_bs_iva = _calcular_total_con_iva(factura, db)
+        # GRAVADO: 3650, IVA=584; EXENTO: 1825; total_bs=6059
+        # total_usd = 6059/36.5 = 166.00
+        assert total_bs_iva == Decimal("6059.00")
+        assert total_usd_iva == Decimal("166.00")
+
+
+# ── Tests NUEVOS: CreateInvoice - Obsequios ───────────────────────────────
+
+
+class TestCreateInvoiceObsequios:
+    """Tests de obsequios (productos gratis) en facturas."""
+
+    def test_obsequios_add_stock_without_affecting_total(self, db):
+        """Obsequios incrementan stock pero NO afectan total_usd/total_bs."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-OBS-001",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=2,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("1825"),
+            )],
+            obsequios=[ObsequioFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                justificacion="Promoción del proveedor",
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+        db.refresh(prod)
+
+        assert factura.total_usd == Decimal("100.00")
+        assert factura.total_bs == Decimal("3650.00")
+        assert prod.stock_cajas == 3  # 2 (factura) + 1 (obsequio)
+        assert len(factura.obsequios) == 1
+
+    def test_obsequios_unidad_stock(self, db):
+        """Obsequios en UNIDAD incrementan stock_unidades."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        db.refresh(prod)
+        stock_inicial = prod.stock_unidades
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-OBS-002",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("50"),
+            )],
+            obsequios=[ObsequioFacturaCreate(
+                producto_id=prod.id, tipo_empaque="UNIDAD", cantidad=5,
+                justificacion="Muestra gratis",
+            )],
+        )
+        create_invoice(db, data, usuario_id=user.id)
+        db.refresh(prod)
+
+        assert prod.stock_unidades == stock_inicial + 5
+
+
+# ── Tests NUEVOS: CreateInvoice - Persistencia de campos ──────────────────
+
+
+class TestCreateInvoiceFieldPersistence:
+    """Tests de persistencia de campos opcionales en factura."""
+
+    def test_observaciones_persisted(self, db):
+        """Campo observaciones se guarda correctamente."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-OBS-003",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            observaciones="Nota de entrega pendiente de revisión",
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("50"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+        assert factura.observaciones == "Nota de entrega pendiente de revisión"
+
+    def test_fecha_limite_pago_persisted(self, db):
+        """Campo fecha_limite_pago se guarda correctamente."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-FLP-001",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            fecha_limite_pago=date(2026, 12, 31),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("50"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+        assert factura.fecha_limite_pago == date(2026, 12, 31)
+
+    def test_proveedor_id_overwrites_previous_supplier(self, db):
+        """Si producto ya tiene proveedor, la factura lo reasigna."""
+        sup1 = _sup(db, nombre="Proveedor A")
+        sup2 = _sup(db, nombre="Proveedor B")
+        prod = _prod(db)
+        user = _user(db)
+
+        data1 = _factura_data(sup1, prod, "F-SUP-001")
+        create_invoice(db, data1, usuario_id=user.id)
+        db.refresh(prod)
+        assert prod.proveedor_id == sup1.id
+
+        data2 = _factura_data(sup2, prod, "F-SUP-002")
+        create_invoice(db, data2, usuario_id=user.id)
+        db.refresh(prod)
+        assert prod.proveedor_id == sup2.id
+
+
+# ── Tests NUEVOS: _calcular_total_con_iva - Edge cases ────────────────────
+
+
+class TestCalcularTotalConIvaEdgeCases:
+    """Tests de edge cases en cálculo de IVA."""
+
+    def test_iva_rounding_boundary(self, db):
+        """Redondeo en límite .005: IVA = base * 16%."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12, tipo_iva="GRAVADO")
+        user = _user(db)
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-IVA-ROUND-001",
+            moneda_principal=MonedaEnum.BS,
+            tasa_bs=Decimal("36.5"),
+            aplica_iva=True,
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=3,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("1825"),
+                tipo_iva="GRAVADO",
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        total_usd_iva, total_bs_iva = _calcular_total_con_iva(factura, db)
+        # base_bs = 3 * 1825 = 5475; IVA = 5475 * 0.16 = 876.00
+        # total_bs = 5475 + 876 = 6351
+        assert total_bs_iva == Decimal("6351.00")
+        assert total_usd_iva == (Decimal("6351.00") / Decimal("36.5")).quantize(Decimal("0.01"))
+
+    def test_iva_multiple_gravado_products(self, db):
+        """Múltiples productos GRAVADO: IVA se suma sobre la base total."""
+        sup = _sup(db)
+        prod1 = _prod(db, nombre="G1", precio=Decimal("100"), unidades_caja=12, tipo_iva="GRAVADO")
+        prod2 = _prod(db, nombre="G2", precio=Decimal("50"), unidades_caja=12, tipo_iva="GRAVADO")
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-IVA-MULTI-G",
+            moneda_principal=MonedaEnum.BS,
+            tasa_bs=Decimal("36.5"),
+            aplica_iva=True,
+            detalles=[
+                DetalleFacturaCreate(
+                    producto_id=prod1.id, tipo_empaque="CAJA", cantidad=1,
+                    costo_unitario_usd=Decimal("100"),
+                    costo_unitario_bs=Decimal("3650"),
+                    tipo_iva="GRAVADO",
+                ),
+                DetalleFacturaCreate(
+                    producto_id=prod2.id, tipo_empaque="CAJA", cantidad=2,
+                    costo_unitario_usd=Decimal("50"),
+                    costo_unitario_bs=Decimal("1825"),
+                    tipo_iva="GRAVADO",
+                ),
+            ],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        total_usd_iva, total_bs_iva = _calcular_total_con_iva(factura, db)
+        # base_bs = 3650 + (2*1825) = 7300; IVA = 7300 * 0.16 = 1168
+        # total_bs = 7300 + 1168 = 8468
+        assert total_bs_iva == Decimal("8468.00")
+        assert total_usd_iva == (Decimal("8468.00") / Decimal("36.5")).quantize(Decimal("0.01"))
+
+
+# ── Tests NUEVOS: get_invoices - Filtros y ordenamiento ───────────────────
+
+
+class TestGetInvoicesFiltersAndSorting:
+    """Tests de filtros avanzados y ordenamiento de facturas."""
+
+    def test_filter_estado_pago(self, db):
+        """Filtrar por estado_pago retorna solo los que coinciden."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        data1 = _factura_data(sup, prod, "F-FIL-001", cajas=1, costo_usd=Decimal("50"))
+        f1 = create_invoice(db, data1, usuario_id=user.id)
+        assert f1.estado_pago == "PENDIENTE"
+
+        data2 = _factura_data(sup, prod, "F-FIL-002", cajas=1, costo_usd=Decimal("50"))
+        f2 = create_invoice(db, data2, usuario_id=user.id)
+        mp = _metodo_pago(db)
+        register_invoice_payment(
+            db, f2.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("50")),
+            usuario_id=user.id,
+        )
+        db.refresh(f2)
+        assert f2.estado_pago == "PAGADA"
+
+        result = get_invoices(db, estado_pago="PENDIENTE")
+        assert len(result["items"]) == 1
+        assert result["items"][0].numero_factura == "F-FIL-001"
+
+        result = get_invoices(db, estado_pago="PAGADA")
+        assert len(result["items"]) == 1
+        assert result["items"][0].numero_factura == "F-FIL-002"
+
+    def test_filter_fecha_desde_hasta(self, db):
+        """Filtrar por rango de fechas."""
+        from datetime import date as _date
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        for i, fecha in enumerate([date(2026, 1, 15), date(2026, 6, 20), date(2026, 12, 25)]):
+            data = FacturaCreate(
+                proveedor_id=sup.id,
+                numero_factura=f"F-DATE-{i:03d}",
+                moneda_principal=MonedaEnum.USD,
+                tasa_bs=Decimal("1"),
+                fecha_factura=fecha,
+                detalles=[DetalleFacturaCreate(
+                    producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                    costo_unitario_usd=Decimal("50"),
+                    costo_unitario_bs=Decimal("50"),
+                )],
+            )
+            create_invoice(db, data, usuario_id=user.id)
+
+        result = get_invoices(db, fecha_desde="2026-03-01", fecha_hasta="2026-09-30")
+        assert len(result["items"]) == 1
+        assert result["items"][0].numero_factura == "F-DATE-001"
+
+    def test_sort_precio_desc(self, db):
+        """Ordenar por precio descendente."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        for i, precio in enumerate([Decimal("30"), Decimal("100"), Decimal("60")]):
+            data = _factura_data(sup, prod, f"F-SORT-{i:03d}", cajas=1, costo_usd=precio)
+            create_invoice(db, data, usuario_id=user.id)
+
+        result = get_invoices(db, sort_by="precio_desc")
+        precios = [item.total_usd for item in result["items"]]
+        assert precios == [Decimal("100.00"), Decimal("60.00"), Decimal("30.00")]
+
+    def test_sort_precio_asc(self, db):
+        """Ordenar por precio ascendente."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        for i, precio in enumerate([Decimal("30"), Decimal("100"), Decimal("60")]):
+            data = _factura_data(sup, prod, f"F-SORTA-{i:03d}", cajas=1, costo_usd=precio)
+            create_invoice(db, data, usuario_id=user.id)
+
+        result = get_invoices(db, sort_by="precio_asc")
+        precios = [item.total_usd for item in result["items"]]
+        assert precios == [Decimal("30.00"), Decimal("60.00"), Decimal("100.00")]
+
+    def test_sort_fecha_limite_pago(self, db):
+        """Ordenar por fecha_limite_pago: primero sin fecha, luego por fecha ascendente."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        data1 = FacturaCreate(
+            proveedor_id=sup.id, numero_factura="F-SORT-FLP-001",
+            moneda_principal=MonedaEnum.USD, tasa_bs=Decimal("1"),
+            fecha_limite_pago=date(2026, 12, 31),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"), costo_unitario_bs=Decimal("50"),
+            )],
+        )
+        data2 = FacturaCreate(
+            proveedor_id=sup.id, numero_factura="F-SORT-FLP-002",
+            moneda_principal=MonedaEnum.USD, tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"), costo_unitario_bs=Decimal("50"),
+            )],
+        )
+        data3 = FacturaCreate(
+            proveedor_id=sup.id, numero_factura="F-SORT-FLP-003",
+            moneda_principal=MonedaEnum.USD, tasa_bs=Decimal("1"),
+            fecha_limite_pago=date(2026, 6, 15),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"), costo_unitario_bs=Decimal("50"),
+            )],
+        )
+        create_invoice(db, data1, usuario_id=user.id)
+        create_invoice(db, data2, usuario_id=user.id)
+        create_invoice(db, data3, usuario_id=user.id)
+
+        result = get_invoices(db, sort_by="fecha_limite_pago")
+        nums = [item.numero_factura for item in result["items"]]
+        assert nums[0] == "F-SORT-FLP-003"  # 2026-06-15 (más pronto)
+        assert nums[1] == "F-SORT-FLP-001"  # 2026-12-31
+
+
+# ── Tests NUEVOS: get_invoice_stats ───────────────────────────────────────
+
+
+class TestGetInvoiceStats:
+    """Tests para get_invoice_stats: conteo por estado de pago."""
+
+    def test_stats_empty(self, db):
+        """Sin facturas: todos los conteos en 0."""
+        stats = get_invoice_stats(db)
+        assert stats == {"pendientes": 0, "parciales": 0, "pagadas": 0, "total": 0}
+
+    def test_stats_mixed_statuses(self, db):
+        """Conteo correcto por estado de pago."""
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        # PENDIENTE
+        data1 = _factura_data(sup, prod, "F-STAT-001", cajas=1, costo_usd=Decimal("100"))
+        f1 = create_invoice(db, data1, usuario_id=user.id)
+
+        # PAGADA
+        data2 = _factura_data(sup, prod, "F-STAT-002", cajas=1, costo_usd=Decimal("50"))
+        f2 = create_invoice(db, data2, usuario_id=user.id)
+        register_invoice_payment(
+            db, f2.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("50")),
+            usuario_id=user.id,
+        )
+
+        # PARCIAL
+        data3 = _factura_data(sup, prod, "F-STAT-003", cajas=1, costo_usd=Decimal("200"))
+        f3 = create_invoice(db, data3, usuario_id=user.id)
+        register_invoice_payment(
+            db, f3.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("50")),
+            usuario_id=user.id,
+        )
+
+        stats = get_invoice_stats(db)
+        assert stats["pendientes"] == 1
+        assert stats["pagadas"] == 1
+        assert stats["parciales"] == 1
+        assert stats["total"] == 3
+
+
+# ── Tests NUEVOS: get_top_suppliers_by_purchases ──────────────────────────
+
+
+class TestGetTopSuppliers:
+    """Tests para get_top_suppliers_by_purchases."""
+
+    def test_top_suppliers_empty(self, db):
+        """Sin facturas: lista vacía."""
+        result = get_top_suppliers_by_purchases(db)
+        assert result == []
+
+    def test_top_suppliers_ranking(self, db):
+        """Ranking correcto por cantidad de facturas."""
+        sup1 = _sup(db, nombre="Proveedor Mayorista")
+        sup2 = _sup(db, nombre="Proveedor Menorista")
+        prod = _prod(db)
+        user = _user(db)
+
+        # 3 facturas de sup1, 1 de sup2
+        for i in range(3):
+            data = _factura_data(sup1, prod, f"F-TOP-1-{i}")
+            create_invoice(db, data, usuario_id=user.id)
+        data = _factura_data(sup2, prod, "F-TOP-2-0")
+        create_invoice(db, data, usuario_id=user.id)
+
+        result = get_top_suppliers_by_purchases(db)
+        assert len(result) == 2
+        assert result[0]["supplier_id"] == sup1.id
+        assert result[0]["invoice_count"] == 3
+        assert result[1]["supplier_id"] == sup2.id
+        assert result[1]["invoice_count"] == 1
+
+    def test_top_suppliers_limit(self, db):
+        """Respeta el parámetro limit."""
+        sup1 = _sup(db, nombre="S1")
+        sup2 = _sup(db, nombre="S2")
+        sup3 = _sup(db, nombre="S3")
+        prod = _prod(db)
+        user = _user(db)
+
+        for sup in [sup1, sup2, sup3]:
+            for i in range(2):
+                data = _factura_data(sup, prod, f"F-LIM-{sup.id}-{i}")
+                create_invoice(db, data, usuario_id=user.id)
+
+        result = get_top_suppliers_by_purchases(db, limit=2)
+        assert len(result) == 2
+
+
+# ── Tests NUEVOS: get_pending_invoices_summary ────────────────────────────
+
+
+class TestGetPendingInvoicesSummary:
+    """Tests para get_pending_invoices_summary (incluyendo bug fix BS-only)."""
+
+    def test_pending_summary_empty(self, db):
+        """Sin facturas: total pendiente en 0."""
+        result = get_pending_invoices_summary(db)
+        assert result["total_pendiente_usd"] == Decimal("0.00")
+
+    def test_pending_summary_usd_invoice(self, db):
+        """Factura USD pendiente: total = total_usd."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+
+        data = _factura_data(sup, prod, "F-PEND-SUM-001", cajas=2, costo_usd=Decimal("50"))
+        create_invoice(db, data, usuario_id=user.id)
+
+        result = get_pending_invoices_summary(db)
+        assert result["total_pendiente_usd"] == Decimal("100.00")
+
+    def test_pending_summary_bs_invoice_with_iva(self, db):
+        """Factura BS + IVA: pendiente = total con IVA en USD."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-PEND-IVA-001",
+            moneda_principal=MonedaEnum.BS,
+            tasa_bs=Decimal("36.5"),
+            aplica_iva=True,
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("50"),
+                costo_unitario_bs=Decimal("1825"),
+                tipo_iva="GRAVADO",
+            )],
+        )
+        create_invoice(db, data, usuario_id=user.id)
+
+        result = get_pending_invoices_summary(db)
+        # total_bs=1825, IVA=292, total=2117, USD=2117/36.5=58.00
+        assert result["total_pendiente_usd"] == Decimal("58.00")
+
+    def test_pending_summary_with_partial_payment(self, db):
+        """Pago parcial reduce el pendiente."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = _factura_data(sup, prod, "F-PEND-PART-001", cajas=2, costo_usd=Decimal("50"))
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("40")),
+            usuario_id=user.id,
+        )
+
+        result = get_pending_invoices_summary(db)
+        assert result["total_pendiente_usd"] == Decimal("60.00")
+
+    def test_pending_summary_bs_only_payment_bug_fix(self, db):
+        """Bug fix: pago BS-only se convierte a USD para el cálculo de pendiente."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-PEND-BS-001",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("100"),
+                costo_unitario_bs=Decimal("3650"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        # Pago BS-only: 3650 BS = 100 USD a tasa 36.5
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("0"),
+                                  monto_bs=Decimal("3650")),
+            usuario_id=user.id,
+        )
+
+        result = get_pending_invoices_summary(db)
+        assert result["total_pendiente_usd"] == Decimal("0.00")
+
+    def test_pending_summary_excludes_paid(self, db):
+        """Facturas PAGADA no aparecen en el resumen de pendientes."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = _factura_data(sup, prod, "F-PEND-PAID-001", cajas=1, costo_usd=Decimal("100"))
+        factura = create_invoice(db, data, usuario_id=user.id)
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("100")),
+            usuario_id=user.id,
+        )
+
+        result = get_pending_invoices_summary(db)
+        assert result["total_pendiente_usd"] == Decimal("0.00")
+
+    def test_pending_summary_multiple_invoices(self, db):
+        """Múltiples facturas se suman correctamente."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+
+        for i in range(3):
+            data = _factura_data(sup, prod, f"F-PEND-MULTI-{i}", cajas=1, costo_usd=Decimal("100"))
+            create_invoice(db, data, usuario_id=user.id)
+
+        result = get_pending_invoices_summary(db)
+        assert result["total_pendiente_usd"] == Decimal("300.00")
+
+
+# ── Tests NUEVOS: register_invoice_payment - Monedas ──────────────────────
+
+
+class TestRegisterInvoicePaymentCurrency:
+    """Tests de pagos con diferentes combinaciones de moneda."""
+
+    def test_payment_bs_only(self, db):
+        """Pago solo en BS (monto_usd=0)."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-PAY-BS-ONLY",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("100"),
+                costo_unitario_bs=Decimal("3650"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        pago = register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("0"),
+                                  monto_bs=Decimal("3650")),
+            usuario_id=user.id,
+        )
+
+        assert pago.monto_usd == Decimal("0")
+        assert pago.monto_bs == Decimal("3650.00")
+
+    def test_payment_mixed_usd_and_bs(self, db):
+        """Pago mixto USD+BS en una transacción."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-PAY-MIXED",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("100"),
+                costo_unitario_bs=Decimal("100"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        pago = register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("50"),
+                                  monto_bs=Decimal("50")),
+            usuario_id=user.id,
+        )
+
+        assert pago.monto_usd == Decimal("50.00")
+        assert pago.monto_bs == Decimal("50.00")
+
+    def test_payment_with_different_tasa(self, db):
+        """Pago con tasa diferente a la de la factura: se guarda la tasa del pago."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-PAY-TASA-DIF",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("800"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("10"),
+                costo_unitario_bs=Decimal("8000"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        pago = register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("10"),
+                                  tasa_bs=Decimal("900")),
+            usuario_id=user.id,
+        )
+
+        assert pago.tasa_bs == Decimal("900.00")
+        assert pago.monto_bs == Decimal("9000.00")
+
+
+# ── Tests NUEVOS: get_invoice_payment_summary - Monedas ───────────────────
+
+
+class TestGetInvoicePaymentSummaryCurrency:
+    """Tests de summary con diferentes combinaciones de moneda."""
+
+    def test_summary_bs_only_payments(self, db):
+        """Summary con pagos BS-only: se convierten a USD."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-SUM-BS-ONLY",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("100"),
+                costo_unitario_bs=Decimal("3650"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("0"),
+                                  monto_bs=Decimal("1825")),
+            usuario_id=user.id,
+        )
+
+        summary = get_invoice_payment_summary(db, factura.id)
+        assert summary.total_pagado_bs == Decimal("1825.00")
+        # 1825 / 36.5 = 50.00 USD
+        assert summary.total_pagado_usd == Decimal("50.00")
+        assert summary.saldo_pendiente_usd == Decimal("50.00")
+
+    def test_summary_mixed_payments(self, db):
+        """Summary con pagos mixtos USD + BS."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-SUM-MIXED",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("36.5"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("100"),
+                costo_unitario_bs=Decimal("3650"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        # Pago 1: USD
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("30")),
+            usuario_id=user.id,
+        )
+        # Pago 2: BS-only
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("0"),
+                                  monto_bs=Decimal("1825")),
+            usuario_id=user.id,
+        )
+
+        summary = get_invoice_payment_summary(db, factura.id)
+        # 30 USD + (1825/36.5=50 USD) = 80 USD pagado
+        assert summary.total_pagado_usd == Decimal("80.00")
+        assert summary.saldo_pendiente_usd == Decimal("20.00")
+
+    def test_summary_diferencia_cambiaria(self, db):
+        """Diferencia cambiaria se calcula correctamente."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-SUM-DIF-CAMB",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("800"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("10"),
+                costo_unitario_bs=Decimal("8000"),
+            )],
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("10"),
+                                  tasa_bs=Decimal("900")),
+            usuario_id=user.id,
+        )
+
+        summary = get_invoice_payment_summary(db, factura.id)
+        # Pago BS = 10*900 = 9000; esperado BS = 10*800 = 8000; diferencia = 1000
+        assert summary.diferencia_cambiaria_bs == Decimal("1000.00")
