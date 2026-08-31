@@ -34,7 +34,6 @@ export default function InvoiceNewPage() {
   // ── IA ──
   const [aiState, setAiState] = useState<"idle" | "analyzing" | "reviewing">("idle");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<InvoiceAnalysisOut | null>(null);
   const [aiRawJsonIa, setAiRawJsonIa] = useState<Record<string, unknown> | null>(null);
 
@@ -117,7 +116,6 @@ export default function InvoiceNewPage() {
       return;
     }
     setAiLoading(true);
-    setAiError(null);
     try {
       const result = await api.analyzeInvoice(invoiceFiles);
       setAiAnalysis(result);
@@ -125,7 +123,7 @@ export default function InvoiceNewPage() {
       setAiState("reviewing");
       toast(`IA: ${result.productos.length} productos extraídos`, "success");
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : "Error al analizar imagen");
+      toast(err instanceof Error ? err.message : "Error al analizar imagen", "error");
     } finally {
       setAiLoading(false);
     }
@@ -135,7 +133,6 @@ export default function InvoiceNewPage() {
     setAiState("idle");
     setAiAnalysis(null);
     setAiRawJsonIa(null);
-    setAiError(null);
   }, []);
 
   const handleSupplierCreated = useCallback((supplier: SupplierOut) => {
@@ -308,19 +305,6 @@ export default function InvoiceNewPage() {
             onProductCreated={handleProductCreated}
             onCancel={handleCancelAiReview}
           />
-        )}
-
-        {aiError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {aiError}
-            <button
-              type="button"
-              onClick={() => { setAiError(null); handleAnalyzeImage(); }}
-              className="ml-2 underline hover:text-red-900"
-            >
-              Reintentar
-            </button>
-          </div>
         )}
 
         <Textarea
