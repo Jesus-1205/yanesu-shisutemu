@@ -17,6 +17,7 @@ from app.services.product_service import _accent_fold, _accent_fold_pattern
 from app.schemas.invoice import ExtractedProduct, FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, ObsequioFacturaCreate
 
 IVA_RATE = Decimal("16")
+GEMINI_MODEL = "gemini-3.7-flash"
 
 
 def _calcular_total_con_iva(factura: Factura, db: Session) -> tuple[Decimal, Decimal]:
@@ -275,7 +276,7 @@ def _call_gemini(
 
     url = (
         "https://generativelanguage.googleapis.com/v1beta/"
-        "models/gemini-3.1-flash-lite:generateContent"
+        f"models/{GEMINI_MODEL}:generateContent"
     )
 
     payload = {
