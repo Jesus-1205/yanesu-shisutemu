@@ -339,7 +339,7 @@ export default function InvoiceNewPage() {
       />
 
       {aiLoading && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/70">
           <div className="bg-white rounded-2xl px-8 py-10 flex flex-col items-center shadow-2xl">
             <Spinner size="lg" />
             <p className="mt-5 text-sm font-semibold text-slate-700">Analizando factura con IA...</p>

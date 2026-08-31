@@ -270,19 +270,19 @@ export default function AIReviewPanel({
             </button>
           </div>
         </div>
-        <div>
+        <div className="col-span-2 md:col-span-1">
           <label className={labelSmall}>N° Factura</label>
           <input value={numeroFactura} onChange={(e) => setNumeroFactura(e.target.value)} className={inputBase} />
         </div>
-        <div>
+        <div className="col-span-1 md:col-span-1">
           <label className={labelSmall}>Fecha</label>
           <input type="date" value={fechaFactura} onChange={(e) => setFechaFactura(e.target.value)} className={inputBase} />
         </div>
-        <div>
+        <div className="col-span-1 md:col-span-1">
           <label className={labelSmall}>Fecha Límite</label>
           <input type="date" value={fechaLimitePago} onChange={(e) => setFechaLimitePago(e.target.value)} className={inputBase} />
         </div>
-        <div>
+        <div className="col-span-1 md:col-span-2">
           <label className={labelSmall}>Tipo</label>
           <div className="flex rounded-lg border border-slate-300 overflow-hidden">
             <button
@@ -305,7 +305,7 @@ export default function AIReviewPanel({
             </button>
           </div>
         </div>
-        <div>
+        <div className="col-span-1 md:col-span-1">
           <label className={labelSmall}>Moneda</label>
           <div className="flex rounded-lg border border-slate-300 overflow-hidden">
             <button
