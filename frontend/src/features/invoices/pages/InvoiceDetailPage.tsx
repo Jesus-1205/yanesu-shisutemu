@@ -569,22 +569,32 @@ export default function InvoiceDetailPage() {
                   <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Producto</th>
                   <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-2">Tipo</th>
                   <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Cant</th>
+                  <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Unds/Caja</th>
+                  <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Total Unds</th>
                   <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Justificación</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-100">
-                {invoice.obsequios.map((o) => (
-                  <tr key={o.id} className="bg-purple-50/30">
-                    <td className="px-4 py-2 text-text-main font-medium">{o.product?.nombre || "—"}</td>
-                    <td className="px-4 py-2 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                        {o.tipo_empaque === "CAJA" ? "Caja" : "Und"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 text-right tabular-nums">{o.cantidad}</td>
-                    <td className="px-4 py-2 text-xs text-slate-600">{o.justificacion}</td>
-                  </tr>
-                ))}
+                {invoice.obsequios.map((o) => {
+                  const undsCaja = o.product?.unidades_por_caja ?? 1;
+                  const totalUnds = o.tipo_empaque === "CAJA" ? o.cantidad * undsCaja : o.cantidad;
+                  return (
+                    <tr key={o.id} className="bg-purple-50/30">
+                      <td className="px-4 py-2 text-text-main font-medium">{o.product?.nombre || "—"}</td>
+                      <td className="px-4 py-2 text-center">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                          {o.tipo_empaque === "CAJA" ? "Caja" : "Und"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">{o.cantidad}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-slate-500">
+                        {o.tipo_empaque === "CAJA" ? undsCaja : "—"}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums font-medium">{totalUnds}</td>
+                      <td className="px-4 py-2 text-xs text-slate-600">{o.justificacion}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -58,9 +58,10 @@ export default function ObsequioForm({ products, onSearchProducts, onAdd }: Obse
   }, [isValid, selectedProduct, productoId, tipoEmpaque, nCajas, nUndsCaja, justificacion, onAdd]);
 
   const inputBase = "w-full h-9 rounded-lg border border-slate-300 bg-surface px-2.5 text-sm outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20";
+  const inputReadOnly = "w-full h-9 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-sm text-slate-400";
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-3 items-end">
       <div className="lg:col-span-2">
         <label className="block text-xs font-medium text-slate-700 mb-1">Buscar producto</label>
         <AsyncCombobox
@@ -111,6 +112,31 @@ export default function ObsequioForm({ products, onSearchProducts, onAdd }: Obse
             Unid
           </button>
         </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1">Unds/Caja</label>
+        {tipoEmpaque === "CAJA" ? (
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={unidadesPorCaja}
+            onChange={(e) => setUnidadesPorCaja(e.target.value)}
+            autoComplete="off"
+            className={inputBase}
+            placeholder="24"
+          />
+        ) : (
+          <input
+            type="text"
+            value="—"
+            className={`${inputReadOnly} cursor-not-allowed text-center`}
+            readOnly
+            tabIndex={-1}
+            aria-readonly="true"
+            autoComplete="off"
+          />
+        )}
       </div>
       <div className="lg:col-span-2">
         <label className="block text-xs font-medium text-slate-700 mb-1">Justificación</label>

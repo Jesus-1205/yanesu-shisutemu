@@ -27,6 +27,7 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
   const [showRateHistory, setShowRateHistory] = useState(false);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [supplierModalNombre, setSupplierModalNombre] = useState("");
+  const [supplierCreated, setSupplierCreated] = useState<SupplierOut | null>(null);
 
   useEffect(() => {
     if (exchangeRateStore.tasa === 0) {
@@ -50,6 +51,7 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
 
   const handleSupplierCreated = useCallback((supplier: SupplierOut) => {
     store.setField("proveedorId", supplier.id);
+    setSupplierCreated(supplier);
     toast(`Proveedor "${supplier.nombre}" creado`, "success");
   }, [store, toast]);
 
@@ -96,6 +98,7 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
                 onSearch={onSearchSuppliers}
                 placeholder="Buscar proveedor..."
                 allowClear={false}
+                initialOptions={supplierCreated ? [{ value: supplierCreated.id, label: supplierCreated.nombre }] : []}
               />
             </div>
             <button
