@@ -486,6 +486,7 @@ export default function AIReviewPanel({
           onClose={() => { setProductModalOpen(false); setProductModalNombre(""); }}
           onCreated={handleProductCreated}
           initialNombre={productModalNombre}
+          compact
         />
       )}
     </div>

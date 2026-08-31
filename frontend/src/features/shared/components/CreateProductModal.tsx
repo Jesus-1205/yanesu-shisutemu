@@ -40,13 +40,14 @@ interface CreateProductModalProps {
   initialMoneda?: "USD" | "BS";
   initialProveedorId?: number | null;
   tasaBs?: number;
+  compact?: boolean;
 }
 
 const inputBase =
   "w-full h-10 rounded-lg border border-slate-300 bg-surface px-3 text-sm text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20";
 const cardBase = "rounded-lg border border-slate-200 bg-surface p-4 space-y-3";
 
-export default function CreateProductModal({ open, onClose, onCreated, initialNombre, initialPrecio, initialMoneda, initialProveedorId, tasaBs }: CreateProductModalProps) {
+export default function CreateProductModal({ open, onClose, onCreated, initialNombre, initialPrecio, initialMoneda, initialProveedorId, tasaBs, compact = false }: CreateProductModalProps) {
   const { user } = useAuth();
   const isOperator = user?.rol_nombre !== "ADMINISTRADOR";
   const [categories, setCategories] = useState<CategoryOut[]>([]);
@@ -157,18 +158,20 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
     setSaving(true);
     setError(null);
     try {
+      const precioUnidadFinal = compact ? 0.01 : n(precioUnidad);
+      const precioCajaFinal = compact ? 0.01 : n(precioCaja);
       const product = await api.createProduct({
         nombre: toTitleCase(nombre.trim()),
-        codigo_barra: codigoBarra.trim() || null,
-        categoria_ids: categoriaIds,
-        unidades_por_caja: n(unidadesPorCaja) || 1,
-        stock_unidades: n(stock),
-        stock_minimo: n(stockMinimo),
-        precio_costo_caja_usd: n(costoCaja),
-        precio_unidad_usd: n(precioUnidad),
-        precio_caja_usd: n(precioCaja),
-        proveedor_id: proveedorId,
-        tipo_iva: tipoIva,
+        codigo_barra: compact ? null : (codigoBarra.trim() || null),
+        categoria_ids: compact ? [] : categoriaIds,
+        unidades_por_caja: unds || 1,
+        stock_unidades: compact ? 0 : n(stock),
+        stock_minimo: compact ? 5 : n(stockMinimo),
+        precio_costo_caja_usd: compact ? 0.01 : n(costoCaja),
+        precio_unidad_usd: precioUnidadFinal || 0.01,
+        precio_caja_usd: precioCajaFinal || 0.01,
+        proveedor_id: compact ? null : proveedorId,
+        tipo_iva: compact ? "GRAVADO" : tipoIva,
       });
       onCreated(product);
       handleClose();
@@ -182,9 +185,28 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
   const fid = (name: string) => `cp-${name}`;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Nuevo Producto" className="!max-w-7xl">
+    <Modal open={open} onClose={handleClose} title="Nuevo Producto" className={compact ? "!max-w-md" : "!max-w-7xl"}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="max-h-[60vh] overflow-y-auto -mx-6 px-6">
+        <div className={compact ? "" : "max-h-[60vh] overflow-y-auto -mx-6 px-6"}>
+          {compact ? (
+            <div className="space-y-3">
+              <Input
+                label="Nombre del producto"
+                id={fid("nombre")}
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="ej: Ron Santa Teresa Añejo"
+                required
+                autoFocus
+              />
+              <div>
+                <label htmlFor={fid("uds-caja")} className="block text-xs font-medium text-slate-700 mb-1">Unidades por caja</label>
+                <input id={fid("uds-caja")} type="number" min="1" value={unidadesPorCaja}
+                  onChange={(e) => setUnidadesPorCaja(e.target.value)} autoComplete="off" className={inputBase} placeholder="1" />
+              </div>
+              <p className="text-[11px] text-slate-400">El costo se establecerá desde la factura.</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-4">
 
             {/* ─── Columna izquierda: info general ─────────────── */}
@@ -351,6 +373,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
               )}
             </div>
           </div>
+        )}
         </div>
 
         {error && <p className="text-xs text-danger">{error}</p>}
