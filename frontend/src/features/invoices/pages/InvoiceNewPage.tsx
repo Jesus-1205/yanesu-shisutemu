@@ -4,6 +4,7 @@ import { ArrowLeft, Package } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut, SupplierOut, CategoryOut, InvoiceAnalysisOut } from "@/types/api";
 import Button from "@/ui-components/Button";
+import Spinner from "@/ui-components/Spinner";
 import { useToast } from "@/ui-components/Toast";
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
 import CreateProductModal from "@/features/shared/components/CreateProductModal";
@@ -351,6 +352,16 @@ export default function InvoiceNewPage() {
         onClose={() => setProductModalOpen(false)}
         onCreated={handleProductCreated}
       />
+
+      {aiLoading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl px-8 py-10 flex flex-col items-center shadow-2xl">
+            <Spinner size="lg" />
+            <p className="mt-5 text-sm font-semibold text-slate-700">Analizando factura con IA...</p>
+            <p className="mt-1 text-xs text-slate-400">Esto puede tomar unos segundos</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
