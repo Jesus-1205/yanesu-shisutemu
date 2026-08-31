@@ -115,8 +115,7 @@ export default function AIReviewPanel({
     if (!prod) {
       try {
         const { api } = await import("@/services/api");
-        const data = await api.getProducts({ search: "" });
-        prod = data.items.find((p) => p.id === productoId);
+        prod = await api.getProduct(productoId);
       } catch { /* ignore */ }
     }
     setItems((prev) => {
@@ -138,6 +137,33 @@ export default function AIReviewPanel({
       return updated;
     });
   }, []);
+
+  const handleToggleEmpaque = useCallback(async (index: number, nuevoTipo: TipoEmpaque) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], tipo_empaque: nuevoTipo };
+      return updated;
+    });
+    if (nuevoTipo === "CAJA") {
+      const item = items[index];
+      if (item.producto_id) {
+        let prod = products.find((p) => p.id === item.producto_id);
+        if (!prod) {
+          try {
+            const { api } = await import("@/services/api");
+            prod = await api.getProduct(item.producto_id);
+          } catch { /* ignore */ }
+        }
+        if (prod) {
+          setItems((prev) => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], unidades_por_caja: prod!.unidades_por_caja };
+            return updated;
+          });
+        }
+      }
+    }
+  }, [items, products]);
 
   const allAccepted = items.every((i) => i.producto_id !== null);
 
@@ -378,7 +404,7 @@ export default function AIReviewPanel({
                   <div className="flex rounded-lg border border-slate-300 overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => handleUpdateItem(idx, "tipo_empaque", "CAJA")}
+                      onClick={() => handleToggleEmpaque(idx, "CAJA")}
                       className={`flex-1 h-9 text-[10px] font-medium transition-colors cursor-pointer ${
                         item.tipo_empaque === "CAJA" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
                       }`}
@@ -387,7 +413,7 @@ export default function AIReviewPanel({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleUpdateItem(idx, "tipo_empaque", "UNIDAD")}
+                      onClick={() => handleToggleEmpaque(idx, "UNIDAD")}
                       className={`flex-1 h-9 text-[10px] font-medium transition-colors cursor-pointer ${
                         item.tipo_empaque === "UNIDAD" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
                       }`}
