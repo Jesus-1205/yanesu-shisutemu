@@ -235,3 +235,39 @@ pytest tests/test_auth.py       # Test específico
 - Unitarios: no requieren base de datos.
 - Nombrar archivos: `test_<modulo>.py` dentro de `tests/`.
 - Cada test debe ser independiente.
+
+## 8. Migraciones Alembic (compatibilidad multi-dialecto)
+
+Las migraciones deben funcionar en SQLite Y PostgreSQL. Prohibido usar sintaxis específica de un solo dialecto.
+
+### 8.1. Defaults de timestamp
+
+Usar `sa.func.now()` (SQLAlchemy lo compila a `CURRENT_TIMESTAMP` en SQLite y `now()` en PostgreSQL).
+
+```python
+# CORRECTO
+sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False)
+
+# PROHIBIDO
+# sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text("datetime('now')"))  # Solo SQLite
+# sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text("now()"))  # Solo PostgreSQL
+```
+
+### 8.2. Defaults de boolean
+
+Usar `sa.text('true')` o `sa.text('false')` (válido en ambos dialectos).
+
+```python
+# CORRECTO
+sa.Column('activo', sa.Boolean(), nullable=False, server_default=sa.text('true'))
+
+# PROHIBIDO
+# sa.Column('activo', sa.Boolean(), nullable=False, server_default=sa.text('1'))  # Solo SQLite
+```
+
+### 8.3. Otros dialectos prohibidos en migraciones
+
+- `ILIKE` → usar `ilike()` de SQLAlchemy (lo compila según el dialecto)
+- `JSONB` → usar `JSON` de SQLAlchemy
+- `SERIAL` → usar `Integer` con `autoincrement=True`
+- `psycopg` → no importar drivers directamente en migraciones

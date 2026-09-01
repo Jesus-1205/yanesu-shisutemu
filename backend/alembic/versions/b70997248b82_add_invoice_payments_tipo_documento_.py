@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     # ── Columnas nuevas en facturas ──
     op.add_column('facturas', sa.Column('tipo_documento', sa.String(length=15), nullable=False, server_default='FACTURA'))
-    op.add_column('facturas', sa.Column('aplica_iva', sa.Boolean(), nullable=False, server_default=sa.text('1')))
+    op.add_column('facturas', sa.Column('aplica_iva', sa.Boolean(), nullable=False, server_default=sa.text('true')))
     op.add_column('facturas', sa.Column('estado_pago', sa.String(length=20), nullable=False, server_default='PENDIENTE'))
 
     # ── Tabla pagos_facturas ──
@@ -33,7 +33,7 @@ def upgrade() -> None:
         sa.Column('monto_bs', sa.DECIMAL(14, 2), nullable=False),
         sa.Column('referencia', sa.String(100), nullable=True),
         sa.Column('observaciones', sa.Text(), nullable=True),
-        sa.Column('fecha_pago', sa.DateTime(timezone=True), server_default=sa.text("datetime('now')"), nullable=False),
+        sa.Column('fecha_pago', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('usuario_id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(['factura_id'], ['facturas.id'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['metodo_pago_id'], ['metodos_pago.id'], ondelete='RESTRICT'),
@@ -49,7 +49,7 @@ def upgrade() -> None:
         sa.Column('archivo_path', sa.String(255), nullable=False),
         sa.Column('nombre_original', sa.String(255), nullable=False),
         sa.Column('tipo_archivo', sa.String(50), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text("datetime('now')"), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.ForeignKeyConstraint(['pago_id'], ['pagos_facturas.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id'),
     )
