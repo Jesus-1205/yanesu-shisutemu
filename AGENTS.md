@@ -61,6 +61,7 @@ Sistema_inventario/
 - **Decimales**: dinero, stock y tasas SIEMPRE con `Decimal`/`DECIMAL`, NUNCA `float` (es un sistema de inventario: un centavo o un descuadre es un fallo grave). Ver sección 0 de `backend_rules.md`
 - TypeScript sin `any`, interfaces en `types/` o `features/*/types.ts`
 - Base de datos **SQLite** (no PostgreSQL): no generar SQL de dialecto incompatible
+- **Prohibido `create_all()` en producción**: Solo en tests. Alembic es el único mecanismo de creación de tablas.
 - Rutas FastAPI delgadas: HTTP en `routes/`, lógica de negocio en `services/`
 - NO hacer `git commit` ni `git push` a menos que el usuario lo solicite explícitamente
 

@@ -238,7 +238,17 @@ pytest tests/test_auth.py       # Test específico
 
 ## 8. Migraciones Alembic (compatibilidad multi-dialecto)
 
+Alembic es el **único** mecanismo de creación de tablas en producción. `create_all()` solo se usa en tests.
+
 Las migraciones deben funcionar en SQLite Y PostgreSQL. Prohibido usar sintaxis específica de un solo dialecto.
+
+### 8.0. Reglas de oro
+
+- **`render_as_batch=True`** en `alembic/env.py`: Obligatorio para compatibilidad SQLite.
+- **`naming_convention`** en `Base.metadata`: Todos los constraints deben tener nombres deterministas.
+- **Siempre generar migraciones contra PostgreSQL**: La fuente de verdad. `render_as_batch` hace que funcionen en SQLite.
+- **Usar `sa.func.now()`** (no `sa.text('now()')`): Multi-dialecto.
+- **Prohibido `create_all()` en producción**: Solo en tests.
 
 ### 8.1. Defaults de timestamp
 

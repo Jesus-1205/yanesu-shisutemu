@@ -10,6 +10,8 @@ a = Analysis(
     binaries=[],
     datas=[
         ('app', 'app'),
+        ('alembic', 'alembic'),
+        ('alembic.ini', '.'),
         (str(BASE.parent / 'frontend' / 'dist'), 'frontend/dist'),
     ],
     hiddenimports=[
@@ -27,6 +29,9 @@ a = Analysis(
         'uvicorn.lifespan.on',
         'fastapi',
         'sqlalchemy.dialects.sqlite',
+        'alembic',
+        'alembic.config',
+        'alembic.command',
         'jose',
         'jose.jwt',
         'passlib',

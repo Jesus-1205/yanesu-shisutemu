@@ -1,19 +1,13 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.database import engine, Base
 from app.models.role import Role
 from app.models.user import User
 from app.models.payment_method import PaymentMethod
 
 
 def initialize_database(db: Session) -> bool:
-    """
-    Crea las tablas, roles y métodos de pago por defecto si no existen.
-    Retorna True si la BD requiere configuración de Admin (cero usuarios).
-    """
-    Base.metadata.create_all(bind=engine)
-
+    """Semillas por defecto. Retorna True si la BD requiere configuración de Admin."""
     if db.execute(select(func.count()).select_from(Role)).scalar() == 0:
         db.add_all([
             Role(nombre="ADMINISTRADOR"),
