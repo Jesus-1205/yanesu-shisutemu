@@ -238,7 +238,7 @@ def compile_jsonb_sqlite(element, compiler, **kw):
 | `SAEnum` en modelos | ✅ SQLAlchemy genera CHECK | `CHECK (col IN ('VAL1', 'VAL2'))` |
 | `DECIMAL` columns | ✅ SQLite NUMERIC type | Almacenamiento correcto de precisión |
 | Frontend | ✅ API_BASE sin prefijo `/api` | El prefijo era manejado por nginx en Docker; se eliminó para ejecutable local |
-| `main.py` startup | ✅ `create_all()` | Crea tablas en SQLite automáticamente |
+| `main.py` startup | ✅ Alembic `upgrade head` | Crea/actualiza tablas via migraciones (SQLite y PostgreSQL) |
 
 ---
 
@@ -271,13 +271,14 @@ Sistema Licoreria_1.0.0_x64-setup.exe (NSIS, ~56 MB)
 
 ### 7.2 Flujo de ejecución
 
-1. Tauri inicia → lanza `sistema_licoreria.exe` como sidecar
+1. Tauri inicia → lanza `yanesu_shisutemu.exe` como sidecar
 2. Sidecar ejecuta `run.py`:
-   - Crea tablas con `create_all()` si no existen
+   - Ejecuta Alembic `upgrade head` (crea/actualiza tablas via migraciones)
+   - Semillas iniciales (roles, métodos de pago) si las tablas están vacías
    - Busca puerto libre (8000-8010)
    - Monta `frontend/dist/` como archivos estáticos
    - Inicia FastAPI en `127.0.0.1:{port}`
-   - Guarda puerto en `AppData/Local/SistemaLicoreria/.port`
+   - Guarda puerto en `%LOCALAPPDATA%/YanesuShisutemu/.port`
 3. Tauri lee el archivo `.port` y navega el webview al backend
 4. El usuario interactúa con la app web embebida
 
@@ -323,11 +324,12 @@ O ejecutar `backend\build.bat` que hace los pasos 1 y 2.
 
 | Archivo | Descripción |
 |---------|-------------|
-| `backend/run.py` | Entry point PyInstaller: init DB, find port, mount frontend, start uvicorn |
-| `backend/build.spec` | Spec de PyInstaller para empaquetar backend + frontend |
+| `backend/run.py` | Entry point PyInstaller: Alembic migrations, seeds, find port, mount frontend, start uvicorn |
+| `backend/build.spec` | Spec de PyInstaller para empaquetar backend + frontend + Alembic |
 | `backend/build.bat` | Script de build completo |
-| `backend/app/core/first_run.py` | Inicialización pasiva de DB + roles + needs_setup check |
+| `backend/app/core/first_run.py` | Seeds iniciales (roles, métodos de pago) + needs_setup check |
 | `backend/app/core/port_manager.py` | Búsqueda de puerto libre + archivo `.port` |
+| `backend/alembic/` | Migraciones Alembic (compatibles SQLite + PostgreSQL) |
 | `frontend/src/features/auth/pages/SetupPage.tsx` | Pantalla de primer inicio |
 
 ---
@@ -340,3 +342,64 @@ O ejecutar `backend\build.bat` que hace los pasos 1 y 2.
 | Ajuste de umbral | Media | Evaluar con datos reales si 30.0 es el umbral óptimo |
 
 > Para documentación completa de errores durante el empaquetado, ver `docs/DESKTOP_BUILD_LOG.md`.
+
+---
+
+## 9. Arquitectura de Migraciones (post-limpieza)
+
+### 9.1 Mecanismo único: Alembic
+
+`create_all()` fue eliminado de producción. Alembic es el **único** mecanismo de creación de tablas:
+
+| Entorno | Mecanismo | Respaldo |
+|---------|-----------|----------|
+| Desktop (SQLite) | `alembic upgrade head` (programático en `run.py`) | — |
+| VPS (PostgreSQL) | `alembic upgrade head` (en `entrypoint.sh`) | — |
+| Tests (SQLite en memoria) | `Base.metadata.create_all()` en `conftest.py` | — |
+
+### 9.2 Compatibilidad SQLite/PostgreSQL
+
+- **`render_as_batch=True`** en `alembic/env.py`: SQLite necesita `batch_alter_table` para modificar columnas. PostgreSQL ejecuta `ALTER TABLE` estándar transparentemente.
+- **`naming_convention`** en `Base.metadata`: Todos los constraints (PK, FK, UQ, CK, IX) tienen nombres deterministas idénticos en ambos motores.
+- **`sa.func.now()`** (no `sa.text('now()')`): Funciona en SQLite (`datetime('now', '-4 hours')`) y PostgreSQL (`now()`).
+
+### 9.3 Protocolo de despliegue VPS
+
+```bash
+# 1. Backup
+docker compose exec db pg_dump -U postgres licoreria > backup_$(date +%Y%m%d).sql
+
+# 2. Pull nueva imagen
+docker compose pull backend
+
+# 3. Stamp ANTES de levantar (evita DuplicateTable)
+docker compose run --rm backend alembic stamp head
+
+# 4. Levantar stack
+docker compose up -d
+
+# 5. Validar
+docker compose logs backend --tail 50
+```
+
+### 9.4 Actualización de Desktop existente
+
+Usuarios que ya tienen una BD SQLite con tablas creadas por `create_all()` (sin tabla `alembic_version`):
+
+```bash
+# Desde el directorio backend/:
+python -m alembic stamp head
+```
+
+Esto crea la tabla `alembic_version` con la revisión actual sin ejecutar las migraciones. La app arrancará normalmente en el siguiente inicio.
+
+### 9.5 Generación de migraciones
+
+Siempre generar migraciones contra PostgreSQL (la fuente de verdad):
+
+```bash
+# En desarrollo, con PostgreSQL local corriendo:
+alembic revision --autogenerate -m "descripcion_cambio"
+```
+
+La migración generada funcionará en SQLite gracias a `render_as_batch=True`.

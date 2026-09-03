@@ -11,9 +11,9 @@ Valores por defecto:
     --postgres usa DATABASE_URL si apunta a postgresql.
 
 Notas:
-    - El esquema se crea en PostgreSQL con create_all() (enums, columnas
-      computadas, tablas). Los seeds (roles, métodos de pago) se omiten si la
-      tabla destino ya tiene filas; usa --truncate para reemplazarlos.
+    - El esquema se crea en PostgreSQL con Alembic (migraciones). Los seeds
+      (roles, métodos de pago) se omiten si la tabla destino ya tiene filas;
+      usa --truncate para reemplazarlos.
     - Las columnas computadas (totales de ventas) se omiten en el INSERT;
       PostgreSQL las genera.
     - Los IDs se conservan y las secuencias se reajustan al final.
@@ -77,8 +77,13 @@ def _truncate_all(conn) -> None:
 
 
 def migrate(src, dst, *, truncate: bool = False) -> None:
-    logger.info("Creando esquema en PostgreSQL si no existe...")
-    Base.metadata.create_all(dst)
+    from alembic.config import Config
+    from alembic import command
+
+    logger.info("Creando esquema en PostgreSQL con Alembic...")
+    alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
+    alembic_cfg.set_main_option("sqlalchemy.url", str(dst.url))
+    command.upgrade(alembic_cfg, "head")
 
     if truncate:
         with dst.begin() as conn:

@@ -34,7 +34,10 @@ Sistema_inventario/
 │   │   ├── conftest.py          # Fixtures (app FastAPI, DB SQLite)
 │   │   ├── test_auth.py         # Tests de integración de rutas
 │   │   └── test_services/       # Tests unitarios de servicios
-│   ├── sql/                     # Scripts SQL de normalización
+│   ├── alembic/                 # Migraciones Alembic (SQLite + PostgreSQL)
+│   │   ├── env.py               #   Config: render_as_batch=True, naming_convention
+│   │   └── versions/            #   Archivos de migración
+│   ├── alembic.ini              # Configuración de Alembic
 │   ├── .env.example
 │   ├── run.py                   # Entrada de desarrollo (FastAPI / uvicorn)
 │   ├── build.bat / build.spec   # Build empaquetado
@@ -91,3 +94,4 @@ Sistema_inventario/
 - **Errores**: Rutas FastAPI responden con `HTTPException` y código HTTP adecuado (400 validación, 401 no autenticado, 403 sin permisos, 404 no encontrado, 409 conflicto).
 - **Resguardo de datos**: No generar comandos SQL destructivos (`DROP TABLE`, `TRUNCATE`) sin advertencia previa.
 - **Testing**: Antes de generar nuevo código, verifica si existe un test asociado y mantenlo actualizado. Nueva funcionalidad = nuevo test.
+- **Prohibido `create_all()` en producción**: Solo en tests. Alembic es el único mecanismo de creación de tablas.

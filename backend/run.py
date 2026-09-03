@@ -50,22 +50,27 @@ def setup_frontend():
         return FileResponse(str(frontend_dist / "index.html"))
 
 
+def run_migrations():
+    """Ejecuta migraciones de Alembic. Funciona en código plano y binario PyInstaller."""
+    from alembic.config import Config
+    from alembic import command
+
+    logger = logging.getLogger(__name__)
+    alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(BASE_DIR / "alembic"))
+
+    try:
+        command.upgrade(alembic_cfg, "head")
+    except Exception:
+        logger.exception("Fallo en migraciones de Alembic")
+        sys.exit(1)
+
+
 def main():
     ensure_logging()
     logger = logging.getLogger(__name__)
 
-    # Ejecuta migraciones de Alembic antes de inicializar la BD.
-    # Esto asegura que tanto SQLite (local) como PostgreSQL (Docker) estén actualizados.
-    try:
-        import subprocess
-        subprocess.run(
-            [sys.executable, "-m", "alembic", "upgrade", "head"],
-            cwd=str(BASE_DIR),
-            check=False,
-            capture_output=True,
-        )
-    except Exception:
-        logger.exception("Error ejecutando migraciones de Alembic")
+    run_migrations()
 
     db = SessionLocal()
     needs_setup = initialize_database(db)
