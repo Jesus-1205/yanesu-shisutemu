@@ -13,15 +13,15 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
-  referencia: {
-    presentacion: string;
-    estado: string;
-    cantidad_botellas: number;
-  } | null;
 }
 
 const ESTADOS = ["CASILLERO", "VACIO", "LLENO"] as const;
 const PRESENTACIONES = ["222", "333"] as const;
+const LABELS_ESTADO: Record<string, string> = {
+  CASILLERO: "Casillero (cajas vacías sin botellas)",
+  VACIO: "Vacío (cajas con botellas vacías)",
+  LLENO: "Lleno (cajas con botellas listas para vender)",
+};
 
 function buildEmptyDetalles(): DetalleLinea[] {
   const detalles: DetalleLinea[] = [];
@@ -36,6 +36,47 @@ function buildEmptyDetalles(): DetalleLinea[] {
     }
   }
   return detalles;
+}
+
+function NumberInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  disabled?: boolean;
+}) {
+  const [raw, setRaw] = useState(value === 0 ? "" : String(value));
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setRaw(text);
+    if (text === "") {
+      onChange(0);
+      return;
+    }
+    const num = parseInt(text, 10);
+    if (!isNaN(num) && num >= 0) {
+      onChange(num);
+    }
+  };
+
+  const handleBlur = () => {
+    setRaw(value === 0 ? "" : String(value));
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      className="w-20 text-right border border-slate-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+      value={raw}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      disabled={disabled}
+    />
+  );
 }
 
 export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
@@ -95,9 +136,9 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
       open={open}
       onClose={onClose}
       title="Nuevo Reporte de Conteo Físico"
-      className="max-w-2xl"
+      className="max-w-lg"
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Input
           label="Realizado por"
           value={realizadoPor}
@@ -113,47 +154,38 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
           rows={2}
         />
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="p-2 text-left font-semibold text-slate-600">Present.</th>
-                <th className="p-2 text-left font-semibold text-slate-600">Estado</th>
-                <th className="p-2 text-right font-semibold text-slate-600">Cajas</th>
-                <th className="p-2 text-right font-semibold text-slate-600">Botellas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PRESENTACIONES.map((pres) =>
-                ESTADOS.map((estado) => {
-                  const det = getDetalle(pres, estado);
-                  return (
-                    <tr key={`${pres}-${estado}`} className="border-b border-slate-100">
-                      <td className="p-2 font-semibold">{pres}</td>
-                      <td className="p-2">{estado}</td>
-                      <td className="p-2 text-right">
-                        <input
-                          type="number"
-                          min={0}
-                          className="w-20 text-right border border-slate-300 rounded px-2 py-1 text-sm"
-                          value={det?.cantidad_cajas ?? 0}
-                          onChange={(e) =>
-                            updateDetalle(pres, estado, "cantidad_cajas", Number(e.target.value) || 0)
-                          }
-                        />
-                      </td>
-                      <td className="p-2 text-right text-slate-400 text-xs">
-                        {det ? (det.estado === "CASILLERO" ? "—" : `${det.cantidad_botellas} bot.`) : "—"}
-                      </td>
-                    </tr>
-                  );
-                }),
-              )}
-            </tbody>
-          </table>
-        </div>
+        {PRESENTACIONES.map((pres) => (
+          <div key={pres}>
+            <h4 className="text-sm font-bold text-slate-700 mb-2">
+              {pres}ml
+            </h4>
+            <div className="space-y-2">
+              {ESTADOS.map((estado) => {
+                const det = getDetalle(pres, estado);
+                const isCasillero = estado === "CASILLERO";
+                return (
+                  <div key={`${pres}-${estado}`} className="flex items-center gap-3">
+                    <span className="w-56 text-sm text-slate-600 truncate" title={LABELS_ESTADO[estado]}>
+                      {LABELS_ESTADO[estado]}
+                    </span>
+                    <span className="text-xs text-slate-400">Cajas:</span>
+                    <NumberInput
+                      value={det?.cantidad_cajas ?? 0}
+                      onChange={(v) => updateDetalle(pres, estado, "cantidad_cajas", v)}
+                    />
+                    {!isCasillero && (
+                      <span className="text-xs text-slate-400 ml-2">
+                        ({(det?.cantidad_cajas ?? 0) * BOTTLES_PER_CASE} botellas)
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>

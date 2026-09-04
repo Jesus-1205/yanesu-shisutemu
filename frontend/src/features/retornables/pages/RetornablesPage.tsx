@@ -239,7 +239,6 @@ export default function RetornablesPage() {
           reportes.refetch();
           historico.refetch();
         }}
-        referencia={null}
       />
 
       <GestionarProductosModal
