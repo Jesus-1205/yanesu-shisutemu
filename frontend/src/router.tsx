@@ -137,6 +137,10 @@ export const router = createBrowserRouter([
             lazy: adminOnly(() => import("./features/reports/pages/ReportsPage")),
           },
           {
+            path: "retornables",
+            lazy: adminOnly(() => import("./features/retornables/pages/RetornablesPage")),
+          },
+          {
             path: "settings",
             lazy: adminOnly(() => import("./features/settings/components/SettingsLayout")),
             children: [

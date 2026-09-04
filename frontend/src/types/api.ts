@@ -819,3 +819,112 @@ export interface ComboUpdate {
   metodo_pago_ids?: number[] | null;
 }
 
+// ─── Retornables ─────────────────────────────────────────────
+
+export interface RetornableProductoOut {
+  id: number;
+  producto_id: number;
+  presentacion: "222" | "333";
+  producto_nombre: string;
+  stock_cajas: number;
+  stock_unidades: number;
+}
+
+export interface RetornableEstadoOut {
+  estado: "CASILLERO" | "VACIO" | "LLENO";
+  cantidad_botellas: number;
+  cantidad_cajas: number;
+  total_botellas: number;
+  cajas_enteras: number;
+  botellas_sueltas: number;
+}
+
+export interface RetornablePresentacionOut {
+  presentacion: "222" | "333";
+  casillero: RetornableEstadoOut;
+  vacio: RetornableEstadoOut;
+  lleno: RetornableEstadoOut;
+  total_botellas: number;
+  total_cajas_enteras: number;
+  lleno_esperado_botellas: number;
+  discrepancia_botellas: number;
+  productos_asociados: RetornableProductoOut[];
+}
+
+export interface RetornableResumenOut {
+  ultimo_reporte_fecha: string | null;
+  ultimo_reporte_realizado_por: string | null;
+  presentaciones: RetornablePresentacionOut[];
+}
+
+export interface DetalleLinea {
+  presentacion: "222" | "333";
+  estado: "CASILLERO" | "VACIO" | "LLENO";
+  cantidad_botellas: number;
+  cantidad_cajas: number;
+}
+
+export interface DetalleLineaConDiscrepancia extends DetalleLinea {
+  esperado_botellas: number;
+  esperado_cajas: number;
+  discrepancia_botellas: number;
+  discrepancia_cajas: number;
+}
+
+export interface RetornableReporteCreate {
+  realizado_por: string;
+  observaciones?: string | null;
+  detalles: DetalleLinea[];
+}
+
+export interface RetornableReporteOut {
+  id: number;
+  fecha: string;
+  realizado_por: string;
+  usuario_id: number;
+  observaciones: string | null;
+  es_actual: boolean;
+}
+
+export interface RetornableReporteCompletoOut {
+  reporte: RetornableReporteOut;
+  detalles: DetalleLineaConDiscrepancia[];
+  reporte_anterior_id: number | null;
+  reporte_anterior_fecha: string | null;
+}
+
+export interface RetornableReportePaginationOut {
+  items: RetornableReporteOut[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface RetornableMovimientoOut {
+  id: number;
+  fecha: string;
+  presentacion: "222" | "333";
+  estado: "CASILLERO" | "VACIO" | "LLENO";
+  delta_botellas: number;
+  tipo_movimiento: "VENTA" | "COMPRA" | "REPORTE" | "AJUSTE_MANUAL";
+  referencia_id: number | null;
+  referencia_tipo: string | null;
+  usuario_id: number;
+  usuario_nombre: string;
+  observaciones: string | null;
+}
+
+export interface RetornableMovimientoPaginationOut {
+  items: RetornableMovimientoOut[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface RetornableProductoCreate {
+  producto_id: number;
+  presentacion: "222" | "333";
+}
+

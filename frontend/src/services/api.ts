@@ -57,6 +57,13 @@ import type {
   UserCreate,
   UserOut,
   UserUpdate,
+  RetornableResumenOut,
+  RetornableReporteCreate,
+  RetornableReportePaginationOut,
+  RetornableReporteCompletoOut,
+  RetornableMovimientoPaginationOut,
+  RetornableProductoOut,
+  RetornableProductoCreate,
 } from "@/types/api";
 import { normalizeDecimals } from "@/lib/normalizeDecimals";
 
@@ -640,5 +647,64 @@ export const api = {
     request<TestConnectionResponse>("/settings/api-key/test", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  // ── Retornables ──
+  getRetornableResumen: () =>
+    request<RetornableResumenOut>("/retornable/resumen"),
+
+  getRetornableReportes: (page = 1, pageSize = 20) =>
+    request<RetornableReportePaginationOut>(
+      `/retornable/reportes?page=${page}&page_size=${pageSize}`,
+    ),
+
+  getRetornableDetalleReporte: (id: number) =>
+    request<RetornableReporteCompletoOut>(`/retornable/reportes/${id}`),
+
+  crearRetornableReporte: (data: RetornableReporteCreate) =>
+    request<RetornableReportePaginationOut>("/retornable/reportes", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  confirmarRetornableReporte: (id: number) =>
+    request<{ detail: string }>(`/retornable/reportes/${id}/confirmar`, {
+      method: "PUT",
+    }),
+
+  getRetornableHistorico: (
+    page = 1,
+    pageSize = 20,
+    filters?: {
+      presentacion?: string;
+      tipo_movimiento?: string;
+      fecha_desde?: string;
+      fecha_hasta?: string;
+    },
+  ) => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("page_size", String(pageSize));
+    if (filters?.presentacion) params.set("presentacion", filters.presentacion);
+    if (filters?.tipo_movimiento) params.set("tipo_movimiento", filters.tipo_movimiento);
+    if (filters?.fecha_desde) params.set("fecha_desde", filters.fecha_desde);
+    if (filters?.fecha_hasta) params.set("fecha_hasta", filters.fecha_hasta);
+    return request<RetornableMovimientoPaginationOut>(
+      `/retornable/historico?${params.toString()}`,
+    );
+  },
+
+  getRetornableProductos: () =>
+    request<RetornableProductoOut[]>("/retornable/productos"),
+
+  asociarRetornableProducto: (data: RetornableProductoCreate) =>
+    request<{ detail: string; id: number }>("/retornable/productos", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  desasociarRetornableProducto: (id: number) =>
+    request<void>(`/retornable/productos/${id}`, {
+      method: "DELETE",
     }),
 };

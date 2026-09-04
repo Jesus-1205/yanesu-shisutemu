@@ -27,6 +27,7 @@ from app.routes.sales import router as sales_router
 from app.routes.suppliers import router as suppliers_router
 from app.routes.users import router as users_router
 from app.routes.system_settings import router as system_settings_router
+from app.routes.retornable import router as retornable_router
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,7 @@ app.include_router(reports_router, prefix="/api")
 app.include_router(sales_router, prefix="/api")
 app.include_router(invoices_router, prefix="/api")
 app.include_router(system_settings_router, prefix="/api")
+app.include_router(retornable_router, prefix="/api")
 
 
 @app.exception_handler(EntityNotFoundError)

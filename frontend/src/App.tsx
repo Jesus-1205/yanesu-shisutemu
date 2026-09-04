@@ -48,6 +48,7 @@ const adminSidebarItems: SidebarItem[] = [
   { label: "Facturas", icon: <Truck size={18} />, to: "/buys" },
   { label: "Tasas de Cambio", icon: <DollarSign size={18} />, to: "/exchange-rates" },
   { label: "Reportes", icon: <BarChart3 size={18} />, to: "/reports" },
+  { label: "Retornables", icon: <Package size={18} />, to: "/retornables" },
 ];
 
 const operatorSidebarItems: SidebarItem[] = [
@@ -81,6 +82,7 @@ const breadcrumbMap: Record<string, string> = {
   roles: "Roles",
   "exchange-rates": "Tasas de Cambio",
   reports: "Reportes",
+  retornables: "Retornables",
   invoices: "Facturas de Compra",
   "payment-methods": "Métodos de Pago",
   "price-rules": "Precios Div.",
