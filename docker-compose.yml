@@ -11,6 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-yanesu}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       POSTGRES_DB: ${POSTGRES_DB:-licoreria}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
