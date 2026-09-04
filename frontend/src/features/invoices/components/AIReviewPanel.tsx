@@ -215,10 +215,10 @@ export default function AIReviewPanel({
   const resolvedCount = items.filter((i) => i.producto_id !== null).length;
 
   return (
-    <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-5 space-y-4">
+    <div className="space-y-4 rounded-xl border-2 border-amber-200 bg-amber-50/50 p-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-amber-800 uppercase tracking-wide flex items-center gap-2">
-          <ScanLine className="w-4 h-4" />
+        <h3 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-amber-800 uppercase">
+          <ScanLine className="size-4" />
           Revisión de Factura (IA)
         </h3>
         <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -230,11 +230,11 @@ export default function AIReviewPanel({
         <ImagePreview file={invoiceFile} alt="Factura a revisar" />
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <div className="col-span-2 md:col-span-3">
           <label className={labelSmall}>Proveedor</label>
           {aiAnalysis.proveedor_nombre && (
-            <p className="text-xs text-slate-600 font-medium mb-1" title={aiAnalysis.proveedor_nombre}>
+            <p className="mb-1 text-xs font-medium text-slate-600" title={aiAnalysis.proveedor_nombre}>
               {aiAnalysis.proveedor_nombre}
             </p>
           )}
@@ -263,7 +263,7 @@ export default function AIReviewPanel({
             <button
               type="button"
               onClick={() => setSupplierModalOpen(true)}
-              className="shrink-0 h-9 px-2 rounded-lg border border-dashed border-slate-300 bg-surface text-xs text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
+              className="h-9 shrink-0 cursor-pointer rounded-lg border border-dashed border-slate-300 bg-surface px-2 text-xs text-slate-500 transition-colors hover:border-brand-blue hover:text-brand-blue"
               title="Crear nuevo proveedor"
             >
               + Nuevo
@@ -284,11 +284,11 @@ export default function AIReviewPanel({
         </div>
         <div className="col-span-1 md:col-span-2">
           <label className={labelSmall}>Tipo</label>
-          <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+          <div className="flex overflow-hidden rounded-lg border border-slate-300">
             <button
               type="button"
               onClick={() => setTipoDocumento("FACTURA")}
-              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+              className={`h-9 flex-1 cursor-pointer text-[10px] font-medium transition-colors ${
                 tipoDocumento === "FACTURA" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
               }`}
             >
@@ -297,7 +297,7 @@ export default function AIReviewPanel({
             <button
               type="button"
               onClick={() => setTipoDocumento("NOTA_ENTREGA")}
-              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+              className={`h-9 flex-1 cursor-pointer text-[10px] font-medium transition-colors ${
                 tipoDocumento === "NOTA_ENTREGA" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
               }`}
             >
@@ -307,11 +307,11 @@ export default function AIReviewPanel({
         </div>
         <div className="col-span-1 md:col-span-1">
           <label className={labelSmall}>Moneda</label>
-          <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+          <div className="flex overflow-hidden rounded-lg border border-slate-300">
             <button
               type="button"
               onClick={() => setMoneda("USD")}
-              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+              className={`h-9 flex-1 cursor-pointer text-[10px] font-medium transition-colors ${
                 moneda === "USD" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
               }`}
             >
@@ -320,7 +320,7 @@ export default function AIReviewPanel({
             <button
               type="button"
               onClick={() => setMoneda("BS")}
-              className={`flex-1 h-9 text-xs font-medium transition-colors cursor-pointer ${
+              className={`h-9 flex-1 cursor-pointer text-[10px] font-medium transition-colors ${
                 moneda === "BS" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
               }`}
             >
@@ -347,15 +347,15 @@ export default function AIReviewPanel({
                   : "border-slate-200 bg-white"
               }`}
             >
-              <div className="flex items-start gap-2 mb-2">
-                <span className="text-[10px] font-bold text-slate-400 mt-1">#{idx + 1}</span>
-                <span className="text-xs text-slate-500 flex-1 truncate" title={item.extracted.nombre}>
+              <div className="mb-2 flex items-start gap-2">
+                <span className="mt-1 text-[10px] font-bold text-slate-400">#{idx + 1}</span>
+                <span className="flex-1 truncate text-xs text-slate-500" title={item.extracted.nombre}>
                   {item.extracted.nombre}
                 </span>
-                {item.producto_id !== null && <Check className="w-4 h-4 text-green-500 shrink-0" />}
+                {item.producto_id !== null && <Check className="size-4 shrink-0 text-green-500" />}
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
+              <div className="grid grid-cols-2 items-end gap-2 md:grid-cols-6">
                 <div className="col-span-2">
                   <label className={labelSmall}>Producto</label>
                   <AsyncCombobox
@@ -394,18 +394,18 @@ export default function AIReviewPanel({
                 </div>
                 <div>
                   <label className={labelSmall}>Subtotal</label>
-                  <div className={`${inputBase} w-full bg-slate-50 flex items-center text-xs font-mono`}>
+                  <div className={`${inputBase} flex w-full items-center bg-slate-50 font-mono text-xs`}>
                     {moneda === "BS" ? "Bs. " : "$ "}
                     {calcularSubtotal(item.cantidad, item.costo).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 <div>
                   <label className={labelSmall}>Tipo</label>
-                  <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+                  <div className="flex overflow-hidden rounded-lg border border-slate-300">
                     <button
                       type="button"
                       onClick={() => handleToggleEmpaque(idx, "CAJA")}
-                      className={`flex-1 h-9 text-[10px] font-medium transition-colors cursor-pointer ${
+                      className={`h-9 flex-1 cursor-pointer text-[10px] font-medium transition-colors ${
                         item.tipo_empaque === "CAJA" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
                       }`}
                     >
@@ -414,7 +414,7 @@ export default function AIReviewPanel({
                     <button
                       type="button"
                       onClick={() => handleToggleEmpaque(idx, "UNIDAD")}
-                      className={`flex-1 h-9 text-[10px] font-medium transition-colors cursor-pointer ${
+                      className={`h-9 flex-1 cursor-pointer text-[10px] font-medium transition-colors ${
                         item.tipo_empaque === "UNIDAD" ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
                       }`}
                     >
@@ -450,7 +450,7 @@ export default function AIReviewPanel({
                       setProductModalNombre(item.extracted.nombre);
                       setProductModalOpen(true);
                     }}
-                    className="text-[10px] text-brand-blue hover:underline cursor-pointer"
+                    className="cursor-pointer text-[10px] text-brand-blue hover:underline"
                   >
                     Crear producto
                   </button>
@@ -463,7 +463,7 @@ export default function AIReviewPanel({
 
       <div className="flex justify-end gap-2 pt-2">
         {!allAccepted && (
-          <span className="text-xs text-amber-600 self-center">
+          <span className="self-center text-xs text-amber-600">
             {items.length - resolvedCount} producto(s) sin resolver
           </span>
         )}

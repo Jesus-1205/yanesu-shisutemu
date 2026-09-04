@@ -54,10 +54,10 @@ export default function RateTrendChart({
 }: RateTrendChartProps) {
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-text-main">Evolución de tasas</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="mt-0.5 text-xs text-slate-400">
             Tasas de cambio registradas en los últimos {interval}.
           </p>
         </div>
@@ -72,10 +72,10 @@ export default function RateTrendChart({
               role="tab"
               aria-selected={interval === iv}
               onClick={() => onIntervalChange(iv)}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+              className={`cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition-colors ${
                 interval === iv
                   ? "bg-brand-blue text-white shadow-sm"
-                  : "text-slate-500 hover:text-brand-blue hover:bg-surface"
+                  : "text-slate-500 hover:bg-surface hover:text-brand-blue"
               }`}
             >
               {iv}
@@ -87,7 +87,7 @@ export default function RateTrendChart({
       {loading ? (
         <ChartSkeleton />
       ) : data.length === 0 ? (
-        <div className="flex items-center justify-center h-[300px]">
+        <div className="flex h-75 items-center justify-center">
           <p className="text-sm text-slate-400">Sin registros de tasas en este período</p>
         </div>
       ) : (

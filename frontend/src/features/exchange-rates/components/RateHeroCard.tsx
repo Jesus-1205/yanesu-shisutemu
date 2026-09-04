@@ -32,10 +32,10 @@ function RateFigure({
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">{label}</p>
         <p
           key={value ?? "empty"}
-          className="mt-1.5 text-3xl sm:text-4xl font-bold tabular-nums text-text-main truncate"
+          className="mt-1.5 truncate text-3xl font-bold text-text-main tabular-nums sm:text-4xl"
           style={{ animation: "fadeIn 0.35s ease" }}
         >
           {value ? `Bs ${formatRateFull(value)}` : "—"}
@@ -43,14 +43,14 @@ function RateFigure({
       </div>
       {variationPct !== null && (
         <span
-          className={`inline-flex items-center gap-1 text-xs font-semibold tabular-nums px-2 py-1 rounded-lg ${
+          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold tabular-nums ${
             variationPct >= 0 ? "bg-green-50 text-success" : "bg-red-50 text-danger"
           }`}
         >
           {variationPct >= 0 ? (
-            <TrendingUp className="w-3.5 h-3.5" />
+            <TrendingUp className="size-3.5" />
           ) : (
-            <TrendingDown className="w-3.5 h-3.5" />
+            <TrendingDown className="size-3.5" />
           )}
           {variationPct > 0 ? "+" : ""}
           {variationPct.toFixed(2)}%
@@ -75,34 +75,34 @@ export default function RateHeroCard({
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-surface shadow-sm">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-blue via-sky-400 to-accent-orange" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-brand-blue via-sky-400 to-accent-orange" />
       <div className="p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">
             Tasas oficiales BCV
           </h2>
           <span
-            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${
               needsUpdate
-                ? "bg-amber-50 text-amber-700 border-amber-200"
-                : "bg-green-50 text-success border-green-200"
+                ? "border-amber-200 bg-amber-50 text-amber-700"
+                : "border-green-200 bg-green-50 text-success"
             }`}
           >
             {needsUpdate ? (
               <>
-                <AlarmClock className="w-3.5 h-3.5" />
+                <AlarmClock className="size-3.5" />
                 Pendiente de actualización
               </>
             ) : (
               <>
-                <BadgeCheck className="w-3.5 h-3.5" />
+                <BadgeCheck className="size-3.5" />
                 Al día
               </>
             )}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-6 md:grid-cols-2">
           <RateFigure label="Dólar (USD)" value={usd} variationPct={usdVar} />
           <div className="md:border-l md:border-slate-100 md:pl-10">
             <RateFigure label="Euro (EUR)" value={eur} variationPct={eurVar} />
@@ -111,7 +111,7 @@ export default function RateHeroCard({
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <p className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="size-3.5" />
             {loading
               ? "Cargando..."
               : fechaActualizacion
@@ -119,7 +119,7 @@ export default function RateHeroCard({
                 : "Aún no se han registrado tasas"}
           </p>
           <Button variant="outline" size="sm" onClick={onOpenPanel}>
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="size-4" />
             Actualizar
           </Button>
         </div>

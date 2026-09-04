@@ -52,27 +52,27 @@ export default function Drawer({
   return (
     <div className="fixed inset-0 z-50 flex">
       <div
-        className="absolute inset-0 bg-black/40 animate-[fadeIn_150ms_ease]"
+        className="absolute inset-0 animate-[fadeIn_150ms_ease] bg-black/40"
         onClick={onClose}
       />
       <div
         className={`
-          absolute top-0 bottom-0 w-full sm:w-96 bg-surface shadow-2xl
-          flex flex-col
+          absolute inset-y-0 flex w-full flex-col bg-surface shadow-2xl
+          sm:w-96
           ${sideStyles[side]}
           ${animateIn[side]}
           ${className}
         `}
       >
         {title && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h2 className="text-base font-semibold text-text-main">{title}</h2>
             <button
               onClick={onClose}
-              className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors duration-150 cursor-pointer"
+              className="shrink-0 cursor-pointer text-slate-400 transition-colors duration-150 hover:text-slate-600"
               aria-label="Cerrar"
             >
-              <X className="w-5 h-5" />
+              <X className="size-5" />
             </button>
           </div>
         )}

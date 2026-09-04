@@ -57,13 +57,13 @@ export default function ComboSelectorModal({ combo, onConfirm, onClose }: ComboS
 
         <div className="space-y-2">
           {allProducts.map((p) => (
-            <div key={p.producto_id} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-              <span className="text-sm text-text-main truncate mr-2">{p.nombre}</span>
-              <div className="flex items-center gap-1.5 shrink-0">
+            <div key={p.producto_id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+              <span className="mr-2 truncate text-sm text-text-main">{p.nombre}</span>
+              <div className="flex shrink-0 items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setQuantity(p.producto_id, getQuantity(p.producto_id) - 1)}
-                  className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-200 text-sm cursor-pointer"
+                  className="flex size-7 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-sm text-slate-600 hover:bg-slate-200"
                 >
                   -
                 </button>
@@ -71,12 +71,12 @@ export default function ComboSelectorModal({ combo, onConfirm, onClose }: ComboS
                 <button
                   type="button"
                   onClick={() => setQuantity(p.producto_id, getQuantity(p.producto_id) + 1)}
-                  className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-200 text-sm cursor-pointer"
+                  className="flex size-7 cursor-pointer items-center justify-center rounded-md border border-slate-300 text-sm text-slate-600 hover:bg-slate-200"
                   disabled={total >= max}
                 >
                   +
                 </button>
-                <span className="text-xs text-slate-400 w-16 text-right">
+                <span className="w-16 text-right text-xs text-slate-400">
                   {formatCurrency(p.precio_unidad_usd)}
                 </span>
               </div>
@@ -84,7 +84,7 @@ export default function ComboSelectorModal({ combo, onConfirm, onClose }: ComboS
           ))}
         </div>
 
-        <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-100">
+        <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-sm">
           <span className={`font-semibold ${valid ? "text-emerald-700" : "text-danger"}`}>
             Total: {total}/{max}
           </span>
@@ -93,7 +93,7 @@ export default function ComboSelectorModal({ combo, onConfirm, onClose }: ComboS
           </span>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+        <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>

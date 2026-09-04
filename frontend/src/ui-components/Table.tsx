@@ -45,7 +45,7 @@ function SkeletonRow({ cols }: { cols: number }) {
     <tr className="border-b border-slate-100 last:border-b-0">
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-4 py-3">
-          <span className="block h-4 bg-slate-200 rounded animate-pulse w-3/4" />
+          <span className="block h-4 w-3/4 animate-pulse rounded bg-slate-200" />
         </td>
       ))}
     </tr>
@@ -106,7 +106,7 @@ function Table<T>({
   return (
     <div className={`rounded-xl border border-slate-200 shadow-xs ${className}`}>
       {(hasExport || headerLeft) && (
-        <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 border-b border-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-1.5">
           {headerLeft && <div>{headerLeft}</div>}
           {!headerLeft && <div />}
           {hasExport && (
@@ -123,9 +123,9 @@ function Table<T>({
                     });
                     onExported?.(name);
                   }}
-                  className="flex items-center gap-1 p-1.5 rounded hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="flex cursor-pointer items-center gap-1 rounded p-1.5 transition-colors hover:bg-slate-200"
                 >
-                  <Download className="w-3.5 h-3.5 text-slate-600" />
+                  <Download className="size-3.5 text-slate-600" />
                 </button>
               ) : (
                 <>
@@ -141,14 +141,14 @@ function Table<T>({
                       }
                       setMenuOpen(!menuOpen);
                     }}
-                    className="flex items-center gap-1 p-1.5 rounded hover:bg-slate-200 transition-colors cursor-pointer"
+                    className="flex cursor-pointer items-center gap-1 rounded p-1.5 transition-colors hover:bg-slate-200"
                   >
-                    <Download className="w-3.5 h-3.5 text-slate-600" />
-                    <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
+                    <Download className="size-3.5 text-slate-600" />
+                    <ChevronDown className={`size-3 text-slate-400 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
                   </button>
                   {menuOpen && (
                     <div
-                      className="fixed z-[9999] bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[180px]"
+                      className="fixed z-9999 min-w-45 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
                       style={{
                         top: menuDirection === "up" ? undefined : menuPos.top,
                         right: menuPos.right,
@@ -166,7 +166,7 @@ function Table<T>({
                           onExported?.(name);
                           setMenuOpen(false);
                         }}
-                        className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="w-full cursor-pointer px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100"
                       >
                         Datos visibles
                       </button>
@@ -191,11 +191,11 @@ function Table<T>({
                                 setMenuOpen(false);
                               }
                             }}
-                          className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                          className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50"
                         >
                           {exportingAll ? (
                             <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <Loader2 className="size-3.5 animate-spin" />
                               Exportando...
                             </>
                           ) : (
@@ -214,24 +214,24 @@ function Table<T>({
       <div ref={tableContainerRef} className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-slate-50 border-b border-slate-200">
+          <tr className="border-b border-slate-200 bg-slate-50">
             {visibleColumns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${col.className || ""}`}
+                className={`px-4 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase ${col.className || ""}`}
               >
                 {col.sortable ? (
                   <button
                     onClick={col.onSort}
-                    className="flex items-center gap-1.5 cursor-pointer hover:text-text-main transition-colors"
+                    className="flex cursor-pointer items-center gap-1.5 transition-colors hover:text-text-main"
                   >
                     {col.header}
                     {col.sortDirection === "asc" ? (
-                      <ArrowUp className="w-3.5 h-3.5" />
+                      <ArrowUp className="size-3.5" />
                     ) : col.sortDirection === "desc" ? (
-                      <ArrowDown className="w-3.5 h-3.5" />
+                      <ArrowDown className="size-3.5" />
                     ) : (
-                      <ArrowUpDown className="w-3.5 h-3.5 text-slate-300" />
+                      <ArrowUpDown className="size-3.5 text-slate-300" />
                     )}
                   </button>
                 ) : (
@@ -260,12 +260,12 @@ function Table<T>({
               <tr
                 key={keyExtractor(item, i)}
                 onClick={() => onRowClick?.(item)}
-                className={`border-b border-slate-100 last:border-b-0 transition-colors duration-150 ${i % 2 === 1 ? "bg-slate-50/40" : ""} ${onRowClick ? "cursor-pointer hover:bg-blue-50/60" : "hover:bg-blue-50/40"}`}
+                className={`border-b border-slate-100 transition-colors duration-150 last:border-b-0 ${i % 2 === 1 ? "bg-slate-50/40" : ""} ${onRowClick ? "cursor-pointer hover:bg-blue-50/60" : "hover:bg-blue-50/40"}`}
               >
                 {visibleColumns.map((col) => (
                   <td
                     key={col.key}
-                    className={`px-4 py-3 text-text-main whitespace-nowrap ${col.className || ""}`}
+                    className={`px-4 py-3 whitespace-nowrap text-text-main ${col.className || ""}`}
                   >
                     {col.render
                       ? col.render(item)

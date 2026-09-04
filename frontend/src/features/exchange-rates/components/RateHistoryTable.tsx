@@ -123,7 +123,7 @@ export default function RateHistoryTable({
       <Table
         headerLeft={
           <div className="flex items-center gap-2 py-1">
-            <History className="w-4 h-4 text-brand-blue" />
+            <History className="size-4 text-brand-blue" />
             <h2 className="text-sm font-semibold text-text-main">Historial de tasas</h2>
           </div>
         }

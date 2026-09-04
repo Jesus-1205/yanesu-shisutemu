@@ -32,7 +32,7 @@ export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) 
 
   if (!withValue.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
+      <div className="flex h-75 items-center justify-center">
         <p className="text-sm text-slate-400">Sin pagos registrados en el período</p>
       </div>
     );
@@ -56,7 +56,7 @@ export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) 
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-text-main mb-4">
+      <h2 className="mb-4 text-lg font-semibold text-text-main">
         Monto recibido por Método de Pago (equiv. USD)
       </h2>
       <ResponsiveContainer width="100%" height={300}>
@@ -86,7 +86,7 @@ export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) 
               if (!active || !payload?.length) return null;
               const d = payload[0].payload as ChartDatum;
               return (
-                <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-2 text-sm">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg">
                   <p className="font-medium text-text-main">{d.name}</p>
                   <p className="text-slate-500">{d.amount} · {d.percentage}%</p>
                 </div>
@@ -95,11 +95,11 @@ export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) 
           />
           <Legend
             content={() => (
-              <ul className="flex flex-wrap gap-x-3 gap-y-1 mt-2 justify-center">
+              <ul className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
                 {chartData.map((entry) => (
                   <li key={entry.name} className="flex items-center gap-1.5 text-xs text-slate-600">
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      className="size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: entry.color }}
                     />
                     {entry.name} ({entry.percentage}%)

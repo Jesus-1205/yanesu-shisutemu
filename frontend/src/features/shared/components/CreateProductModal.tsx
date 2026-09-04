@@ -185,9 +185,9 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
   const fid = (name: string) => `cp-${name}`;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Nuevo Producto" className={compact ? "!max-w-lg" : "!max-w-7xl"}>
+    <Modal open={open} onClose={handleClose} title="Nuevo Producto" className={compact ? "max-w-lg!" : "max-w-7xl!"}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className={compact ? "" : "max-h-[60vh] overflow-y-auto -mx-6 px-6"}>
+        <div className={compact ? "" : "-mx-6 max-h-[60vh] overflow-y-auto px-6"}>
           {compact ? (
             <div className="space-y-3">
               <Input
@@ -214,18 +214,18 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
                 placeholder="Seleccionar categorías..."
               />
               <div>
-                <label htmlFor={fid("uds-caja")} className="block text-xs font-medium text-slate-700 mb-1">Unidades por caja</label>
+                <label htmlFor={fid("uds-caja")} className="mb-1 block text-xs font-medium text-slate-700">Unidades por caja</label>
                 <input id={fid("uds-caja")} type="number" min="1" value={unidadesPorCaja}
                   onChange={(e) => setUnidadesPorCaja(e.target.value)} autoComplete="off" className={inputBase} placeholder="1" />
               </div>
               <p className="text-[11px] text-slate-400">El costo se establecerá desde la factura.</p>
             </div>
           ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-4">
+          <div className="grid grid-cols-1 gap-5 pb-4 lg:grid-cols-2">
 
             {/* ─── Columna izquierda: info general ─────────────── */}
             <div className={cardBase}>
-              <h4 className="text-xs font-semibold text-text-main uppercase tracking-wide">Información General</h4>
+              <h4 className="text-xs font-semibold tracking-wide text-text-main uppercase">Información General</h4>
               <Input
                 label="Nombre"
                 id={fid("nombre")}
@@ -273,17 +273,17 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
               {!isOperator && (
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label htmlFor={fid("stock")} className="block text-xs font-medium text-slate-700 mb-1">Stock (uds)</label>
+                    <label htmlFor={fid("stock")} className="mb-1 block text-xs font-medium text-slate-700">Stock (uds)</label>
                     <input id={fid("stock")} type="number" min="0" value={stock}
                       onChange={(e) => setStock(e.target.value)} autoComplete="off" className={inputBase} placeholder="0" />
                   </div>
                   <div>
-                    <label htmlFor={fid("stock-min")} className="block text-xs font-medium text-slate-700 mb-1">Stock mínimo</label>
+                    <label htmlFor={fid("stock-min")} className="mb-1 block text-xs font-medium text-slate-700">Stock mínimo</label>
                     <input id={fid("stock-min")} type="number" min="0" value={stockMinimo}
                       onChange={(e) => setStockMinimo(e.target.value)} autoComplete="off" className={inputBase} placeholder="0" />
                   </div>
                   <div>
-                    <label htmlFor={fid("uds-caja")} className="block text-xs font-medium text-slate-700 mb-1">Unds/caja</label>
+                    <label htmlFor={fid("uds-caja")} className="mb-1 block text-xs font-medium text-slate-700">Unds/caja</label>
                     <input id={fid("uds-caja")} type="number" min="1" value={unidadesPorCaja}
                       onChange={(e) => setUnidadesPorCaja(e.target.value)} autoComplete="off" className={inputBase} placeholder="1" />
                   </div>
@@ -291,7 +291,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
               )}
               {isOperator && (
                 <div>
-                  <label htmlFor={fid("uds-caja")} className="block text-xs font-medium text-slate-700 mb-1">Unds/caja</label>
+                  <label htmlFor={fid("uds-caja")} className="mb-1 block text-xs font-medium text-slate-700">Unds/caja</label>
                   <input id={fid("uds-caja")} type="number" min="1" value={unidadesPorCaja}
                     onChange={(e) => setUnidadesPorCaja(e.target.value)} className={inputBase} placeholder="1" />
                 </div>
@@ -300,19 +300,19 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
 
             {/* ─── Columna derecha: precios ─────────────────────── */}
             <div className={cardBase}>
-              <h4 className="text-xs font-semibold text-text-main uppercase tracking-wide">
+              <h4 className="text-xs font-semibold tracking-wide text-text-main uppercase">
                 {isOperator ? "Precios" : "Precios y Finanzas"}
               </h4>
 
               <div>
-                <label htmlFor={fid("costo-caja")} className="block text-xs font-medium text-slate-700 mb-1">Costo por caja USD *</label>
+                <label htmlFor={fid("costo-caja")} className="mb-1 block text-xs font-medium text-slate-700">Costo por caja USD *</label>
                 <input id={fid("costo-caja")} type="number" step="0.01" min="0" value={costoCaja}
                   onChange={(e) => setCostoCaja(e.target.value)} required autoComplete="off" className={inputBase} placeholder="0.00" />
               </div>
 
               <div>
-                <span className="block text-xs font-medium text-slate-700 mb-1">Costo por unidad USD</span>
-                <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm text-slate-600 font-mono">
+                <span className="mb-1 block text-xs font-medium text-slate-700">Costo por unidad USD</span>
+                <div className="flex h-10 items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 font-mono text-sm text-slate-600">
                   <span>${costoUnitario > 0 ? costoUnitario.toFixed(2) : "—"}</span>
                   {n(costoCaja) > 0 && n(unidadesPorCaja) > 0 && (
                     <span className="text-[11px] text-slate-400">
@@ -325,15 +325,15 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
               <div className="grid grid-cols-2 gap-3">
                 {!isOperator && (
                   <div>
-                    <span className="block text-xs font-medium text-slate-700 mb-1">Precio sugerido unidad USD</span>
-                    <div className="h-10 px-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between text-sm">
-                      <span className="text-blue-700 font-mono font-medium">${precioSugeridoUnidad > 0 ? precioSugeridoUnidad.toFixed(2) : "—"}</span>
+                    <span className="mb-1 block text-xs font-medium text-slate-700">Precio sugerido unidad USD</span>
+                    <div className="flex h-10 items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm">
+                      <span className="font-mono font-medium text-blue-700">${precioSugeridoUnidad > 0 ? precioSugeridoUnidad.toFixed(2) : "—"}</span>
                       <span className="text-[11px] text-blue-500">30% margen obj.</span>
                     </div>
                   </div>
                 )}
                 <div>
-                  <label htmlFor={fid("precio-u")} className="block text-xs font-medium text-slate-700 mb-1">Precio unidad USD *</label>
+                  <label htmlFor={fid("precio-u")} className="mb-1 block text-xs font-medium text-slate-700">Precio unidad USD *</label>
                   <div className="flex gap-2">
                     <input id={fid("precio-u")} type="number" step="0.01" min="0" value={precioUnidad}
                       onChange={(e) => setPrecioUnidad(e.target.value)} required
@@ -352,14 +352,14 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
               <div className="grid grid-cols-2 gap-3">
                 {!isOperator && (
                   <div>
-                    <span className="block text-xs font-medium text-slate-700 mb-1">Precio sugerido caja USD</span>
-                    <div className="h-10 px-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center text-sm text-blue-700 font-mono">
+                    <span className="mb-1 block text-xs font-medium text-slate-700">Precio sugerido caja USD</span>
+                    <div className="flex h-10 items-center rounded-lg border border-blue-200 bg-blue-50 px-3 font-mono text-sm text-blue-700">
                       ${precioSugeridoCaja > 0 ? precioSugeridoCaja.toFixed(2) : "—"}
                     </div>
                   </div>
                 )}
                 <div>
-                  <label htmlFor={fid("precio-c")} className="block text-xs font-medium text-slate-700 mb-1">Precio caja USD *</label>
+                  <label htmlFor={fid("precio-c")} className="mb-1 block text-xs font-medium text-slate-700">Precio caja USD *</label>
                   <div className="flex gap-2">
                     <input id={fid("precio-c")} type="number" step="0.01" min="0" value={precioCaja}
                       onChange={(e) => setPrecioCaja(e.target.value)} required
@@ -377,9 +377,9 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
 
               {!isOperator && (
                 <div>
-                  <span className="block text-xs font-medium text-slate-700 mb-1">Margen</span>
-                  <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
-                    <span className="text-slate-500 font-medium">Ganancia</span>
+                  <span className="mb-1 block text-xs font-medium text-slate-700">Margen</span>
+                  <div className="flex h-10 items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm">
+                    <span className="font-medium text-slate-500">Ganancia</span>
                     <span className="text-xs text-slate-400">{margin.margen > 0 ? `${margin.margen.toFixed(1)}%` : "—"}</span>
                     <Badge variant={margin.color}>{margin.label}</Badge>
                   </div>
@@ -392,7 +392,7 @@ export default function CreateProductModal({ open, onClose, onCreated, initialNo
 
         {error && <p className="text-xs text-danger">{error}</p>}
 
-        <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+        <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
           <Button type="button" variant="ghost" onClick={handleClose}>
             Cancelar
           </Button>

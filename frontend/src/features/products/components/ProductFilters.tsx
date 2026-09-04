@@ -58,8 +58,8 @@ export default function ProductFilters({
   const sortValue = `${filters.sortField}_${filters.sortOrder}`;
 
   return (
-    <div className="flex flex-wrap items-end gap-3 mb-4">
-      <div className="relative min-w-[240px] flex-1 max-w-sm">
+    <div className="mb-4 flex flex-wrap items-end gap-3">
+      <div className="relative max-w-sm min-w-60 flex-1">
         <SearchInput
           ref={searchRef}
           value={filters.search}
@@ -133,9 +133,9 @@ export default function ProductFilters({
           value={filters.precio_min}
           onChange={(e) => set("precio_min", e.target.value === "" ? "" : Number(e.target.value))}
           autoComplete="off"
-          className="w-24 px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 placeholder:text-slate-400"
+          className="w-24 rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
         />
-        <span className="text-slate-400 text-sm">—</span>
+        <span className="text-sm text-slate-400">—</span>
         <input
           type="number"
           min="0"
@@ -144,7 +144,7 @@ export default function ProductFilters({
           value={filters.precio_max}
           onChange={(e) => set("precio_max", e.target.value === "" ? "" : Number(e.target.value))}
           autoComplete="off"
-          className="w-24 px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 placeholder:text-slate-400"
+          className="w-24 rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
         />
       </div>
     </div>

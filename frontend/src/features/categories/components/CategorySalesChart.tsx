@@ -11,7 +11,7 @@ interface CategorySalesChartProps {
 export default function CategorySalesChart({ data, selectedId }: CategorySalesChartProps) {
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-[250px]">
+      <div className="flex h-[250px] items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de ventas</p>
       </div>
     );
@@ -28,7 +28,7 @@ export default function CategorySalesChart({ data, selectedId }: CategorySalesCh
 
   if (!chartData.length) {
     return (
-      <div className="flex items-center justify-center h-[250px]">
+      <div className="flex h-[250px] items-center justify-center">
         <p className="text-sm text-slate-400">Sin ventas registradas</p>
       </div>
     );
@@ -36,7 +36,7 @@ export default function CategorySalesChart({ data, selectedId }: CategorySalesCh
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-text-main mb-2">Ingresos por Categoría</h3>
+      <h3 className="mb-2 text-sm font-semibold text-text-main">Ingresos por Categoría</h3>
       <ResponsiveContainer width="100%" height={250}>
         <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 15, left: 5, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />

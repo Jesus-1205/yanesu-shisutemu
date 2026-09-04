@@ -71,8 +71,8 @@ export default function MultiSelectTags({
       <div
         id={inputId}
         onClick={() => !disabled && setOpen(!open)}
-        className={`flex flex-wrap items-center gap-1.5 min-h-10 w-full rounded-lg border bg-surface px-3 py-1.5 text-sm cursor-pointer transition-all
-          ${disabled ? "border-slate-200 bg-slate-50 cursor-not-allowed" : ""}
+        className={`flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-lg border bg-surface px-3 py-1.5 text-sm transition-all
+          ${disabled ? "cursor-not-allowed border-slate-200 bg-slate-50" : ""}
           ${error ? "border-danger bg-red-50" : "border-slate-300 hover:border-brand-blue"}
         `}
       >
@@ -80,36 +80,36 @@ export default function MultiSelectTags({
           selectedLabels.map((opt) => (
             <span
               key={opt.value}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-medium"
+              className="inline-flex items-center gap-1 rounded-full bg-brand-blue/10 px-2.5 py-0.5 text-xs font-medium text-brand-blue"
             >
               {opt.label}
               {!disabled && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); remove(opt.value); }}
-                  className="hover:text-danger transition-colors cursor-pointer"
+                  className="cursor-pointer transition-colors hover:text-danger"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="size-3" />
                 </button>
               )}
             </span>
           ))
         ) : (
-          <span className="text-slate-400 text-sm">{placeholder}</span>
+          <span className="text-sm text-slate-400">{placeholder}</span>
         )}
         <span className="ml-auto shrink-0">
-          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`size-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
         </span>
       </div>
       {open && !disabled && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-surface border border-slate-200 rounded-xl shadow-lg">
+        <div className="absolute top-full z-50 mt-1 w-full rounded-xl border border-slate-200 bg-surface shadow-lg">
           <div className="p-2">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filtrar..."
-              className="w-full h-8 px-3 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
+              className="h-8 w-full rounded-lg border border-slate-300 bg-surface px-3 text-sm outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
               autoComplete="off"
               autoFocus
             />
@@ -124,7 +124,7 @@ export default function MultiSelectTags({
                 <li
                   key={opt.value}
                   onMouseDown={() => toggle(opt.value)}
-                  className="px-3 py-2 text-sm text-text-main hover:bg-slate-100 cursor-pointer transition-colors mx-1 rounded-lg"
+                  className="mx-1 cursor-pointer rounded-lg px-3 py-2 text-sm text-text-main transition-colors hover:bg-slate-100"
                 >
                   {opt.label}
                 </li>

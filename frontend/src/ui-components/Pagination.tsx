@@ -30,12 +30,12 @@ export default function Pagination({
   return (
     <nav className={`flex items-center justify-center gap-1.5 ${className}`} aria-label="Paginación">
       <button
-        className={`${btnBase} gap-1 px-3 h-9 text-sm text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-800 active:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1`}
+        className={`${btnBase} h-9 gap-1 border-slate-300 px-3 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1 focus-visible:outline-none active:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent`}
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
         aria-label="Página anterior"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="size-4" />
         Anterior
       </button>
 
@@ -43,7 +43,7 @@ export default function Pagination({
         p === "ellipsis" ? (
           <span
             key={`e${i}`}
-            className="flex items-center justify-center w-9 h-9 text-sm text-slate-400 select-none"
+            className="flex size-9 items-center justify-center text-sm text-slate-400 select-none"
             aria-hidden="true"
           >
             &hellip;
@@ -51,10 +51,10 @@ export default function Pagination({
         ) : (
           <button
             key={p}
-            className={`${btnBase} w-9 h-9 text-sm ${
+            className={`${btnBase} size-9 text-sm ${
               p === page
-                ? "bg-brand-blue text-white border-brand-blue hover:bg-blue-800 active:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1"
-                : "text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-800 active:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1"
+                ? "border-brand-blue bg-brand-blue text-white hover:bg-blue-800 focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1 focus-visible:outline-none active:bg-blue-900"
+                : "border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1 focus-visible:outline-none active:bg-slate-200"
             }`}
             onClick={() => onPageChange(p)}
             aria-label={`Ir a página ${p}`}
@@ -66,13 +66,13 @@ export default function Pagination({
       )}
 
       <button
-        className={`${btnBase} gap-1 px-3 h-9 text-sm text-slate-600 border-slate-300 hover:bg-slate-100 hover:text-slate-800 active:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1`}
+        className={`${btnBase} h-9 gap-1 border-slate-300 px-3 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1 focus-visible:outline-none active:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent`}
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
         aria-label="Página siguiente"
       >
         Siguiente
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="size-4" />
       </button>
     </nav>
   );

@@ -14,22 +14,20 @@ export default function Checkbox({
   const inputId = id ?? uid;
 
   return (
-    <label className={`inline-flex items-center gap-2.5 cursor-pointer select-none ${className}`}>
-      <input id={inputId} type="checkbox" className="hidden peer" autoComplete="off" {...props} />
+    <label className={`inline-flex cursor-pointer items-center gap-2.5 select-none ${className}`}>
+      <input id={inputId} type="checkbox" className="peer hidden" autoComplete="off" {...props} />
       <span
         className="
-          relative w-[18px] h-[18px] block
-          before:absolute before:top-[-15px] before:left-[-15px]
-          before:w-12 before:h-12 before:rounded-full
-          before:bg-brand-blue/5 before:opacity-0
+          relative block size-[18px] before:absolute
+          before:top-[-15px] before:left-[-15px] before:size-12
+          before:rounded-full before:bg-brand-blue/5 before:opacity-0
           before:transition-opacity before:duration-200
-          hover:before:opacity-100
-          peer-checked:[&_svg]:stroke-brand-blue
+          hover:before:opacity-100 peer-checked:[&_svg]:stroke-brand-blue
           peer-checked:[&_svg_path]:[stroke-dashoffset:60]
           peer-checked:[&_svg_path]:[transition:all_0.3s_linear]
+          peer-checked:[&_svg_polyline]:delay-150
           peer-checked:[&_svg_polyline]:[stroke-dashoffset:42]
           peer-checked:[&_svg_polyline]:[transition:all_0.2s_linear]
-          peer-checked:[&_svg_polyline]:[transition-delay:0.15s]
           [&:hover_svg]:stroke-brand-blue
         "
       >
@@ -39,8 +37,8 @@ export default function Checkbox({
           viewBox="0 0 18 18"
           fill="none"
           className="
-            relative z-10
-            stroke-slate-300 stroke-[1.5]
+            stroke-1.5 relative
+            z-10 stroke-slate-300
             transition-all duration-200
             [stroke-linecap:round] [stroke-linejoin:round]
             [&_path]:[stroke-dasharray:60] [&_path]:[stroke-dashoffset:0]

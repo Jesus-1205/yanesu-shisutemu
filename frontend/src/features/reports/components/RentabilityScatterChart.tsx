@@ -12,7 +12,7 @@ interface RentabilityScatterChartProps {
 export default function RentabilityScatterChart({ data }: RentabilityScatterChartProps) {
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
+      <div className="flex h-75 items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de rentabilidad</p>
       </div>
     );
@@ -29,7 +29,7 @@ export default function RentabilityScatterChart({ data }: RentabilityScatterChar
 
   if (!chartData.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
+      <div className="flex h-75 items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de rentabilidad</p>
       </div>
     );
@@ -37,23 +37,23 @@ export default function RentabilityScatterChart({ data }: RentabilityScatterChar
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-text-main mb-3">Matriz de Rendimiento: Rotación vs. Margen %</h2>
+      <h2 className="mb-3 text-lg font-semibold text-text-main">Matriz de Rendimiento: Rotación vs. Margen %</h2>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="mb-4 flex flex-wrap gap-2">
         <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
+          <span className="size-2.5 rounded-full bg-green-500" />
           Estrella (Alta Rotación / Alto Margen)
         </span>
         <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
+          <span className="size-2.5 rounded-full bg-blue-500" />
           Nicho (Baja Rotación / Alto Margen)
         </span>
         <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]" />
+          <span className="size-2.5 rounded-full bg-orange-500" />
           Caballo de Batalla (Alta Rotación / Bajo Margen)
         </span>
         <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8]" />
+          <span className="size-2.5 rounded-full bg-slate-400" />
           Producto Hueso (Baja Rotación / Bajo Margen)
         </span>
       </div>
@@ -106,9 +106,9 @@ export default function RentabilityScatterChart({ data }: RentabilityScatterChar
               else badge = { label: "Producto Hueso", cls: "bg-slate-100 text-slate-600" };
 
               return (
-                <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-md text-xs space-y-1">
+                <div className="space-y-1 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-md">
                   <p className="font-semibold text-slate-800">{d.nombre}</p>
-                  <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${badge.cls}`}>
+                  <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${badge.cls}`}>
                     {badge.label}
                   </span>
                   <p className="text-slate-600">Vendidos: <span className="font-medium text-slate-900">{d.vendidos} unidades</span></p>

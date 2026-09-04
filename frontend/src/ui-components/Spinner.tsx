@@ -43,7 +43,7 @@ export default function Spinner({ size = "md", className = "" }: SpinnerProps) {
       {Array.from({ length: dotsCount }, (_, i) => (
         <div
           key={i}
-          className="dot-spinner__dot absolute top-0 left-0 flex items-center justify-start h-full w-full"
+          className="dot-spinner__dot absolute top-0 left-0 flex size-full items-center justify-start"
           style={{
             transform: `rotate(${i * 45}deg)`,
             ["--dot-delay" as string]: i === 0 ? "0s" : `calc(var(--uib-speed) * ${-0.125 * (dotsCount - i)})`,

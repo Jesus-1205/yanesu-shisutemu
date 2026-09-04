@@ -40,10 +40,10 @@ export default function ProductTable({
       render: (p: Product) => (
         <button
           onClick={() => onToggleFavorite?.(p)}
-          className="p-1 rounded hover:bg-yellow-50 transition-colors cursor-pointer"
+          className="cursor-pointer rounded p-1 transition-colors hover:bg-yellow-50"
           title={p.es_favorito ? "Quitar de favoritos" : "Agregar a favoritos"}
         >
-          <Star className={`w-4 h-4 ${p.es_favorito ? "fill-yellow-400 text-yellow-400" : "text-slate-300 hover:text-yellow-400"}`} />
+          <Star className={`size-4 ${p.es_favorito ? "fill-yellow-400 text-yellow-400" : "text-slate-300 hover:text-yellow-400"}`} />
         </button>
       ),
     },
@@ -53,9 +53,9 @@ export default function ProductTable({
       ...sortable("nombre"),
       render: (p: Product) => (
         <div className="min-w-0">
-          <p className="font-medium text-text-main truncate max-w-[200px]">{p.nombre}</p>
+          <p className="max-w-50 truncate font-medium text-text-main">{p.nombre}</p>
           {p.codigo_barra && (
-            <p className="text-xs text-slate-400 font-mono">{p.codigo_barra}</p>
+            <p className="font-mono text-xs text-slate-400">{p.codigo_barra}</p>
           )}
         </div>
       ),
@@ -65,7 +65,7 @@ export default function ProductTable({
       header: "Categorías",
       hideOnMobile: true,
       render: (p: Product) => (
-        <div className="flex flex-wrap gap-1 max-w-[160px]">
+        <div className="flex max-w-40 flex-wrap gap-1">
           {p.categories.map((c) => (
             <Badge key={c.id} variant="info">{c.nombre}</Badge>
           ))}
@@ -127,18 +127,18 @@ export default function ProductTable({
         <div className="flex items-center justify-end gap-1">
           <button
             onClick={() => onEdit(p)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors cursor-pointer"
+            className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-brand-blue/10 hover:text-brand-blue"
             aria-label="Editar"
           >
-            <Pencil className="w-4 h-4" />
+            <Pencil className="size-4" />
           </button>
           {role === "admin" && (
             <button
               onClick={() => onDelete(p)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+              className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-danger/10 hover:text-danger"
               aria-label="Eliminar"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="size-4" />
             </button>
           )}
         </div>

@@ -29,10 +29,23 @@ SPACING_MAP: dict[int, str] = {
     0: "0", 1: "px", 2: "0.5", 4: "1", 6: "1.5", 8: "2",
     10: "2.5", 12: "3", 14: "3.5", 16: "4", 20: "5", 24: "6",
     28: "7", 32: "8", 36: "9", 40: "10", 44: "11", 48: "12",
-    56: "14", 64: "16", 72: "18", 80: "20", 88: "22", 96: "24",
-    104: "26", 112: "28", 120: "30", 128: "32", 144: "36",
-    160: "40", 176: "44", 192: "48", 208: "52", 224: "56",
-    240: "60", 256: "64", 288: "72", 320: "80", 352: "88", 384: "96",
+    52: "13", 56: "14", 60: "15", 64: "16", 68: "17", 72: "18",
+    76: "19", 80: "20", 84: "21", 88: "22", 92: "23", 96: "24",
+    100: "25", 104: "26", 108: "27", 112: "28", 116: "29",
+    120: "30", 124: "31", 128: "32", 132: "33", 136: "34",
+    140: "35", 144: "36", 148: "37", 152: "38", 156: "39",
+    160: "40", 164: "41", 168: "42", 172: "43", 176: "44",
+    180: "45", 184: "46", 188: "47", 192: "48", 196: "49",
+    200: "50", 204: "51", 208: "52", 212: "53", 216: "54",
+    220: "55", 224: "56", 228: "57", 232: "58", 236: "59",
+    240: "60", 244: "61", 248: "62", 252: "63", 256: "64",
+    260: "65", 264: "66", 268: "67", 272: "68", 276: "69",
+    280: "70", 284: "71", 288: "72", 292: "73", 296: "74",
+    300: "75", 304: "76", 308: "77", 312: "78", 316: "79",
+    320: "80", 324: "81", 328: "82", 332: "83", 336: "84",
+    340: "85", 344: "86", 348: "87", 352: "88", 356: "89",
+    360: "90", 364: "91", 368: "92", 372: "93", 376: "94",
+    380: "95", 384: "96",
 }
 
 FONT_SIZE_MAP: dict[int, str] = {
@@ -179,9 +192,6 @@ def classify_class(classname: str) -> tuple[str, Optional[str], bool]:
             suggestion = FONT_SIZE_MAP.get(px)
             if suggestion:
                 return ("fontsize", suggestion, True)
-            closest = min(FONT_SIZE_MAP.keys(), key=lambda x: abs(x - px))
-            if abs(closest - px) <= 2:
-                return ("fontsize", FONT_SIZE_MAP[closest], True)
             return ("fontsize", None, False)
         # If not a px value, it might be a color
         hex_val = value.lower().strip()
@@ -224,18 +234,23 @@ def classify_class(classname: str) -> tuple[str, Optional[str], bool]:
     if prefix in SPACING_PREFIXES:
         px = parse_px_value(value)
         if px is not None:
-            suggestion = SPACING_MAP.get(px)
-            if suggestion:
-                return ("spacing", f"{prefix}-{suggestion}", True)
+            # Tailwind v4 generates classes for ANY multiple of 4px (or 1px → px)
+            if px in SPACING_MAP:
+                return ("spacing", f"{prefix}-{SPACING_MAP[px]}", True)
+            if px % 4 == 0:
+                class_num = px // 4
+                return ("spacing", f"{prefix}-{class_num}", True)
             return ("spacing", None, False)
         # rem values
         if value.endswith("rem"):
             try:
                 rem_val = float(value[:-3])
                 px_val = int(rem_val * 16)
-                suggestion = SPACING_MAP.get(px_val)
-                if suggestion:
-                    return ("spacing", f"{prefix}-{suggestion}", True)
+                if px_val in SPACING_MAP:
+                    return ("spacing", f"{prefix}-{SPACING_MAP[px_val]}", True)
+                if px_val % 4 == 0:
+                    class_num = px_val // 4
+                    return ("spacing", f"{prefix}-{class_num}", True)
             except ValueError:
                 pass
             return ("spacing", None, False)

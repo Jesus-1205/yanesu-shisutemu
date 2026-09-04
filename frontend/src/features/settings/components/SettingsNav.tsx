@@ -15,8 +15,8 @@ const navItems: NavItem[] = [
 
 export default function SettingsNav() {
   return (
-    <nav className="w-full lg:w-56 shrink-0 lg:sticky lg:top-20 lg:self-start">
-      <div className="bg-surface rounded-xl border border-slate-200 p-2">
+    <nav className="w-full shrink-0 lg:sticky lg:top-20 lg:w-56 lg:self-start">
+      <div className="rounded-xl border border-slate-200 bg-surface p-2">
         {navItems.map((item) => (
           <NavLink
             key={item.to}

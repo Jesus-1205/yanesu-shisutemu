@@ -23,7 +23,7 @@ interface VentasVsCostosChartProps {
 export default function VentasVsCostosChart({ data }: VentasVsCostosChartProps) {
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
+      <div className="flex h-75 items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de ventas</p>
       </div>
     );

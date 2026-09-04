@@ -120,7 +120,7 @@ export default function InvoicesPage() {
         description="Registro de compras y facturas"
         actions={
           <Button variant="accent" onClick={() => navigate("/invoices/new")}>
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Nueva Factura
           </Button>
         }
@@ -141,8 +141,8 @@ export default function InvoicesPage() {
       />
 
       {/* Filtros - Fila 1 */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-3">
-        <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-xs">
+      <div className="mb-3 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:max-w-xs sm:min-w-50 sm:flex-1">
           <SearchInput
             value={search}
             onChange={(e) => { setField("search", e.target.value); setField("page", 1); }}
@@ -186,24 +186,24 @@ export default function InvoicesPage() {
       </div>
 
       {/* Filtros - Fila 2: fechas */}
-      <div className="flex items-end gap-3 mb-3">
+      <div className="mb-3 flex items-end gap-3">
         <div>
-          <label className="block text-xs text-slate-500 mb-1">Desde</label>
+          <label className="mb-1 block text-xs text-slate-500">Desde</label>
           <input
             type="date"
             value={fechaDesde}
             onChange={(e) => { setField("fechaDesde", e.target.value); setField("page", 1); }}
-            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             autoComplete="off"
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-500 mb-1">Hasta</label>
+          <label className="mb-1 block text-xs text-slate-500">Hasta</label>
           <input
             type="date"
             value={fechaHasta}
             onChange={(e) => { setField("fechaHasta", e.target.value); setField("page", 1); }}
-            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             autoComplete="off"
           />
         </div>
@@ -216,45 +216,45 @@ export default function InvoicesPage() {
 
       {/* Filtros activos */}
       {hasActiveFilters && (
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-xs text-slate-500">Filtros activos:</span>
           {search && (
             <Badge variant="neutral" className="gap-1">
               &quot;{search}&quot;
-              <button onClick={() => { setField("search", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
-                <X className="w-3 h-3" />
+              <button onClick={() => { setField("search", ""); setField("page", 1); }} className="ml-1 cursor-pointer hover:text-text-main">
+                <X className="size-3" />
               </button>
             </Badge>
           )}
           {proveedorId && (
             <Badge variant="neutral" className="gap-1">
               {suppliers.find((s) => s.id === proveedorId)?.nombre}
-              <button onClick={() => { setField("proveedorId", null); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
-                <X className="w-3 h-3" />
+              <button onClick={() => { setField("proveedorId", null); setField("page", 1); }} className="ml-1 cursor-pointer hover:text-text-main">
+                <X className="size-3" />
               </button>
             </Badge>
           )}
           {tipoDocumento && (
             <Badge variant="neutral" className="gap-1">
               {tipoDocumento === "FACTURA" ? "Factura" : "Nota de Entrega"}
-              <button onClick={() => { setField("tipoDocumento", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
-                <X className="w-3 h-3" />
+              <button onClick={() => { setField("tipoDocumento", ""); setField("page", 1); }} className="ml-1 cursor-pointer hover:text-text-main">
+                <X className="size-3" />
               </button>
             </Badge>
           )}
           {fechaDesde && (
             <Badge variant="neutral" className="gap-1">
               Desde: {fechaDesde}
-              <button onClick={() => { setField("fechaDesde", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
-                <X className="w-3 h-3" />
+              <button onClick={() => { setField("fechaDesde", ""); setField("page", 1); }} className="ml-1 cursor-pointer hover:text-text-main">
+                <X className="size-3" />
               </button>
             </Badge>
           )}
           {fechaHasta && (
             <Badge variant="neutral" className="gap-1">
               Hasta: {fechaHasta}
-              <button onClick={() => { setField("fechaHasta", ""); setField("page", 1); }} className="ml-1 hover:text-text-main cursor-pointer">
-                <X className="w-3 h-3" />
+              <button onClick={() => { setField("fechaHasta", ""); setField("page", 1); }} className="ml-1 cursor-pointer hover:text-text-main">
+                <X className="size-3" />
               </button>
             </Badge>
           )}
@@ -278,7 +278,7 @@ export default function InvoicesPage() {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {invoices.map((inv) => (
               <InvoiceCard
                 key={inv.id}

@@ -125,18 +125,18 @@ export default function FileUpload({
         onDragLeave={handleDragLeave}
         onClick={() => inputRef.current?.click()}
         className={`
-          flex flex-col items-center justify-center gap-2 px-6 py-8
-          rounded-xl border-2 border-dashed cursor-pointer
+          flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl
+          border-2 border-dashed px-6 py-8
           transition-all duration-150
           ${
             dragging
               ? "border-brand-blue bg-blue-50"
-              : "border-slate-300 hover:border-slate-400 bg-surface"
+              : "border-slate-300 bg-surface hover:border-slate-400"
           }
         `}
       >
-        <Upload className={`w-8 h-8 ${dragging ? "text-brand-blue" : "text-slate-400"}`} />
-        <p className="text-sm text-slate-600 font-medium">
+        <Upload className={`size-8 ${dragging ? "text-brand-blue" : "text-slate-400"}`} />
+        <p className="text-sm font-medium text-slate-600">
           {dragging ? "Suelta los archivos aquí" : `Arrastra ${group.toLowerCase()} o haz clic`}
         </p>
         <p className="text-xs text-slate-400">
@@ -160,16 +160,16 @@ export default function FileUpload({
           {files.map((file, i) => (
             <li
               key={`${file.name}-${i}`}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm"
+              className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
             >
               <span className="flex-1 truncate text-text-main">{file.name}</span>
-              <span className="text-xs text-slate-400 shrink-0">{formatSize(file.size)}</span>
+              <span className="shrink-0 text-xs text-slate-400">{formatSize(file.size)}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                className="shrink-0 text-slate-400 hover:text-danger transition-colors cursor-pointer"
+                className="shrink-0 cursor-pointer text-slate-400 transition-colors hover:text-danger"
                 aria-label={`Eliminar ${file.name}`}
               >
-                <X className="w-4 h-4" />
+                <X className="size-4" />
               </button>
             </li>
           ))}

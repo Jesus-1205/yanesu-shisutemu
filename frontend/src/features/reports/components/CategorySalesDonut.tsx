@@ -46,7 +46,7 @@ interface CategorySalesDonutProps {
 export default function CategorySalesDonut({ data }: CategorySalesDonutProps) {
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
+      <div className="flex h-75 items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de categorías</p>
       </div>
     );
@@ -58,7 +58,7 @@ export default function CategorySalesDonut({ data }: CategorySalesDonutProps) {
 
   if (!sorted.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
+      <div className="flex h-75 items-center justify-center">
         <p className="text-sm text-slate-400">Sin ingresos registrados</p>
       </div>
     );
@@ -79,7 +79,7 @@ export default function CategorySalesDonut({ data }: CategorySalesDonutProps) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-text-main mb-4">Cuota de Ventas por Categoría</h2>
+      <h2 className="mb-4 text-lg font-semibold text-text-main">Cuota de Ventas por Categoría</h2>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
@@ -107,7 +107,7 @@ export default function CategorySalesDonut({ data }: CategorySalesDonutProps) {
               if (!active || !payload?.length) return null;
               const d = payload[0].payload as ChartDatum;
               return (
-                <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-2 text-sm">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg">
                   <p className="font-medium text-text-main">
                     {d.name}
                   </p>
@@ -120,11 +120,11 @@ export default function CategorySalesDonut({ data }: CategorySalesDonutProps) {
           />
           <Legend
             content={() => (
-              <ul className="flex flex-wrap gap-x-3 gap-y-1 mt-2 justify-center">
+              <ul className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
                 {chartData.map((entry) => (
                   <li key={entry.name} className="flex items-center gap-1.5 text-xs text-slate-600">
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      className="size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: entry.color }}
                     />
                     {entry.name} ({entry.percentage}%)

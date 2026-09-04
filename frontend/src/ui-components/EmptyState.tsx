@@ -20,11 +20,11 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className}`}
+      className={`flex flex-col items-center justify-center px-4 py-16 text-center ${className}`}
     >
       {icon || (
         <svg
-          className="w-16 h-16 text-slate-300 mb-4"
+          className="mb-4 size-16 text-slate-300"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -37,9 +37,9 @@ export default function EmptyState({
           />
         </svg>
       )}
-      <h3 className="text-lg font-semibold text-text-main mb-1">{title}</h3>
+      <h3 className="mb-1 text-lg font-semibold text-text-main">{title}</h3>
       {description && (
-        <p className="text-sm text-slate-500 mb-6 max-w-sm">{description}</p>
+        <p className="mb-6 max-w-sm text-sm text-slate-500">{description}</p>
       )}
       {actionLabel && onAction && (
         <Button variant="primary" onClick={onAction}>

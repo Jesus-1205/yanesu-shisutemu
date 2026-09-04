@@ -54,12 +54,12 @@ export default function Button({
 
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 ease-out cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1 ${variantStyles[variant]} ${sizeStyles[size]} ${disabledStyles} ${className}`}
+      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-150 ease-out hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-1 focus-visible:outline-none active:translate-y-0 active:shadow-none ${variantStyles[variant]} ${sizeStyles[size]} ${disabledStyles} ${className}`}
       disabled={isDisabled}
       {...props}
     >
       {loading && (
-        <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span className="inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
       )}
       {children}
     </button>

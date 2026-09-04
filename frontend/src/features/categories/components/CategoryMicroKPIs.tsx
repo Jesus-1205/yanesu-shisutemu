@@ -10,11 +10,11 @@ interface CategoryMicroKPIsProps {
 export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsProps) {
   if (loading || !data) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-slate-200 bg-surface p-5 animate-pulse">
-            <div className="h-4 bg-slate-200 rounded w-24 mb-3" />
-            <div className="h-7 bg-slate-200 rounded w-20" />
+          <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-surface p-5">
+            <div className="mb-3 h-4 w-24 rounded bg-slate-200" />
+            <div className="h-7 w-20 rounded bg-slate-200" />
           </div>
         ))}
       </div>
@@ -30,23 +30,23 @@ export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsPr
     : null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <StatCard
         label="Categoría Líder"
         value={lider ? lider.nombre : "—"}
-        icon={<Crown className="w-5 h-5" />}
+        icon={<Crown className="size-5" />}
         variant="info"
       />
       <StatCard
         label="Mayor Margen"
         value={mayorMargen ? `${Number(mayorMargen.margen_promedio).toFixed(1)}%` : "—"}
-        icon={<TrendingUp className="w-5 h-5" />}
+        icon={<TrendingUp className="size-5" />}
         variant="success"
       />
       <StatCard
         label="Total Ítems"
         value={String(data.total_productos)}
-        icon={<Package className="w-5 h-5" />}
+        icon={<Package className="size-5" />}
       />
     </div>
   );

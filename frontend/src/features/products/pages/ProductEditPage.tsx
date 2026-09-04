@@ -222,10 +222,10 @@ export default function ProductEditPage() {
         description="Gestión completa del producto"
       />
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-6 max-w-5xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="mt-6 max-w-5xl space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className={cardBase}>
-            <h3 className="text-sm font-semibold text-text-main uppercase tracking-wide">
+            <h3 className="text-sm font-semibold tracking-wide text-text-main uppercase">
               Información General
             </h3>
             <div>
@@ -274,7 +274,7 @@ export default function ProductEditPage() {
               />
             </div>
             {!isOperator && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div>
                   <label htmlFor={fieldId("stock-cajas")} className={labelBase}>Stock cajas</label>
                   <input
@@ -358,7 +358,7 @@ export default function ProductEditPage() {
           </div>
 
           <div className={cardBase}>
-            <h3 className="text-sm font-semibold text-text-main uppercase tracking-wide">
+            <h3 className="text-sm font-semibold tracking-wide text-text-main uppercase">
               {isOperator ? "Precios" : "Precios y Finanzas"}
             </h3>
             <div>
@@ -377,7 +377,7 @@ export default function ProductEditPage() {
             </div>
             <div>
               <span className={labelBase}>Costo por unidad USD</span>
-              <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center text-sm text-slate-600 font-mono">
+              <div className="flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 font-mono text-sm text-slate-600">
                 ${precioCostoUnitario.toFixed(2)}
                 <span className="ml-auto text-[11px] text-slate-400">
                   {n(form.precio_costo_caja_usd) > 0 && n(form.unidades_por_caja) > 0
@@ -390,8 +390,8 @@ export default function ProductEditPage() {
               {!isOperator && (
                 <div>
                   <span className={labelBase}>Precio sugerido unidad USD</span>
-                  <div className="h-10 px-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between text-sm">
-                    <span className="text-blue-700 font-mono font-medium">
+                  <div className="flex h-10 items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm">
+                    <span className="font-mono font-medium text-blue-700">
                       ${precioSugerido.toFixed(2)}
                     </span>
                     <span className="text-[11px] text-blue-500">30% margen obj.</span>
@@ -431,7 +431,7 @@ export default function ProductEditPage() {
               {!isOperator && (
                 <div>
                   <span className={labelBase}>Precio sugerido caja USD</span>
-                  <div className="h-10 px-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center text-sm text-blue-700 font-mono">
+                  <div className="flex h-10 items-center rounded-lg border border-blue-200 bg-blue-50 px-3 font-mono text-sm text-blue-700">
                     ${precioSugeridoCaja.toFixed(2)}
                   </div>
                 </div>
@@ -480,7 +480,7 @@ export default function ProductEditPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className={labelBase}>Margen unidad</span>
-                  <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                  <div className="flex h-10 items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm">
                     <input
                       type="text"
                       inputMode="decimal"
@@ -490,7 +490,7 @@ export default function ProductEditPage() {
                       onChange={(e) => unitMargin.onChange(e.target.value)}
                       onBlur={unitMargin.onBlur}
                       autoComplete="off"
-                      className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                      className="w-16 bg-transparent text-right font-mono text-sm text-text-main outline-none"
                     />
                     <span className="text-xs text-slate-400">%</span>
                     <Badge variant={unitMargin.margin.color}>{unitMargin.margin.label}</Badge>
@@ -498,7 +498,7 @@ export default function ProductEditPage() {
                 </div>
                 <div>
                   <span className={labelBase}>Margen caja</span>
-                  <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                  <div className="flex h-10 items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm">
                     <input
                       type="text"
                       inputMode="decimal"
@@ -508,7 +508,7 @@ export default function ProductEditPage() {
                       onChange={(e) => boxMargin.onChange(e.target.value)}
                       onBlur={boxMargin.onBlur}
                       autoComplete="off"
-                      className="w-16 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                      className="w-16 bg-transparent text-right font-mono text-sm text-text-main outline-none"
                     />
                     <span className="text-xs text-slate-400">%</span>
                     <Badge variant={boxMargin.margin.color}>{boxMargin.margin.label}</Badge>

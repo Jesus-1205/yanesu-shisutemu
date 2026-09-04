@@ -93,7 +93,7 @@ export default function InvoiceDetailPage() {
           title="Detalle de Factura"
           actions={
             <Button variant="ghost" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="size-4" />
               Volver
             </Button>
           }
@@ -136,12 +136,12 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center gap-2">
             {invoice.procesada_por_ia && (
               <Button variant="outline" onClick={() => setAiModalOpen(true)}>
-                <Bot className="w-4 h-4" />
+                <Bot className="size-4" />
                 Resultado IA
               </Button>
             )}
             <Button variant="ghost" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="size-4" />
               Volver
             </Button>
           </div>
@@ -161,7 +161,7 @@ export default function InvoiceDetailPage() {
           {invoice.aplica_iva && (
             <>
               <span className="text-slate-300">•</span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">IVA 16%</span>
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">IVA 16%</span>
             </>
           )}
         </div>
@@ -176,7 +176,7 @@ export default function InvoiceDetailPage() {
               <span className="text-slate-500">Límite de pago:</span>
               <span className="font-medium">{limite.toLocaleDateString("es-VE")}</span>
               {!esPagada && (
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                   diffDias < 0
                     ? "bg-red-100 text-red-700"
                     : diffDias <= 3
@@ -197,54 +197,54 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* ─── Cards financieras ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {invoice.moneda_principal === "BS" ? (
           <>
-            <div className="p-4 rounded-xl bg-surface border border-slate-200">
-              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+            <div className="rounded-xl border border-slate-200 bg-surface p-4">
+              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                 Total Bs.
-                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">PRINCIPAL</span>
+                <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">PRINCIPAL</span>
               </p>
-              <p className="text-lg font-bold mt-1 font-mono">
+              <p className="mt-1 font-mono text-lg font-bold">
                 Bs. {formatBs(totalPrincipal)}
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-surface border border-slate-200">
-              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+            <div className="rounded-xl border border-slate-200 bg-surface p-4">
+              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                 Total USD
-                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">AUTO-CALC</span>
+                <span className="ml-2 inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">AUTO-CALC</span>
               </p>
-              <p className="text-lg font-bold mt-1 font-mono">
+              <p className="mt-1 font-mono text-lg font-bold">
                 {formatUsd(totalSecundario)}
               </p>
             </div>
           </>
         ) : (
           <>
-            <div className="p-4 rounded-xl bg-surface border border-slate-200">
-              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+            <div className="rounded-xl border border-slate-200 bg-surface p-4">
+              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                 Total USD
-                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">PRINCIPAL</span>
+                <span className="ml-2 inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">PRINCIPAL</span>
               </p>
-              <p className="text-lg font-bold mt-1 font-mono">
+              <p className="mt-1 font-mono text-lg font-bold">
                 {formatUsd(totalPrincipal)}
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-surface border border-slate-200">
-              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+            <div className="rounded-xl border border-slate-200 bg-surface p-4">
+              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                 Total Bs.
-                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">AUTO-CALC</span>
+                <span className="ml-2 inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">AUTO-CALC</span>
               </p>
-              <p className="text-lg font-bold mt-1 font-mono">
+              <p className="mt-1 font-mono text-lg font-bold">
                 Bs. {formatBs(totalSecundario)}
               </p>
             </div>
           </>
         )}
         {nTasa > 0 && (
-          <div className="p-4 rounded-xl bg-surface border border-slate-200">
-            <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Tasa BCV</p>
-            <p className="text-lg font-bold mt-1 font-mono">
+          <div className="rounded-xl border border-slate-200 bg-surface p-4">
+            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Tasa BCV</p>
+            <p className="mt-1 font-mono text-lg font-bold">
               {formatBs(nTasa)}
             </p>
           </div>
@@ -253,22 +253,22 @@ export default function InvoiceDetailPage() {
 
       {/* Panel de Estado de Pago */}
       {paymentSummary && (
-        <div className="mb-6 p-4 rounded-xl bg-surface border border-slate-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Estado de Pago</h3>
+        <div className="mb-6 rounded-xl border border-slate-200 bg-surface p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold tracking-wide text-slate-700 uppercase">Estado de Pago</h3>
             {invoice.estado_pago !== "PAGADA" && (
               <Button variant="accent" size="sm" onClick={() => navigate(`/invoices/${id}/pay`)}>
-                <DollarSign className="w-4 h-4" />
+                <DollarSign className="size-4" />
                 Registrar Pago
               </Button>
             )}
           </div>
           <div className="mb-3">
-            <div className="flex justify-between text-xs text-slate-500 mb-1">
+            <div className="mb-1 flex justify-between text-xs text-slate-500">
               <span>{Math.round(paymentSummary.porcentaje_pagado)}% pagado</span>
               <span>{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.saldo_pendiente_bs)}` : formatUsd(paymentSummary.saldo_pendiente_usd)} pendiente</span>
             </div>
-            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   invoice.estado_pago === "PAGADA" ? "bg-green-500" : "bg-amber-500"
@@ -277,20 +277,20 @@ export default function InvoiceDetailPage() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+          <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
               <p className="text-slate-500">Total</p>
-              <p className="font-bold font-mono mt-0.5">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.total_factura_bs)}` : formatUsd(paymentSummary.total_factura_usd)}</p>
+              <p className="mt-0.5 font-mono font-bold">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.total_factura_bs)}` : formatUsd(paymentSummary.total_factura_usd)}</p>
             </div>
-            <div className="p-3 rounded-lg bg-green-50 border border-green-100">
+            <div className="rounded-lg border border-green-100 bg-green-50 p-3">
               <p className="text-green-600">Pagado</p>
-              <p className="font-bold font-mono text-green-700 mt-0.5">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.total_pagado_bs)}` : formatUsd(paymentSummary.total_pagado_usd)}</p>
+              <p className="mt-0.5 font-mono font-bold text-green-700">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.total_pagado_bs)}` : formatUsd(paymentSummary.total_pagado_usd)}</p>
             </div>
-            <div className="p-3 rounded-lg bg-red-50 border border-red-100">
+            <div className="rounded-lg border border-red-100 bg-red-50 p-3">
               <p className="text-red-600">Saldo</p>
-              <p className="font-bold font-mono text-red-700 mt-0.5">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.saldo_pendiente_bs)}` : formatUsd(paymentSummary.saldo_pendiente_usd)}</p>
+              <p className="mt-0.5 font-mono font-bold text-red-700">{invoice.moneda_principal === "BS" ? `Bs. ${formatBs(paymentSummary.saldo_pendiente_bs)}` : formatUsd(paymentSummary.saldo_pendiente_usd)}</p>
             </div>
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
               <p className="text-slate-500">Estado</p>
               <Badge
                 variant={
@@ -305,22 +305,22 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
           {(Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 1 || paymentSummary.total_mora_bs > 0) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mt-3">
+            <div className="mt-3 grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
               {Math.abs(paymentSummary.diferencia_cambiaria_bs) >= 1 && (
-                <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
-                  <p className="text-amber-600 font-medium">Diferencia cambiaria</p>
-                  <p className="font-bold font-mono text-amber-700 mt-0.5">Bs. {formatBs(paymentSummary.diferencia_cambiaria_bs)}</p>
-                  <p className="text-[10px] text-amber-500 mt-1">Por cambio de tasa BCV</p>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="font-medium text-amber-600">Diferencia cambiaria</p>
+                  <p className="mt-0.5 font-mono font-bold text-amber-700">Bs. {formatBs(paymentSummary.diferencia_cambiaria_bs)}</p>
+                  <p className="mt-1 text-[10px] text-amber-500">Por cambio de tasa BCV</p>
                 </div>
               )}
               {paymentSummary.total_mora_bs > 0 && (
-                <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-                  <p className="text-orange-600 font-medium">Mora</p>
-                  <p className="font-bold font-mono text-orange-700 mt-0.5">Bs. {formatBs(paymentSummary.total_mora_bs)}</p>
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+                  <p className="font-medium text-orange-600">Mora</p>
+                  <p className="mt-0.5 font-mono font-bold text-orange-700">Bs. {formatBs(paymentSummary.total_mora_bs)}</p>
                   {nTasa > 0 && (
-                    <p className="font-mono text-xs text-orange-500 mt-0.5">{formatUsd(paymentSummary.total_mora_bs / nTasa)}</p>
+                    <p className="mt-0.5 font-mono text-xs text-orange-500">{formatUsd(paymentSummary.total_mora_bs / nTasa)}</p>
                   )}
-                  <p className="text-[10px] text-orange-400 mt-1">Recargo por pago tardío</p>
+                  <p className="mt-1 text-[10px] text-orange-400">Recargo por pago tardío</p>
                 </div>
               )}
             </div>
@@ -331,7 +331,7 @@ export default function InvoiceDetailPage() {
       {/* Historial de Pagos */}
       {payments.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-slate-700 mb-3">Historial de Pagos</h3>
+          <h3 className="mb-3 text-sm font-medium text-slate-700">Historial de Pagos</h3>
           <Table
             columns={[
               {
@@ -397,7 +397,7 @@ export default function InvoiceDetailPage() {
                 render: (p: InvoicePaymentOut) =>
                   p.comprobantes.length > 0 ? (
                     <Button variant="ghost" size="sm" onClick={() => window.open(api.getPaymentReceiptUrl(invoice.id, p.id, p.comprobantes[0].id), "_blank")}>
-                      <Paperclip className="w-3.5 h-3.5" />
+                      <Paperclip className="size-3.5" />
                       Ver
                     </Button>
                   ) : (
@@ -414,7 +414,7 @@ export default function InvoiceDetailPage() {
 
       {invoice.image_path && (
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-medium text-slate-700">Imagen de Factura</p>
             <Button
               variant="outline"
@@ -422,18 +422,18 @@ export default function InvoiceDetailPage() {
               loading={downloading}
               onClick={handleDownloadImage}
             >
-              <Download className="w-4 h-4" />
+              <Download className="size-4" />
               Descargar
             </Button>
           </div>
           <div
-            className="rounded-xl overflow-hidden border border-slate-200 hover:border-brand-blue transition-colors cursor-pointer"
+            className="cursor-pointer overflow-hidden rounded-xl border border-slate-200 transition-colors hover:border-brand-blue"
             onClick={() => setImagePreviewOpen(true)}
           >
             <img
               src={api.getInvoiceImageUrl(invoice.id)}
               alt={`Factura #${invoice.numero_factura}`}
-              className="max-h-80 w-full object-contain bg-slate-50"
+              className="max-h-80 w-full bg-slate-50 object-contain"
             />
           </div>
         </div>
@@ -443,12 +443,12 @@ export default function InvoiceDetailPage() {
         <img
           src={api.getInvoiceImageUrl(invoice.id)}
           alt={`Factura #${invoice.numero_factura}`}
-          className="w-full object-contain rounded-lg"
+          className="w-full rounded-lg object-contain"
         />
       </Modal>
 
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-slate-700 mb-3">Productos</h3>
+        <h3 className="mb-3 text-sm font-medium text-slate-700">Productos</h3>
         <Table
           columns={[
             { key: "producto", header: "Producto", render: (d) => d.product?.nombre || "—" },
@@ -457,7 +457,7 @@ export default function InvoiceDetailPage() {
               header: "Tipo",
               render: (d) => (
                 <div className="flex flex-col items-center">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                     d.tipo_empaque === "CAJA"
                       ? "bg-blue-100 text-blue-700"
                       : "bg-green-100 text-green-700"
@@ -465,10 +465,10 @@ export default function InvoiceDetailPage() {
                     {d.tipo_empaque === "CAJA" ? "Caja" : "Und"}
                   </span>
                   {d.tipo_empaque === "CAJA" && d.product?.unidades_por_caja && d.product.unidades_por_caja > 1 && (
-                    <span className="text-[10px] text-slate-400 mt-0.5">{d.product.unidades_por_caja} unds/caja</span>
+                    <span className="mt-0.5 text-[10px] text-slate-400">{d.product.unidades_por_caja} unds/caja</span>
                   )}
                   {d.tipo_iva === "EXENTO" && (
-                    <span className="text-[10px] text-orange-600 font-semibold mt-0.5">Exento</span>
+                    <span className="mt-0.5 text-[10px] font-semibold text-orange-600">Exento</span>
                   )}
                 </div>
               ),
@@ -481,7 +481,7 @@ export default function InvoiceDetailPage() {
                 if (d.tipo_empaque !== "CAJA") return <span className="text-slate-300">—</span>;
                 return (
                   <div className="text-right">
-                    <span className="font-mono font-semibold text-sm">{formatUsd(Number(d.costo_unitario_usd))}</span>
+                    <span className="font-mono text-sm font-semibold">{formatUsd(Number(d.costo_unitario_usd))}</span>
                   </div>
                 );
               },
@@ -496,7 +496,7 @@ export default function InvoiceDetailPage() {
                   return <span className="font-mono text-xs text-slate-400">{invoice.moneda_principal === "BS" && "≈ "}{formatUsd(costoUnitario)}</span>;
                 }
                 if (d.tipo_empaque === "UNIDAD") {
-                  return <span className={`font-mono ${invoice.moneda_principal === "BS" ? "text-xs text-slate-400" : "font-semibold text-sm"}`}>{invoice.moneda_principal === "BS" && "≈ "}{formatUsd(Number(d.costo_unitario_usd))}</span>;
+                  return <span className={`font-mono ${invoice.moneda_principal === "BS" ? "text-xs text-slate-400" : "text-sm font-semibold"}`}>{invoice.moneda_principal === "BS" && "≈ "}{formatUsd(Number(d.costo_unitario_usd))}</span>;
                 }
                 return <span className="text-slate-300">—</span>;
               },
@@ -506,7 +506,7 @@ export default function InvoiceDetailPage() {
               header: "Bs. / Unid",
               hideOnMobile: true,
               render: (d) => (
-                <span className={`font-mono ${invoice.moneda_principal === "BS" ? "font-semibold text-sm" : "text-xs"}`}>{invoice.moneda_principal !== "BS" && "≈ "}Bs. {formatBs(Number(d.costo_unitario_bs))}</span>
+                <span className={`font-mono ${invoice.moneda_principal === "BS" ? "text-sm font-semibold" : "text-xs"}`}>{invoice.moneda_principal !== "BS" && "≈ "}Bs. {formatBs(Number(d.costo_unitario_bs))}</span>
               ),
             },
             {
@@ -546,9 +546,9 @@ export default function InvoiceDetailPage() {
               }
             }
             return (
-              <tr className="bg-slate-100/70 border-t-2 border-slate-200 font-semibold text-text-main">
+              <tr className="border-t-2 border-slate-200 bg-slate-100/70 font-semibold text-text-main">
                 <td className="px-4 py-3.5" colSpan={2}>Totales</td>
-                <td className="px-4 py-3.5 text-right tabular-nums text-xs">
+                <td className="px-4 py-3.5 text-right text-xs tabular-nums">
                   {totalCajas > 0 && <div>{totalCajas} cajas</div>}
                   <div>{totalUnidades} unds</div>
                 </td>
@@ -574,19 +574,19 @@ export default function InvoiceDetailPage() {
       {/* Sección de Obsequios */}
       {invoice.obsequios && invoice.obsequios.length > 0 && (
         <div className="mb-6 rounded-xl border-2 border-purple-200 bg-purple-50/50 p-5">
-          <h3 className="text-sm font-semibold text-purple-800 uppercase tracking-wide mb-3">
+          <h3 className="mb-3 text-sm font-semibold tracking-wide text-purple-800 uppercase">
             Obsequios / Cortesías ({invoice.obsequios.length})
           </h3>
           <div className="overflow-x-auto rounded-lg border border-purple-200 bg-white">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-purple-50 border-b border-purple-200 text-purple-700">
-                  <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Producto</th>
-                  <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-2">Tipo</th>
-                  <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Cant</th>
-                  <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Unds/Caja</th>
-                  <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-2">Total Unds</th>
-                  <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-2">Justificación</th>
+                <tr className="border-b border-purple-200 bg-purple-50 text-purple-700">
+                  <th className="px-4 py-2 text-left text-xs font-medium tracking-wider uppercase">Producto</th>
+                  <th className="px-4 py-2 text-center text-xs font-medium tracking-wider uppercase">Tipo</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium tracking-wider uppercase">Cant</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium tracking-wider uppercase">Unds/Caja</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium tracking-wider uppercase">Total Unds</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium tracking-wider uppercase">Justificación</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-100">
@@ -595,17 +595,17 @@ export default function InvoiceDetailPage() {
                   const totalUnds = o.tipo_empaque === "CAJA" ? o.cantidad * undsCaja : o.cantidad;
                   return (
                     <tr key={o.id} className="bg-purple-50/30">
-                      <td className="px-4 py-2 text-text-main font-medium">{o.product?.nombre || "—"}</td>
+                      <td className="px-4 py-2 font-medium text-text-main">{o.product?.nombre || "—"}</td>
                       <td className="px-4 py-2 text-center">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                        <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
                           {o.tipo_empaque === "CAJA" ? "Caja" : "Und"}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-right tabular-nums">{o.cantidad}</td>
-                      <td className="px-4 py-2 text-right tabular-nums text-slate-500">
+                      <td className="px-4 py-2 text-right text-slate-500 tabular-nums">
                         {o.tipo_empaque === "CAJA" ? undsCaja : "—"}
                       </td>
-                      <td className="px-4 py-2 text-right tabular-nums font-medium">{totalUnds}</td>
+                      <td className="px-4 py-2 text-right font-medium tabular-nums">{totalUnds}</td>
                       <td className="px-4 py-2 text-xs text-slate-600">{o.justificacion}</td>
                     </tr>
                   );
@@ -613,15 +613,15 @@ export default function InvoiceDetailPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-purple-400 mt-2">
+          <p className="mt-2 text-xs text-purple-400">
             Los obsequios actualizan el stock sin afectar el total de la factura.
           </p>
         </div>
       )}
 
       {resumen && (
-          <div className="p-4 rounded-xl bg-surface border border-slate-200 mb-6">
-            <h3 className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">Resumen Fiscal y Total</h3>
+          <div className="mb-6 rounded-xl border border-slate-200 bg-surface p-4">
+            <h3 className="mb-3 text-xs font-medium tracking-wide text-slate-500 uppercase">Resumen Fiscal y Total</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Exento</span>
@@ -641,17 +641,17 @@ export default function InvoiceDetailPage() {
                   {invoice.moneda_principal === "BS" ? `Bs. ${formatBs(resumen.iva)}` : formatUsd(resumen.iva)}
                 </span>
               </div>
-              <div className="border-t border-slate-200 pt-2 mt-2">
+              <div className="mt-2 border-t border-slate-200 pt-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-700 font-bold">Total USD</span>
+                  <span className="font-bold text-slate-700">Total USD</span>
                   <span className="font-mono font-bold">
                     {invoice.moneda_principal === "BS"
                       ? formatUsd(totalSecundario)
                       : formatUsd(totalPrincipal)}
                   </span>
                 </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-slate-700 font-bold">Total Bs.</span>
+                <div className="mt-1 flex justify-between">
+                  <span className="font-bold text-slate-700">Total Bs.</span>
                   <span className="font-mono font-bold">
                     {invoice.moneda_principal === "BS"
                       ? `Bs. ${formatBs(totalPrincipal)}`
@@ -664,9 +664,9 @@ export default function InvoiceDetailPage() {
       )}
 
       {invoice.observaciones && (
-        <div className="p-4 rounded-xl bg-surface border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Observaciones</p>
-          <p className="text-sm mt-1 text-slate-700">{invoice.observaciones}</p>
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Observaciones</p>
+          <p className="mt-1 text-sm text-slate-700">{invoice.observaciones}</p>
         </div>
       )}
 
@@ -707,13 +707,13 @@ export default function InvoiceDetailPage() {
 
               {prods && prods.length > 0 && (
                 <>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Productos</p>
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Productos</p>
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 text-left">
                         <th className="pb-2 font-medium text-slate-500">Producto</th>
-                        <th className="pb-2 font-medium text-slate-500 text-right">Cantidad</th>
-                        <th className="pb-2 font-medium text-slate-500 text-right">Precio Unit.</th>
+                        <th className="pb-2 text-right font-medium text-slate-500">Cantidad</th>
+                        <th className="pb-2 text-right font-medium text-slate-500">Precio Unit.</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -743,8 +743,8 @@ function ObsCell({ text }: { text: string | null }) {
     <button
       type="button"
       onClick={() => setExpanded((v) => !v)}
-      className={`text-xs text-left cursor-pointer hover:text-brand-blue transition-colors ${
-        expanded ? "text-slate-700" : "text-slate-500 truncate max-w-[150px]"
+      className={`cursor-pointer text-left text-xs transition-colors hover:text-brand-blue ${
+        expanded ? "text-slate-700" : "max-w-[150px] truncate text-slate-500"
       }`}
       title={expanded ? "Click para contraer" : "Click para expandir"}
     >

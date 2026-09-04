@@ -87,16 +87,16 @@ export default function Combobox({
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"
-        className={`w-full h-10 rounded-lg border bg-surface px-3 text-sm text-text-main outline-none transition-all duration-200
-          ${disabled ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed" : ""}
+        className={`h-10 w-full rounded-lg border bg-surface px-3 text-sm text-text-main transition-all duration-200 outline-none
+          ${disabled ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400" : ""}
           ${error ? "border-danger bg-red-50" : "border-slate-300 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"}
         `}
       />
       {open && !disabled && (
-        <ul className="absolute z-50 top-full mt-1 w-full bg-surface border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+        <ul className="absolute top-full z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-surface shadow-lg">
           {allowClear && (
             <li
-              className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 cursor-pointer transition-colors"
+              className="cursor-pointer px-4 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-100"
               onMouseDown={() => handleSelect(null)}
             >
               {clearLabel}
@@ -108,7 +108,7 @@ export default function Combobox({
             filtered.map((opt) => (
               <li
                 key={opt.value}
-                className={`px-4 py-2 text-sm cursor-pointer transition-colors hover:bg-slate-100 ${
+                className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
                   value === opt.value ? "bg-brand-blue/10 font-medium text-brand-blue" : "text-text-main"
                 }`}
                 onMouseDown={() => handleSelect(opt)}

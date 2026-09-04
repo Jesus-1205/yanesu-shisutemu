@@ -58,18 +58,18 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
 
   return (
     <div className={cardBase}>
-      <h3 className="text-sm font-semibold text-text-main uppercase tracking-wide">
+      <h3 className="text-sm font-semibold tracking-wide text-text-main uppercase">
         Información de la Factura
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-0 md:grid-cols-2">
         <div className="space-y-4">
           <div>
             <label className={labelBase}>Tipo de Documento</label>
-            <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+            <div className="flex overflow-hidden rounded-lg border border-slate-300">
               <button
                 type="button"
                 onClick={() => store.setField("tipoDocumento", "FACTURA")}
-                className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                className={`h-10 flex-1 cursor-pointer text-sm font-medium transition-colors ${
                   store.tipoDocumento === "FACTURA"
                     ? "bg-brand-blue text-white"
                     : "bg-surface text-slate-600 hover:bg-slate-50"
@@ -80,7 +80,7 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
               <button
                 type="button"
                 onClick={() => store.setField("tipoDocumento", "NOTA_ENTREGA")}
-                className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                className={`h-10 flex-1 cursor-pointer text-sm font-medium transition-colors ${
                   store.tipoDocumento === "NOTA_ENTREGA"
                     ? "bg-brand-blue text-white"
                     : "bg-surface text-slate-600 hover:bg-slate-50"
@@ -105,10 +105,10 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
             <button
               type="button"
               onClick={() => { setSupplierModalNombre(""); setSupplierModalOpen(true); }}
-              className="shrink-0 h-10 flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-surface px-3 text-sm text-slate-500 hover:text-brand-blue hover:border-brand-blue transition-colors cursor-pointer"
+              className="flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-surface px-3 text-sm text-slate-500 transition-colors hover:border-brand-blue hover:text-brand-blue"
               title="Crear nuevo proveedor"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
               <span className="hidden sm:inline">Nuevo</span>
             </button>
           </div>
@@ -136,7 +136,7 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
             />
           </div>
           <div>
-            <label htmlFor={fid("fecha-limite")} className={labelBase}>Fecha Límite de Pago <span className="text-slate-400 font-normal">(opcional)</span></label>
+            <label htmlFor={fid("fecha-limite")} className={labelBase}>Fecha Límite de Pago <span className="font-normal text-slate-400">(opcional)</span></label>
             <input
               id={fid("fecha-limite")}
               type="date"
@@ -150,11 +150,11 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
         <div className="space-y-4">
           <div>
             <label className={labelBase}>Moneda Principal</label>
-            <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+            <div className="flex overflow-hidden rounded-lg border border-slate-300">
               <button
                 type="button"
                 onClick={() => store.setField("moneda", "USD")}
-                className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                className={`h-10 flex-1 cursor-pointer text-sm font-medium transition-colors ${
                   store.moneda === "USD"
                     ? "bg-brand-blue text-white"
                     : "bg-surface text-slate-600 hover:bg-slate-50"
@@ -165,7 +165,7 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
               <button
                 type="button"
                 onClick={() => store.setField("moneda", "BS")}
-                className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                className={`h-10 flex-1 cursor-pointer text-sm font-medium transition-colors ${
                   store.moneda === "BS"
                     ? "bg-brand-blue text-white"
                     : "bg-surface text-slate-600 hover:bg-slate-50"
@@ -193,16 +193,16 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
                 <button
                   type="button"
                   onClick={() => setShowRateHistory((prev) => !prev)}
-                  className="shrink-0 h-10 px-3 rounded-lg border border-slate-300 bg-surface text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-brand-blue transition-colors cursor-pointer flex items-center gap-1"
+                  className="flex h-10 shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-slate-300 bg-surface px-3 text-xs font-medium text-slate-600 transition-colors hover:border-brand-blue hover:bg-slate-50"
                   title="Historial de tasas"
                 >
-                  <Clock className="w-3.5 h-3.5" />
+                  <Clock className="size-3.5" />
                 </button>
                 {showRateHistory && rateHistory.length > 0 && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowRateHistory(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-lg border border-slate-200 bg-white shadow-lg overflow-hidden">
-                      <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                    <div className="absolute top-full right-0 z-50 mt-1 w-72 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+                      <div className="border-b border-slate-100 px-3 py-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
                         Últimas tasas
                       </div>
                       <div className="max-h-64 overflow-y-auto">
@@ -215,13 +215,13 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
                               setShowRateHistory(false);
                               toast(`Tasa del ${new Date(rate.fecha_registro).toLocaleDateString("es-VE")} aplicada`, "success");
                             }}
-                            className="w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between border-b border-slate-50 last:border-0"
+                            className="flex w-full cursor-pointer items-center justify-between border-b border-slate-50 px-3 py-2 text-left transition-colors last:border-0 hover:bg-slate-50"
                           >
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-text-main">USD {Number(rate.tasa_usd).toFixed(2)}</span>
                               <span className="text-[10px] text-slate-400">EUR {Number(rate.tasa_eur).toFixed(2)}</span>
                             </div>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-[10px] text-slate-400">
                               {new Date(rate.fecha_registro).toLocaleDateString("es-VE")}
                             </span>
                           </button>
@@ -233,21 +233,21 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
               </div>
             </div>
             {exchangeRateStore.fechaUltimaActualizacion && (
-              <p className="text-[10px] text-slate-400 mt-0.5">
+              <p className="mt-0.5 text-[10px] text-slate-400">
                 Tasa actual: {Number(exchangeRateStore.tasa).toFixed(2)} Bs/USD • Actualizada {new Date(exchangeRateStore.fechaUltimaActualizacion).toLocaleDateString("es-VE")}
               </p>
             )}
           </div>
           <div>
             <label className={labelBase}>¿La factura incluye IVA?</label>
-            <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+            <div className="flex overflow-hidden rounded-lg border border-slate-300">
               <button
                 type="button"
                 onClick={() => store.setField("aplicaIva", true)}
                 disabled={store.moneda === "USD"}
-                className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                className={`h-10 flex-1 cursor-pointer text-sm font-medium transition-colors ${
                   store.aplicaIva ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
-                } ${store.moneda === "USD" ? "opacity-50 cursor-not-allowed" : ""}`}
+                } ${store.moneda === "USD" ? "cursor-not-allowed opacity-50" : ""}`}
               >
                 Con IVA
               </button>
@@ -255,15 +255,15 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
                 type="button"
                 onClick={() => store.setField("aplicaIva", false)}
                 disabled={store.moneda === "USD"}
-                className={`flex-1 h-10 text-sm font-medium transition-colors cursor-pointer ${
+                className={`h-10 flex-1 cursor-pointer text-sm font-medium transition-colors ${
                   !store.aplicaIva ? "bg-brand-blue text-white" : "bg-surface text-slate-600 hover:bg-slate-50"
-                } ${store.moneda === "USD" ? "opacity-50 cursor-not-allowed" : ""}`}
+                } ${store.moneda === "USD" ? "cursor-not-allowed opacity-50" : ""}`}
               >
                 Sin IVA
               </button>
             </div>
             {store.moneda === "USD" && (
-              <p className="text-[10px] text-slate-400 mt-0.5">El IVA solo aplica a facturas en bolívares</p>
+              <p className="mt-0.5 text-[10px] text-slate-400">El IVA solo aplica a facturas en bolívares</p>
             )}
           </div>
           <div>
@@ -283,12 +283,12 @@ export default function InvoiceInfoCard({ onSearchSuppliers, onAnalyzeImage, aiL
                 type="button"
                 onClick={onAnalyzeImage}
                 disabled={aiLoading}
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-brand-blue text-white hover:bg-brand-blue/90 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-blue/90 disabled:opacity-50"
               >
                 {aiLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <ScanLine className="w-4 h-4" />
+                  <ScanLine className="size-4" />
                 )}
                 {aiLoading ? "Analizando..." : "Leer con IA"}
               </button>

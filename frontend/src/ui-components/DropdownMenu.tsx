@@ -24,16 +24,16 @@ export default function DropdownMenu({
   return (
     <div
       className={`
-        w-[200px] rounded-xl py-3
-        flex flex-col gap-2.5
-        bg-slate-800 shadow-lg
+        flex w-50 flex-col
+        gap-2.5 rounded-xl bg-slate-800
+        py-3 shadow-lg
         ${className}
       `}
     >
       {sections.map((section, si) => (
         <div key={si}>
-          {si > 0 && <hr className="border-t border-slate-600 mx-0" />}
-          <ul className="flex flex-col gap-2 list-none px-2.5">
+          {si > 0 && <hr className="mx-0 border-t border-slate-600" />}
+          <ul className="flex list-none flex-col gap-2 px-2.5">
             {section.items.map((item, ii) => {
               const isDanger = item.variant === "danger";
               const isLastSection = si === sections.length - 1;
@@ -48,14 +48,14 @@ export default function DropdownMenu({
                 <li key={ii}>
                   <button
                     className={`
-                      flex items-center gap-2.5 w-full
-                      px-2 py-1.5 rounded-md
-                      text-sm font-semibold text-slate-400
-                      transition-all duration-300 ease-out
-                      active:scale-[0.99]
+                      active:scale-0.99 flex w-full items-center
+                      gap-2.5 rounded-md px-2
+                      py-1.5 text-sm font-semibold
+                      text-slate-400 transition-all duration-300
+                      ease-out
                       ${isDanger ? "text-red-300" : isLastSection ? "text-indigo-300" : ""}
                       ${hoverStyles}
-                      ${item.disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer"}
+                      ${item.disabled ? "pointer-events-none cursor-not-allowed opacity-50" : "cursor-pointer"}
                     `}
                     onClick={item.onClick}
                     disabled={item.disabled}
@@ -63,8 +63,8 @@ export default function DropdownMenu({
                     {item.icon && (
                       <span
                         className={`
-                          [&>svg]:w-[19px] [&>svg]:h-[19px] [&>svg]:stroke-slate-400
-                          transition-all duration-300
+                          transition-all duration-300 [&>svg]:size-[19px]
+                          [&>svg]:stroke-slate-400
                           ${isLastSection ? "[&>svg]:stroke-indigo-400" : ""}
                         `}
                       >

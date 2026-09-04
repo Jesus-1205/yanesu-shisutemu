@@ -17,7 +17,7 @@ export default function SupplierComparisonBar({ data }: SupplierComparisonBarPro
 
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
+      <div className="flex h-75 items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de proveedores</p>
       </div>
     );
@@ -39,14 +39,14 @@ export default function SupplierComparisonBar({ data }: SupplierComparisonBarPro
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-main">Comparación de Proveedores</h2>
-        <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-sm">
+        <div className="flex rounded-lg border border-slate-200 bg-slate-100 p-1 text-sm">
           <button
             onClick={() => setMetric("ingresos")}
-            className={`px-3 py-1.5 rounded-md transition-all ${
+            className={`rounded-md px-3 py-1.5 transition-all ${
               metric === "ingresos"
-                ? "bg-white shadow-sm text-slate-900 font-semibold"
+                ? "bg-white font-semibold text-slate-900 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -54,9 +54,9 @@ export default function SupplierComparisonBar({ data }: SupplierComparisonBarPro
           </button>
           <button
             onClick={() => setMetric("unidades")}
-            className={`px-3 py-1.5 rounded-md transition-all ${
+            className={`rounded-md px-3 py-1.5 transition-all ${
               metric === "unidades"
-                ? "bg-white shadow-sm text-slate-900 font-semibold"
+                ? "bg-white font-semibold text-slate-900 shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >

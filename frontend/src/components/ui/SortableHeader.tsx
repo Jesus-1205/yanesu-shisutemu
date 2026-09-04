@@ -21,17 +21,17 @@ export default function SortableHeader<T>({
 
   return (
     <th
-      className={`px-3 py-2 text-left font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none transition-colors ${className}`}
+      className={`cursor-pointer px-3 py-2 text-left font-semibold tracking-wider text-slate-500 uppercase transition-colors select-none hover:bg-slate-100 ${className}`}
       onClick={() => onRequestSort(sortKey)}
     >
       <span className="inline-flex items-center gap-1">
         {label}
         {direction === "asc" ? (
-          <ArrowUp className="w-3.5 h-3.5 text-brand-blue" />
+          <ArrowUp className="size-3.5 text-brand-blue" />
         ) : direction === "desc" ? (
-          <ArrowDown className="w-3.5 h-3.5 text-brand-blue" />
+          <ArrowDown className="size-3.5 text-brand-blue" />
         ) : (
-          <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+          <ArrowUpDown className="size-3.5 text-slate-400" />
         )}
       </span>
     </th>

@@ -51,19 +51,19 @@ export default function ErrorBanner({
 
   return (
     <div
-      className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${bgClass} ${borderClass} motion-safe:animate-[fadeIn_200ms_ease] ${className}`}
+      className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${bgClass} ${borderClass} motion-safe:animate-[fadeIn_200ms_ease] ${className}`}
       role="alert"
     >
-      <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${iconClass}`} />
-      <div className="flex-1 min-w-0">
+      <Icon className={`mt-0.5 size-5 shrink-0 ${iconClass}`} />
+      <div className="min-w-0 flex-1">
         {title && <p className={`text-sm font-semibold ${titleClass}`}>{title}</p>}
         <p className="text-sm text-slate-600">{children}</p>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 items-center gap-2">
         {onRetry && (
           <button
             onClick={onRetry}
-            className="text-sm font-medium text-brand-blue hover:text-blue-700 transition-colors cursor-pointer"
+            className="cursor-pointer text-sm font-medium text-brand-blue transition-colors hover:text-blue-700"
           >
             Reintentar
           </button>
@@ -71,10 +71,10 @@ export default function ErrorBanner({
         {dismissible && (
           <button
             onClick={() => setDismissed(true)}
-            className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+            className="cursor-pointer text-slate-400 transition-colors hover:text-slate-600"
             aria-label="Descartar"
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         )}
       </div>

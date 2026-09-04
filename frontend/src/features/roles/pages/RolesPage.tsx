@@ -103,7 +103,7 @@ export default function RolesPage() {
         description="Administra los roles del sistema"
         actions={
           <Button variant="accent" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Nuevo Rol
           </Button>
         }
@@ -131,14 +131,14 @@ export default function RolesPage() {
                   size="sm"
                   onClick={() => openEdit(role)}
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="size-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteTarget(role)}
                 >
-                  <Trash2 className="w-4 h-4 text-danger" />
+                  <Trash2 className="size-4 text-danger" />
                 </Button>
               </div>
             ),

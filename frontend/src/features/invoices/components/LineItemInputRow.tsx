@@ -83,11 +83,11 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
   }, [canAdd, selectedProduct, newProductId, nCajas, nCostoPrim, nTasa, nUndsCaja, moneda, newTipoEmpaque, aplicaIva, addLineItem]);
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-4">
-      <div className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+    <div className="space-y-4 rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
+      <div className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
         Agregar Ítem
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 items-end">
+      <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-3 lg:grid-cols-8">
         <div className="col-span-2 sm:col-span-3 lg:col-span-2">
           <AsyncCombobox
             label="Buscar producto"
@@ -113,7 +113,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
         </div>
         <div>
           <label htmlFor={fid("costo-prim")} className={labelBase}>
-            {newTipoEmpaque === "CAJA" ? "$/Caja" : "$/Unid"} <span className="text-slate-400 font-normal">({esBs ? "Bs" : "USD"})</span>
+            {newTipoEmpaque === "CAJA" ? "$/Caja" : "$/Unid"} <span className="font-normal text-slate-400">({esBs ? "Bs" : "USD"})</span>
           </label>
           <input
             id={fid("costo-prim")}
@@ -129,13 +129,13 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
         </div>
         <div>
           <label htmlFor={fid("costo-sec")} className={labelBase}>
-            {esBs ? "USD" : "Bs"} <span className="text-slate-400 font-normal">calc.</span>
+            {esBs ? "USD" : "Bs"} <span className="font-normal text-slate-400">calc.</span>
           </label>
           <input
             id={fid("costo-sec")}
             type="text"
             value={newCostoSecundario > 0 ? (esBs ? formatUsd(newCostoSecundario) : `Bs. ${formatBs(newCostoSecundario)}`) : "—"}
-            className={`${inputReadOnly} cursor-not-allowed text-slate-400 font-mono text-xs text-center`}
+            className={`${inputReadOnly} cursor-not-allowed text-center font-mono text-xs text-slate-400`}
             readOnly
             tabIndex={-1}
             aria-readonly="true"
@@ -161,7 +161,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
             <input
               type="text"
               value="—"
-              className={`${inputReadOnly} cursor-not-allowed text-slate-400 text-center`}
+              className={`${inputReadOnly} cursor-not-allowed text-center text-slate-400`}
               readOnly
               tabIndex={-1}
               aria-readonly="true"
@@ -171,7 +171,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
         </div>
         <div className="col-span-2 sm:col-span-1">
           <label className={labelBase}>Empaque</label>
-          <div className="flex rounded-lg border border-slate-300 overflow-hidden h-10">
+          <div className="flex h-10 overflow-hidden rounded-lg border border-slate-300">
             <button
               type="button"
               data-testid="empaque-caja"
@@ -179,7 +179,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
                 setNewTipoEmpaque("CAJA");
                 if (selectedProduct) setNewUnidadesPorCaja(String(selectedProduct.unidades_por_caja));
               }}
-              className={`flex-1 text-xs font-medium transition-colors cursor-pointer ${
+              className={`flex-1 cursor-pointer text-xs font-medium transition-colors ${
                 newTipoEmpaque === "CAJA"
                   ? "bg-brand-blue text-white"
                   : "bg-surface text-slate-600 hover:bg-slate-50"
@@ -194,7 +194,7 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
                 setNewTipoEmpaque("UNIDAD");
                 setNewUnidadesPorCaja("");
               }}
-              className={`flex-1 text-xs font-medium transition-colors cursor-pointer ${
+              className={`flex-1 cursor-pointer text-xs font-medium transition-colors ${
                 newTipoEmpaque === "UNIDAD"
                   ? "bg-brand-blue text-white"
                   : "bg-surface text-slate-600 hover:bg-slate-50"
@@ -211,15 +211,15 @@ export default function LineItemInputRow({ products, onSearchProducts, esBs, mon
             onClick={handleAddLine}
             disabled={!canAdd}
             data-testid="agregar-item"
-            className="w-full h-10 shadow-sm font-semibold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-10 w-full cursor-pointer items-center justify-center gap-1 font-semibold shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             <span className="hidden sm:inline">Agregar</span>
           </Button>
         </div>
       </div>
       {newTipoEmpaque === "CAJA" && nUndsCaja > 0 && nCostoPrim > 0 && (
-        <p className="text-[10px] text-slate-400 whitespace-nowrap mt-1">
+        <p className="mt-1 text-[10px] whitespace-nowrap text-slate-400">
           = {formatUsd((esBs ? newCostoSecundario : nCostoPrim) / nUndsCaja)}/und ({nUndsCaja} unds/caja)
         </p>
       )}

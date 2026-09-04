@@ -186,7 +186,7 @@ export default function PriceRulesPage() {
         description="Define precios especiales cuando se paga con métodos en divisas"
         actions={
           <Button variant="accent" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Nueva Regla
           </Button>
         }
@@ -207,7 +207,7 @@ export default function PriceRulesPage() {
             key: "productos",
             header: "Productos",
             render: (r: PriceRuleOut) => (
-              <span className="text-xs block max-w-md truncate" title={r.products.map((p) => `${p.producto_nombre} (${p.tipo_empaque}: ${formatCurrency(p.precio_usd)})`).join(", ")}>
+              <span className="block max-w-md truncate text-xs" title={r.products.map((p) => `${p.producto_nombre} (${p.tipo_empaque}: ${formatCurrency(p.precio_usd)})`).join(", ")}>
                 {r.products.map((p) => `${p.producto_nombre} (${p.tipo_empaque}: ${formatCurrency(p.precio_usd)})`).join(", ")}
               </span>
             ),
@@ -225,7 +225,7 @@ export default function PriceRulesPage() {
             key: "activo",
             header: "Estado",
             render: (r: PriceRuleOut) => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 r.activo ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
               }`}>
                 {r.activo ? "Activa" : "Inactiva"}
@@ -239,10 +239,10 @@ export default function PriceRulesPage() {
             render: (r: PriceRuleOut) => (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => openEdit(r)}>
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="size-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(r)}>
-                  <Trash2 className="w-4 h-4 text-danger" />
+                  <Trash2 className="size-4 text-danger" />
                 </Button>
               </div>
             ),
@@ -263,7 +263,7 @@ export default function PriceRulesPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Nombre de la regla</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Nombre de la regla</label>
               <Input
                 label=""
                 value={formName}
@@ -272,7 +272,7 @@ export default function PriceRulesPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Descripción</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Descripción</label>
               <Input
                 label=""
                 value={formDesc}
@@ -283,17 +283,17 @@ export default function PriceRulesPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <label className="text-sm font-medium text-text-main">Productos con precio divisas</label>
               <Button variant="ghost" size="sm" onClick={addProductEntry}>
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="size-3.5" />
                 Agregar producto
               </Button>
             </div>
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
               {formProductEntries.map((entry, idx) => (
-                <div key={idx} className="flex items-start gap-2 bg-slate-50 rounded-lg p-2">
-                  <div className="flex-1 min-w-0">
+                <div key={idx} className="flex items-start gap-2 rounded-lg bg-slate-50 p-2">
+                  <div className="min-w-0 flex-1">
                     <AsyncCombobox
                       value={entry.producto_id > 0 ? entry.producto_id : null}
                       onChange={(val) => updateProductEntry(idx, "producto_id", val ? Number(val) : 0)}
@@ -323,19 +323,19 @@ export default function PriceRulesPage() {
                     onChange={(e) => updateProductEntry(idx, "precio_usd", Number(e.target.value))}
                     placeholder="$ 0.00"
                     autoComplete="off"
-                    className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-brand-blue focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-20 [appearance:textfield] rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-brand-blue focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
                     onClick={() => removeProductEntry(idx)}
-                    className="text-danger hover:text-red-700 shrink-0 mt-1"
+                    className="mt-1 shrink-0 text-danger hover:text-red-700"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="size-4" />
                   </button>
                 </div>
               ))}
               {formProductEntries.length === 0 && (
-                <p className="text-xs text-slate-400 text-center py-3">
+                <p className="py-3 text-center text-xs text-slate-400">
                   Agrega al menos un producto
                 </p>
               )}
@@ -343,14 +343,14 @@ export default function PriceRulesPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-text-main mb-2 block">Métodos de pago (divisas)</label>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+            <label className="mb-2 block text-sm font-medium text-text-main">Métodos de pago (divisas)</label>
+            <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
               {paymentMethods.map((pm) => (
                 <label
                   key={pm.id}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
                     formMethodIds.includes(pm.id)
-                      ? "border-brand-blue bg-blue-50 text-brand-blue font-semibold"
+                      ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
                       : "border-slate-200 text-slate-600 hover:border-slate-300"
                   }`}
                 >
@@ -365,12 +365,12 @@ export default function PriceRulesPage() {
                 </label>
               ))}
             </div>
-            <p className={`text-xs mt-1 transition-opacity ${formMethodIds.length > 0 ? "opacity-0" : "text-slate-400 opacity-100"}`}>
+            <p className={`mt-1 text-xs transition-opacity ${formMethodIds.length > 0 ? "opacity-0" : "text-slate-400 opacity-100"}`}>
               Selecciona al menos un método de pago
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
             <Button variant="ghost" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>

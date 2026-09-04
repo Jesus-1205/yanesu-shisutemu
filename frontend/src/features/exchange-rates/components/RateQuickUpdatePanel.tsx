@@ -97,17 +97,17 @@ export default function RateQuickUpdatePanel({
 
   return (
     <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-5">
-      <div className="flex items-center justify-between mb-1">
+      <div className="mb-1 flex items-center justify-between">
         <h3 className="text-base font-semibold text-text-main">Actualizar tasas del día</h3>
         <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={saving}>
           Cancelar
         </Button>
       </div>
-      <p className="text-sm text-slate-500 mb-4">
+      <p className="mb-4 text-sm text-slate-500">
         Cargue las tasas oficiales del BCV o ingréselas manualmente. Solo se guardan si hay cambios.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Input
             label="USD / VES"
@@ -153,15 +153,15 @@ export default function RateQuickUpdatePanel({
       )}
 
       {usd.trim() !== "" && eur.trim() !== "" && sinCambios && (
-        <div className="mt-4 flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-blue-100 text-blue-700 border border-blue-200">
-          <Check className="w-4 h-4" />
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-100 px-3 py-2 text-xs text-blue-700">
+          <Check className="size-4" />
           <span>Los valores coinciden con las tasas vigentes. No es necesario actualizar.</span>
         </div>
       )}
 
       {updatedToday && (
-        <div className="mt-4 flex items-start gap-2 text-xs px-3 py-2 rounded-lg bg-red-50 text-red-800 border border-red-200">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <span>
             Ya se registró una actualización de tasas hoy. Solo continúe si el BCV cambió
             nuevamente; de lo contrario, cancele para no duplicar el registro.
@@ -171,17 +171,17 @@ export default function RateQuickUpdatePanel({
 
       <div className="flex flex-wrap items-center justify-end gap-3 pt-4">
         <Button type="button" variant="outline" onClick={handleLoadBcv} loading={bcvLoading}>
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="size-4" />
           Cargar desde BCV
         </Button>
         <Button variant="accent" onClick={handleSave} loading={saving} disabled={disabledSave}>
-          <Check className="w-4 h-4" />
+          <Check className="size-4" />
           Guardar
         </Button>
       </div>
 
-      <div className="flex items-center gap-1.5 mt-3 text-xs text-slate-400">
-        <Globe className="w-3.5 h-3.5" />
+      <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+        <Globe className="size-3.5" />
         <span>Fuente oficial: banco central de Venezuela (bcv.org.ve)</span>
       </div>
     </div>

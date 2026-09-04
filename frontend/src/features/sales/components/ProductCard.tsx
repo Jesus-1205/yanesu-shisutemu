@@ -49,27 +49,27 @@ export default memo(function ProductCard({
     <div
       onClick={handleCardClick}
       className={`
-        relative rounded-xl border border-slate-200 bg-surface p-3.5 flex flex-col transition-all duration-150
+        relative flex flex-col rounded-xl border border-slate-200 bg-surface p-3.5 transition-all duration-150
         ${isAgotado
-          ? "opacity-60 cursor-not-allowed"
-          : "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"
         }
       `}
     >
       {product.es_favorito && (
         <div className="absolute top-2 right-2">
-          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+          <Star className="size-4 fill-amber-400 text-amber-400" />
         </div>
       )}
 
       {isAgotado && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-slate-100/80 z-10">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-slate-100/80">
           <Badge variant="danger">AGOTADO</Badge>
         </div>
       )}
 
-      <div className="flex flex-col flex-1 space-y-2.5">
-        <p className="text-base font-semibold text-text-main leading-tight pr-6 line-clamp-2" title={product.nombre}>
+      <div className="flex flex-1 flex-col space-y-2.5">
+        <p className="line-clamp-2 pr-6 text-base leading-tight font-semibold text-text-main" title={product.nombre}>
           {product.nombre}
         </p>
 
@@ -79,7 +79,7 @@ export default memo(function ProductCard({
           ) : isOperator ? (
             <Badge variant="success">{stockLabel}</Badge>
           ) : (
-            <span className="text-sm text-slate-600 font-medium">{stockLabel}</span>
+            <span className="text-sm font-medium text-slate-600">{stockLabel}</span>
           )}
         </div>
 
@@ -96,7 +96,7 @@ export default memo(function ProductCard({
             </div>
           )}
           {hasCajas && (
-            <div className="flex items-baseline justify-between pt-1 border-t border-slate-100">
+            <div className="flex items-baseline justify-between border-t border-slate-100 pt-1">
               <span className="text-sm font-semibold text-slate-700">
                 {formatCurrency(product.precio_caja_usd)}
               </span>
@@ -106,14 +106,14 @@ export default memo(function ProductCard({
         </div>
 
         {hasDivisas && (
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex flex-wrap gap-1">
             {product.precio_divisas_unidad && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
                 Div Ud: {formatCurrency(product.precio_divisas_unidad)}
               </span>
             )}
             {product.precio_divisas_caja && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
                 Div Cj: {formatCurrency(product.precio_divisas_caja)}
               </span>
             )}
@@ -121,14 +121,14 @@ export default memo(function ProductCard({
         )}
 
         {hasCajas && (
-          <div className="flex justify-end mt-auto pt-2">
+          <div className="mt-auto flex justify-end pt-2">
             <button
               type="button"
               disabled={isAgotado || product.precio_caja_usd <= 0}
               onClick={handleBoxClick}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-blue text-white hover:bg-blue-700 active:bg-blue-800 transition-all duration-150 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-xs hover:shadow-md disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+              className="flex cursor-pointer items-center gap-1 rounded-lg bg-brand-blue px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-all duration-150 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md active:translate-y-0 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0"
             >
-              <Package className="w-3.5 h-3.5" />
+              <Package className="size-3.5" />
               CAJA
             </button>
           </div>

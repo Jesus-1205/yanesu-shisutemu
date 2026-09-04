@@ -37,16 +37,16 @@ export default function StatCard({
 }: StatCardProps) {
   return (
     <div className={`rounded-xl border p-4 sm:p-5 ${variantStyles[variant]} ${className}`}>
-      <div className="flex items-start justify-between mb-2 sm:mb-3">
-        <p className="text-xs sm:text-sm font-medium text-slate-500">{label}</p>
+      <div className="mb-2 flex items-start justify-between sm:mb-3">
+        <p className="text-xs font-medium text-slate-500 sm:text-sm">{label}</p>
         {icon && (
-          <span className={`p-2 rounded-lg ${iconStyles[variant]}`}>
+          <span className={`rounded-lg p-2 ${iconStyles[variant]}`}>
             {icon}
           </span>
         )}
       </div>
       <div className="flex items-end justify-between">
-        <p className="text-xl sm:text-2xl font-bold text-text-main">{value}</p>
+        <p className="text-xl font-bold text-text-main sm:text-2xl">{value}</p>
         {trend && (
           <span
             className={`inline-flex items-center gap-0.5 text-xs font-medium ${
@@ -54,9 +54,9 @@ export default function StatCard({
             }`}
           >
             {trend.direction === "up" ? (
-              <TrendingUp className="w-3.5 h-3.5" />
+              <TrendingUp className="size-3.5" />
             ) : (
-              <TrendingDown className="w-3.5 h-3.5" />
+              <TrendingDown className="size-3.5" />
             )}
             {trend.value}
           </span>

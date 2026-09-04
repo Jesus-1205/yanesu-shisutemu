@@ -90,7 +90,7 @@ export default function UsersPage() {
         description="Administra los usuarios del sistema"
         actions={
           <Button variant="accent" onClick={() => navigate("/users/new")}>
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Nuevo Usuario
           </Button>
         }
@@ -111,7 +111,7 @@ export default function UsersPage() {
             key: "email",
             header: "Email",
             render: (u: User) => (
-              <span className="block max-w-[200px] truncate" title={u.email}>{u.email}</span>
+              <span className="block max-w-50 truncate" title={u.email}>{u.email}</span>
             ),
           },
           {
@@ -138,7 +138,7 @@ export default function UsersPage() {
                   size="sm"
                   onClick={() => navigate(`/users/${user.id}`)}
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="size-4" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -147,9 +147,9 @@ export default function UsersPage() {
                   onClick={() => handleToggleActive(user)}
                 >
                   {user.is_active ? (
-                    <PowerOff className="w-4 h-4 text-danger" />
+                    <PowerOff className="size-4 text-danger" />
                   ) : (
-                    <Power className="w-4 h-4 text-success" />
+                    <Power className="size-4 text-success" />
                   )}
                 </Button>
                 <Button
@@ -157,7 +157,7 @@ export default function UsersPage() {
                   size="sm"
                   onClick={() => setDeleteTarget(user)}
                 >
-                  <Trash2 className="w-4 h-4 text-danger" />
+                  <Trash2 className="size-4 text-danger" />
                 </Button>
               </div>
             ),

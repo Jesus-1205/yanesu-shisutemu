@@ -43,23 +43,23 @@ export default function SetupPage() {
 
   return (
     <div
-      className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden"
+      className="relative flex min-h-screen w-full items-center justify-center overflow-hidden p-4"
       style={{ backgroundImage: "url('/auth-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
     >
       <div className="absolute inset-0 bg-slate-950/40" />
 
-      <div className="w-full max-w-2xl relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white tracking-tight drop-shadow-lg">
+      <div className="relative z-10 w-full max-w-2xl">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-lg">
             Configuración Inicial
           </h1>
-          <p className="mt-3 text-base text-white/60 leading-relaxed max-w-sm mx-auto drop-shadow">
+          <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-white/60 drop-shadow">
             Crea el usuario administrador para comenzar a usar el sistema.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Crear Administrador</h2>
+        <div className="rounded-2xl bg-white p-8 shadow-2xl">
+          <h2 className="mb-6 text-xl font-semibold text-gray-900">Crear Administrador</h2>
 
           {error && (
             <div className="mb-6">
@@ -69,9 +69,9 @@ export default function SetupPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre de Usuario</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Nombre de Usuario</label>
               <input
                 type="text"
                 placeholder="admin"
@@ -79,12 +79,12 @@ export default function SetupPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={loading}
                 autoComplete="username"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre Completo</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Nombre Completo</label>
               <input
                 type="text"
                 placeholder="Tu nombre"
@@ -92,12 +92,12 @@ export default function SetupPage() {
                 onChange={(e) => setNombreCompleto(e.target.value)}
                 disabled={loading}
                 autoComplete="name"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Email</label>
               <input
                 type="email"
                 placeholder="admin@yanesu.test"
@@ -105,12 +105,12 @@ export default function SetupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 autoComplete="email"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Contraseña</label>
               <input
                 type="password"
                 placeholder="••••••••"
@@ -118,12 +118,12 @@ export default function SetupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirmar Contraseña</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
               <input
                 type="password"
                 placeholder="••••••••"
@@ -131,14 +131,14 @@ export default function SetupPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading}
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-all duration-200 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 disabled:opacity-50"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed mt-6 md:col-span-2"
+              className="mt-6 w-full rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2"
             >
               {loading ? (
                 <span className="inline-flex items-center justify-center gap-2">

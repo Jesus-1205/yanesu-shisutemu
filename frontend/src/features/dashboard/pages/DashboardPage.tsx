@@ -84,43 +84,43 @@ export default function DashboardPage() {
       <h1 className="text-responsive-h1 text-text-main">Dashboard</h1>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-12 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-12">
         <StatCard
           label="Productos"
           value={String(totalProductos)}
-          icon={<Package className="w-5 h-5" />}
+          icon={<Package className="size-5" />}
           className="lg:col-span-2"
         />
         <StatCard
           label="Categorías"
           value={String(totalCategorias)}
-          icon={<ShoppingBag className="w-5 h-5" />}
+          icon={<ShoppingBag className="size-5" />}
           className="lg:col-span-2"
         />
         <StatCard
           label="Proveedores"
           value={String(totalProveedores)}
-          icon={<Building2 className="w-5 h-5" />}
+          icon={<Building2 className="size-5" />}
           className="lg:col-span-2"
         />
         <StatCard
           label="Sin stock"
           value={String(sinStock)}
-          icon={<AlertTriangle className="w-5 h-5" />}
+          icon={<AlertTriangle className="size-5" />}
           variant={sinStock > 0 ? "danger" : "success"}
           className="lg:col-span-2"
         />
         <StatCard
           label="Ventas semanal"
           value={ventasSemana ? formatCurrency(ventasSemana.total_usd) : "—"}
-          icon={<TrendingUp className="w-5 h-5" />}
+          icon={<TrendingUp className="size-5" />}
           variant={ventasSemana ? "success" : "default"}
           className="lg:col-span-4"
         />
       </div>
 
       {/* Sales trend + Top products charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <ChartContainer title="Ventas Semanales — Últimas 5 Semanas">
             <Suspense fallback={<ChartSkeleton />}>
@@ -138,13 +138,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Top margin + Low rotation */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface rounded-xl border border-slate-200 p-4">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Mayor Margen — Catálogo Actual</h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Mayor Margen — Catálogo Actual</h2>
           {topMargin.length > 0 ? (
             <Table
               columns={[
-                { key: "nombre", header: "Producto", className: "max-w-[140px] truncate" },
+                { key: "nombre", header: "Producto", className: "max-w-35 truncate" },
                 {
                   key: "precio_costo_usd",
                   header: "Costo",
@@ -179,8 +179,8 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="bg-surface rounded-xl border border-slate-200 p-4">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Menor Rotación — Histórico</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Menor Rotación — Histórico</h2>
           {lowRotation.length > 0 ? (
             <Table
               columns={[
