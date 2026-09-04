@@ -107,40 +107,40 @@ export default function SystemSettingsPage() {
         description="Configura las API keys del sistema"
       />
 
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="mx-auto max-w-2xl space-y-6">
         {/* Gemini API Key Card */}
-        <div className="bg-surface rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50">
-              <Key className="w-5 h-5 text-blue-600" />
+        <div className="rounded-xl border border-slate-200 bg-surface p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-blue-50">
+              <Key className="size-5 text-blue-600" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-text-main">
                 Google Gemini API Key
               </h3>
-              <p className="text-sm text-text-secondary">
+              <p className="text-text-secondary text-sm">
                 Necesaria para el análisis de facturas con IA
               </p>
             </div>
           </div>
 
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-text-secondary py-4">
-              <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="text-text-secondary flex items-center gap-2 py-4 text-sm">
+              <Loader2 className="size-4 animate-spin" />
               Verificando estado...
             </div>
           ) : (
             <>
               {/* Status indicator */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="mb-4 flex items-center gap-2">
                 {configured ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                    <CheckCircle className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                    <CheckCircle className="size-3.5" />
                     Configurada
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                    <XCircle className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                    <XCircle className="size-3.5" />
                     No configurada
                   </span>
                 )}
@@ -164,19 +164,19 @@ export default function SystemSettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowKey(!showKey)}
-                    className="flex items-center justify-center h-[52px] w-10 shrink-0 rounded-xl border border-slate-300 bg-surface text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-colors"
+                    className="flex h-13 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-surface text-slate-400 transition-colors hover:border-slate-400 hover:text-slate-600"
                   >
-                    {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
                 </div>
 
                 {/* Test result */}
                 {testResult && (
                   <div
-                    className={`p-3 rounded-lg text-sm ${
+                    className={`rounded-lg p-3 text-sm ${
                       testResult.success
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
+                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border border-red-200 bg-red-50 text-red-700"
                     }`}
                   >
                     <p className="font-medium">{testResult.message}</p>
@@ -199,7 +199,7 @@ export default function SystemSettingsPage() {
                     loading={testing}
                     disabled={!geminiKey.trim()}
                   >
-                    <Zap className="w-4 h-4" />
+                    <Zap className="size-4" />
                     Probar Conexión
                   </Button>
                   {configured && (
@@ -218,10 +218,10 @@ export default function SystemSettingsPage() {
         </div>
 
         {/* Info box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-blue-800 mb-1">¿Cómo obtener una API Key?</h4>
-          <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-            <li>Ve a <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded select-all">https://aistudio.google.com/apikey</span></li>
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <h4 className="mb-1 text-sm font-semibold text-blue-800">¿Cómo obtener una API Key?</h4>
+          <ol className="list-inside list-decimal space-y-1 text-sm text-blue-700">
+            <li>Ve a <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs select-all">https://aistudio.google.com/apikey</span></li>
             <li>Inicia sesión con tu cuenta de Google</li>
             <li>Haz clic en "Create API Key"</li>
             <li>Copia la key generada y pégala aquí</li>

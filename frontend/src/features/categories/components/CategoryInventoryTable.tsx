@@ -18,7 +18,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
 
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-[120px]">
+      <div className="flex h-30 items-center justify-center">
         <p className="text-sm text-slate-400">Sin productos en esta categoría</p>
       </div>
     );
@@ -26,8 +26,8 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-text-main mb-2">Inventario</h3>
-      <div className="max-h-[260px] overflow-y-auto">
+      <h3 className="mb-2 text-sm font-semibold text-text-main">Inventario</h3>
+      <div className="max-h-65 overflow-y-auto">
         <Table
           columns={[
             {
@@ -36,7 +36,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               sortable: true,
               onSort: () => requestSort("nombre"),
               sortDirection: sortConfig?.key === "nombre" ? sortConfig.direction : null,
-              className: "max-w-[160px] truncate",
+              className: "max-w-40 truncate",
             },
             {
               key: "stock_unidades",
@@ -46,7 +46,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               sortDirection: sortConfig?.key === "stock_unidades" ? sortConfig.direction : null,
               render: (p: CategoryDetailProduct) =>
                 p.stock_unidades <= 5 ? (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
                     {p.stock_unidades}
                   </span>
                 ) : (

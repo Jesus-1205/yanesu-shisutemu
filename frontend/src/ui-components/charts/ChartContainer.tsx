@@ -14,8 +14,8 @@ export default function ChartContainer({
   height = 300,
 }: ChartContainerProps) {
   return (
-    <div className={`bg-surface rounded-xl border border-slate-200 p-5 ${className}`}>
-      <h2 className="text-lg font-semibold text-text-main mb-4">{title}</h2>
+    <div className={`rounded-xl border border-slate-200 bg-surface p-5 ${className}`}>
+      <h2 className="mb-4 text-lg font-semibold text-text-main">{title}</h2>
       <div style={{ width: "100%", height }}>
         {children}
       </div>

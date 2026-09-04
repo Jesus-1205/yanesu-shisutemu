@@ -147,33 +147,33 @@ function LayoutHeader({
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-20 flex items-center h-14 sm:h-16 gap-2 sm:gap-4 px-4 sm:px-6 bg-surface border-b border-slate-200">
+    <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-slate-200 bg-surface px-4 sm:h-16 sm:gap-4 sm:px-6">
       <button
         onClick={onMenuToggle}
-        className="lg:hidden shrink-0 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer p-1"
+        className="shrink-0 cursor-pointer p-1 text-slate-500 transition-colors hover:text-slate-800 lg:hidden"
         aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
       >
-        {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        {menuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
       </button>
 
       {/* Breadcrumbs - hidden on mobile, show last segment as mobile title */}
-      <div className="flex-1 min-w-0 hidden sm:block">
+      <div className="hidden min-w-0 flex-1 sm:block">
         <Breadcrumbs items={crumbs} />
       </div>
 
       {/* Mobile: show last crumb as page title */}
       {crumbs.length > 0 && (
-        <span className="flex-1 min-w-0 truncate text-sm font-medium text-text-main sm:hidden">
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-main sm:hidden">
           {crumbs[crumbs.length - 1].label}
         </span>
       )}
 
-      <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
+      <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
         <TasaBcvIndicator />
         {!isOperator && (
           <button
             onClick={() => navigate("/settings")}
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="cursor-pointer rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             title="Configuración"
           >
             <Settings size={20} />
@@ -283,15 +283,15 @@ function AppLayoutInner({
     <div className="min-h-screen bg-background">
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-20 lg:hidden"
+          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       <div
         className={`
-          fixed inset-y-0 left-0 z-30 pr-4 overflow-y-auto
-          transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+          fixed inset-y-0 left-0 z-30 overflow-y-auto pr-4
+          transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
@@ -309,7 +309,7 @@ function AppLayoutInner({
       </div>
 
       <div
-        className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`transition-all duration-300 ease-in-out ${
           collapsed ? "lg:ml-[4.94rem]" : "lg:ml-60"
         }`}
       >

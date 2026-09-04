@@ -64,7 +64,7 @@ export default function Select({
           ))}
         </select>
         <svg
-          className={`absolute ${arrowSizes[size]} top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none`}
+          className={`absolute ${arrowSizes[size]} pointer-events-none top-1/2 -translate-y-1/2 text-slate-500`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

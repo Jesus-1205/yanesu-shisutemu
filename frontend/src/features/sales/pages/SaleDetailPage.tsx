@@ -36,7 +36,7 @@ export default function SaleDetailPage() {
 
   if (!sale) {
     return (
-      <div className="text-center py-20 text-slate-500">
+      <div className="py-20 text-center text-slate-500">
         Venta no encontrada
       </div>
     );
@@ -46,7 +46,7 @@ export default function SaleDetailPage() {
     <div>
       <div className="mb-4">
         <Button variant="ghost" onClick={() => navigate("/sales")}>
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="size-4" />
           Volver
         </Button>
       </div>
@@ -56,32 +56,32 @@ export default function SaleDetailPage() {
         description={new Date(sale.fecha_venta).toLocaleString("es-VE")}
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-        <div className="bg-surface rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Usuario</p>
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <p className="mb-1 text-xs text-slate-500">Usuario</p>
           <p className="text-lg font-semibold">{sale.usuario_nombre || `Usuario #${sale.usuario_id}`}</p>
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Tasa BCV</p>
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <p className="mb-1 text-xs text-slate-500">Tasa BCV</p>
           <p className="text-lg font-semibold">{formatRate(sale.tasa_bcv_aplicada)}</p>
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Total USD</p>
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <p className="mb-1 text-xs text-slate-500">Total USD</p>
           <p className="text-lg font-semibold text-info">{formatCurrency(sale.total_usd)}</p>
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Total VES</p>
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <p className="mb-1 text-xs text-slate-500">Total VES</p>
           <p className="text-lg font-semibold text-success">{formatCurrency(sale.total_ves, "Bs ")}</p>
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-500 mb-1">Método de Pago</p>
+        <div className="rounded-xl border border-slate-200 bg-surface p-4">
+          <p className="mb-1 text-xs text-slate-500">Método de Pago</p>
           <p className="text-lg font-semibold">{sale.metodo_pago ? sale.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-"}</p>
         </div>
       </div>
 
       {sale.observaciones && (
-        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-amber-700 mb-1">Observaciones</p>
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="mb-1 text-xs font-semibold text-amber-700">Observaciones</p>
           <p className="text-sm text-amber-900">{sale.observaciones}</p>
         </div>
       )}
@@ -95,11 +95,11 @@ export default function SaleDetailPage() {
               <div className="flex items-center gap-1.5">
                 <span>{i.producto_nombre || `Producto #${i.producto_id}`}</span>
                 {i.combo_id && i.combo_nombre ? (
-                  <Badge variant="warning" className="!text-[10px] !px-1 !py-0 !bg-amber-100 !text-amber-700">
+                  <Badge variant="warning" className="!text-[10px] bg-amber-100! px-1! py-0! text-amber-700!">
                     {i.combo_nombre}
                   </Badge>
                 ) : i.usa_precio_divisas ? (
-                  <Badge variant="success" className="!text-[10px] !px-1 !py-0">DIV</Badge>
+                  <Badge variant="success" className="!text-[10px] px-1! py-0!">DIV</Badge>
                 ) : null}
               </div>
             ),
@@ -129,7 +129,7 @@ export default function SaleDetailPage() {
       />
 
       <div className="mt-6">
-        <h3 className="text-sm font-semibold text-text-main mb-2">Pagos</h3>
+        <h3 className="mb-2 text-sm font-semibold text-text-main">Pagos</h3>
         <Table
           columns={[
             { key: "metodo_pago_nombre", header: "Método", render: (p: SalePayment) => formatPaymentMethodName(p.metodo_pago_nombre) },
@@ -155,7 +155,7 @@ export default function SaleDetailPage() {
         />
       </div>
 
-      <div className="mt-6 bg-surface rounded-xl border border-slate-200 p-5 space-y-2 max-w-sm ml-auto">
+      <div className="mt-6 ml-auto max-w-sm space-y-2 rounded-xl border border-slate-200 bg-surface p-5">
         <div className="flex justify-between text-sm">
           <span className="text-slate-500">Monto exento USD</span>
           <span>{formatCurrency(sale.monto_exento_usd)}</span>
@@ -168,7 +168,7 @@ export default function SaleDetailPage() {
           <span className="text-slate-500">IVA USD</span>
           <span>{formatCurrency(sale.monto_iva_usd)}</span>
         </div>
-        <div className="flex justify-between text-base font-bold border-t border-slate-200 pt-2">
+        <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold">
           <span>Total USD</span>
           <span className="text-info">{formatCurrency(sale.total_usd)}</span>
         </div>

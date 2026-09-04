@@ -121,7 +121,7 @@ export default function PaymentMethodsPage() {
         description="Administra los métodos de pago disponibles en el POS"
         actions={
           <Button variant="accent" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Nuevo Método
           </Button>
         }
@@ -142,7 +142,7 @@ export default function PaymentMethodsPage() {
             key: "moneda_default",
             header: "Moneda",
             render: (m: PaymentMethod) => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 m.moneda_default === "USD" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
               }`}>
                 {m.moneda_default}
@@ -153,7 +153,7 @@ export default function PaymentMethodsPage() {
             key: "acepta_referencia",
             header: "Referencia",
             render: (m: PaymentMethod) => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 m.acepta_referencia ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"
               }`}>
                 {m.acepta_referencia ? "Sí" : "No"}
@@ -164,7 +164,7 @@ export default function PaymentMethodsPage() {
             key: "activo",
             header: "Estado",
             render: (m: PaymentMethod) => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 m.activo ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
               }`}>
                 {m.activo ? "Activo" : "Inactivo"}
@@ -178,10 +178,10 @@ export default function PaymentMethodsPage() {
             render: (m: PaymentMethod) => (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="size-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(m)}>
-                  <Trash2 className="w-4 h-4 text-danger" />
+                  <Trash2 className="size-4 text-danger" />
                 </Button>
               </div>
             ),
@@ -206,11 +206,11 @@ export default function PaymentMethodsPage() {
             placeholder="Ej: TRANSFERENCIA"
           />
           <div>
-            <label className="block text-sm font-medium text-text-main mb-1">Moneda default</label>
+            <label className="mb-1 block text-sm font-medium text-text-main">Moneda default</label>
             <select
               value={formMoneda}
               onChange={(e) => setFormMoneda(e.target.value as "USD" | "VES")}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue focus:outline-none"
             >
               <option value="VES">VES (Bolívares)</option>
               <option value="USD">USD (Dólares)</option>

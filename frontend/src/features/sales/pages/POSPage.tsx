@@ -224,19 +224,19 @@ export default function POSPage() {
         description="Registra una nueva venta"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Left panel: products */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="space-y-4 lg:col-span-2">
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
               <input
                 ref={searchRef}
                 placeholder="Buscar productos o escanear código de barras..."
                 value={search}
                 onChange={handleSearchChange}
                 onFocus={(e) => e.target.select()}
-                className="w-full pl-10 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+                className="w-full rounded-xl border border-slate-300 bg-surface py-2.5 pr-3 pl-10 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
                 autoComplete="off"
                 autoFocus
               />
@@ -255,9 +255,9 @@ export default function POSPage() {
               <button
                 type="button"
                 onClick={() => setShowPromos(!showPromos)}
-                className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 transition-colors hover:bg-amber-100"
               >
-                <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide flex-1 text-left">
+                <h2 className="flex-1 text-left text-sm font-bold tracking-wide text-amber-700 uppercase">
                   Promociones ({combos.length})
                 </h2>
                 <ChevronDown
@@ -266,7 +266,7 @@ export default function POSPage() {
                 />
               </button>
               {showPromos && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {combos.map((combo) => (
                     <ComboCard
                       key={combo.id}
@@ -292,7 +292,7 @@ export default function POSPage() {
           {hasMoreFavorites && (
             <button
               onClick={handleShowMore}
-              className="w-full py-2 text-sm text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-colors"
+              className="w-full rounded-lg py-2 text-sm text-brand-blue transition-colors hover:bg-brand-blue/5"
             >
               Ver más favoritos ({totalFavorites - 10} restantes)
             </button>
@@ -338,7 +338,7 @@ export default function POSPage() {
         onClose={() => setHoldModalOpen(false)}
         title="Guardar venta"
       >
-        <p className="text-sm text-slate-600 mb-4">
+        <p className="mb-4 text-sm text-slate-600">
           El carrito actual se guardará en la cola de espera y quedará vacío para poder hacer otra venta.
         </p>
         <Input
@@ -355,7 +355,7 @@ export default function POSPage() {
             }
           }}
         />
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="mt-6 flex justify-end gap-3">
           <Button variant="ghost" onClick={() => setHoldModalOpen(false)}>
             Cancelar
           </Button>

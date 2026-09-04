@@ -294,7 +294,7 @@ export default function InvoicePaymentPage() {
           title="Registrar Pago"
           actions={
             <Button variant="ghost" onClick={() => navigate(`/invoices/${id}`)}>
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="size-4" />
               Volver
             </Button>
           }
@@ -313,21 +313,21 @@ export default function InvoicePaymentPage() {
         description={`Factura #${invoice.numero_factura} — ${invoice.supplier?.nombre || "Proveedor"}`}
         actions={
           <Button variant="ghost" onClick={() => navigate(`/invoices/${id}`)}>
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="size-4" />
             Volver
           </Button>
         }
       />
 
-      <div className="flex flex-col lg:flex-row gap-6 max-w-5xl">
+      <div className="flex max-w-5xl flex-col gap-6 lg:flex-row">
         {/* Columna izquierda: Formulario */}
-        <div className="flex-1 space-y-6 min-w-0">
+        <div className="min-w-0 flex-1 space-y-6">
           {/* Método de pago */}
           <section>
-            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
+            <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-700 uppercase">
               Método de pago
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {methods.map((method) => {
                 const Icon = getMethodIcon(method.nombre);
                 const selected = store.selectedMethodId === method.id;
@@ -337,14 +337,14 @@ export default function InvoicePaymentPage() {
                     type="button"
                     onClick={() => store.setMethod(method.id)}
                     className={`
-                      flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-150 cursor-pointer text-center
+                      flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all duration-150
                       ${selected
                         ? "border-brand-blue bg-blue-50 ring-2 ring-brand-blue/20"
                         : "border-slate-200 bg-surface hover:border-slate-300 hover:bg-slate-50"
                       }
                     `}
                   >
-                    <Icon className={`w-6 h-6 ${selected ? "text-brand-blue" : "text-slate-400"}`} />
+                    <Icon className={`size-6 ${selected ? "text-brand-blue" : "text-slate-400"}`} />
                     <span className={`text-sm font-medium ${selected ? "text-brand-blue" : "text-text-main"}`}>
                       {method.nombre}
                     </span>
@@ -356,7 +356,7 @@ export default function InvoicePaymentPage() {
                 );
               })}
               {methods.length === 0 && (
-                <p className="col-span-full text-sm text-slate-400 py-4 text-center">
+                <p className="col-span-full py-4 text-center text-sm text-slate-400">
                   No hay métodos de pago activos
                 </p>
               )}
@@ -366,31 +366,31 @@ export default function InvoicePaymentPage() {
           {/* Monto a pagar */}
           {store.selectedMethodId && (
             <section>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-sm font-semibold tracking-wide text-slate-700 uppercase">
                   Monto a pagar
                 </label>
-                <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer select-none">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-500 select-none">
                   <input
                     type="checkbox"
                     checked={store.incluirMora}
                     onChange={(e) => store.setField("incluirMora", e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400 cursor-pointer"
+                    className="size-4 cursor-pointer rounded border-slate-300 text-amber-500 focus:ring-amber-400"
                   />
                   Incluir mora
                 </label>
               </div>
-              <p className="text-xs text-slate-500 mb-2">
+              <p className="mb-2 text-xs text-slate-500">
                 Saldo pendiente:{" "}
                 <span className="font-mono font-medium text-slate-700">
                   {payInUsd ? formatUsd(saldoEnMonedaPago) : `Bs. ${formatBs(saldoEnMonedaPago)}`}
                 </span>
-                <span className="text-slate-400 ml-1">
+                <span className="ml-1 text-slate-400">
                   ({formatUsd(saldoPendienteUsd)} / Bs. {formatBs(saldoPendienteBs)})
                 </span>
               </p>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-500 font-mono font-semibold">
+                <span className="absolute top-1/2 left-4 -translate-y-1/2 font-mono text-base font-semibold text-slate-500">
                   {payInUsd ? "$" : "Bs."}
                 </span>
                 <input
@@ -400,12 +400,12 @@ export default function InvoicePaymentPage() {
                   max={store.incluirMora ? undefined : toCents(saldoEnMonedaPago)}
                   value={store.monto}
                   onChange={(e) => store.setMonto(e.target.value)}
-                  className="w-full h-14 rounded-xl border-2 border-slate-200 bg-surface pl-12 pr-4 text-xl font-mono font-semibold text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+                  className="h-14 w-full rounded-xl border-2 border-slate-200 bg-surface pr-4 pl-12 font-mono text-xl font-semibold text-text-main transition-all duration-200 outline-none hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
                   placeholder="0.00"
                 />
               </div>
               {excedeSaldo && (
-                <p className="text-xs text-red-500 mt-1.5">
+                <p className="mt-1.5 text-xs text-red-500">
                   {store.incluirMora
                     ? `El monto mínimo con mora es ${payInUsd ? formatUsd(totalFacturaUsd) : `Bs. ${formatBs(totalFacturaBs)}`}`
                     : "El monto excede el saldo pendiente"}
@@ -414,35 +414,35 @@ export default function InvoicePaymentPage() {
 
               {/* Mora inline - solo cuando incluirMora está activo y hay monto */}
               {store.incluirMora && montoNum > 0 && !excedeSaldo && (
-                <div className="mt-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-amber-600 font-medium">Mora</span>
+                    <span className="font-medium text-amber-600">Mora</span>
                     <span className="font-mono font-bold text-amber-700">
                       {montoMoraBs > 0 ? `Bs. ${formatBs(montoMoraBs)}` : "Bs. 0,00"}
                     </span>
                   </div>
                   {payInUsd && montoMoraUsd > 0 && (
-                    <div className="flex items-center justify-between text-xs mt-1">
+                    <div className="mt-1 flex items-center justify-between text-xs">
                       <span className="text-amber-500">Recargo por pago tardío</span>
                       <span className="font-mono text-amber-600">{formatUsd(montoMoraUsd)}</span>
                     </div>
                   )}
                   {!payInUsd && montoMoraBs > 0 && (
-                    <p className="text-[10px] text-amber-500 mt-1">Recargo por pago tardío</p>
+                    <p className="mt-1 text-[10px] text-amber-500">Recargo por pago tardío</p>
                   )}
                 </div>
               )}
 
               {/* Quedaría por pagar - ambos montos */}
               {montoNum > 0 && !excedeSaldo && (
-                <div className="mt-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                  <p className="text-xs text-slate-500 font-medium mb-1">Quedaría por pagar</p>
+                <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="mb-1 text-xs font-medium text-slate-500">Quedaría por pagar</p>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-bold text-sm text-green-700">
+                    <span className="font-mono text-sm font-bold text-green-700">
                       {formatUsd(saldoRestanteUsd)}
                     </span>
                     <span className="text-slate-300">|</span>
-                    <span className="font-mono font-bold text-sm text-green-700">
+                    <span className="font-mono text-sm font-bold text-green-700">
                       Bs. {formatBs(saldoRestanteBs)}
                     </span>
                   </div>
@@ -450,25 +450,25 @@ export default function InvoicePaymentPage() {
               )}
 
               {/* Botones rápidos */}
-              <div className="flex gap-2 mt-3">
+              <div className="mt-3 flex gap-2">
                 <button
                   type="button"
                   onClick={() => store.setMonto(String(toCents(saldoEnMonedaPago)))}
-                  className="flex-1 h-10 px-4 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="h-10 flex-1 cursor-pointer rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium transition-colors hover:bg-slate-50"
                 >
                   Pagar todo
                 </button>
                 <button
                   type="button"
                   onClick={() => store.setMonto(String(toCents(saldoEnMonedaPago / 2)))}
-                  className="flex-1 h-10 px-4 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="h-10 flex-1 cursor-pointer rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium transition-colors hover:bg-slate-50"
                 >
                   Mitad
                 </button>
                 <button
                   type="button"
                   onClick={() => store.setMonto("")}
-                  className="h-10 px-4 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="h-10 cursor-pointer rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium transition-colors hover:bg-slate-50"
                 >
                   Otro
                 </button>
@@ -476,17 +476,17 @@ export default function InvoicePaymentPage() {
 
               {/* Conversión de moneda - siempre muestra ambos */}
               {tasaBs > 0 && montoNum > 0 && (
-                <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-amber-700">
                       {payInUsd ? formatUsd(montoNum) : `Bs. ${formatBs(montoNum)}`}
                     </span>
                     <span className="text-amber-400">→</span>
-                    <span className="text-amber-800 font-bold font-mono">
+                    <span className="font-mono font-bold text-amber-800">
                       {payInUsd ? `Bs. ${formatBs(montoBs)}` : formatUsd(montoUsd)}
                     </span>
                   </div>
-                  <p className="text-[10px] text-amber-600 mt-1">
+                  <p className="mt-1 text-[10px] text-amber-600">
                     Tasa BCV: {formatBs(tasaBs)}
                   </p>
                 </div>
@@ -497,10 +497,10 @@ export default function InvoicePaymentPage() {
           {/* Tasa de cambio */}
           {store.selectedMethodId && (
             <section>
-              <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-1">
+              <label className="mb-1 block text-sm font-semibold tracking-wide text-slate-700 uppercase">
                 Tasa de cambio (BS/USD)
               </label>
-              <p className="text-xs text-slate-500 mb-2">
+              <p className="mb-2 text-xs text-slate-500">
                 Usa la tasa BCV actual o selecciona una reciente
               </p>
               <div className="relative" ref={dropdownRef}>
@@ -517,24 +517,24 @@ export default function InvoicePaymentPage() {
                         const num = Number(val);
                         if (!isNaN(num) && num > 0) setTasaBs(Math.round(num * 100) / 100);
                       }}
-                      className="w-full h-11 rounded-xl border-2 border-slate-200 bg-surface pl-4 pr-10 text-sm font-mono text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+                      className="h-11 w-full rounded-xl border-2 border-slate-200 bg-surface pr-10 pl-4 font-mono text-sm text-text-main transition-all duration-200 outline-none hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
                       placeholder="Ej: 791.32"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-slate-400">
                       Bs./USD
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowRateDropdown(!showRateDropdown)}
-                    className="h-11 px-3 rounded-xl border-2 border-slate-200 bg-surface hover:border-slate-300 transition-colors cursor-pointer flex items-center gap-1"
+                    className="flex h-11 cursor-pointer items-center gap-1 rounded-xl border-2 border-slate-200 bg-surface px-3 transition-colors hover:border-slate-300"
                     title="Ver tasas recientes"
                   >
-                    <ChevronDown className="w-4 h-4 text-slate-500" />
+                    <ChevronDown className="size-4 text-slate-500" />
                   </button>
                 </div>
                 {showRateDropdown && exchangeRates.length > 0 && (
-                  <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
                     {exchangeRates.map((rate) => (
                       <button
                         key={rate.id}
@@ -545,7 +545,7 @@ export default function InvoicePaymentPage() {
                           setTasaBsInput(String(rounded));
                           setShowRateDropdown(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex justify-between items-center cursor-pointer"
+                        className="flex w-full cursor-pointer items-center justify-between px-4 py-2 text-left text-sm hover:bg-slate-50"
                       >
                         <span className="font-mono font-medium text-text-main">
                           {formatBs(Number(rate.tasa_usd))}
@@ -564,7 +564,7 @@ export default function InvoicePaymentPage() {
           {/* Referencia */}
           {selectedMethod?.acepta_referencia && (
             <section>
-              <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+              <label className="mb-2 block text-sm font-semibold tracking-wide text-slate-700 uppercase">
                 Referencia
               </label>
               <input
@@ -572,14 +572,14 @@ export default function InvoicePaymentPage() {
                 value={store.referencia}
                 onChange={(e) => store.setReferencia(e.target.value)}
                 placeholder="Número de referencia"
-                className="w-full h-11 rounded-xl border-2 border-slate-200 bg-surface px-4 text-sm text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+                className="h-11 w-full rounded-xl border-2 border-slate-200 bg-surface px-4 text-sm text-text-main transition-all duration-200 outline-none hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               />
             </section>
           )}
 
           {/* Comprobantes */}
           <section>
-            <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+            <label className="mb-2 block text-sm font-semibold tracking-wide text-slate-700 uppercase">
               Comprobantes de pago
             </label>
             <FileUpload
@@ -595,7 +595,7 @@ export default function InvoicePaymentPage() {
 
           {/* Observaciones */}
           <section>
-            <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+            <label className="mb-2 block text-sm font-semibold tracking-wide text-slate-700 uppercase">
               Observaciones
             </label>
             <textarea
@@ -603,23 +603,23 @@ export default function InvoicePaymentPage() {
               value={store.observaciones}
               onChange={(e) => store.setObservaciones(e.target.value)}
               placeholder="Notas opcionales sobre este pago..."
-              className="w-full rounded-xl border-2 border-slate-200 bg-surface px-4 py-3 text-sm resize-none outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              className="w-full resize-none rounded-xl border-2 border-slate-200 bg-surface px-4 py-3 text-sm transition-all duration-200 outline-none hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             />
           </section>
         </div>
 
         {/* Columna derecha: Sidebar sticky */}
-        <div className="lg:w-80 shrink-0">
-          <div className="lg:sticky lg:top-20 space-y-4">
+        <div className="shrink-0 lg:w-80">
+          <div className="space-y-4 lg:sticky lg:top-20">
             {/* Resumen de factura */}
-            <div className="rounded-xl border border-slate-200 bg-surface p-4 space-y-3">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-surface p-4">
               <div>
                 <p className="text-xs text-slate-500">Factura</p>
                 <p className="text-sm font-bold text-text-main">#{invoice.numero_factura}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{invoice.supplier?.nombre}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{invoice.supplier?.nombre}</p>
               </div>
 
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     invoice.estado_pago === "PAGADA" ? "bg-green-500" : "bg-amber-500"
@@ -630,24 +630,24 @@ export default function InvoicePaymentPage() {
 
               {/* Total en ambas monedas */}
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span className="text-slate-500">Total</span>
                   <div className="text-right">
-                    <div className="font-bold font-mono text-sm text-text-main">{formatUsd(totalFacturaUsd)}</div>
+                    <div className="font-mono text-sm font-bold text-text-main">{formatUsd(totalFacturaUsd)}</div>
                     <div className="font-mono text-xs text-slate-400">Bs. {formatBs(totalFacturaBs)}</div>
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span className="text-green-600">Pagado</span>
                   <div className="text-right">
-                    <div className="font-bold font-mono text-sm text-green-700">{formatUsd(totalPagadoUsd)}</div>
+                    <div className="font-mono text-sm font-bold text-green-700">{formatUsd(totalPagadoUsd)}</div>
                     <div className="font-mono text-xs text-green-600">Bs. {formatBs(totalPagadoBs)}</div>
                   </div>
                 </div>
-                <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                  <span className="text-red-600 font-medium">Pendiente</span>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+                  <span className="font-medium text-red-600">Pendiente</span>
                   <div className="text-right">
-                    <div className="font-bold font-mono text-sm text-red-700">{formatUsd(saldoPendienteUsd)}</div>
+                    <div className="font-mono text-sm font-bold text-red-700">{formatUsd(saldoPendienteUsd)}</div>
                     <div className="font-mono text-xs text-red-600">Bs. {formatBs(saldoPendienteBs)}</div>
                   </div>
                 </div>
@@ -674,12 +674,12 @@ export default function InvoicePaymentPage() {
               )}
               <Button
                 variant="accent"
-                className="w-full h-12 text-base"
+                className="h-12 w-full text-base"
                 disabled={!isValid || submitting}
                 onClick={handleSubmit}
                 loading={submitting}
               >
-                <DollarSign className="w-5 h-5" />
+                <DollarSign className="size-5" />
                 Registrar Pago
               </Button>
             </div>

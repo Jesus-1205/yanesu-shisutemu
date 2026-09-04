@@ -37,27 +37,27 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-[fadeIn_150ms_ease]"
+      className="fixed inset-0 z-50 flex animate-[fadeIn_150ms_ease] items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`bg-surface rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] flex flex-col overflow-hidden motion-safe:animate-[scaleIn_200ms_cubic-bezier(0.16,1,0.3,1)] ${className}`}
+        className={`mx-4 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-surface shadow-2xl motion-safe:animate-[scaleIn_200ms_cubic-bezier(0.16,1,0.3,1)] ${className}`}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <h2 className="text-lg font-semibold text-text-main">{title}</h2>
             <button
               onClick={onClose}
-              className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors duration-150 cursor-pointer"
+              className="shrink-0 cursor-pointer text-slate-400 transition-colors duration-150 hover:text-slate-600"
               aria-label="Cerrar"
             >
-              <X className="w-5 h-5" />
+              <X className="size-5" />
             </button>
           </div>
         )}
-        <div className="p-6 overflow-y-auto">{children}</div>
+        <div className="overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   );

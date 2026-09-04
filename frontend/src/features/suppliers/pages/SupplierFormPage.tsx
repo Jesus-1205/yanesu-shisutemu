@@ -80,7 +80,7 @@ export default function SupplierFormPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="mx-auto max-w-xl">
       <PageHeader
         title={isNew ? "Nuevo Proveedor" : "Editar Proveedor"}
         description={
@@ -90,7 +90,7 @@ export default function SupplierFormPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-surface rounded-xl border border-slate-200 shadow-xs p-6 space-y-5"
+        className="space-y-5 rounded-xl border border-slate-200 bg-surface p-6 shadow-xs"
       >
         <Input
           label="Nombre"

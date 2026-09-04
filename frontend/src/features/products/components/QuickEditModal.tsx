@@ -125,17 +125,17 @@ export default function QuickEditModal({
       <form onSubmit={handleSubmit} className="flex flex-col">
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-text-main truncate">
+            <p className="truncate text-sm font-medium text-text-main">
               {product?.nombre ?? "—"}
             </p>
             {product?.codigo_barra && (
-              <p className="text-xs text-slate-400 font-mono mt-0.5">
+              <p className="mt-0.5 font-mono text-xs text-slate-400">
                 Código: {product.codigo_barra}
               </p>
             )}
           </div>
 
-          <div className="grid gap-3 grid-cols-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label htmlFor={id("costo")} className={labelBase}>Costo caja USD</label>
               <input
@@ -154,7 +154,7 @@ export default function QuickEditModal({
                 autoComplete="off"
                 className={inputBase}
               />
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="mt-0.5 text-[11px] text-slate-400">
                 ${precioCostoUnitario.toFixed(2)} / ud
               </p>
             </div>
@@ -202,7 +202,7 @@ export default function QuickEditModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <span className={labelBase}>Margen unidad</span>
-                <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                <div className="flex h-10 items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm">
                   <input
                     type="text"
                     inputMode="decimal"
@@ -212,7 +212,7 @@ export default function QuickEditModal({
                     onChange={(e) => unitMargin.onChange(e.target.value)}
                     onBlur={unitMargin.onBlur}
                     autoComplete="off"
-                    className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                    className="w-14 bg-transparent text-right font-mono text-sm text-text-main outline-none"
                   />
                   <span className="text-xs text-slate-400">%</span>
                   <Badge variant={unitMargin.margin.color}>{unitMargin.margin.label}</Badge>
@@ -220,7 +220,7 @@ export default function QuickEditModal({
               </div>
               <div>
                 <span className={labelBase}>Margen caja</span>
-                <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+                <div className="flex h-10 items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm">
                   <input
                     type="text"
                     inputMode="decimal"
@@ -230,7 +230,7 @@ export default function QuickEditModal({
                     onChange={(e) => boxMargin.onChange(e.target.value)}
                     onBlur={boxMargin.onBlur}
                     autoComplete="off"
-                    className="w-14 bg-transparent text-sm text-text-main outline-none text-right font-mono"
+                    className="w-14 bg-transparent text-right font-mono text-sm text-text-main outline-none"
                   />
                   <span className="text-xs text-slate-400">%</span>
                   <Badge variant={boxMargin.margin.color}>{boxMargin.margin.label}</Badge>
@@ -240,11 +240,11 @@ export default function QuickEditModal({
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+        <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
           <Link
             to={product ? `/products/${product.id}/edit` : "#"}
             onClick={onClose}
-            className="text-xs text-brand-blue hover:text-blue-700 underline underline-offset-2 transition-colors"
+            className="text-xs text-brand-blue underline underline-offset-2 transition-colors hover:text-blue-700"
           >
             Edición completa →
           </Link>

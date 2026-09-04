@@ -38,9 +38,9 @@ export default function RateKpis({ data, intervalo, loading }: RateKpisProps) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-28 rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
+          <div key={i} className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50" />
         ))}
       </div>
     );
@@ -48,7 +48,7 @@ export default function RateKpis({ data, intervalo, loading }: RateKpisProps) {
 
   if (!kpis) {
     return (
-      <p className="text-sm text-slate-400 text-center py-4">
+      <p className="py-4 text-center text-sm text-slate-400">
         Sin suficientes registros para calcular indicadores del período {intervalo}.
       </p>
     );
@@ -63,29 +63,29 @@ export default function RateKpis({ data, intervalo, loading }: RateKpisProps) {
         };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label={`Variación USD (${intervalo})`}
         value={kpis.usdVar !== null ? `${kpis.usdVar > 0 ? "+" : ""}${kpis.usdVar.toFixed(2)}%` : "—"}
-        icon={<TrendingUp className="w-5 h-5" />}
+        icon={<TrendingUp className="size-5" />}
         trend={trendFor(kpis.usdVar)}
       />
       <StatCard
         label={`Variación EUR (${intervalo})`}
         value={kpis.eurVar !== null ? `${kpis.eurVar > 0 ? "+" : ""}${kpis.eurVar.toFixed(2)}%` : "—"}
-        icon={<TrendingDown className="w-5 h-5" />}
+        icon={<TrendingDown className="size-5" />}
         trend={trendFor(kpis.eurVar)}
       />
       <StatCard
         label={`Máximo USD (${intervalo})`}
         value={`Bs ${formatRateFull(kpis.usdMax)}`}
-        icon={<ArrowUpCircle className="w-5 h-5" />}
+        icon={<ArrowUpCircle className="size-5" />}
         variant="success"
       />
       <StatCard
         label={`Mínimo USD (${intervalo})`}
         value={`Bs ${formatRateFull(kpis.usdMin)}`}
-        icon={<ArrowDownCircle className="w-5 h-5" />}
+        icon={<ArrowDownCircle className="size-5" />}
         variant="danger"
       />
     </div>

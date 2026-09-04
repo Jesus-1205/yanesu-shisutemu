@@ -21,36 +21,36 @@ export default function CategoryAnalyticsDrawer({
   const { data, loading, error } = useCategoryDetailAnalytics(categoryId);
 
   return (
-    <Drawer open={open} onClose={onClose} title={categoryName} className="!w-[540px]">
+    <Drawer open={open} onClose={onClose} title={categoryName} className="w-135!">
       {loading || !data ? (
         <Spinner />
       ) : error ? (
-        <div className="flex items-center justify-center h-[200px]">
+        <div className="flex h-50 items-center justify-center">
           <p className="text-sm text-red-500">{error}</p>
         </div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
-              <p className="text-xs text-slate-500 mb-1">Productos</p>
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <p className="mb-1 text-xs text-slate-500">Productos</p>
               <p className="text-lg font-bold text-text-main">{data.total_productos}</p>
             </div>
-            <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-              <p className="text-xs text-slate-500 mb-1">Unidades Vendidas</p>
+            <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+              <p className="mb-1 text-xs text-slate-500">Unidades Vendidas</p>
               <p className="text-lg font-bold text-text-main">{data.unidades_vendidas}</p>
             </div>
-            <div className="rounded-lg bg-orange-50 border border-orange-200 p-3">
-              <p className="text-xs text-slate-500 mb-1">Ingresos</p>
+            <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+              <p className="mb-1 text-xs text-slate-500">Ingresos</p>
               <p className="text-lg font-bold text-text-main">
                 {formatCurrency(Number(data.ingresos_usd))}
               </p>
             </div>
-            <div className="rounded-lg bg-purple-50 border border-purple-200 p-3">
-              <p className="text-xs text-slate-500 mb-1">Ganancia Bruta</p>
+            <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+              <p className="mb-1 text-xs text-slate-500">Ganancia Bruta</p>
               <p className="text-lg font-bold text-text-main">
                 {formatCurrency(Math.round(Number(data.ingresos_usd) * (Number(data.margen_promedio) / 100) * 100) / 100)}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="mt-0.5 text-xs text-slate-400">
                 {Number(data.margen_promedio).toFixed(1)}% de margen promedio
               </p>
             </div>

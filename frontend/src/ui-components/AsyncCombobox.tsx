@@ -169,24 +169,24 @@ export default function AsyncCombobox({
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
-          className={`w-full h-9 rounded-lg border bg-surface px-3 pr-8 text-sm text-text-main outline-none transition-all duration-200
-            ${disabled ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed" : ""}
+          className={`h-9 w-full rounded-lg border bg-surface px-3 pr-8 text-sm text-text-main transition-all duration-200 outline-none
+            ${disabled ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400" : ""}
             ${error ? "border-danger bg-red-50" : "border-slate-300 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"}
           `}
         />
         {loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 animate-spin" />
+          <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-slate-400" />
         )}
       </div>
       {open && !disabled && createPortal(
         <ul
           ref={dropdownRef}
-          className="fixed z-[9999] bg-surface border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+          className="fixed z-9999 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-surface shadow-lg"
           style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
         >
           {allowClear && (
             <li
-              className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 cursor-pointer transition-colors"
+              className="cursor-pointer px-4 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-100"
               onMouseDown={() => handleSelect(null)}
             >
               {clearLabel}
@@ -198,14 +198,14 @@ export default function AsyncCombobox({
           {!loading && filtered.map((opt) => (
             <li
               key={opt.value}
-              className={`px-4 py-2 cursor-pointer transition-colors hover:bg-slate-100 ${
+              className={`cursor-pointer px-4 py-2 transition-colors hover:bg-slate-100 ${
                 value === opt.value ? "bg-brand-blue/10 font-medium text-brand-blue" : "text-text-main"
               }`}
               onMouseDown={() => handleSelect(opt)}
             >
               <div className="text-sm">{opt.label}</div>
               {opt.subtitle && (
-                <div className="text-xs text-slate-400 mt-0.5">{opt.subtitle}</div>
+                <div className="mt-0.5 text-xs text-slate-400">{opt.subtitle}</div>
               )}
             </li>
           ))}

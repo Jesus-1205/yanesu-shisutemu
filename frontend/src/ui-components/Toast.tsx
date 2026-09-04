@@ -69,7 +69,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"
+        className="pointer-events-none fixed right-4 bottom-4 z-50 flex flex-col gap-2"
         aria-live="polite"
       >
         {items.map((item) => {
@@ -78,25 +78,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={item.id}
               className={`
-                pointer-events-auto relative flex items-start gap-3 w-80
-                bg-white rounded-xl shadow-lg border border-slate-200
-                px-4 py-3.5 overflow-hidden
+                pointer-events-auto relative flex w-80 items-start gap-3
+                overflow-hidden rounded-xl border border-slate-200 bg-white
+                px-4 py-3.5 shadow-lg
                 motion-safe:animate-[slideIn_250ms_cubic-bezier(0.16,1,0.3,1)]
               `}
             >
               <span
                 className={`absolute inset-x-0 bottom-0 h-0.5 origin-left motion-safe:animate-[shrink_4s_linear] ${barClass}`}
               />
-              <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${iconClass}`} />
-              <p className="flex-1 text-sm text-text-main leading-5">
+              <Icon className={`mt-0.5 size-5 shrink-0 ${iconClass}`} />
+              <p className="flex-1 text-sm leading-5 text-text-main">
                 {item.message}
               </p>
               <button
                 onClick={() => removeToast(item.id)}
-                className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors duration-150 cursor-pointer"
+                className="shrink-0 cursor-pointer text-slate-400 transition-colors duration-150 hover:text-slate-600"
                 aria-label="Cerrar"
               >
-                <X className="w-4 h-4" />
+                <X className="size-4" />
               </button>
             </div>
           );

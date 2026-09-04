@@ -17,8 +17,8 @@ interface InvoiceSummaryPanelProps {
 export default function InvoiceSummaryPanel({ esBs, ivaBreakdown, totalUsd, totalBs, tasa }: InvoiceSummaryPanelProps) {
   return (
     <div className="flex justify-end">
-      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-slate-50/70 p-5 space-y-3">
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+      <div className="w-full max-w-sm space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-5">
+        <div className="mb-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
           Resumen Fiscal y Total
         </div>
         <div className="space-y-2 text-sm">
@@ -47,25 +47,25 @@ export default function InvoiceSummaryPanel({ esBs, ivaBreakdown, totalUsd, tota
             )}
           </div>
         </div>
-        <div className="border-t border-slate-200 pt-3 space-y-2">
+        <div className="space-y-2 border-t border-slate-200 pt-3">
           {esBs ? (
             <>
-              <div className="flex justify-between items-center font-bold text-text-main text-base">
+              <div className="flex items-center justify-between text-base font-bold text-text-main">
                 <span>Total</span>
                 <span className="font-mono text-lg">Bs. {formatBs(ivaBreakdown.total)}</span>
               </div>
-              <div className="flex justify-between items-center font-bold text-text-main text-base">
+              <div className="flex items-center justify-between text-base font-bold text-text-main">
                 <span>Total USD</span>
                 <span className="font-mono text-lg">{formatUsd(tasa > 0 ? toCents(ivaBreakdown.total / tasa) : totalUsd)}</span>
               </div>
             </>
           ) : (
             <>
-              <div className="flex justify-between items-center font-bold text-text-main text-base">
+              <div className="flex items-center justify-between text-base font-bold text-text-main">
                 <span>Total USD</span>
                 <span className="font-mono text-lg">{formatUsd(ivaBreakdown.total)}</span>
               </div>
-              <div className="flex justify-between items-center font-bold text-text-main text-base">
+              <div className="flex items-center justify-between text-base font-bold text-text-main">
                 <span>Total Bs.</span>
                 <span className="font-mono text-lg">Bs. {formatBs(tasa > 0 ? toCents(ivaBreakdown.total * tasa) : totalBs)}</span>
               </div>

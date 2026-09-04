@@ -45,7 +45,7 @@ export default function Tabs({
       ref={containerRef}
       className={`
         relative flex items-center overflow-x-auto
-        bg-white rounded-full p-3
+        rounded-full bg-white p-3
         shadow-[0_0_1px_0_rgba(24,94,224,0.15),0_6px_12px_0_rgba(24,94,224,0.15)]
         ${className}
       `}
@@ -60,23 +60,23 @@ export default function Tabs({
             ref={(el) => { tabsRef.current[i] = el; }}
             htmlFor={inputId}
             className={`
-              relative z-10 flex items-center justify-center
-              h-[30px] px-4 shrink-0
-              text-xs font-medium
-              rounded-full cursor-pointer select-none
-              transition-colors duration-150 ease-in
+              relative z-10 flex h-[30px] shrink-0
+              cursor-pointer items-center justify-center
+              rounded-full px-4
+              text-xs font-medium transition-colors
+              duration-150 ease-in select-none
               ${isActive ? "text-brand-blue" : "text-slate-700"}
             `}
           >
-            {tab.icon && <span className="mr-1.5 [&>svg]:w-4 [&>svg]:h-4">{tab.icon}</span>}
+            {tab.icon && <span className="mr-1.5 [&>svg]:size-4">{tab.icon}</span>}
             {tab.label}
             {tab.badge !== undefined && (
               <span
                 className={`
-                  inline-flex items-center justify-center
-                  w-3.5 h-3.5 ml-1.5
-                  text-[10px] rounded-full
-                  transition-colors duration-150 ease-in
+                  ml-1.5 inline-flex size-3.5
+                  items-center justify-center rounded-full
+                  text-xs transition-colors
+                  duration-150 ease-in
                   ${isActive ? "bg-brand-blue text-white" : "bg-slate-100 text-slate-600"}
                 `}
               >
@@ -101,9 +101,9 @@ export default function Tabs({
       {glider && (
         <span
           className="
-            absolute top-3 bottom-3 z-0
-            rounded-full bg-slate-100
-            transition-all duration-250 ease-out
+            absolute inset-y-3 z-0 rounded-full
+            bg-slate-100 transition-all
+            duration-250 ease-out
           "
           style={{ left: glider.left, width: glider.width }}
         />

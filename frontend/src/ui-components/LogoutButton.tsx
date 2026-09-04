@@ -13,22 +13,21 @@ export default function LogoutButton({
   return (
     <button
       className={`
-        group flex items-center justify-start
-        w-9 h-9 rounded-full
-        bg-danger text-white
-        border-none cursor-pointer relative
-        overflow-hidden
-        transition-all duration-300
-        hover:w-[95px] hover:rounded-[30px]
-        active:translate-x-0.5 active:translate-y-0.5
+        group relative flex size-9
+        cursor-pointer items-center justify-start
+        overflow-hidden rounded-full
+        border-none bg-danger text-white
+        transition-all
+        duration-300 hover:w-[95px]
+        hover:rounded-[30px] active:translate-0.5
         ${className}
       `}
       {...props}
     >
       <span
         className="
-          flex items-center justify-center
-          w-full transition-all duration-300
+          flex w-full items-center
+          justify-center transition-all duration-300
           group-hover:w-[30%] group-hover:pl-4
         "
       >
@@ -36,10 +35,10 @@ export default function LogoutButton({
       </span>
       <span
         className="
-          absolute right-0 w-0 opacity-0
-          text-white text-sm font-semibold
+          absolute right-0 w-0 text-sm
+          font-semibold text-white opacity-0
           transition-all duration-300
-          group-hover:w-[70%] group-hover:opacity-100 group-hover:pr-2
+          group-hover:w-[70%] group-hover:pr-2 group-hover:opacity-100
         "
       >
         {label}

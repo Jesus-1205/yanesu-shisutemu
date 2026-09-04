@@ -293,7 +293,7 @@ export default function ProductsPage() {
         actions={
           !isOperator ? (
             <Button variant="outline" onClick={handleExportAll}>
-              <Download className="w-4 h-4" />
+              <Download className="size-4" />
               Descargar Excel
             </Button>
           ) : undefined
@@ -309,10 +309,10 @@ export default function ProductsPage() {
       )}
 
       {/* Toolbar - responsive */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Search + Filters row */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="relative flex-1 min-w-[180px] max-w-sm">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="relative max-w-sm min-w-45 flex-1">
             <SearchInput
               ref={searchRef}
               value={filters.search}
@@ -328,17 +328,17 @@ export default function ProductsPage() {
           </div>
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`rounded-lg p-2 transition-colors ${
               showFavoritesOnly
                 ? "bg-yellow-100 text-yellow-600"
-                : "text-slate-400 hover:text-yellow-500 hover:bg-yellow-50"
+                : "text-slate-400 hover:bg-yellow-50 hover:text-yellow-500"
             }`}
             title={showFavoritesOnly ? "Mostrar todos los productos" : "Mostrar solo favoritos"}
           >
-            <Star className={`w-4 h-4 ${showFavoritesOnly ? "fill-yellow-400" : ""}`} />
+            <Star className={`size-4 ${showFavoritesOnly ? "fill-yellow-400" : ""}`} />
           </button>
           {!isOperator && (
-            <div className="hidden md:block w-56 lg:w-72">
+            <div className="hidden w-56 md:block lg:w-72">
               <Select
                 value={sortValue}
                 onChange={(e) => handleSortChange(e.target.value)}
@@ -349,10 +349,10 @@ export default function ProductsPage() {
           )}
           <div className="relative shrink-0">
             <Button variant="outline" onClick={openDrawer}>
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="size-4" />
               <span className="hidden sm:inline">Filtros</span>
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 text-[11px] font-bold text-white bg-brand-blue rounded-full">
+                <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-brand-blue text-[11px] font-bold text-white">
                   {activeFilterCount}
                 </span>
               )}
@@ -361,14 +361,14 @@ export default function ProductsPage() {
         </div>
 
         {/* Actions row */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {!isOperator && <ViewToggle view={view} onChange={setView} />}
           <Button variant="accent" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden xs:inline">Nuevo</span>
+            <Plus className="size-4" />
+            <span className="xs:inline hidden">Nuevo</span>
           </Button>
           <Button variant="outline" onClick={() => navigate("/invoices/new")}>
-            <FileText className="w-4 h-4" />
+            <FileText className="size-4" />
             <span className="hidden lg:inline">Agregar Factura</span>
           </Button>
         </div>
@@ -407,7 +407,7 @@ export default function ProductsPage() {
         </>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
               <ProductCard
                 key={p.id}

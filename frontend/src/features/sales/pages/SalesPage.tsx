@@ -156,7 +156,7 @@ export default function SalesPage() {
         description="Historial de ventas del sistema"
         actions={
           <Button variant="accent" onClick={() => navigate("/sales/new")}>
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Nueva Venta
           </Button>
         }
@@ -171,49 +171,49 @@ export default function SalesPage() {
       )}
 
       {isOperator ? (
-        <div className="mb-4 flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-          <Calendar className="w-4 h-4" />
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+          <Calendar className="size-4" />
           Mostrando ventas del día de hoy
         </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Desde</label>
+            <label className="mb-1 block text-xs text-slate-500">Desde</label>
             <input
               type="date"
               value={fechaDesde}
               onChange={(e) => handleFilterChange(setFechaDesde)(e.target.value)}
-              className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               autoComplete="off"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Hasta</label>
+            <label className="mb-1 block text-xs text-slate-500">Hasta</label>
             <input
               type="date"
               value={fechaHasta}
               onChange={(e) => handleFilterChange(setFechaHasta)(e.target.value)}
-              className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               autoComplete="off"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Hora desde</label>
+            <label className="mb-1 block text-xs text-slate-500">Hora desde</label>
             <input
               type="time"
               value={horaDesde}
               onChange={(e) => handleFilterChange(setHoraDesde)(e.target.value)}
-              className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               autoComplete="off"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Hora hasta</label>
+            <label className="mb-1 block text-xs text-slate-500">Hora hasta</label>
             <input
               type="time"
               value={horaHasta}
               onChange={(e) => handleFilterChange(setHoraHasta)(e.target.value)}
-              className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               autoComplete="off"
             />
           </div>
@@ -223,7 +223,7 @@ export default function SalesPage() {
             options={paymentMethods.map((m) => ({ value: m.id, label: m.nombre }))}
             onChange={handleMetodoPagoChange}
             placeholder="Todos"
-            className="min-w-[200px]"
+            className="min-w-50"
           />
           {(fechaDesde || fechaHasta || horaDesde || horaHasta || metodoPagoIds.length > 0) && (
             <Button
@@ -237,9 +237,9 @@ export default function SalesPage() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="mb-4 flex items-center gap-2">
         <Button variant="outline" onClick={handleExportAll}>
-          <Download className="w-4 h-4" />
+          <Download className="size-4" />
           Descargar Excel
         </Button>
       </div>
@@ -267,7 +267,7 @@ export default function SalesPage() {
             header: "Método de Pago",
             hideOnMobile: true,
             render: (s: Sale) => (
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
                 {s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-"}
               </span>
             ),

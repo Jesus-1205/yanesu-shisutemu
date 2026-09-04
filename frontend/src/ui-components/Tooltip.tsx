@@ -30,18 +30,18 @@ export default function Tooltip({
   className = "",
 }: TooltipProps) {
   return (
-    <div className={`relative inline-flex group ${className}`}>
+    <div className={`group relative inline-flex ${className}`}>
       {children}
       <div
         role="tooltip"
         className={`
-          absolute z-50 pointer-events-none
-          opacity-0 group-hover:opacity-100
-          transition-opacity duration-150
+          pointer-events-none absolute z-50
+          opacity-0 transition-opacity
+          duration-150 group-hover:opacity-100
           ${sideStyles[side]}
         `}
       >
-        <span className="block px-2.5 py-1.5 rounded-md bg-slate-800 text-white text-xs font-medium whitespace-nowrap">
+        <span className="block rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white">
           {content}
         </span>
         <span className={`absolute ${arrowStyles[side]}`} />

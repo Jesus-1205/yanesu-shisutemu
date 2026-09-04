@@ -26,27 +26,27 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
       <div className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-500">
-              <th className="text-left text-xs font-medium uppercase tracking-wider px-4 py-3">Producto</th>
-              <th className="text-center text-xs font-medium uppercase tracking-wider px-4 py-3">Tipo</th>
-              <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Cant</th>
-              <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">$/Caja</th>
-              <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3 hidden md:table-cell">$/Und</th>
-              <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3 hidden md:table-cell">Bs./Unid</th>
-              <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">USD</th>
-              <th className="text-right text-xs font-medium uppercase tracking-wider px-4 py-3">Bs.</th>
-              <th className="text-center text-xs font-medium uppercase tracking-wider px-3 py-3 w-16">Acciones</th>
+            <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500">
+              <th className="px-4 py-3 text-left text-xs font-medium tracking-wider uppercase">Producto</th>
+              <th className="px-4 py-3 text-center text-xs font-medium tracking-wider uppercase">Tipo</th>
+              <th className="px-4 py-3 text-right text-xs font-medium tracking-wider uppercase">Cant</th>
+              <th className="px-4 py-3 text-right text-xs font-medium tracking-wider uppercase">$/Caja</th>
+              <th className="hidden px-4 py-3 text-right text-xs font-medium tracking-wider uppercase md:table-cell">$/Und</th>
+              <th className="hidden px-4 py-3 text-right text-xs font-medium tracking-wider uppercase md:table-cell">Bs./Unid</th>
+              <th className="px-4 py-3 text-right text-xs font-medium tracking-wider uppercase">USD</th>
+              <th className="px-4 py-3 text-right text-xs font-medium tracking-wider uppercase">Bs.</th>
+              <th className="w-16 p-3 text-center text-xs font-medium tracking-wider uppercase">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-surface">
             {lineItems.map((item) => (
-              <tr key={item.key} className="hover:bg-slate-50/80 transition-colors">
-                <td className="px-4 py-3 text-text-main font-medium max-w-[220px] truncate">
+              <tr key={item.key} className="transition-colors hover:bg-slate-50/80">
+                <td className="max-w-55 truncate px-4 py-3 font-medium text-text-main">
                   {item.nombre}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex flex-col items-center">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                       item.tipo_empaque === "CAJA"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-green-100 text-green-700"
@@ -54,13 +54,13 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
                       {item.tipo_empaque === "CAJA" ? "Caja" : "Und"}
                     </span>
                     {item.tipo_empaque === "CAJA" && item.unidades_por_caja > 1 && (
-                      <span className="text-[10px] text-slate-400 mt-0.5">{item.unidades_por_caja} unds/caja</span>
+                      <span className="mt-0.5 text-[10px] text-slate-400">{item.unidades_por_caja} unds/caja</span>
                     )}
                     {aplicaIva && esBs && (
                       <button
                         type="button"
                         onClick={() => toggleItemIva(item.key)}
-                        className={`mt-0.5 inline-flex items-center gap-1 text-[10px] cursor-pointer rounded-full px-1.5 py-0.5 font-medium transition-colors ${
+                        className={`mt-0.5 inline-flex cursor-pointer items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
                           item.tipo_iva === "GRAVADO"
                             ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                             : "bg-orange-100 text-orange-700 hover:bg-orange-200"
@@ -74,16 +74,16 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
                 <td className="px-4 py-3 text-right text-text-main tabular-nums">
                   {item.cantidad}
                 </td>
-                <td className="px-4 py-3 text-right text-text-main font-mono">
+                <td className="px-4 py-3 text-right font-mono text-text-main">
                   {item.tipo_empaque === "CAJA" ? (
-                    <span className="font-semibold text-sm">{formatUsd(item.costo_unitario_usd)}</span>
+                    <span className="text-sm font-semibold">{formatUsd(item.costo_unitario_usd)}</span>
                   ) : (
                     <span className="text-slate-300">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-right text-text-main font-mono hidden md:table-cell">
+                <td className="hidden px-4 py-3 text-right font-mono text-text-main md:table-cell">
                   {item.tipo_empaque === "UNIDAD" ? (
-                    <span className={esBs ? "text-xs text-slate-400" : "font-semibold text-sm"}>
+                    <span className={esBs ? "text-xs text-slate-400" : "text-sm font-semibold"}>
                       {esBs && "≈ "}{formatUsd(item.costo_unitario_usd)}
                     </span>
                   ) : item.unidades_por_caja > 0 ? (
@@ -92,8 +92,8 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
                     <span className="text-slate-300">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-right text-text-main font-mono hidden md:table-cell">
-                  <span className={esBs ? "font-semibold text-sm" : "text-xs"}>
+                <td className="hidden px-4 py-3 text-right font-mono text-text-main md:table-cell">
+                  <span className={esBs ? "text-sm font-semibold" : "text-xs"}>
                     {!esBs && "≈ "}Bs. {formatBs(item.costo_unitario_bs)}
                   </span>
                 </td>
@@ -103,25 +103,25 @@ export default function LineItemsTable({ esBs, aplicaIva, totalUsd, totalBs, iva
                 <td className="px-4 py-3 text-right text-text-main tabular-nums">
                   <span className={esBs ? "font-semibold" : ""}>Bs. {formatBs(item.subtotal_bs)}</span>
                 </td>
-                <td className="px-3 py-3 text-center">
+                <td className="p-3 text-center">
                   <button
                     type="button"
                     onClick={() => removeLineItem(item.key)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
                     aria-label={`Eliminar ${item.nombre}`}
                     title="Eliminar ítem"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="size-4" />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-slate-100/70 border-t-2 border-slate-200 font-semibold text-text-main">
+            <tr className="border-t-2 border-slate-200 bg-slate-100/70 font-semibold text-text-main">
               <td className="px-4 py-3.5">Totales</td>
               <td />
-              <td className="px-4 py-3.5 text-right tabular-nums text-xs">
+              <td className="px-4 py-3.5 text-right text-xs tabular-nums">
                 {ivaBreakdown.totalUnidades} unds
               </td>
               <td />

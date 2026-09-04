@@ -43,7 +43,7 @@ export default function ExchangeRatesPage() {
         description="Consulta y actualiza las tasas oficiales del día"
         actions={
           <Button variant="accent" onClick={() => setPanelOpen((v) => !v)}>
-            {panelOpen ? <X className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+            {panelOpen ? <X className="size-4" /> : <RefreshCw className="size-4" />}
             {panelOpen ? "Cerrar" : "Actualizar Tasas"}
           </Button>
         }
@@ -56,9 +56,9 @@ export default function ExchangeRatesPage() {
       )}
 
       {needsUpdate && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <div className="flex items-center gap-2 text-amber-800 text-sm">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+        <div className="flex flex-col justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 text-sm text-amber-800">
+            <AlertTriangle className="size-4 shrink-0" />
             <span>
               Las tasas no se han actualizado hoy (después de las 17:00). Se recomienda
               actualizarlas antes de vender.
@@ -92,7 +92,7 @@ export default function ExchangeRatesPage() {
 
       <RateKpis data={trend} intervalo={intervalo} loading={trendLoading} />
 
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
         <RateTrendChart
           data={trend}
           interval={intervalo}
@@ -101,7 +101,7 @@ export default function ExchangeRatesPage() {
         />
       </div>
 
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
         <RateHistoryTable
           data={history}
           loading={historyLoading}

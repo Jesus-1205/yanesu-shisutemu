@@ -8,7 +8,7 @@ interface SkeletonProps {
 export function Skeleton({ className = "", style }: SkeletonProps) {
   return (
     <span
-      className={`block bg-slate-200 rounded animate-pulse ${className}`}
+      className={`block animate-pulse rounded bg-slate-200 ${className}`}
       style={style}
       aria-hidden="true"
     />
@@ -46,7 +46,7 @@ interface SkeletonCardProps {
 
 export function SkeletonCard({ className = "", children }: SkeletonCardProps) {
   return (
-    <div className={`rounded-xl border border-slate-200 p-5 space-y-4 ${className}`} aria-hidden="true">
+    <div className={`space-y-4 rounded-xl border border-slate-200 p-5 ${className}`} aria-hidden="true">
       {children ?? (
         <>
           <Skeleton className="h-4 w-2/5" />

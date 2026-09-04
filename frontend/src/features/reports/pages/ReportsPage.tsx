@@ -183,11 +183,11 @@ export default function ReportsPage() {
         <Tabs
           className="w-full justify-around"
           tabs={[
-            { value: "resumen", label: "Resumen", icon: <BarChart3 className="w-4 h-4" /> },
-            { value: "productos", label: "Productos", icon: <Package className="w-4 h-4" /> },
-            { value: "categorias", label: "Categorías", icon: <ShoppingBag className="w-4 h-4" /> },
-            { value: "proveedores", label: "Proveedores", icon: <Building2 className="w-4 h-4" /> },
-            { value: "pagos", label: "Pagos", icon: <Wallet className="w-4 h-4" /> },
+            { value: "resumen", label: "Resumen", icon: <BarChart3 className="size-4" /> },
+            { value: "productos", label: "Productos", icon: <Package className="size-4" /> },
+            { value: "categorias", label: "Categorías", icon: <ShoppingBag className="size-4" /> },
+            { value: "proveedores", label: "Proveedores", icon: <Building2 className="size-4" /> },
+            { value: "pagos", label: "Pagos", icon: <Wallet className="size-4" /> },
           ]}
           value={activeTab}
           onChange={setActiveTab}
@@ -352,15 +352,15 @@ function ResumenTab({
   return (
     <div className="space-y-6">
       {topWeek && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard label="Total USD" value={formatCurrency(categoriesTotal)} icon={<DollarSign className="w-5 h-5" />} variant="info" trend={getTrend()} />
-          <StatCard label="Períodos" value={String(categoriesCount)} icon={<BarChart3 className="w-5 h-5" />} />
-          <StatCard label={bestPeriodLabel} value={`${formatPeriodRange(topWeek.periodo, rango as "semanal")} · ${formatCurrency(topWeek.total_usd)}`} icon={<TrendingUp className="w-5 h-5" />} variant="success" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard label="Total USD" value={formatCurrency(categoriesTotal)} icon={<DollarSign className="size-5" />} variant="info" trend={getTrend()} />
+          <StatCard label="Períodos" value={String(categoriesCount)} icon={<BarChart3 className="size-5" />} />
+          <StatCard label={bestPeriodLabel} value={`${formatPeriodRange(topWeek.periodo, rango as "semanal")} · ${formatCurrency(topWeek.total_usd)}`} icon={<TrendingUp className="size-5" />} variant="success" />
         </div>
       )}
 
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
-        <div className="flex items-center justify-between mb-4">
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text-main">Ventas vs. Costos vs. Margen</h2>
           <Select
             value={rango}
@@ -374,9 +374,9 @@ function ResumenTab({
         </Suspense>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-4">Resumen de Ventas</h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-4 text-lg font-semibold text-text-main">Resumen de Ventas</h2>
           {salesSummary.length > 0 ? (
             <SortableSalesTable data={salesSummary} rango={rango} />
           ) : (
@@ -384,13 +384,13 @@ function ResumenTab({
           )}
         </div>
 
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Top Vendidos</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Top Vendidos</h2>
           {topSelling.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitTopSelling)} onChange={(e) => setLimitTopSelling(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
-                { key: "nombre", header: "Producto", render: (r: { producto: ProductOut }) => <span className="truncate max-w-[150px] block" title={r.producto.nombre}>{r.producto.nombre}</span> },
+                { key: "nombre", header: "Producto", render: (r: { producto: ProductOut }) => <span className="block max-w-[150px] truncate" title={r.producto.nombre}>{r.producto.nombre}</span> },
                 { key: "total", header: "Vendidos", render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
                 { key: "ingresos", header: "Ingresos ($)", render: (r: { producto: ProductOut; total_vendido: number }) => formatCurrency(Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100), exportValue: (r: { producto: ProductOut; total_vendido: number }) => Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100 },
               ]}
@@ -494,23 +494,23 @@ function ProductosTab({
 
   return (
     <div className="space-y-6">
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
         {loadingMatrix ? (
-          <div className="flex items-center justify-center h-[300px]"><Spinner size="lg" /></div>
+          <div className="flex h-75 items-center justify-center"><Spinner size="lg" /></div>
         ) : (
-          <Suspense fallback={<div className="flex items-center justify-center h-[300px]"><Spinner size="lg" /></div>}>
+          <Suspense fallback={<div className="flex h-75 items-center justify-center"><Spinner size="lg" /></div>}>
             <RentabilityScatterChart data={matrixData} />
           </Suspense>
         )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
-        <h2 className="text-lg font-semibold text-text-main mb-3">Más Vendidos</h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
+        <h2 className="mb-3 text-lg font-semibold text-text-main">Más Vendidos</h2>
         {sortedSelling.length > 0 ? (
           <Table
             headerLeft={<Select value={String(limitSelling)} onChange={(e) => setLimitSelling(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
-              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortSelling("nombre"), sortDirection: sortSelling?.key === "nombre" ? sortSelling.direction : null, render: (r: { nombre: string }) => <span className="truncate max-w-[150px] block" title={r.nombre}>{r.nombre}</span> },
+              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortSelling("nombre"), sortDirection: sortSelling?.key === "nombre" ? sortSelling.direction : null, render: (r: { nombre: string }) => <span className="block max-w-[150px] truncate" title={r.nombre}>{r.nombre}</span> },
               { key: "total_vendido", header: "Vendidos", sortable: true, onSort: () => reqSortSelling("total_vendido"), sortDirection: sortSelling?.key === "total_vendido" ? sortSelling.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
               { key: "ingresos", header: "Ingresos ($)", sortable: true, onSort: () => reqSortSelling("ingresos"), sortDirection: sortSelling?.key === "ingresos" ? sortSelling.direction : null, render: (r: { ingresos: number }) => formatCurrency(r.ingresos), exportValue: (r: { ingresos: number }) => r.ingresos },
             ]}
@@ -528,13 +528,13 @@ function ProductosTab({
           />
         ) : <p className="text-sm text-slate-400">Sin datos</p>}
       </div>
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
-        <h2 className="text-lg font-semibold text-text-main mb-3">Mayor Margen</h2>
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
+        <h2 className="mb-3 text-lg font-semibold text-text-main">Mayor Margen</h2>
         {sortedTopMargin.length > 0 ? (
           <Table
             headerLeft={<Select value={String(limitTopMargin)} onChange={(e) => setLimitTopMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
-              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortTopMargin("nombre"), sortDirection: sortTopMargin?.key === "nombre" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="truncate max-w-[150px] block" title={p.nombre}>{p.nombre}</span> },
+              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortTopMargin("nombre"), sortDirection: sortTopMargin?.key === "nombre" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="block max-w-[150px] truncate" title={p.nombre}>{p.nombre}</span> },
               { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortTopMargin("precio_costo_usd"), sortDirection: sortTopMargin?.key === "precio_costo_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_costo_usd) },
               { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortTopMargin("precio_unidad_usd"), sortDirection: sortTopMargin?.key === "precio_unidad_usd" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_unidad_usd) },
               { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortTopMargin("margen_pct"), sortDirection: sortTopMargin?.key === "margen_pct" ? sortTopMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; }, exportValue: (p: ProductOut & { margen_pct: number }) => Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100 },
@@ -553,13 +553,13 @@ function ProductosTab({
           />
         ) : <p className="text-sm text-slate-400">Sin datos</p>}
       </div>
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
-        <h2 className="text-lg font-semibold text-text-main mb-3">Menor Margen</h2>
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
+        <h2 className="mb-3 text-lg font-semibold text-text-main">Menor Margen</h2>
         {sortedLowMargin.length > 0 ? (
           <Table
             headerLeft={<Select value={String(limitLowMargin)} onChange={(e) => setLimitLowMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
-              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortLowMargin("nombre"), sortDirection: sortLowMargin?.key === "nombre" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="truncate max-w-[150px] block" title={p.nombre}>{p.nombre}</span> },
+              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortLowMargin("nombre"), sortDirection: sortLowMargin?.key === "nombre" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => <span className="block max-w-[150px] truncate" title={p.nombre}>{p.nombre}</span> },
               { key: "precio_costo_usd", header: "Costo", sortable: true, onSort: () => reqSortLowMargin("precio_costo_usd"), sortDirection: sortLowMargin?.key === "precio_costo_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_costo_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_costo_usd) },
               { key: "precio_unidad_usd", header: "Venta", sortable: true, onSort: () => reqSortLowMargin("precio_unidad_usd"), sortDirection: sortLowMargin?.key === "precio_unidad_usd" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => formatCurrency(p.precio_unidad_usd), exportValue: (p: ProductOut & { margen_pct: number }) => Number(p.precio_unidad_usd) },
               { key: "margen_pct", header: "Margen", sortable: true, onSort: () => reqSortLowMargin("margen_pct"), sortDirection: sortLowMargin?.key === "margen_pct" ? sortLowMargin.direction : null, render: (p: ProductOut & { margen_pct: number }) => { const margen = Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100; return `${formatCurrency(margen)} (${p.margen_pct.toFixed(1)}%)`; }, exportValue: (p: ProductOut & { margen_pct: number }) => Math.round((p.precio_unidad_usd - p.precio_costo_usd) * 100) / 100 },
@@ -578,13 +578,13 @@ function ProductosTab({
           />
         ) : <p className="text-sm text-slate-400">Sin datos</p>}
       </div>
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
-        <h2 className="text-lg font-semibold text-text-main mb-3">Menor Rotación</h2>
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
+        <h2 className="mb-3 text-lg font-semibold text-text-main">Menor Rotación</h2>
         {sortedLowRot.length > 0 ? (
           <Table
             headerLeft={<Select value={String(limitLowRot)} onChange={(e) => setLimitLowRot(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
             columns={[
-              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortLowRot("nombre"), sortDirection: sortLowRot?.key === "nombre" ? sortLowRot.direction : null, render: (r: { nombre: string }) => <span className="truncate max-w-[150px] block" title={r.nombre}>{r.nombre}</span> },
+              { key: "nombre", header: "Producto", sortable: true, onSort: () => reqSortLowRot("nombre"), sortDirection: sortLowRot?.key === "nombre" ? sortLowRot.direction : null, render: (r: { nombre: string }) => <span className="block max-w-[150px] truncate" title={r.nombre}>{r.nombre}</span> },
               { key: "total_vendido", header: "Vendidos", sortable: true, onSort: () => reqSortLowRot("total_vendido"), sortDirection: sortLowRot?.key === "total_vendido" ? sortLowRot.direction : null, render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
               { key: "stock", header: "Stock", sortable: true, onSort: () => reqSortLowRot("stock"), sortDirection: sortLowRot?.key === "stock" ? sortLowRot.direction : null, render: (r: { stock: number }) => String(r.stock), exportValue: (r: { stock: number }) => r.stock },
             ]}
@@ -628,7 +628,7 @@ function CategoriasTab({
   const [limitLowMargin, setLimitLowMargin] = useState(5);
   const [limitDetalle, setLimitDetalle] = useState(10);
 
-  if (!data) return <p className="text-sm text-slate-400 text-center py-10">Sin datos de categorías</p>;
+  if (!data) return <p className="py-10 text-center text-sm text-slate-400">Sin datos de categorías</p>;
 
   const sortedByMargin = useMemo(
     () => [...data.categorias].sort((a, b) => b.margen_promedio - a.margen_promedio),
@@ -669,23 +669,23 @@ function CategoriasTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <StatCard label="Categorías" value={String(data.total_categorias)} icon={<ShoppingBag className="w-5 h-5" />} />
-        <StatCard label="Productos" value={String(data.total_productos)} icon={<Package className="w-5 h-5" />} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+        <StatCard label="Categorías" value={String(data.total_categorias)} icon={<ShoppingBag className="size-5" />} />
+        <StatCard label="Productos" value={String(data.total_productos)} icon={<Package className="size-5" />} />
         <StatCard label="Stock Total" value={String(data.stock_total)} />
         <StatCard label="Uds. Vendidas" value={String(data.unidades_vendidas)} />
-        <StatCard label="Ingresos USD" value={formatCurrency(data.ingresos_usd)} icon={<DollarSign className="w-5 h-5" />} variant="success" />
+        <StatCard label="Ingresos USD" value={formatCurrency(data.ingresos_usd)} icon={<DollarSign className="size-5" />} variant="success" />
       </div>
 
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
         <Suspense fallback={<ChartSkeleton />}>
           <CategorySalesDonut data={data.categorias} />
         </Suspense>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Top Ventas</h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Top Ventas</h2>
           {sortedTopSelling.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitTopSelling)} onChange={(e) => setLimitTopSelling(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -707,8 +707,8 @@ function CategoriasTab({
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Bajas Ventas</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Bajas Ventas</h2>
           {sortedLowRot.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitLowRot)} onChange={(e) => setLimitLowRot(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -730,8 +730,8 @@ function CategoriasTab({
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Mayor Margen Prom.</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Mayor Margen Prom.</h2>
           {sortedTopMargin.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitTopMargin)} onChange={(e) => setLimitTopMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -749,8 +749,8 @@ function CategoriasTab({
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Menor Margen Prom.</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Menor Margen Prom.</h2>
           {sortedLowMargin.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitLowMargin)} onChange={(e) => setLimitLowMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -770,8 +770,8 @@ function CategoriasTab({
         </div>
       </div>
 
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
-        <h2 className="text-lg font-semibold text-text-main mb-3">Detalle por Categoría</h2>
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
+        <h2 className="mb-3 text-lg font-semibold text-text-main">Detalle por Categoría</h2>
         <Table
           headerLeft={<Select value={String(limitDetalle)} onChange={(e) => setLimitDetalle(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
           columns={[
@@ -805,7 +805,7 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
   const [limitLowMargin, setLimitLowMargin] = useState(5);
   const [limitDetalle, setLimitDetalle] = useState(10);
 
-  if (!data) return <p className="text-sm text-slate-400 text-center py-10">Sin datos de proveedores</p>;
+  if (!data) return <p className="py-10 text-center text-sm text-slate-400">Sin datos de proveedores</p>;
 
   const isActive = useCallback(
     (s: SupplierAnalyticsOut) =>
@@ -844,22 +844,22 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <StatCard label="Proveedores" value={String(data.total_proveedores)} icon={<Building2 className="w-5 h-5" />} />
-        <StatCard label="Productos" value={String(data.total_productos)} icon={<Package className="w-5 h-5" />} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+        <StatCard label="Proveedores" value={String(data.total_proveedores)} icon={<Building2 className="size-5" />} />
+        <StatCard label="Productos" value={String(data.total_productos)} icon={<Package className="size-5" />} />
         <StatCard label="Stock Total" value={String(data.stock_total)} />
         <StatCard label="Uds. Vendidas" value={String(data.unidades_vendidas)} />
-        <StatCard label="Ingresos USD" value={formatCurrency(data.ingresos_usd)} icon={<DollarSign className="w-5 h-5" />} variant="success" />
+        <StatCard label="Ingresos USD" value={formatCurrency(data.ingresos_usd)} icon={<DollarSign className="size-5" />} variant="success" />
       </div>
 
       <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 select-none">
           <input
             type="checkbox"
             checked={showInactives}
             onChange={(e) => setShowInactives(e.target.checked)}
             autoComplete="off"
-            className="rounded border-slate-300 text-brand focus:ring-brand"
+            className="text-brand focus:ring-brand rounded border-slate-300"
           />
           Mostrar inactivos
         </label>
@@ -868,15 +868,15 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
         </span>
       </div>
 
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
         <Suspense fallback={<ChartSkeleton />}>
           <SupplierComparisonBar data={visibleSuppliers} />
         </Suspense>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Top Ventas</h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Top Ventas</h2>
           {sortedBySales.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitTopSales)} onChange={(e) => setLimitTopSales(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -894,8 +894,8 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Bajas Ventas</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Bajas Ventas</h2>
           {lowSales.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitLowSales)} onChange={(e) => setLimitLowSales(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -913,8 +913,8 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Mayor Margen Prom.</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Mayor Margen Prom.</h2>
           {topByMargin.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitTopMargin)} onChange={(e) => setLimitTopMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -932,8 +932,8 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
             />
           ) : <p className="text-sm text-slate-400">Sin datos</p>}
         </div>
-        <div className="bg-surface rounded-xl border border-slate-200 p-5">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Menor Margen Prom.</h2>
+        <div className="rounded-xl border border-slate-200 bg-surface p-5">
+          <h2 className="mb-3 text-lg font-semibold text-text-main">Menor Margen Prom.</h2>
           {lowestByMargin.length > 0 ? (
             <Table
               headerLeft={<Select value={String(limitLowMargin)} onChange={(e) => setLimitLowMargin(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
@@ -953,8 +953,8 @@ function ProveedoresTab({ data }: { data: SupplierAnalyticsResponse | null }) {
         </div>
       </div>
 
-      <div className="bg-surface rounded-xl border border-slate-200 p-5">
-        <h2 className="text-lg font-semibold text-text-main mb-3">Detalle por Proveedor</h2>
+      <div className="rounded-xl border border-slate-200 bg-surface p-5">
+        <h2 className="mb-3 text-lg font-semibold text-text-main">Detalle por Proveedor</h2>
         <Table
           headerLeft={<Select value={String(limitDetalle)} onChange={(e) => setLimitDetalle(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
           columns={[
@@ -1022,23 +1022,23 @@ function PagosTab({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs text-slate-500 mb-1">Desde</label>
+          <label className="mb-1 block text-xs text-slate-500">Desde</label>
           <input
             type="date"
             value={desde}
             onChange={(e) => onDesdeChange(e.target.value)}
             autoComplete="off"
-            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-500 mb-1">Hasta</label>
+          <label className="mb-1 block text-xs text-slate-500">Hasta</label>
           <input
             type="date"
             value={hasta}
             onChange={(e) => onHastaChange(e.target.value)}
             autoComplete="off"
-            className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
           />
         </div>
         {(desde || hasta) && (
@@ -1052,21 +1052,21 @@ function PagosTab({
         <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Recibido USD" value={formatCurrency(totalUsd)} icon={<DollarSign className="w-5 h-5" />} variant="success" />
-            <StatCard label="Recibido VES" value={formatCurrency(totalVes, "Bs ")} icon={<Banknote className="w-5 h-5" />} variant="info" />
-            <StatCard label="Equivalente USD" value={formatCurrency(totalEquivUsd)} icon={<DollarSign className="w-5 h-5" />} />
-            <StatCard label="Total de Pagos" value={String(totalPagos)} icon={<Wallet className="w-5 h-5" />} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Recibido USD" value={formatCurrency(totalUsd)} icon={<DollarSign className="size-5" />} variant="success" />
+            <StatCard label="Recibido VES" value={formatCurrency(totalVes, "Bs ")} icon={<Banknote className="size-5" />} variant="info" />
+            <StatCard label="Equivalente USD" value={formatCurrency(totalEquivUsd)} icon={<DollarSign className="size-5" />} />
+            <StatCard label="Total de Pagos" value={String(totalPagos)} icon={<Wallet className="size-5" />} />
           </div>
 
-          <div className="bg-surface rounded-xl border border-slate-200 p-5">
+          <div className="rounded-xl border border-slate-200 bg-surface p-5">
             <Suspense fallback={<ChartSkeleton />}>
               <PaymentMethodsDonut data={data} />
             </Suspense>
           </div>
 
-          <div className="bg-surface rounded-xl border border-slate-200 p-5">
-            <h2 className="text-lg font-semibold text-text-main mb-3">Detalle por Método de Pago</h2>
+          <div className="rounded-xl border border-slate-200 bg-surface p-5">
+            <h2 className="mb-3 text-lg font-semibold text-text-main">Detalle por Método de Pago</h2>
             <Table
               columns={[
                 {
@@ -1077,7 +1077,7 @@ function PagosTab({
                   sortDirection: sortConfig?.key === "metodo_pago_nombre" ? sortConfig.direction : null,
                   render: (m: PaymentMethodSummaryItem) => (
                     <span className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
                         {formatPaymentMethodName(m.metodo_pago_nombre)}
                       </span>
                       <span className="text-xs text-slate-400">{m.moneda_default}</span>

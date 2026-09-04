@@ -48,11 +48,11 @@ export default function ProductFiltersDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title="Filtros" className="w-96">
-      <div className="flex flex-col h-full">
+      <div className="flex h-full flex-col">
         <div className="flex-1 space-y-5">
           {!isOperator && (
             <div>
-              <label className="text-sm font-medium text-text-main block mb-1.5">Estado de Stock</label>
+              <label className="mb-1.5 block text-sm font-medium text-text-main">Estado de Stock</label>
               <Select
                 value={draft.stockStatus}
                 onChange={(e) => set("stockStatus", e.target.value as StockStatus)}
@@ -70,7 +70,7 @@ export default function ProductFiltersDrawer({
           />
 
           <div>
-            <label className="text-sm font-medium text-text-main block mb-1.5">Proveedor</label>
+            <label className="mb-1.5 block text-sm font-medium text-text-main">Proveedor</label>
             <Select
               value={draft.proveedor_id?.toString() ?? ""}
               onChange={(e) => set("proveedor_id", e.target.value ? Number(e.target.value) : null)}
@@ -82,7 +82,7 @@ export default function ProductFiltersDrawer({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-text-main block mb-1.5">Rango de Precio</label>
+            <label className="mb-1.5 block text-sm font-medium text-text-main">Rango de Precio</label>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
@@ -92,7 +92,7 @@ export default function ProductFiltersDrawer({
                 value={draft.precio_min}
                 onChange={(e) => set("precio_min", e.target.value === "" ? "" : Number(e.target.value))}
                 autoComplete="off"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 placeholder:text-slate-400"
+                className="w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               />
               <input
                 type="number"
@@ -102,13 +102,13 @@ export default function ProductFiltersDrawer({
                 value={draft.precio_max}
                 onChange={(e) => set("precio_max", e.target.value === "" ? "" : Number(e.target.value))}
                 autoComplete="off"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-surface outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 placeholder:text-slate-400"
+                className="w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-text-main block mb-1.5">Tipo de IVA</label>
+            <label className="mb-1.5 block text-sm font-medium text-text-main">Tipo de IVA</label>
             <Select
               value={draft.tipo_iva}
               onChange={(e) => set("tipo_iva", e.target.value as "" | "GRAVADO" | "EXENTO")}
@@ -117,14 +117,14 @@ export default function ProductFiltersDrawer({
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-surface pt-4 pb-2 border-t border-slate-100 mt-6 -mx-5 px-5">
+        <div className="sticky bottom-0 -mx-5 mt-6 border-t border-slate-100 bg-surface px-5 pt-4 pb-2">
           <div className="flex gap-3">
             <Button variant="ghost" onClick={onClear} className="flex-1 justify-center">
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="size-4" />
               Limpiar
             </Button>
             <Button variant="accent" onClick={onApply} className="flex-1 justify-center">
-              <Check className="w-4 h-4" />
+              <Check className="size-4" />
               Aplicar Filtros
             </Button>
           </div>

@@ -15,12 +15,12 @@ export default function PageHeader({
 }: PageHeaderProps) {
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 ${className}`}
+      className={`mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${className}`}
     >
       <div>
         <h1 className="text-responsive-h1 text-text-main">{title}</h1>
         {description && (
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">{description}</p>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">{description}</p>
         )}
       </div>
       {actions && <div className="flex items-center gap-3">{actions}</div>}

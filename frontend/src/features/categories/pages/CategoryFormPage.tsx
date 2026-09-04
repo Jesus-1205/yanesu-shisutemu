@@ -73,7 +73,7 @@ export default function CategoryFormPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="mx-auto max-w-xl">
       <PageHeader
         title={isNew ? "Nueva Categoría" : "Editar Categoría"}
         description={
@@ -83,7 +83,7 @@ export default function CategoryFormPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-surface rounded-xl border border-slate-200 shadow-xs p-6 space-y-5"
+        className="space-y-5 rounded-xl border border-slate-200 bg-surface p-6 shadow-xs"
       >
         <Input
           label="Nombre"

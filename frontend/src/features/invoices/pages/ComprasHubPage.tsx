@@ -92,11 +92,11 @@ export default function ComprasHubPage() {
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate("/suppliers")}>
-              <Building2 className="w-4 h-4" />
+              <Building2 className="size-4" />
               Ver Proveedores
             </Button>
             <Button variant="accent" onClick={() => navigate("/invoices/new")}>
-              <Plus className="w-4 h-4" />
+              <Plus className="size-4" />
               Nueva Factura
             </Button>
           </div>
@@ -110,17 +110,17 @@ export default function ComprasHubPage() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Pendiente (USD)"
           value={`$${(pending?.total_pendiente_usd ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          icon={<DollarSign className="w-5 h-5" />}
+          icon={<DollarSign className="size-5" />}
           variant={pending && pending.total_pendiente_usd > 0 ? "danger" : "success"}
         />
         <StatCard
           label="Facturas Pagadas"
           value={String(stats?.pagadas ?? 0)}
-          icon={<CheckCircle className="w-5 h-5" />}
+          icon={<CheckCircle className="size-5" />}
           variant="success"
         />
         <StatCard
@@ -134,24 +134,24 @@ export default function ComprasHubPage() {
                 getDaysUntil(inv.fecha_limite_pago) <= DAYS_AHEAD,
             ).length,
           )}
-          icon={<Clock className="w-5 h-5" />}
+          icon={<Clock className="size-5" />}
           variant="info"
         />
         <StatCard
           label="Proveedores"
           value={String(stats?.total ?? 0)}
-          icon={<Building2 className="w-5 h-5" />}
+          icon={<Building2 className="size-5" />}
           variant="default"
         />
       </div>
 
       {/* Facturas Próximas a Vencer */}
       <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text-main">Facturas Próximas a Vencer</h2>
           <Button variant="ghost" size="sm" onClick={() => navigate("/invoices")}>
             Ver todas
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <ArrowRight className="ml-1 size-4" />
           </Button>
         </div>
         {invoicesByDue.length === 0 ? (
@@ -159,7 +159,7 @@ export default function ComprasHubPage() {
             <p className="text-sm text-slate-500">No hay facturas pendientes por vencer</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {invoicesByDue.map((inv) => (
               <InvoiceCard
                 key={inv.id}
@@ -178,11 +178,11 @@ export default function ComprasHubPage() {
 
       {/* Top Proveedores */}
       <section>
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text-main">Top Proveedores</h2>
           <Button variant="ghost" size="sm" onClick={() => navigate("/suppliers")}>
             Ver todos
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <ArrowRight className="ml-1 size-4" />
           </Button>
         </div>
         {topSuppliers.length === 0 ? (
@@ -190,28 +190,28 @@ export default function ComprasHubPage() {
             <p className="text-sm text-slate-500">No hay proveedores con compras registradas</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-200 bg-surface overflow-hidden">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-surface">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 w-12">#</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600">Proveedor</th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-600">Compras</th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-600">Acción</th>
+                  <th className="w-12 px-4 py-3 text-left font-medium text-slate-600">#</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-600">Proveedor</th>
+                  <th className="px-4 py-3 text-right font-medium text-slate-600">Compras</th>
+                  <th className="px-4 py-3 text-right font-medium text-slate-600">Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {topSuppliers.map((s, idx) => (
                   <tr
                     key={s.supplier_id}
-                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="cursor-pointer border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50"
                     onClick={() => navigate(`/suppliers?open=${s.supplier_id}`)}
                   >
                     <td className="px-4 py-3">
                       {idx === 0 ? (
-                        <Trophy className="w-4 h-4 text-amber-500" />
+                        <Trophy className="size-4 text-amber-500" />
                       ) : (
-                        <span className="text-slate-400 font-mono text-xs">{idx + 1}</span>
+                        <span className="font-mono text-xs text-slate-400">{idx + 1}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 font-medium text-text-main">{s.supplier_name}</td>
@@ -219,7 +219,7 @@ export default function ComprasHubPage() {
                     <td className="px-4 py-3 text-right">
                       <Button variant="ghost" size="sm">
                         Ver
-                        <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                        <ArrowRight className="ml-1 size-3.5" />
                       </Button>
                     </td>
                   </tr>

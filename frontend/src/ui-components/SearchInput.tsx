@@ -14,7 +14,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function Sear
   return (
     <div className="relative">
       <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+        className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -31,17 +31,17 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function Sear
         value={value}
         onChange={onChange}
         autoComplete="off"
-        className={`w-full pl-10 pr-8 py-2 text-sm rounded-lg border border-slate-300 bg-surface text-text-main outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-colors ${className}`}
+        className={`w-full rounded-lg border border-slate-300 bg-surface py-2 pr-8 pl-10 text-sm text-text-main transition-colors outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 ${className}`}
         {...props}
       />
       {value && onClear && (
         <button
           onClick={onClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-text-main cursor-pointer"
+          className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-text-main"
           tabIndex={-1}
         >
           <svg
-            className="w-4 h-4"
+            className="size-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

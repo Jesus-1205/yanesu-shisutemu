@@ -37,7 +37,7 @@ export default function Input({
             ${label && placeholder ? "placeholder-transparent focus:placeholder-slate-400" : ""}
             ${
               disabled
-                ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
+                ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
                 : error
                   ? "border-danger bg-red-50 text-text-main"
                   : "border-slate-300 hover:border-brand-blue focus:border-brand-blue"
@@ -55,16 +55,16 @@ export default function Input({
           <label
             htmlFor={inputId}
             className={`
-              absolute ${labelPos} text-sm pointer-events-none z-10 whitespace-nowrap
-              transition-all duration-200 origin-left
-              top-1/2 -translate-y-1/2
-              peer-focus:top-1.5 peer-focus:translate-y-0 peer-focus:scale-[0.75]
-              peer-focus:bg-surface peer-focus:px-1.5
-              peer-not-placeholder-shown:top-1.5
-              peer-not-placeholder-shown:translate-y-0
-              peer-not-placeholder-shown:scale-[0.75]
-              peer-not-placeholder-shown:bg-surface
+              absolute ${labelPos} peer-not-placeholder-shown:scale-0.75 peer-focus:scale-0.75 pointer-events-none top-1/2
+              z-10 origin-left -translate-y-1/2
+              text-sm whitespace-nowrap
+              transition-all duration-200 peer-not-placeholder-shown:top-1.5
+              peer-not-placeholder-shown:translate-y-0 peer-not-placeholder-shown:bg-surface
               peer-not-placeholder-shown:px-1.5
+              peer-focus:top-1.5
+              peer-focus:translate-y-0
+              peer-focus:bg-surface
+              peer-focus:px-1.5
               ${
                 disabled
                   ? "text-slate-400"

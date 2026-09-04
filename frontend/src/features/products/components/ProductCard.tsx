@@ -23,35 +23,35 @@ export default function ProductCard({ product, onEdit, onDelete, onToggleFavorit
   const stockVariant = isOutOfStock ? "danger" : isLowStock ? "warning" : "success";
 
   return (
-    <div className="bg-surface rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition-shadow duration-200">
+    <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-surface p-4 shadow-sm transition-shadow duration-200 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-text-main truncate">{product.nombre}</h3>
+          <h3 className="truncate text-sm font-semibold text-text-main">{product.nombre}</h3>
           {product.codigo_barra && (
-            <p className="text-xs text-slate-400 mt-0.5 font-mono">{product.codigo_barra}</p>
+            <p className="mt-0.5 font-mono text-xs text-slate-400">{product.codigo_barra}</p>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             onClick={() => onToggleFavorite?.(product)}
-            className="p-1.5 rounded-lg transition-colors cursor-pointer"
+            className="cursor-pointer rounded-lg p-1.5 transition-colors"
             title={product.es_favorito ? "Quitar de favoritos" : "Agregar a favoritos"}
           >
-            <Star className={`w-4 h-4 ${product.es_favorito ? "fill-yellow-400 text-yellow-400" : "text-slate-400 hover:text-yellow-400"}`} />
+            <Star className={`size-4 ${product.es_favorito ? "fill-yellow-400 text-yellow-400" : "text-slate-400 hover:text-yellow-400"}`} />
           </button>
           <button
             onClick={() => onEdit(product)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-blue hover:bg-brand-blue/10 transition-colors cursor-pointer"
+            className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-brand-blue/10 hover:text-brand-blue"
             aria-label="Editar"
           >
-            <Pencil className="w-4 h-4" />
+            <Pencil className="size-4" />
           </button>
           <button
             onClick={() => onDelete(product)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+            className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-danger/10 hover:text-danger"
             aria-label="Eliminar"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="size-4" />
           </button>
         </div>
       </div>
@@ -66,7 +66,7 @@ export default function ProductCard({ product, onEdit, onDelete, onToggleFavorit
 
       <div className="flex items-center gap-4 text-xs text-slate-500">
         <span className="flex items-center gap-1">
-          <Package className="w-3.5 h-3.5" />
+          <Package className="size-3.5" />
           {product.unidades_por_caja} uds/caja
         </span>
         <span className="flex items-center gap-1 font-medium" data-margin={margin.color}>
@@ -74,9 +74,9 @@ export default function ProductCard({ product, onEdit, onDelete, onToggleFavorit
         </span>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+      <div className="flex items-center justify-between border-t border-slate-100 pt-1">
         <div className="flex items-center gap-2">
-          <Box className="w-4 h-4 text-slate-400" />
+          <Box className="size-4 text-slate-400" />
           <Badge variant={stockVariant}>
             {totalStock} uds
           </Badge>

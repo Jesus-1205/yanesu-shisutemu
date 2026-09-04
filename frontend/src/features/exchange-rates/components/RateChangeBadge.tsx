@@ -34,7 +34,7 @@ export default function RateChangeBadge({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs px-3 py-1.5 rounded-lg border ${tone} ${className}`}
+      className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg border px-3 py-1.5 text-xs ${tone} ${className}`}
     >
       <span className="font-medium">{label}</span>
       <span className="tabular-nums">

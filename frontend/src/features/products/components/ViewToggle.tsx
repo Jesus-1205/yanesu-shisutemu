@@ -8,10 +8,10 @@ interface ViewToggleProps {
 
 export default function ViewToggle({ view, onChange }: ViewToggleProps) {
   return (
-    <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden">
+    <div className="flex items-center overflow-hidden rounded-lg border border-slate-300">
       <button
         onClick={() => onChange("grid")}
-        className={`p-2 transition-colors cursor-pointer ${
+        className={`cursor-pointer p-2 transition-colors ${
           view === "grid"
             ? "bg-brand-blue text-white"
             : "bg-surface text-slate-500 hover:bg-slate-100"
@@ -19,11 +19,11 @@ export default function ViewToggle({ view, onChange }: ViewToggleProps) {
         aria-label="Vista cuadrícula"
         title="Vista cuadrícula"
       >
-        <LayoutGrid className="w-4 h-4" />
+        <LayoutGrid className="size-4" />
       </button>
       <button
         onClick={() => onChange("table")}
-        className={`p-2 transition-colors cursor-pointer ${
+        className={`cursor-pointer p-2 transition-colors ${
           view === "table"
             ? "bg-brand-blue text-white"
             : "bg-surface text-slate-500 hover:bg-slate-100"
@@ -31,7 +31,7 @@ export default function ViewToggle({ view, onChange }: ViewToggleProps) {
         aria-label="Vista tabla"
         title="Vista tabla"
       >
-        <List className="w-4 h-4" />
+        <List className="size-4" />
       </button>
     </div>
   );

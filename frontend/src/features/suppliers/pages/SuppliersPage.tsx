@@ -132,14 +132,14 @@ export default function SuppliersPage() {
             aria-label="Editar proveedor"
             onClick={(e) => { e.stopPropagation(); navigate(`/suppliers/${s.id}`); }}
           >
-            <Pencil className="w-4 h-4" />
+            <Pencil className="size-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={(e) => { e.stopPropagation(); setDeleteTarget(s); }}
           >
-            <Trash2 className="w-4 h-4 text-danger" />
+            <Trash2 className="size-4 text-danger" />
           </Button>
         </div>
       ),
@@ -154,11 +154,11 @@ export default function SuppliersPage() {
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleExportAll}>
-              <Download className="w-4 h-4" />
+              <Download className="size-4" />
               Descargar Excel
             </Button>
             <Button variant="accent" onClick={() => setCreateModalOpen(true)}>
-              <Plus className="w-4 h-4" />
+              <Plus className="size-4" />
               Nuevo Proveedor
             </Button>
           </div>

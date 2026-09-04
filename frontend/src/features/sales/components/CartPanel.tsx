@@ -30,16 +30,16 @@ export default function CartPanel({
   onOpenQueue,
 }: CartPanelProps) {
   return (
-    <div className="lg:sticky lg:top-24 lg:self-start space-y-3">
+    <div className="space-y-3 lg:sticky lg:top-24 lg:self-start">
       {/* Total prominente */}
-      <div className="bg-surface rounded-2xl border-2 border-brand-blue/30 p-5 space-y-3 shadow-sm">
+      <div className="space-y-3 rounded-2xl border-2 border-brand-blue/30 bg-surface p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-          <ShoppingCart className="w-4 h-4" />
+          <ShoppingCart className="size-4" />
           Total a cobrar
         </div>
 
         <div className="space-y-1">
-          <div className="text-4xl font-black text-brand-blue tracking-tight">
+          <div className="text-4xl font-black tracking-tight text-brand-blue">
             {formatCurrency(totalUsd)}
           </div>
           {snapshotTasa > 0 && (
@@ -50,13 +50,13 @@ export default function CartPanel({
         </div>
 
         {snapshotTasa > 0 && (
-          <p className="text-xs text-slate-400 text-right">
+          <p className="text-right text-xs text-slate-400">
             Tasa: {formatRate(snapshotTasa)}
           </p>
         )}
 
         {/* Desglose */}
-        <div className="space-y-1 text-sm border-t border-slate-100 pt-3">
+        <div className="space-y-1 border-t border-slate-100 pt-3 text-sm">
           {totals.monto_exento_usd > 0 && (
             <div className="flex justify-between text-slate-500">
               <span>Exento</span>
@@ -79,9 +79,9 @@ export default function CartPanel({
       </div>
 
       {/* Items del carrito */}
-      <div className="bg-surface rounded-xl border border-slate-200 p-3 space-y-2.5 max-h-[calc(100vh-380px)] overflow-y-auto">
+      <div className="max-h-[calc(100vh-380px)] space-y-2.5 overflow-y-auto rounded-xl border border-slate-200 bg-surface p-3">
         {itemCount === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-6">
+          <p className="py-6 text-center text-sm text-slate-400">
             Selecciona productos para agregar
           </p>
         ) : (
@@ -110,7 +110,7 @@ export default function CartPanel({
           disabled={itemCount === 0}
           onClick={onHold}
         >
-          <PauseCircle className="w-4 h-4" />
+          <PauseCircle className="size-4" />
           Guardar
         </Button>
         <Button
@@ -119,7 +119,7 @@ export default function CartPanel({
           className="w-full"
           onClick={onOpenQueue}
         >
-          <Clock className="w-4 h-4" />
+          <Clock className="size-4" />
           En espera ({heldCount})
         </Button>
       </div>

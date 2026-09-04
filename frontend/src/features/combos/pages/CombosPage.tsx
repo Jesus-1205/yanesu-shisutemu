@@ -230,7 +230,7 @@ export default function CombosPage() {
         description="Define combos con precios especiales y métodos de pago"
         actions={
           <Button variant="accent" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
+            <Plus className="size-4" />
             Nuevo Combo
           </Button>
         }
@@ -256,7 +256,7 @@ export default function CombosPage() {
             key: "grupos",
             header: "Opciones",
             render: (c: ComboOut) => (
-              <span className="text-xs block max-w-sm truncate" title={c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad}: ${g.products.length} prods.)`).join(", ")}>
+              <span className="block max-w-sm truncate text-xs" title={c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad}: ${g.products.length} prods.)`).join(", ")}>
                 {c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad}: ${g.products.length} prods.)`).join(", ")}
               </span>
             ),
@@ -265,7 +265,7 @@ export default function CombosPage() {
             key: "metodos",
             header: "Métodos",
             render: (c: ComboOut) => (
-              <span className="text-xs block max-w-[120px] truncate" title={c.metodo_pago_ids.map((id) => paymentMethods.find((pm) => pm.id === id)?.nombre ?? `#${id}`).join(", ")}>
+              <span className="block max-w-30 truncate text-xs" title={c.metodo_pago_ids.map((id) => paymentMethods.find((pm) => pm.id === id)?.nombre ?? `#${id}`).join(", ")}>
                 {c.metodo_pago_ids.map((id) => paymentMethods.find((pm) => pm.id === id)?.nombre ?? `#${id}`).join(", ")}
               </span>
             ),
@@ -274,7 +274,7 @@ export default function CombosPage() {
             key: "activo",
             header: "Estado",
             render: (c: ComboOut) => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                 c.activo ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
               }`}>
                 {c.activo ? "Activo" : "Inactivo"}
@@ -288,10 +288,10 @@ export default function CombosPage() {
             render: (c: ComboOut) => (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="size-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(c)}>
-                  <Trash2 className="w-4 h-4 text-danger" />
+                  <Trash2 className="size-4 text-danger" />
                 </Button>
               </div>
             ),
@@ -309,10 +309,10 @@ export default function CombosPage() {
         title={editingCombo ? "Editar Combo" : "Nuevo Combo"}
         className="max-w-2xl"
       >
-        <div className="space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="max-h-[75vh] space-y-4 overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Nombre del combo</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Nombre del combo</label>
               <Input
                 label=""
                 variant="sm"
@@ -322,7 +322,7 @@ export default function CombosPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Precio total (USD)</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Precio total (USD)</label>
               <Input
                 label=""
                 variant="sm"
@@ -336,7 +336,7 @@ export default function CombosPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Descripción</label>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Descripción</label>
             <Input
               label=""
               variant="sm"
@@ -347,24 +347,24 @@ export default function CombosPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1 flex items-center justify-between">
               <label className="text-sm font-medium text-text-main">Opciones del combo</label>
               <button
                 type="button"
                 onClick={addGroup}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-colors cursor-pointer"
+                className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs text-brand-blue transition-colors hover:bg-brand-blue/5"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="size-3.5" />
                 Agregar opción
               </button>
             </div>
-            <p className="text-xs text-slate-400 mb-2">
+            <p className="mb-2 text-xs text-slate-400">
               Cada opción agrupa productos del mismo tipo. Mín. y máx. indican cuántos productos de esa opción puede elegir el cliente.
             </p>
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+            <div className="max-h-60 space-y-3 overflow-y-auto pr-1">
               {formGroups.map((group, gIdx) => (
-                <div key={gIdx} className="border border-slate-200 rounded-lg p-3 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <div key={gIdx} className="space-y-3 rounded-lg border border-slate-200 p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Input
                       label=""
                       variant="sm"
@@ -373,9 +373,9 @@ export default function CombosPage() {
                       placeholder="Nombre de la opción (Ej: Cervezas)"
                       className="flex-1"
                     />
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex shrink-0 items-center gap-2">
                       <label className="flex flex-col">
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Mín.</span>
+                        <span className="text-[10px] font-medium tracking-wide text-slate-400 uppercase">Mín.</span>
                         <input
                           type="number"
                           min="0"
@@ -387,7 +387,7 @@ export default function CombosPage() {
                         />
                       </label>
                       <label className="flex flex-col">
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Máx.</span>
+                        <span className="text-[10px] font-medium tracking-wide text-slate-400 uppercase">Máx.</span>
                         <input
                           type="number"
                           min="1"
@@ -401,10 +401,10 @@ export default function CombosPage() {
                       <button
                         type="button"
                         onClick={() => removeGroup(gIdx)}
-                        className="text-danger hover:text-red-700 mt-3.5"
+                        className="mt-3.5 text-danger hover:text-red-700"
                         title="Eliminar opción"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="size-4" />
                       </button>
                     </div>
                   </div>
@@ -424,26 +424,26 @@ export default function CombosPage() {
                         <button
                           type="button"
                           onClick={() => removeProductFromGroup(gIdx, pIdx)}
-                          className="text-danger hover:text-red-700 shrink-0 mt-1"
+                          className="mt-1 shrink-0 text-danger hover:text-red-700"
                           title="Quitar producto"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="size-4" />
                         </button>
                       </div>
                     ))}
                     <button
                       type="button"
                       onClick={() => addProductToGroup(gIdx)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-colors cursor-pointer"
+                      className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs text-brand-blue transition-colors hover:bg-brand-blue/5"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="size-3" />
                       Agregar producto
                     </button>
                   </div>
                 </div>
               ))}
               {formGroups.length === 0 && (
-                <p className="text-xs text-slate-400 text-center py-3">
+                <p className="py-3 text-center text-xs text-slate-400">
                   Agrega al menos una opción de productos
                 </p>
               )}
@@ -451,17 +451,17 @@ export default function CombosPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-text-main mb-1 block">Métodos de pago</label>
-            <p className="text-xs text-slate-400 mb-2">
+            <label className="mb-1 block text-sm font-medium text-text-main">Métodos de pago</label>
+            <p className="mb-2 text-xs text-slate-400">
               Métodos de pago con los que se puede comprar este combo.
             </p>
             <div className="flex flex-wrap gap-2">
               {paymentMethods.map((pm) => (
                 <label
                   key={pm.id}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
                     formMethodIds.includes(pm.id)
-                      ? "border-brand-blue bg-blue-50 text-brand-blue font-semibold"
+                      ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
                       : "border-slate-200 text-slate-600 hover:border-slate-300"
                   }`}
                 >
@@ -476,12 +476,12 @@ export default function CombosPage() {
                 </label>
               ))}
             </div>
-            <p className={`text-xs mt-1 transition-opacity ${formMethodIds.length > 0 ? "opacity-0" : "text-slate-400 opacity-100"}`}>
+            <p className={`mt-1 text-xs transition-opacity ${formMethodIds.length > 0 ? "opacity-0" : "text-slate-400 opacity-100"}`}>
               Selecciona al menos un método de pago
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
             <Button variant="ghost" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>

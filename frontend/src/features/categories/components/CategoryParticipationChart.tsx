@@ -10,7 +10,7 @@ interface CategoryParticipationChartProps {
 export default function CategoryParticipationChart({ data, selectedId }: CategoryParticipationChartProps) {
   if (!data.length) {
     return (
-      <div className="flex items-center justify-center h-[250px]">
+      <div className="flex h-[250px] items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de participación</p>
       </div>
     );
@@ -27,7 +27,7 @@ export default function CategoryParticipationChart({ data, selectedId }: Categor
 
   if (!chartData.length) {
     return (
-      <div className="flex items-center justify-center h-[250px]">
+      <div className="flex h-[250px] items-center justify-center">
         <p className="text-sm text-slate-400">Sin ventas registradas</p>
       </div>
     );
@@ -35,7 +35,7 @@ export default function CategoryParticipationChart({ data, selectedId }: Categor
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-text-main mb-2">Participación por Unidades</h3>
+      <h3 className="mb-2 text-sm font-semibold text-text-main">Participación por Unidades</h3>
       <ResponsiveContainer width="100%" height={250}>
         <PieChart>
           <Pie
@@ -67,14 +67,14 @@ export default function CategoryParticipationChart({ data, selectedId }: Categor
           />
           <Legend
             content={({ payload }) => (
-              <ul className="flex flex-wrap gap-x-3 gap-y-1 mt-2 justify-center">
+              <ul className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
                 {payload?.map((entry, i) => {
                   const item = chartData[i];
                   const isSelected = item && item.id === selectedId;
                   return (
                     <li key={i} className={`flex items-center gap-1.5 text-xs ${isSelected ? "font-bold text-text-main" : "text-slate-600"}`}>
                       <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        className="size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: chartPalette[i % chartPalette.length] }}
                       />
                       {entry.value}

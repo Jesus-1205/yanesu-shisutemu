@@ -17,24 +17,24 @@ export default function Breadcrumbs({ items, className = "" }: BreadcrumbsProps)
         <li>
           <a
             href="/"
-            className="inline-flex items-center gap-1 hover:text-brand-blue transition-colors duration-150"
+            className="inline-flex items-center gap-1 transition-colors duration-150 hover:text-brand-blue"
           >
-            <Home className="w-4 h-4" />
+            <Home className="size-4" />
             <span className="sr-only">Inicio</span>
           </a>
         </li>
         {items.map((item, i) => (
           <li key={i} className="flex items-center gap-1">
-            <ChevronRight className="w-4 h-4 text-slate-300" />
+            <ChevronRight className="size-4 text-slate-300" />
             {item.href ? (
               <a
                 href={item.href}
-                className="hover:text-brand-blue transition-colors duration-150"
+                className="transition-colors duration-150 hover:text-brand-blue"
               >
                 {item.label}
               </a>
             ) : (
-              <span className="text-text-main font-medium" aria-current="page">
+              <span className="font-medium text-text-main" aria-current="page">
                 {item.label}
               </span>
             )}

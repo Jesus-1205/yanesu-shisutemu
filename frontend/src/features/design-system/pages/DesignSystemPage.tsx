@@ -72,7 +72,7 @@ export default function DesignSystemPage() {
         <div className="space-y-10">
           {/* Button */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Button</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Button</h2>
             <Card>
               <div className="flex flex-wrap gap-3">
                 <Button variant="primary">Primary</Button>
@@ -84,7 +84,7 @@ export default function DesignSystemPage() {
                 <Button loading>Loading</Button>
                 <Button disabled>Disabled</Button>
               </div>
-              <div className="flex flex-wrap gap-3 mt-4 items-end">
+              <div className="mt-4 flex flex-wrap items-end gap-3">
                 <Button size="sm">Small</Button>
                 <Button size="md">Medium</Button>
                 <Button size="lg">Large</Button>
@@ -94,7 +94,7 @@ export default function DesignSystemPage() {
 
           {/* Input */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Input</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Input</h2>
             <Card>
               <div className="grid grid-cols-2 gap-4">
                 <Input label="Default" />
@@ -107,7 +107,7 @@ export default function DesignSystemPage() {
 
           {/* Select */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Select</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Select</h2>
             <Card>
               <div className="grid grid-cols-2 gap-4">
                 <Select
@@ -131,7 +131,7 @@ export default function DesignSystemPage() {
 
           {/* Badge */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Badge</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Badge</h2>
             <Card>
               <div className="flex flex-wrap gap-3">
                 <Badge variant="success">Activo</Badge>
@@ -145,26 +145,26 @@ export default function DesignSystemPage() {
 
           {/* Card */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Card</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Card</h2>
             <div className="grid grid-cols-3 gap-4">
               <Card>
                 <h3 className="font-semibold">Tarjeta 1</h3>
-                <p className="text-sm text-slate-500 mt-1">Contenido de ejemplo</p>
+                <p className="mt-1 text-sm text-slate-500">Contenido de ejemplo</p>
               </Card>
               <Card>
                 <h3 className="font-semibold">Tarjeta 2</h3>
-                <p className="text-sm text-slate-500 mt-1">Contenido de ejemplo</p>
+                <p className="mt-1 text-sm text-slate-500">Contenido de ejemplo</p>
               </Card>
               <Card>
                 <h3 className="font-semibold">Tarjeta 3</h3>
-                <p className="text-sm text-slate-500 mt-1">Contenido de ejemplo</p>
+                <p className="mt-1 text-sm text-slate-500">Contenido de ejemplo</p>
               </Card>
             </div>
           </section>
 
           {/* Modal */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Modal</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Modal</h2>
             <Card>
               <Button onClick={() => setModalOpen(true)}>Crear Producto</Button>
               <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Nuevo Producto">
@@ -187,7 +187,7 @@ export default function DesignSystemPage() {
                   />
                   <Input label="Descripción (opcional)" placeholder="Breve descripción del producto" />
                 </div>
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
                   <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button>
                   <Button variant="accent" onClick={() => { setModalOpen(false); toast("Producto creado", "success"); }}>
                     Guardar Producto
@@ -199,7 +199,7 @@ export default function DesignSystemPage() {
 
           {/* ConfirmDialog */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">ConfirmDialog</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">ConfirmDialog</h2>
             <Card>
               <Button variant="danger" onClick={() => setConfirmOpen(true)}>
                 Eliminar
@@ -216,7 +216,7 @@ export default function DesignSystemPage() {
 
           {/* Spinner */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Spinner</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Spinner</h2>
             <Card>
               <div className="flex items-center gap-4">
                 <Spinner size="sm" />
@@ -228,7 +228,7 @@ export default function DesignSystemPage() {
 
           {/* SearchInput */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">SearchInput</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">SearchInput</h2>
             <Card>
               <div className="max-w-md">
                 <SearchInput
@@ -243,7 +243,7 @@ export default function DesignSystemPage() {
 
           {/* Pagination */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Pagination</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Pagination</h2>
             <Card>
               <Pagination page={page} totalPages={10} onPageChange={setPage} />
             </Card>
@@ -251,7 +251,7 @@ export default function DesignSystemPage() {
 
           {/* Table */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Table</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Table</h2>
             <Card padding={false}>
               <Table
                 columns={[
@@ -280,7 +280,7 @@ export default function DesignSystemPage() {
 
           {/* EmptyState */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">EmptyState</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">EmptyState</h2>
             <Card>
               <EmptyState
                 title="Sin registros"
@@ -293,18 +293,18 @@ export default function DesignSystemPage() {
 
           {/* LogoutButton */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">LogoutButton</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">LogoutButton</h2>
             <Card>
-              <p className="text-sm text-slate-500 mb-4">Pasa el mouse sobre el botón para ver la animación expandible.</p>
+              <p className="mb-4 text-sm text-slate-500">Pasa el mouse sobre el botón para ver la animación expandible.</p>
               <LogoutButton onClick={() => toast("Cerrando sesión...", "info")} />
             </Card>
           </section>
 
           {/* HamburgerButton */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">HamburgerButton</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">HamburgerButton</h2>
             <Card>
-              <p className="text-sm text-slate-500 mb-4">Haz clic para alternar entre menú y cerrar.</p>
+              <p className="mb-4 text-sm text-slate-500">Haz clic para alternar entre menú y cerrar.</p>
               <HamburgerButton
                 open={hamburgerOpen}
                 onClick={() => setHamburgerOpen((v) => !v)}
@@ -314,7 +314,7 @@ export default function DesignSystemPage() {
 
           {/* DropdownMenu */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">DropdownMenu</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">DropdownMenu</h2>
             <Card>
               <div className="flex justify-center">
                 <DropdownMenu
@@ -344,7 +344,7 @@ export default function DesignSystemPage() {
 
           {/* Tabs */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Tabs</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Tabs</h2>
             <Card>
               <div className="flex justify-center">
                 <Tabs
@@ -357,13 +357,13 @@ export default function DesignSystemPage() {
                   onChange={setTabValue}
                 />
               </div>
-              <p className="text-sm text-slate-500 mt-4 text-center">Tab activo: {tabValue}</p>
+              <p className="mt-4 text-center text-sm text-slate-500">Tab activo: {tabValue}</p>
             </Card>
           </section>
 
           {/* Checkbox */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Checkbox</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Checkbox</h2>
             <Card>
               <div className="flex flex-col gap-4">
                 <Checkbox label="Opción por defecto" />
@@ -376,7 +376,7 @@ export default function DesignSystemPage() {
 
           {/* ToggleSwitch */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">ToggleSwitch</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">ToggleSwitch</h2>
             <Card>
               <div className="flex flex-col gap-4">
                 <ToggleSwitch label="Apagado" />
@@ -388,7 +388,7 @@ export default function DesignSystemPage() {
 
           {/* Textarea */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Textarea</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Textarea</h2>
             <Card>
               <div className="space-y-4">
                 <Textarea label="Descripción" placeholder="Escriba una descripción..." />
@@ -400,20 +400,20 @@ export default function DesignSystemPage() {
 
           {/* FileUpload */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">FileUpload</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">FileUpload</h2>
             <Card>
-              <p className="text-sm text-slate-500 mb-4">Imágenes (por defecto)</p>
+              <p className="mb-4 text-sm text-slate-500">Imágenes (por defecto)</p>
               <FileUpload />
             </Card>
             <Card className="mt-4">
-              <p className="text-sm text-slate-500 mb-4">Documentos PDF</p>
+              <p className="mb-4 text-sm text-slate-500">Documentos PDF</p>
               <FileUpload accept="application/pdf" />
             </Card>
           </section>
 
           {/* Breadcrumbs */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Breadcrumbs</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Breadcrumbs</h2>
             <Card>
               <Breadcrumbs
                 items={[
@@ -427,7 +427,7 @@ export default function DesignSystemPage() {
 
           {/* Tooltip */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Tooltip</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Tooltip</h2>
             <Card>
               <div className="flex items-center gap-8">
                 <Tooltip content="Editar producto" side="top">
@@ -448,20 +448,20 @@ export default function DesignSystemPage() {
 
           {/* Skeleton */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Skeleton</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Skeleton</h2>
             <div className="grid grid-cols-3 gap-4">
               <Card>
-                <h3 className="text-sm font-semibold text-slate-500 mb-3">SkeletonText</h3>
+                <h3 className="mb-3 text-sm font-semibold text-slate-500">SkeletonText</h3>
                 <SkeletonText lines={4} />
               </Card>
               <Card>
-                <h3 className="text-sm font-semibold text-slate-500 mb-3">SkeletonCard</h3>
+                <h3 className="mb-3 text-sm font-semibold text-slate-500">SkeletonCard</h3>
                 <SkeletonCard />
               </Card>
               <Card>
-                <h3 className="text-sm font-semibold text-slate-500 mb-3">Personalizado</h3>
+                <h3 className="mb-3 text-sm font-semibold text-slate-500">Personalizado</h3>
                 <div className="flex items-center gap-3">
-                  <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                  <Skeleton className="size-10 shrink-0 rounded-full" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-3 w-3/5" />
                     <Skeleton className="h-3 w-2/5" />
@@ -473,7 +473,7 @@ export default function DesignSystemPage() {
 
           {/* Drawer */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">Drawer</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">Drawer</h2>
             <Card>
               <div className="flex gap-3">
                 <Button onClick={() => setDrawerOpen(true)}>Abrir Drawer</Button>
@@ -505,7 +505,7 @@ export default function DesignSystemPage() {
 
           {/* ErrorBanner */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">ErrorBanner</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">ErrorBanner</h2>
             <Card>
               <div className="space-y-3">
                 <ErrorBanner variant="error" title="Error de conexión">
@@ -526,7 +526,7 @@ export default function DesignSystemPage() {
 
           {/* StatCard */}
           <section>
-            <h2 className="text-lg font-bold text-text-main mb-3">StatCard</h2>
+            <h2 className="mb-3 text-lg font-bold text-text-main">StatCard</h2>
             <div className="grid grid-cols-4 gap-4">
               <StatCard
                 label="Ventas hoy"

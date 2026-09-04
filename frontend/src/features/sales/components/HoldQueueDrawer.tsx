@@ -73,23 +73,23 @@ export default function HoldQueueDrawer({ open, onClose }: HoldQueueDrawerProps)
               return (
                 <div
                   key={held.id}
-                  className="bg-surface rounded-xl border border-slate-200 p-3 space-y-2"
+                  className="space-y-2 rounded-xl border border-slate-200 bg-surface p-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-text-main truncate">{held.label}</p>
-                      <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3" />
+                      <p className="truncate text-sm font-medium text-text-main">{held.label}</p>
+                      <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
+                        <Clock className="size-3" />
                         {formatDateTimeVE(held.savedAt)}
                       </p>
                     </div>
                     <button
                       onClick={() => setDeleteId(held.id)}
-                      className="shrink-0 text-slate-400 hover:text-danger transition-colors cursor-pointer"
+                      className="shrink-0 cursor-pointer text-slate-400 transition-colors hover:text-danger"
                       title="Eliminar"
                       aria-label={`Eliminar ${held.label}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="size-4" />
                     </button>
                   </div>
                   <div className="flex items-center justify-between text-xs">
@@ -104,7 +104,7 @@ export default function HoldQueueDrawer({ open, onClose }: HoldQueueDrawerProps)
                     className="w-full"
                     onClick={() => handleRestoreClick(held.id)}
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <RotateCcw className="size-3.5" />
                     Cargar
                   </Button>
                 </div>

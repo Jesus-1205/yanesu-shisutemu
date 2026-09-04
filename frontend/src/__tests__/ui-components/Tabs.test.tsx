@@ -7,7 +7,7 @@ import { Package } from "lucide-react";
 const tabs = [
   { value: "products", label: "Productos" },
   { value: "users", label: "Usuarios", badge: 3 },
-  { value: "settings", label: "Settings", icon: <Package className="w-4 h-4" /> },
+  { value: "settings", label: "Settings", icon: <Package className="size-4" /> },
 ];
 
 describe("Tabs", () => {

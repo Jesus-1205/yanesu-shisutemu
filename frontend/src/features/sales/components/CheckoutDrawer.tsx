@@ -247,32 +247,32 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
   const hasAnyAmount = Object.values(amounts).some((v) => Number(v) > 0);
 
   return (
-    <Drawer open={open} onClose={onClose} title="Cobro" className="w-[420px]">
-      <div className="flex flex-col h-full" onKeyDown={handleKeyDown}>
+    <Drawer open={open} onClose={onClose} title="Cobro" className="w-105">
+      <div className="flex h-full flex-col" onKeyDown={handleKeyDown}>
         {/* Header resumen compacto */}
-        <div className="bg-slate-50 rounded-xl px-3 py-4 text-center mb-3">
+        <div className="mb-3 rounded-xl bg-slate-50 px-3 py-4 text-center">
           <div className="text-xl font-bold text-info">{formatCurrency(totalUsd)}</div>
           {tasaNum > 0 && (
-            <div className="text-sm font-semibold text-success mt-0.5">
+            <div className="mt-0.5 text-sm font-semibold text-success">
               {formatCurrency(totalVes, "Bs ")}
             </div>
           )}
-          <div className="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
+          <div className="mt-1.5 text-[10px] leading-relaxed text-slate-400">
             Tasa: {formatRate(tasaNum)} | Exento: {formatCurrency(totals.monto_exento_usd)} | Base:{" "}
             {formatCurrency(totals.base_imponible_usd)} | IVA: {formatCurrency(totals.monto_iva_usd)}
           </div>
           {totalDivisasItems > 0 && (
-            <div className="mt-2 pt-2 border-t border-slate-200">
+            <div className="mt-2 border-t border-slate-200 pt-2">
               <div className="text-xs font-semibold text-emerald-700">
                 Productos Divisas: {formatCurrency(totalDivisasItems)}
               </div>
               {divisasSummary && !divisasSummary.cubierto && (
-                <div className="text-[10px] text-danger font-semibold mt-0.5">
+                <div className="mt-0.5 text-[10px] font-semibold text-danger">
                   Falta cubrir: {formatCurrency(divisasSummary.faltante)} en divisas
                 </div>
               )}
               {divisasSummary && divisasSummary.cubierto && (
-                <div className="text-[10px] text-success mt-0.5">
+                <div className="mt-0.5 text-[10px] text-success">
                   Cubierto con divisas
                 </div>
               )}
@@ -281,11 +281,11 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
         </div>
 
         {/* Cuerpo scrolleable */}
-        <div className="flex-1 overflow-y-auto space-y-2">
+        <div className="flex-1 space-y-2 overflow-y-auto">
           {!isSplit ? (
             <>
-              <p className="text-xs font-semibold text-text-main mb-1.5">Cobro rápido</p>
-              <div className={`grid gap-1.5 mb-2 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
+              <p className="mb-1.5 text-xs font-semibold text-text-main">Cobro rápido</p>
+              <div className={`mb-2 grid gap-1.5 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
                 {methods.map((m) => {
                   const active = Number(amounts[m.id]) > 0;
                   return (
@@ -294,10 +294,10 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                       type="button"
                       onClick={() => handleExpressClick(m)}
                       className={`
-                        rounded-lg border-2 px-2 py-2 text-center transition-all duration-150
+                        rounded-lg border-2 p-2 text-center transition-all duration-150
                         ${
                           active
-                            ? "border-brand-blue bg-blue-50 text-brand-blue font-semibold"
+                            ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
                             : "border-slate-200 bg-surface text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                         }
                       `}
@@ -310,7 +310,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
               </div>
 
               {!hasAnyAmount && (
-                <p className="text-[11px] text-slate-400 text-center mb-1">
+                <p className="mb-1 text-center text-[11px] text-slate-400">
                   Toca un método para asignar el 100%
                 </p>
               )}
@@ -340,14 +340,14 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                     handleExpressClick(methods[0]);
                   }
                 }}
-                className="block text-[11px] text-brand-blue hover:underline mx-auto mb-2"
+                className="mx-auto mb-2 block text-[11px] text-brand-blue hover:underline"
               >
                 Pago dividido / monto exacto?
               </button>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5 flex items-center justify-between">
                 <p className="text-xs font-semibold text-text-main">Desglose de pagos</p>
                 <button
                   type="button"
@@ -361,7 +361,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                 </button>
               </div>
 
-              <div className={`grid gap-1.5 mb-2 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
+              <div className={`mb-2 grid gap-1.5 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
                 {methods.map((m) => (
                   <Input
                     key={m.id}
@@ -378,7 +378,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
               </div>
 
               {methods.some((m) => m.acepta_referencia) && (
-                <div className="space-y-1.5 mb-2">
+                <div className="mb-2 space-y-1.5">
                   {methods
                     .filter((m) => m.acepta_referencia && Number(amounts[m.id]) > 0)
                     .map((m) => (
@@ -398,7 +398,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                 </div>
               )}
 
-              <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden mb-2">
+              <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     progressPct >= 99.5 ? "bg-success" : "bg-accent-orange"
@@ -411,8 +411,8 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
         </div>
 
         {/* Observaciones compacto */}
-        <div className="px-1 mb-2">
-          <label htmlFor="observaciones" className="block text-[11px] font-medium text-slate-500 mb-0.5">
+        <div className="mb-2 px-1">
+          <label htmlFor="observaciones" className="mb-0.5 block text-[11px] font-medium text-slate-500">
             Observaciones
           </label>
           <textarea
@@ -423,7 +423,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
             onChange={(e) => setObservaciones(e.target.value)}
             placeholder="Notas (opcional)"
             autoComplete="off"
-            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue resize-none"
+            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue focus:outline-none"
           />
         </div>
 
@@ -439,7 +439,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
           </div>
 
           {restanteEnMonedaPago > 0 && (
-            <div className="flex justify-between text-xs text-danger font-semibold">
+            <div className="flex justify-between text-xs font-semibold text-danger">
               <span>Restante</span>
               <span>
                 {isPayingVES
@@ -450,7 +450,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
           )}
 
           {vueltoEnMonedaPago > 0 && (
-            <div className="flex justify-between text-xs text-success font-semibold">
+            <div className="flex justify-between text-xs font-semibold text-success">
               <span>Vuelto</span>
               <span>
                 {isPayingVES
@@ -462,7 +462,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
 
           <Button
             variant="accent"
-            className="w-full !py-1.5 text-sm"
+            className="w-full py-1.5! text-sm"
             loading={saving}
             disabled={!suficiente}
             onClick={handleConfirm}

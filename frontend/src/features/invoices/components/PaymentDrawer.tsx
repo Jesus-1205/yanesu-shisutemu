@@ -76,10 +76,10 @@ export default function PaymentDrawer({ open, onClose, invoice, onSuccess }: Pay
   return (
     <Drawer open={open} onClose={onClose} title="Registrar Pago">
       <div className="space-y-5">
-        <div className="bg-slate-50 rounded-xl p-3 space-y-1">
+        <div className="space-y-1 rounded-xl bg-slate-50 p-3">
           <p className="text-xs text-slate-500">Factura #{invoice.numero_factura}</p>
           <p className="text-sm font-medium">{invoice.supplier?.nombre}</p>
-          <div className="flex justify-between mt-2 text-xs">
+          <div className="mt-2 flex justify-between text-xs">
             <span>Total: <strong>{prefix} {formatBs(isBs ? invoice.total_bs : invoice.total_usd)}</strong></span>
             <span className="text-green-600">Pagado: <strong>{prefix} {formatBs(isBs ? invoice.total_bs - saldoPendiente : invoice.total_usd - saldoPendiente)}</strong></span>
             <span className="text-red-600">Saldo: <strong>{prefix} {formatBs(saldoPendiente)}</strong></span>
@@ -87,31 +87,31 @@ export default function PaymentDrawer({ open, onClose, invoice, onSuccess }: Pay
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">Monto a pagar</label>
+          <label className="mb-1 block text-xs font-medium text-slate-700">Monto a pagar</label>
           <input
             type="number"
             step="0.01"
             min="0"
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
-            className="w-full h-10 rounded-lg border border-slate-300 bg-surface px-3 text-sm text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            className="h-10 w-full rounded-lg border border-slate-300 bg-surface px-3 text-sm text-text-main transition-all duration-200 outline-none hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
           />
           {excedeSaldo && (
-            <p className="text-xs text-red-500 mt-1">El monto excede el saldo pendiente</p>
+            <p className="mt-1 text-xs text-red-500">El monto excede el saldo pendiente</p>
           )}
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-2">Método de pago</label>
+          <label className="mb-2 block text-xs font-medium text-slate-700">Método de pago</label>
           <div className="grid grid-cols-2 gap-2">
             {methods.map((m) => (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => setSelectedMethodId(m.id)}
-                className={`rounded-lg border-2 px-3 py-2 text-center transition-all cursor-pointer ${
+                className={`cursor-pointer rounded-lg border-2 px-3 py-2 text-center transition-all ${
                   selectedMethodId === m.id
-                    ? "border-brand-blue bg-blue-50 text-brand-blue font-semibold"
+                    ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
                     : "border-slate-200 hover:border-slate-300"
                 }`}
               >
@@ -124,40 +124,40 @@ export default function PaymentDrawer({ open, onClose, invoice, onSuccess }: Pay
 
         {selectedMethod?.acepta_referencia && (
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Referencia</label>
+            <label className="mb-1 block text-xs font-medium text-slate-700">Referencia</label>
             <input
               type="text"
               value={referencia}
               onChange={(e) => setReferencia(e.target.value)}
               placeholder="Número de referencia"
-              className="w-full h-10 rounded-lg border border-slate-300 bg-surface px-3 text-sm text-text-main outline-none transition-all duration-200 hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-surface px-3 text-sm text-text-main transition-all duration-200 outline-none hover:border-brand-blue focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
             />
           </div>
         )}
 
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">Comprobante de pago</label>
+          <label className="mb-1 block text-xs font-medium text-slate-700">Comprobante de pago</label>
           <input
             type="file"
             accept="image/*,application/pdf"
             multiple
             onChange={(e) => setComprobantes(Array.from(e.target.files || []))}
-            className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-blue/10 file:text-brand-blue hover:file:bg-brand-blue/20 cursor-pointer"
+            className="w-full cursor-pointer text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-blue/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-blue hover:file:bg-brand-blue/20"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">Observaciones</label>
+          <label className="mb-1 block text-xs font-medium text-slate-700">Observaciones</label>
           <textarea
             rows={2}
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
             placeholder="Notas (opcional)"
-            className="w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm resize-none outline-none"
+            className="w-full resize-none rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm outline-none"
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+        <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button
             variant="accent"
