@@ -197,7 +197,7 @@ export default function ComprasHubPage() {
                   <th className="w-12 px-4 py-3 text-left font-medium text-slate-600">#</th>
                   <th className="px-4 py-3 text-left font-medium text-slate-600">Proveedor</th>
                   <th className="px-4 py-3 text-right font-medium text-slate-600">Compras</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">Acción</th>
+
                 </tr>
               </thead>
               <tbody>
@@ -216,12 +216,6 @@ export default function ComprasHubPage() {
                     </td>
                     <td className="px-4 py-3 font-medium text-text-main">{s.supplier_name}</td>
                     <td className="px-4 py-3 text-right font-mono font-semibold text-slate-700">{s.invoice_count}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm">
-                        Ver
-                        <ArrowRight className="ml-1 size-3.5" />
-                      </Button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
