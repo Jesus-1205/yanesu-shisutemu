@@ -95,11 +95,11 @@ export default function SaleDetailPage() {
               <div className="flex items-center gap-1.5">
                 <span>{i.producto_nombre || `Producto #${i.producto_id}`}</span>
                 {i.combo_id && i.combo_nombre ? (
-                  <Badge variant="warning" className="!text-[10px] bg-amber-100! px-1! py-0! text-amber-700!">
+                  <Badge variant="warning" className="text-[10px]! bg-amber-100! px-1! py-0! text-amber-700!">
                     {i.combo_nombre}
                   </Badge>
                 ) : i.usa_precio_divisas ? (
-                  <Badge variant="success" className="!text-[10px] px-1! py-0!">DIV</Badge>
+                  <Badge variant="success" className="text-[10px]! px-1! py-0!">DIV</Badge>
                 ) : null}
               </div>
             ),

@@ -181,7 +181,7 @@ export default function AsyncCombobox({
       {open && !disabled && createPortal(
         <ul
           ref={dropdownRef}
-          className="fixed z-9999 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-surface shadow-lg"
+          className="fixed z-[9999] max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-surface shadow-lg"
           style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
         >
           {allowClear && (

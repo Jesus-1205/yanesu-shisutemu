@@ -51,7 +51,7 @@ export default function Textarea({
           <label
             htmlFor={textareaId}
             className={`
-              peer-not-placeholder-shown:scale-0.75 peer-focus:scale-0.75 pointer-events-none absolute
+              peer-not-placeholder-shown:scale-75 peer-focus:scale-75 pointer-events-none absolute
               top-3.5 left-4 origin-left
               text-sm
               transition-all duration-200 peer-not-placeholder-shown:top-0

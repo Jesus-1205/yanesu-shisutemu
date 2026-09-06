@@ -148,7 +148,7 @@ function Table<T>({
                   </button>
                   {menuOpen && (
                     <div
-                      className="fixed z-9999 min-w-45 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+                      className="fixed z-[9999] min-w-45 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
                       style={{
                         top: menuDirection === "up" ? undefined : menuPos.top,
                         right: menuPos.right,

@@ -55,7 +55,7 @@ export default function Input({
           <label
             htmlFor={inputId}
             className={`
-              absolute ${labelPos} peer-not-placeholder-shown:scale-0.75 peer-focus:scale-0.75 pointer-events-none top-1/2
+              absolute ${labelPos} peer-not-placeholder-shown:scale-75 peer-focus:scale-75 pointer-events-none top-1/2
               z-10 origin-left -translate-y-1/2
               text-sm whitespace-nowrap
               transition-all duration-200 peer-not-placeholder-shown:top-1.5

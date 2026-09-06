@@ -48,7 +48,7 @@ export default function DropdownMenu({
                 <li key={ii}>
                   <button
                     className={`
-                      active:scale-0.99 flex w-full items-center
+                      active:scale-[0.99] flex w-full items-center
                       gap-2.5 rounded-md px-2
                       py-1.5 text-sm font-semibold
                       text-slate-400 transition-all duration-300

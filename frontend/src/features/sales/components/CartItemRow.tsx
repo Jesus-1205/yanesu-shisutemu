@@ -37,7 +37,7 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <Badge variant="success" className="!text-[10px] px-1! py-0!">COMBO</Badge>
+              <Badge variant="success" className="text-[10px]! px-1! py-0!">COMBO</Badge>
               <p className="truncate text-sm font-medium text-text-main">
                 {item.comboDetalle.nombre}
               </p>
@@ -104,7 +104,7 @@ export default memo(function CartItemRow({ item }: CartItemRowProps) {
             {item.nombre}
           </p>
           {item.usaPrecioDivisas && (
-            <Badge variant="success" className="!text-[10px] px-1! py-0!">DIV</Badge>
+            <Badge variant="success" className="text-[10px]! px-1! py-0!">DIV</Badge>
           )}
         </div>
         <button
