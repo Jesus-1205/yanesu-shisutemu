@@ -21,7 +21,7 @@ export default function SupplierAnalyticsDrawer({
   const { data, loading, error } = useSupplierDetailAnalytics(supplierId);
 
   return (
-    <Drawer open={open} onClose={onClose} title={supplierName} className="w-135!">
+    <Drawer open={open} onClose={onClose} title={supplierName} className="sm:w-135!">
       {loading || !data ? (
         <Spinner />
       ) : error ? (

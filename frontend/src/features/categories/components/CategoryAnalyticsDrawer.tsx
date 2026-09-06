@@ -21,7 +21,7 @@ export default function CategoryAnalyticsDrawer({
   const { data, loading, error } = useCategoryDetailAnalytics(categoryId);
 
   return (
-    <Drawer open={open} onClose={onClose} title={categoryName} className="w-135!">
+    <Drawer open={open} onClose={onClose} title={categoryName} className="sm:w-135!">
       {loading || !data ? (
         <Spinner />
       ) : error ? (
