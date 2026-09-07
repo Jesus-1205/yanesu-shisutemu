@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, SlidersHorizontal, FileText, Download, Star } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut, CategoryOut, SupplierOut } from "@/types/api";
@@ -75,6 +75,7 @@ function countActiveFilters(filters: ProductFiltersState): number {
 export default function ProductsPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const isOperator = user?.rol_nombre !== "ADMINISTRADOR";
   const [products, setProducts] = useState<Product[]>([]);
@@ -95,6 +96,14 @@ export default function ProductsPage() {
 
   const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  useEffect(() => {
+    const stockParam = searchParams.get("stock");
+    if (stockParam && ["disponible", "bajo", "agotado"].includes(stockParam)) {
+      setFilters((prev) => ({ ...prev, stockStatus: stockParam as ProductFiltersState["stockStatus"] }));
+      setDraftFilters((prev) => ({ ...prev, stockStatus: stockParam as ProductFiltersState["stockStatus"] }));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openCreate = () => {
     navigate("/products/new");

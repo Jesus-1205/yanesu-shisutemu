@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, X } from "lucide-react";
 import { api } from "@/services/api";
 import type { Invoice, InvoiceStatsOut } from "../types";
@@ -29,6 +29,7 @@ const statusTabs = [
 
 export default function InvoicesPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierOut[]>([]);
   const [stats, setStats] = useState<InvoiceStatsOut>({ pendientes: 0, parciales: 0, pagadas: 0, total: 0 });
@@ -46,6 +47,13 @@ export default function InvoicesPage() {
   const page = useInvoiceFiltersStore((s) => s.page);
   const setField = useInvoiceFiltersStore((s) => s.setField);
   const clearAll = useInvoiceFiltersStore((s) => s.clearAll);
+
+  useEffect(() => {
+    const estadoParam = searchParams.get("estado");
+    if (estadoParam && ["PENDIENTE", "PARCIALMENTE_PAGADA", "PAGADA"].includes(estadoParam)) {
+      setField("estadoPago", estadoParam);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);

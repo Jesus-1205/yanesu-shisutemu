@@ -9,7 +9,7 @@ interface StatCardProps {
     direction: "up" | "down";
     value: string;
   };
-  variant?: "default" | "success" | "danger" | "info";
+  variant?: "default" | "success" | "danger" | "info" | "warning";
   className?: string;
 }
 
@@ -18,6 +18,7 @@ const variantStyles = {
   success: "bg-green-50 border-green-200",
   danger: "bg-red-50 border-red-200",
   info: "bg-blue-50 border-blue-200",
+  warning: "bg-amber-50 border-amber-200",
 };
 
 const iconStyles = {
@@ -25,6 +26,7 @@ const iconStyles = {
   success: "text-success bg-green-100",
   danger: "text-danger bg-red-100",
   info: "text-info bg-blue-100",
+  warning: "text-amber-600 bg-amber-100",
 };
 
 export default function StatCard({
