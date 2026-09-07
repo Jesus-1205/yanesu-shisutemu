@@ -30,11 +30,11 @@ def get_resumen(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
-    """GET /retornable/resumen - Inventario retornable actual con discrepancias
+    """GET /retornable/resumen - Inventario retornable actual con difs
 
     Recibe: cookie access_token
     Hace:   obtiene ultimo reporte, suma movimientos, calcula stock por estado/presentacion
-    Devuelve: 200 + resumen con 2 presentaciones x 3 estados + discrepancias
+    Devuelve: 200 + resumen con 2 presentaciones x 3 estados + difs
     """
     return svc.obtener_resumen(db)
 
@@ -133,11 +133,11 @@ def get_detalle_reporte(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
-    """GET /retornable/reportes/{id} - Detalle de reporte con discrepancias
+    """GET /retornable/reportes/{id} - Detalle de reporte con difs
 
     Recibe: reporte_id en path
-    Hace:   obtiene las 6 lineas del reporte + discrepancias vs reporte anterior
-    Devuelve: 200 + detalle con discrepancias | 404 no encontrado
+    Hace:   obtiene las 6 lineas del reporte + difs vs reporte anterior
+    Devuelve: 200 + detalle con difs | 404 no encontrado
     """
     return svc.obtener_detalle_reporte(db, reporte_id)
 

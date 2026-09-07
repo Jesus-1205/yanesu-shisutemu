@@ -96,21 +96,21 @@ export function ResumenPresentacion({ data }: Props) {
           </span>
         </div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-slate-600">Discrepancia lleno</span>
+          <span className="text-sm font-medium text-slate-600">Dif lleno</span>
           <span
             className={`text-sm font-semibold ${
-              data.discrepancia_botellas === 0
+              data.dif_botellas === 0
                 ? "text-emerald-600"
-                : data.discrepancia_botellas > 0
+                : data.dif_botellas > 0
                   ? "text-red-600"
                   : "text-amber-600"
             }`}
           >
-            {data.discrepancia_botellas === 0
+            {data.dif_botellas === 0
               ? "✅ Sin diferencias"
-              : data.discrepancia_botellas > 0
-                ? `🚨 Faltan ${data.discrepancia_botellas} botellas`
-                : `⚠️ Sobran ${Math.abs(data.discrepancia_botellas)} botellas`}
+              : data.dif_botellas > 0
+                ? `🚨 Faltan ${data.dif_botellas} botellas`
+                : `⚠️ Sobran ${Math.abs(data.dif_botellas)} botellas`}
           </span>
         </div>
         <div className="flex items-center justify-between mb-1">
@@ -125,21 +125,21 @@ export function ResumenPresentacion({ data }: Props) {
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-600">Discrepancia vacío</span>
+          <span className="text-sm font-medium text-slate-600">Dif vacío</span>
           <span
             className={`text-sm font-semibold ${
-              (data.discrepancia_vacio_botellas ?? 0) === 0
+              (data.dif_vacio_botellas ?? 0) === 0
                 ? "text-emerald-600"
-                : (data.discrepancia_vacio_botellas ?? 0) > 0
+                : (data.dif_vacio_botellas ?? 0) > 0
                   ? "text-red-600"
                   : "text-amber-600"
             }`}
           >
-            {(data.discrepancia_vacio_botellas ?? 0) === 0
+            {(data.dif_vacio_botellas ?? 0) === 0
               ? "✅ Sin diferencias"
-              : (data.discrepancia_vacio_botellas ?? 0) > 0
-                ? `🚨 Faltan ${data.discrepancia_vacio_botellas} botellas`
-                : `⚠️ Sobran ${Math.abs(data.discrepancia_vacio_botellas ?? 0)} botellas`}
+              : (data.dif_vacio_botellas ?? 0) > 0
+                ? `🚨 Faltan ${data.dif_vacio_botellas} botellas`
+                : `⚠️ Sobran ${Math.abs(data.dif_vacio_botellas ?? 0)} botellas`}
           </span>
         </div>
       </div>

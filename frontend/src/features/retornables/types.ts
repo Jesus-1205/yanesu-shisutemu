@@ -4,7 +4,7 @@ export type {
   RetornablePresentacionOut,
   RetornableResumenOut,
   DetalleLinea,
-  DetalleLineaConDiscrepancia,
+  DetalleLineaConDif,
   RetornableReporteCreate,
   RetornableReporteOut,
   RetornableReporteCompletoOut,

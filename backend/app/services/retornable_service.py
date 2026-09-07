@@ -20,7 +20,7 @@ from app.models.retornable import (
 from app.models.user import User
 from app.schemas.retornable import (
     DetalleLinea,
-    DetalleLineaConDiscrepancia,
+    DetalleLineaConDif,
     RetornableEstadoOut,
     RetornableMovimientoOut,
     RetornableMovimientoPaginationOut,
@@ -204,7 +204,7 @@ def _construir_presentacion_out(
     total_cajas_enteras = _botellas_a_cajas_enteras(total_botellas)
 
     lleno_esperado = _calcular_lleno_esperado(db, presentacion)
-    discrepancia = lleno_esperado - lleno.total_botellas
+    dif_lleno = lleno_esperado - lleno.total_botellas
 
     vacio_anterior = 0
     if reporte_detalle:
@@ -213,7 +213,7 @@ def _construir_presentacion_out(
             vacio_anterior = reporte_detalle[clave_vacio][0]
     mov_vacio = movimientos_acumulados.get((presentacion, "VACIO"), 0)
     vacio_esperado = vacio_anterior + mov_vacio
-    discrepancia_vacio = vacio_esperado - vacio.total_botellas
+    dif_vacio = vacio_esperado - vacio.total_botellas
 
     stmt = select(RetornableProducto).where(RetornableProducto.presentacion == presentacion)
     asociados = list(db.execute(stmt).scalars().all())
@@ -228,8 +228,8 @@ def _construir_presentacion_out(
         total_cajas_enteras=total_cajas_enteras,
         lleno_esperado_botellas=lleno_esperado,
         vacio_esperado_botellas=vacio_esperado,
-        discrepancia_botellas=discrepancia,
-        discrepancia_vacio_botellas=discrepancia_vacio,
+        dif_botellas=dif_lleno,
+        dif_vacio_botellas=dif_vacio,
         productos_asociados=productos,
     )
 
@@ -400,7 +400,7 @@ def obtener_detalle_reporte(db: Session, reporte_id: int) -> RetornableReporteCo
         db, anterior.fecha if anterior else None
     )
 
-    detalles_con_disp: list[DetalleLineaConDiscrepancia] = []
+    detalles_con_disp: list[DetalleLineaConDif] = []
     for det in detalles_actuales:
         clave = (det.presentacion, det.estado)
         anterior_botellas, anterior_cajas = detalles_anterior.get(clave, (0, 0))
@@ -417,15 +417,15 @@ def obtener_detalle_reporte(db: Session, reporte_id: int) -> RetornableReporteCo
         disp_cajas = esperado_cajas_final - det.cantidad_cajas
 
         detalles_con_disp.append(
-            DetalleLineaConDiscrepancia(
+            DetalleLineaConDif(
                 presentacion=det.presentacion,
                 estado=det.estado,
                 cantidad_botellas=det.cantidad_botellas,
                 cantidad_cajas=det.cantidad_cajas,
                 esperado_botellas=esperado_botellas,
                 esperado_cajas=esperado_cajas_final,
-                discrepancia_botellas=disp_botellas,
-                discrepancia_cajas=disp_cajas,
+                dif_botellas=disp_botellas,
+                dif_cajas=disp_cajas,
             )
         )
 

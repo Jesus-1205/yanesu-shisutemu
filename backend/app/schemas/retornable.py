@@ -46,8 +46,8 @@ class RetornablePresentacionOut(BaseModel):
     total_cajas_enteras: int
     lleno_esperado_botellas: int
     vacio_esperado_botellas: int
-    discrepancia_botellas: int
-    discrepancia_vacio_botellas: int
+    dif_botellas: int
+    dif_vacio_botellas: int
     productos_asociados: list[RetornableProductoOut]
 
 
@@ -68,13 +68,13 @@ class DetalleLinea(BaseModel):
     cantidad_cajas: int
 
 
-class DetalleLineaConDiscrepancia(DetalleLinea):
-    """Linea con discrepancia calculada."""
+class DetalleLineaConDif(DetalleLinea):
+    """Linea con dif calculada."""
 
     esperado_botellas: int
     esperado_cajas: int
-    discrepancia_botellas: int
-    discrepancia_cajas: int
+    dif_botellas: int
+    dif_cajas: int
 
 
 class RetornableReporteCreate(BaseModel):
@@ -108,10 +108,10 @@ class RetornableReporteDetalleOut(BaseModel):
 
 
 class RetornableReporteCompletoOut(BaseModel):
-    """Reporte con sus 6 lineas y discrepancias vs reporte anterior."""
+    """Reporte con sus 6 lineas y difs vs reporte anterior."""
 
     reporte: RetornableReporteOut
-    detalles: list[DetalleLineaConDiscrepancia]
+    detalles: list[DetalleLineaConDif]
     reporte_anterior_id: int | None = None
     reporte_anterior_fecha: datetime | None = None
 

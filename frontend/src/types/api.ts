@@ -848,8 +848,8 @@ export interface RetornablePresentacionOut {
   total_cajas_enteras: number;
   lleno_esperado_botellas: number;
   vacio_esperado_botellas: number;
-  discrepancia_botellas: number;
-  discrepancia_vacio_botellas: number;
+  dif_botellas: number;
+  dif_vacio_botellas: number;
   productos_asociados: RetornableProductoOut[];
 }
 
@@ -866,11 +866,11 @@ export interface DetalleLinea {
   cantidad_cajas: number;
 }
 
-export interface DetalleLineaConDiscrepancia extends DetalleLinea {
+export interface DetalleLineaConDif extends DetalleLinea {
   esperado_botellas: number;
   esperado_cajas: number;
-  discrepancia_botellas: number;
-  discrepancia_cajas: number;
+  dif_botellas: number;
+  dif_cajas: number;
 }
 
 export interface RetornableReporteCreate {
@@ -890,7 +890,7 @@ export interface RetornableReporteOut {
 
 export interface RetornableReporteCompletoOut {
   reporte: RetornableReporteOut;
-  detalles: DetalleLineaConDiscrepancia[];
+  detalles: DetalleLineaConDif[];
   reporte_anterior_id: number | null;
   reporte_anterior_fecha: string | null;
 }

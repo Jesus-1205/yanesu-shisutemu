@@ -119,7 +119,8 @@ export function ReportesTable({ reportes, loading }: Props) {
                     <th className="p-2 text-left font-semibold text-slate-600">Estado</th>
                     <th className="p-2 text-right font-semibold text-slate-600">Cajas</th>
                     <th className="p-2 text-right font-semibold text-slate-600">Botellas</th>
-                    <th className="p-2 text-right font-semibold text-slate-600">Discrepancia</th>
+                    <th className="p-2 text-right font-semibold text-slate-600">Botellas dif</th>
+                    <th className="p-2 text-right font-semibold text-slate-600">Cajas dif</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,7 +128,7 @@ export function ReportesTable({ reportes, loading }: Props) {
                     <tr
                       key={i}
                       className={`border-b border-slate-100 ${
-                        d.discrepancia_botellas !== 0 ? "bg-red-50" : ""
+                        d.dif_botellas !== 0 ? "bg-red-50" : ""
                       }`}
                     >
                       <td className="p-2 font-semibold">{d.presentacion}</td>
@@ -138,14 +139,25 @@ export function ReportesTable({ reportes, loading }: Props) {
                       </td>
                       <td
                         className={`p-2 text-right font-mono font-semibold ${
-                          d.discrepancia_botellas === 0
+                          d.dif_botellas === 0
                             ? "text-emerald-600"
                             : "text-red-600"
                         }`}
                       >
-                        {d.discrepancia_botellas === 0
+                        {d.dif_botellas === 0
                           ? "0"
-                          : `${d.discrepancia_botellas > 0 ? "+" : ""}${d.discrepancia_botellas}`}
+                          : `${d.dif_botellas > 0 ? "+" : ""}${d.dif_botellas}`}
+                      </td>
+                      <td
+                        className={`p-2 text-right font-mono font-semibold ${
+                          d.dif_cajas === 0
+                            ? "text-emerald-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {d.dif_cajas === 0
+                          ? "0"
+                          : `${d.dif_cajas > 0 ? "+" : ""}${d.dif_cajas}`}
                       </td>
                     </tr>
                   ))}
