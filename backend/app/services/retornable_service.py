@@ -201,7 +201,7 @@ def _construir_presentacion_out(
     lleno = _construir_estado_out(db, presentacion, "LLENO", movimientos_acumulados, reporte_detalle)
 
     total_botellas = vacio.total_botellas + lleno.total_botellas
-    total_cajas_enteras = vacio.cajas_enteras + lleno.cajas_enteras
+    total_cajas_enteras = _botellas_a_cajas_enteras(total_botellas)
 
     lleno_esperado = _calcular_lleno_esperado(db, presentacion)
     discrepancia = lleno_esperado - lleno.total_botellas

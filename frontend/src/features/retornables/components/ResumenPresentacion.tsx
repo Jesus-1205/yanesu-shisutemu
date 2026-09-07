@@ -52,8 +52,7 @@ function EstadoCard({
 
 export function ResumenPresentacion({ data }: Props) {
   const totalVacioLlenoBotellas = data.vacio.total_botellas + data.lleno.total_botellas;
-  const totalVacioLlenoCajas =
-    data.vacio.cajas_enteras + data.lleno.cajas_enteras;
+  const totalVacioLlenoCajas = Math.floor(totalVacioLlenoBotellas / BOTTLES_PER_CASE);
 
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
