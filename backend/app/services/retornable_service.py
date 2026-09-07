@@ -698,7 +698,7 @@ def obtener_comparacion(db: Session) -> ComparacionOut:
         .order_by(desc(RetornableReporte.fecha))
         .limit(1)
     ) if ultimo else None
-    anterior = db.execute(anterior_stmt).scalars().first() if anterior_stmt else None
+    anterior = db.execute(anterior_stmt).scalars().first() if ultimo else None
     anterior_detalle = _detalle_a_dict(db, anterior.id) if anterior else {}
 
     lineas_sistema: list[ComparacionLineaOut] = []
