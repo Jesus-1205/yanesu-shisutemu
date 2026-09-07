@@ -19,6 +19,8 @@ from app.models.retornable import (
 )
 from app.models.user import User
 from app.schemas.retornable import (
+    ComparacionLineaOut,
+    ComparacionOut,
     DetalleLinea,
     DetalleLineaConDif,
     RetornableEstadoOut,
@@ -650,4 +652,95 @@ def procesar_compra(
         referencia_id=referencia_id,
         referencia_tipo="FACTURA",
         usuario_id=usuario_id,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Comparacion
+# ---------------------------------------------------------------------------
+
+
+def _detalle_a_dict(
+    db: Session, reporte_id: int
+) -> dict[tuple[str, str], tuple[int, int]]:
+    """Retorna {(presentacion, estado): (botellas, cajas)} de un reporte."""
+    detalles = _obtener_detalle_reporte(db, reporte_id)
+    return {
+        (d.presentacion, d.estado): (d.cantidad_botellas, d.cantidad_cajas)
+        for d in detalles
+    }
+
+
+def _stock_productos(db: Session, presentacion: str) -> tuple[int, int]:
+    """Retorna (botellas, cajas) del stock total de productos asociados."""
+    stmt = select(RetornableProducto).where(
+        RetornableProducto.presentacion == presentacion
+    )
+    asociados = list(db.execute(stmt).scalars().all())
+    total_botellas = 0
+    for asoc in asociados:
+        prod = db.execute(
+            select(Product).where(Product.id == asoc.producto_id)
+        ).scalars().first()
+        if prod:
+            total_botellas += prod.stock_cajas * BOTTLES_PER_CASE + prod.stock_unidades
+    return total_botellas, _botellas_a_cajas_enteras(total_botellas)
+
+
+def obtener_comparacion(db: Session) -> ComparacionOut:
+    """Compara ultimo reporte vs sistema (productos) y vs reporte anterior."""
+    ultimo = _obtener_ultimo_reporte(db)
+    ultimo_detalle = _detalle_a_dict(db, ultimo.id) if ultimo else {}
+
+    anterior_stmt = (
+        select(RetornableReporte)
+        .where(RetornableReporte.id < ultimo.id)
+        .order_by(desc(RetornableReporte.fecha))
+        .limit(1)
+    ) if ultimo else None
+    anterior = db.execute(anterior_stmt).scalars().first() if anterior_stmt else None
+    anterior_detalle = _detalle_a_dict(db, anterior.id) if anterior else {}
+
+    lineas_sistema: list[ComparacionLineaOut] = []
+    lineas_anterior: list[ComparacionLineaOut] = []
+
+    for pres in PRESENTACIONES:
+        stock_botellas, stock_cajas = _stock_productos(db, pres)
+
+        for estado in ESTADOS:
+            clave = (pres, estado)
+            rep_b, rep_c = ultimo_detalle.get(clave, (0, 0))
+            ant_b, ant_c = anterior_detalle.get(clave, (0, 0))
+
+            if estado == "LLENO":
+                sys_b, sys_c = stock_botellas, stock_cajas
+            else:
+                sys_b, sys_c = rep_b, rep_c
+
+            lineas_sistema.append(ComparacionLineaOut(
+                presentacion=pres,
+                estado=estado,
+                reporte_cajas=rep_c,
+                reporte_botellas=rep_b,
+                comparado_cajas=sys_c,
+                comparado_botellas=sys_b,
+                dif_cajas=sys_c - rep_c,
+                dif_botellas=sys_b - rep_b,
+            ))
+            lineas_anterior.append(ComparacionLineaOut(
+                presentacion=pres,
+                estado=estado,
+                reporte_cajas=rep_c,
+                reporte_botellas=rep_b,
+                comparado_cajas=ant_c,
+                comparado_botellas=ant_b,
+                dif_cajas=ant_c - rep_c,
+                dif_botellas=ant_b - rep_b,
+            ))
+
+    return ComparacionOut(
+        ultimo_reporte=RetornableReporteOut.model_validate(ultimo) if ultimo else None,
+        reporte_anterior=RetornableReporteOut.model_validate(anterior) if anterior else None,
+        lineas_sistema=lineas_sistema,
+        lineas_anterior=lineas_anterior,
     )

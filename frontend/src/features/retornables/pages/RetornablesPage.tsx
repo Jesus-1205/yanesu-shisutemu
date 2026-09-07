@@ -6,10 +6,11 @@ import ErrorBanner from "@/ui-components/ErrorBanner";
 import Spinner from "@/ui-components/Spinner";
 import Select from "@/ui-components/Select";
 import Input from "@/ui-components/Input";
-import { useRetornableResumen, useRetornableReportes, useRetornableHistorico, useRetornableProductos } from "../hooks/useRetornable";
+import { useRetornableResumen, useRetornableReportes, useRetornableHistorico, useRetornableProductos, useRetornableComparacion } from "../hooks/useRetornable";
 import { ResumenPresentacion } from "../components/ResumenPresentacion";
 import { ReportesTable } from "../components/ReportesTable";
 import { MovimientosTable } from "../components/MovimientosTable";
+import { ComparacionTabla } from "../components/ComparacionTabla";
 import { NuevoReporteModal } from "../components/NuevoReporteModal";
 import { GestionarProductosModal } from "../components/GestionarProductosModal";
 import type { TabResumen } from "../types";
@@ -31,11 +32,13 @@ export default function RetornablesPage() {
   const reportes = useRetornableReportes(reportePage);
   const historico = useRetornableHistorico(historicoPage, 20, histFilters);
   const productos = useRetornableProductos();
+  const comparacion = useRetornableComparacion();
 
   const tabs = [
     { value: "resumen", label: "Resumen" },
     { value: "reportes", label: "Reportes" },
     { value: "historico", label: "Histórico" },
+    { value: "comparacion", label: "Comparación" },
   ];
 
   const formatDate = (s: string) =>
@@ -230,6 +233,44 @@ export default function RetornablesPage() {
             )}
           </div>
         )}
+
+        {activeTab === "comparacion" && (
+          <div>
+            {comparacion.loading ? (
+              <div className="py-20 flex justify-center">
+                <Spinner size="lg" />
+              </div>
+            ) : comparacion.error ? (
+              <ErrorBanner>{comparacion.error}</ErrorBanner>
+            ) : comparacion.data ? (
+              <div>
+                {comparacion.data.ultimo_reporte && (
+                  <p className="text-sm text-slate-500 mb-4">
+                    Último reporte: #{comparacion.data.ultimo_reporte.id} —{" "}
+                    {formatDate(comparacion.data.ultimo_reporte.fecha)} por{" "}
+                    {comparacion.data.ultimo_reporte.realizado_por}
+                  </p>
+                )}
+
+                <ComparacionTabla
+                  titulo="Último reporte vs Sistema (productos asociados)"
+                  subtitulo="Comparación del conteo físico con el stock esperado según los productos asociados"
+                  lineas={comparacion.data.lineas_sistema}
+                />
+
+                <ComparacionTabla
+                  titulo="Último reporte vs Reporte anterior"
+                  subtitulo={
+                    comparacion.data.reporte_anterior
+                      ? `Comparación con reporte #${comparacion.data.reporte_anterior.id} del ${formatDate(comparacion.data.reporte_anterior.fecha)}`
+                      : "No hay reporte anterior"
+                  }
+                  lineas={comparacion.data.lineas_anterior}
+                />
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <NuevoReporteModal
@@ -239,6 +280,7 @@ export default function RetornablesPage() {
           resumen.refetch();
           reportes.refetch();
           historico.refetch();
+          comparacion.refetch();
         }}
       />
 

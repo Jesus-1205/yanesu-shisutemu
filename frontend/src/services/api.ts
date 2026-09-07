@@ -64,6 +64,7 @@ import type {
   RetornableMovimientoPaginationOut,
   RetornableProductoOut,
   RetornableProductoCreate,
+  ComparacionOut,
 } from "@/types/api";
 import { normalizeDecimals } from "@/lib/normalizeDecimals";
 
@@ -707,4 +708,7 @@ export const api = {
     request<void>(`/retornable/productos/${id}`, {
       method: "DELETE",
     }),
+
+  getRetornableComparacion: () =>
+    request<ComparacionOut>("/retornable/comparacion"),
 };

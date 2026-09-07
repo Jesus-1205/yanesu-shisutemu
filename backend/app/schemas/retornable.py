@@ -157,3 +157,25 @@ class RetornableSnapshotOut(BaseModel):
 
     fecha: datetime
     presentaciones: list[RetornablePresentacionOut]
+
+
+class ComparacionLineaOut(BaseModel):
+    """Una fila de comparacion entre reporte y sistema/anterior."""
+
+    presentacion: str
+    estado: str
+    reporte_cajas: int
+    reporte_botellas: int
+    comparado_cajas: int
+    comparado_botellas: int
+    dif_cajas: int
+    dif_botellas: int
+
+
+class ComparacionOut(BaseModel):
+    """Vista comparativa de inventario retornable."""
+
+    ultimo_reporte: RetornableReporteOut | None = None
+    reporte_anterior: RetornableReporteOut | None = None
+    lineas_sistema: list[ComparacionLineaOut]
+    lineas_anterior: list[ComparacionLineaOut]

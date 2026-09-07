@@ -930,3 +930,21 @@ export interface RetornableProductoCreate {
   presentacion: "222" | "333";
 }
 
+export interface ComparacionLineaOut {
+  presentacion: string;
+  estado: string;
+  reporte_cajas: number;
+  reporte_botellas: number;
+  comparado_cajas: number;
+  comparado_botellas: number;
+  dif_cajas: number;
+  dif_botellas: number;
+}
+
+export interface ComparacionOut {
+  ultimo_reporte: RetornableReporteOut | null;
+  reporte_anterior: RetornableReporteOut | null;
+  lineas_sistema: ComparacionLineaOut[];
+  lineas_anterior: ComparacionLineaOut[];
+}
+

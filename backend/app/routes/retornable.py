@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
 from app.schemas.retornable import (
+    ComparacionOut,
     RetornableMovimientoPaginationOut,
     RetornableProductoCreate,
     RetornableProductoOut,
@@ -257,3 +258,26 @@ def desasociar_producto(
         entidad_id=asociacion_id,
         detalle=f"Asociacion #{asociacion_id} eliminada",
     )
+
+
+# ---------------------------------------------------------------------------
+# Comparacion
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/comparacion",
+    response_model=ComparacionOut,
+    status_code=status.HTTP_200_OK,
+)
+def get_comparacion(
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_role("ADMINISTRADOR")),
+):
+    """GET /retornable/comparacion - Vista comparativa de inventario
+
+    Recibe: cookie access_token
+    Hace:   compara ultimo reporte vs sistema (productos) y vs reporte anterior
+    Devuelve: 200 + comparacion con lineas desglosadas
+    """
+    return svc.obtener_comparacion(db)
