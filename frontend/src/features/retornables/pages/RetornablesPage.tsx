@@ -164,8 +164,6 @@ export default function RetornablesPage() {
                   { label: "Todos", value: "" },
                   { label: "VENTA", value: "VENTA" },
                   { label: "COMPRA", value: "COMPRA" },
-                  { label: "REPORTE", value: "REPORTE" },
-                  { label: "AJUSTE_MANUAL", value: "AJUSTE_MANUAL" },
                 ]}
               />
               <Input
