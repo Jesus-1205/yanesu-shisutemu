@@ -39,6 +39,11 @@ function EstadoCard({
       {label !== "CASILLERO" && (
         <div className="text-xs text-slate-400 mt-1">
           {estado.total_botellas.toLocaleString()} botellas
+          {estado.total_botellas < 0 && (
+            <span className="text-red-600 font-semibold ml-1">
+              ⚠ Valor negativo
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -91,8 +96,8 @@ export function ResumenPresentacion({ data }: Props) {
             </span>
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-600">Discrepancia</span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-slate-600">Discrepancia lleno</span>
           <span
             className={`text-sm font-semibold ${
               data.discrepancia_botellas === 0
@@ -107,6 +112,35 @@ export function ResumenPresentacion({ data }: Props) {
               : data.discrepancia_botellas > 0
                 ? `🚨 Faltan ${data.discrepancia_botellas} botellas`
                 : `⚠️ Sobran ${Math.abs(data.discrepancia_botellas)} botellas`}
+          </span>
+        </div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm font-medium text-slate-600">
+            Vacío esperado (sistema)
+          </span>
+          <span className="text-sm font-semibold text-slate-800">
+            {Math.floor((data.vacio_esperado_botellas ?? 0) / BOTTLES_PER_CASE)} cajas
+            <span className="text-xs font-normal text-slate-500 ml-1">
+              ({(data.vacio_esperado_botellas ?? 0).toLocaleString()} botellas)
+            </span>
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-slate-600">Discrepancia vacío</span>
+          <span
+            className={`text-sm font-semibold ${
+              (data.discrepancia_vacio_botellas ?? 0) === 0
+                ? "text-emerald-600"
+                : (data.discrepancia_vacio_botellas ?? 0) > 0
+                  ? "text-red-600"
+                  : "text-amber-600"
+            }`}
+          >
+            {(data.discrepancia_vacio_botellas ?? 0) === 0
+              ? "✅ Sin diferencias"
+              : (data.discrepancia_vacio_botellas ?? 0) > 0
+                ? `🚨 Faltan ${data.discrepancia_vacio_botellas} botellas`
+                : `⚠️ Sobran ${Math.abs(data.discrepancia_vacio_botellas ?? 0)} botellas`}
           </span>
         </div>
       </div>

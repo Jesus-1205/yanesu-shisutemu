@@ -847,7 +847,9 @@ export interface RetornablePresentacionOut {
   total_botellas: number;
   total_cajas_enteras: number;
   lleno_esperado_botellas: number;
+  vacio_esperado_botellas: number;
   discrepancia_botellas: number;
+  discrepancia_vacio_botellas: number;
   productos_asociados: RetornableProductoOut[];
 }
 

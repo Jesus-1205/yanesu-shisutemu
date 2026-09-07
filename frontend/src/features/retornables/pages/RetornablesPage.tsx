@@ -103,7 +103,10 @@ export default function RetornablesPage() {
                 Nuevo Reporte
               </Button>
             </div>
-            <ReportesTable reportes={reportes.data?.items ?? []} loading={reportes.loading} />
+            <ReportesTable
+              reportes={reportes.data?.items ?? []}
+              loading={reportes.loading}
+            />
             {reportes.data && reportes.data.pages > 1 && (
               <div className="flex justify-center gap-2 mt-4">
                 <Button

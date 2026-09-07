@@ -4,7 +4,7 @@ import math
 from datetime import datetime
 from typing import Literal
 
-from sqlalchemy import func, select, desc
+from sqlalchemy import func, select, desc, update
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, EntityNotFoundError
@@ -51,27 +51,6 @@ def _botellas_sobran(botellas: int) -> int:
 # ---------------------------------------------------------------------------
 # Inventario base
 # ---------------------------------------------------------------------------
-
-
-def inicializar_inventario(db: Session) -> None:
-    """Crea las 6 filas iniciales del inventario si no existen."""
-    for pres in PRESENTACIONES:
-        for estado in ESTADOS:
-            stmt = select(RetornableInventario).where(
-                RetornableInventario.presentacion == pres,
-                RetornableInventario.estado == estado,
-            )
-            existente = db.execute(stmt).scalars().first()
-            if not existente:
-                db.add(
-                    RetornableInventario(
-                        presentacion=pres,
-                        estado=estado,
-                        cantidad_botellas=0,
-                        cantidad_cajas=0,
-                    )
-                )
-    db.commit()
 
 
 def _obtener_o_crear_inventario(
@@ -137,7 +116,7 @@ def _calcular_movimientos_desde(
 
 
 def _calcular_lleno_esperado(
-    db: Session, movimientos_acumulados: dict[tuple[str, str], int], presentacion: str
+    db: Session, presentacion: str
 ) -> int:
     """Calcula el stock de lleno esperado por el sistema (productos asociados)."""
     stmt = select(RetornableProducto).where(
@@ -224,8 +203,17 @@ def _construir_presentacion_out(
     total_botellas = vacio.total_botellas + lleno.total_botellas
     total_cajas_enteras = vacio.cajas_enteras + lleno.cajas_enteras
 
-    lleno_esperado = _calcular_lleno_esperado(db, movimientos_acumulados, presentacion)
+    lleno_esperado = _calcular_lleno_esperado(db, presentacion)
     discrepancia = lleno_esperado - lleno.total_botellas
+
+    vacio_anterior = 0
+    if reporte_detalle:
+        clave_vacio = (presentacion, "VACIO")
+        if clave_vacio in reporte_detalle:
+            vacio_anterior = reporte_detalle[clave_vacio][0]
+    mov_vacio = movimientos_acumulados.get((presentacion, "VACIO"), 0)
+    vacio_esperado = vacio_anterior + mov_vacio
+    discrepancia_vacio = vacio_esperado - vacio.total_botellas
 
     stmt = select(RetornableProducto).where(RetornableProducto.presentacion == presentacion)
     asociados = list(db.execute(stmt).scalars().all())
@@ -239,7 +227,9 @@ def _construir_presentacion_out(
         total_botellas=total_botellas,
         total_cajas_enteras=total_cajas_enteras,
         lleno_esperado_botellas=lleno_esperado,
+        vacio_esperado_botellas=vacio_esperado,
         discrepancia_botellas=discrepancia,
+        discrepancia_vacio_botellas=discrepancia_vacio,
         productos_asociados=productos,
     )
 
@@ -294,6 +284,29 @@ def crear_reporte(db: Session, data: RetornableReporteCreate, usuario_id: int) -
         )
         db.add(detalle)
 
+    db.execute(
+        update(RetornableReporte)
+        .where(RetornableReporte.es_actual.is_(True), RetornableReporte.id != reporte.id)
+        .values(es_actual=False)
+    )
+
+    for det in data.detalles:
+        inv = _obtener_o_crear_inventario(db, det.presentacion, det.estado)
+        delta = det.cantidad_botellas - inv.cantidad_botellas
+        if delta != 0:
+            registrar_movimiento(
+                db,
+                presentacion=det.presentacion,
+                estado=det.estado,
+                delta_botellas=delta,
+                tipo_movimiento="REPORTE",
+                referencia_id=reporte.id,
+                referencia_tipo="REPORTE",
+                usuario_id=usuario_id,
+            )
+        elif det.estado == "CASILLERO":
+            inv.cantidad_cajas = det.cantidad_cajas
+
     db.commit()
     db.refresh(reporte)
     return reporte
@@ -313,12 +326,28 @@ def confirmar_reporte(db: Session, reporte_id: int) -> None:
     if anterior and anterior.id != reporte_id:
         raise ConflictError("Ya existe un reporte confirmado mas reciente")
 
-    db.flush()
+    db.execute(
+        update(RetornableReporte)
+        .where(RetornableReporte.es_actual.is_(True), RetornableReporte.id != reporte_id)
+        .values(es_actual=False)
+    )
 
     for det in reporte.details:
         inv = _obtener_o_crear_inventario(db, det.presentacion, det.estado)
-        inv.cantidad_botellas = det.cantidad_botellas
-        inv.cantidad_cajas = det.cantidad_cajas
+        delta = det.cantidad_botellas - inv.cantidad_botellas
+        if delta != 0:
+            registrar_movimiento(
+                db,
+                presentacion=det.presentacion,
+                estado=det.estado,
+                delta_botellas=delta,
+                tipo_movimiento="REPORTE",
+                referencia_id=reporte.id,
+                referencia_tipo="REPORTE",
+                usuario_id=reporte.usuario_id,
+            )
+        elif det.estado == "CASILLERO":
+            inv.cantidad_cajas = det.cantidad_cajas
 
     db.commit()
 
@@ -370,22 +399,19 @@ def obtener_detalle_reporte(db: Session, reporte_id: int) -> RetornableReporteCo
     movimientos_entre = _calcular_movimientos_desde(
         db, anterior.fecha if anterior else None
     )
-    movimientos_hasta_actual = _calcular_movimientos_desde(db, reporte.fecha)
 
     detalles_con_disp: list[DetalleLineaConDiscrepancia] = []
     for det in detalles_actuales:
         clave = (det.presentacion, det.estado)
+        anterior_botellas, anterior_cajas = detalles_anterior.get(clave, (0, 0))
+        movimientos = movimientos_entre.get(clave, 0)
 
-        esperado_botellas = det.cantidad_botellas
-        esperado_cajas = det.cantidad_cajas
-
-        if clave in movimientos_hasta_actual:
-            esperado_botellas += movimientos_hasta_actual[clave]
-
-        if clave in movimientos_entre:
-            esperado_botellas -= movimientos_entre[clave]
-
-        esperado_cajas_final = _botellas_a_cajas_enteras(esperado_botellas) if det.estado != "CASILLERO" else esperado_cajas
+        esperado_botellas = anterior_botellas + movimientos
+        esperado_cajas_final = (
+            _botellas_a_cajas_enteras(esperado_botellas)
+            if det.estado != "CASILLERO"
+            else anterior_cajas
+        )
 
         disp_botellas = esperado_botellas - det.cantidad_botellas
         disp_cajas = esperado_cajas_final - det.cantidad_cajas

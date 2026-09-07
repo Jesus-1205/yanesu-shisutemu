@@ -96,7 +96,8 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
       prev.map((d) => {
         if (d.presentacion !== presentacion || d.estado !== estado) return d;
         if (field === "cantidad_cajas") {
-          return { ...d, cantidad_cajas: value, cantidad_botellas: value * BOTTLES_PER_CASE };
+          const botellas = estado === "CASILLERO" ? 0 : value * BOTTLES_PER_CASE;
+          return { ...d, cantidad_cajas: value, cantidad_botellas: botellas };
         }
         return { ...d, [field]: value };
       }),

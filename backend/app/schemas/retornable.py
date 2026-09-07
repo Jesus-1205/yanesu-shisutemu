@@ -45,7 +45,9 @@ class RetornablePresentacionOut(BaseModel):
     total_botellas: int
     total_cajas_enteras: int
     lleno_esperado_botellas: int
+    vacio_esperado_botellas: int
     discrepancia_botellas: int
+    discrepancia_vacio_botellas: int
     productos_asociados: list[RetornableProductoOut]
 
 
