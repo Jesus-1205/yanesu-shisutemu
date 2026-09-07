@@ -387,17 +387,12 @@ def obtener_detalle_reporte(db: Session, reporte_id: int) -> RetornableReporteCo
                 d.cantidad_cajas,
             )
 
-    movimientos_entre = _calcular_movimientos_desde(
-        db, anterior.fecha if anterior else None
-    )
-
     detalles_con_disp: list[DetalleLineaConDif] = []
     for det in detalles_actuales:
         clave = (det.presentacion, det.estado)
         anterior_botellas, anterior_cajas = detalles_anterior.get(clave, (0, 0))
-        movimientos = movimientos_entre.get(clave, 0)
 
-        esperado_botellas = anterior_botellas + movimientos
+        esperado_botellas = anterior_botellas
         esperado_cajas_final = (
             _botellas_a_cajas_enteras(esperado_botellas)
             if det.estado != "CASILLERO"
