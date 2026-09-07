@@ -292,20 +292,11 @@ def crear_reporte(db: Session, data: RetornableReporteCreate, usuario_id: int) -
 
     for det in data.detalles:
         inv = _obtener_o_crear_inventario(db, det.presentacion, det.estado)
-        delta = det.cantidad_botellas - inv.cantidad_botellas
-        if delta != 0:
-            registrar_movimiento(
-                db,
-                presentacion=det.presentacion,
-                estado=det.estado,
-                delta_botellas=delta,
-                tipo_movimiento="REPORTE",
-                referencia_id=reporte.id,
-                referencia_tipo="REPORTE",
-                usuario_id=usuario_id,
-            )
-        elif det.estado == "CASILLERO":
+        inv.cantidad_botellas = det.cantidad_botellas
+        if det.estado == "CASILLERO":
             inv.cantidad_cajas = det.cantidad_cajas
+        else:
+            inv.cantidad_cajas = _botellas_a_cajas_enteras(det.cantidad_botellas)
 
     db.commit()
     db.refresh(reporte)

@@ -47,11 +47,10 @@ function NumberInput({
   onChange: (v: number) => void;
   disabled?: boolean;
 }) {
-  const [raw, setRaw] = useState(value === 0 ? "" : String(value));
+  const display = value === 0 ? "" : String(value);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
-    setRaw(text);
     if (text === "") {
       onChange(0);
       return;
@@ -62,18 +61,13 @@ function NumberInput({
     }
   };
 
-  const handleBlur = () => {
-    setRaw(value === 0 ? "" : String(value));
-  };
-
   return (
     <input
       type="text"
       inputMode="numeric"
       className="w-20 text-right border border-slate-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
-      value={raw}
+      value={display}
       onChange={handleChange}
-      onBlur={handleBlur}
       disabled={disabled}
     />
   );
