@@ -133,7 +133,7 @@ function VistaComparacion({ vista }: { vista: Props["vistas"][0] }) {
       <h4 className="text-sm font-bold text-slate-700 mb-3">{vista.titulo}</h4>
       <div className="overflow-x-auto">
         <div className="min-w-[600px] border border-slate-200 rounded-lg bg-white">
-          <div className="grid grid-cols-3 border-b border-slate-200">
+          <div className="grid grid-cols-[3fr_1fr_3fr] border-b border-slate-200">
             <div className="border-r-2 border-r-blue-500">
               <CardHeader side={vista.izquierda} />
             </div>
@@ -145,7 +145,7 @@ function VistaComparacion({ vista }: { vista: Props["vistas"][0] }) {
             </div>
           </div>
           {vista.lineas.map((l, i) => (
-            <div key={i} className="grid grid-cols-3">
+            <div key={i} className="grid grid-cols-[3fr_1fr_3fr]">
               <div className="border-r-2 border-r-blue-500">
                 <FilaCard linea={l} />
               </div>
