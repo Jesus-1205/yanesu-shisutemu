@@ -7,7 +7,7 @@ import Textarea from "@/ui-components/Textarea";
 import { api } from "@/services/api";
 import { useToast } from "@/ui-components/Toast";
 
-const BOTTLES_PER_CASE = 36;
+const BOTELLAS_POR_CAJA: Record<string, number> = { "222": 36, "333": 24 };
 
 interface Props {
   open: boolean;
@@ -90,7 +90,7 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
       prev.map((d) => {
         if (d.presentacion !== presentacion || d.estado !== estado) return d;
         if (field === "cantidad_cajas") {
-          const botellas = estado === "CASILLERO" ? 0 : value * BOTTLES_PER_CASE;
+          const botellas = estado === "CASILLERO" ? 0 : value * BOTELLAS_POR_CAJA[presentacion];
           return { ...d, cantidad_cajas: value, cantidad_botellas: botellas };
         }
         return { ...d, [field]: value };
@@ -170,7 +170,7 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
                     />
                     {!isCasillero && (
                       <span className="text-xs text-slate-400 ml-2">
-                        ({(det?.cantidad_cajas ?? 0) * BOTTLES_PER_CASE} botellas)
+                        ({(det?.cantidad_cajas ?? 0) * BOTELLAS_POR_CAJA[pres]} botellas)
                       </span>
                     )}
                   </div>

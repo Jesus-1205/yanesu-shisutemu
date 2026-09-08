@@ -36,18 +36,18 @@ from app.schemas.retornable import (
     RetornableResumenOut,
 )
 
-BOTTLES_PER_CASE = 36
+BOTELLAS_POR_CAJA: dict[str, int] = {"222": 36, "333": 24}
 
 ESTADOS = ("CASILLERO", "VACIO", "LLENO")
 PRESENTACIONES = ("222", "333")
 
 
-def _botellas_a_cajas_enteras(botellas: int) -> int:
-    return math.floor(botellas / BOTTLES_PER_CASE)
+def _botellas_a_cajas_enteras(botellas: int, presentacion: str) -> int:
+    return math.floor(botellas / BOTELLAS_POR_CAJA[presentacion])
 
 
-def _botellas_sobran(botellas: int) -> int:
-    return botellas % BOTTLES_PER_CASE
+def _botellas_sobran(botellas: int, presentacion: str) -> int:
+    return botellas % BOTELLAS_POR_CAJA[presentacion]
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ def _calcular_lleno_esperado(
         prod_stmt = select(Product).where(Product.id == asoc.producto_id)
         product = db.execute(prod_stmt).scalars().first()
         if product:
-            total_botellas += product.stock_cajas * BOTTLES_PER_CASE + product.stock_unidades
+            total_botellas += product.stock_cajas * BOTELLAS_POR_CAJA[presentacion] + product.stock_unidades
 
     return total_botellas
 
@@ -172,10 +172,10 @@ def _construir_estado_out(
     return RetornableEstadoOut(
         estado=estado,
         cantidad_botellas=botellas_sistema,
-        cantidad_cajas=_botellas_a_cajas_enteras(botellas_sistema),
+        cantidad_cajas=_botellas_a_cajas_enteras(botellas_sistema, presentacion),
         total_botellas=botellas_sistema,
-        cajas_enteras=_botellas_a_cajas_enteras(botellas_sistema),
-        botellas_sueltas=_botellas_sobran(botellas_sistema),
+        cajas_enteras=_botellas_a_cajas_enteras(botellas_sistema, presentacion),
+        botellas_sueltas=_botellas_sobran(botellas_sistema, presentacion),
     )
 
 
@@ -203,7 +203,7 @@ def _construir_presentacion_out(
     lleno = _construir_estado_out(db, presentacion, "LLENO", movimientos_acumulados, reporte_detalle)
 
     total_botellas = vacio.total_botellas + lleno.total_botellas
-    total_cajas_enteras = _botellas_a_cajas_enteras(total_botellas)
+    total_cajas_enteras = _botellas_a_cajas_enteras(total_botellas, presentacion)
 
     lleno_esperado = _calcular_lleno_esperado(db, presentacion)
     dif_lleno = lleno_esperado - lleno.total_botellas
@@ -298,7 +298,7 @@ def crear_reporte(db: Session, data: RetornableReporteCreate, usuario_id: int) -
         if det.estado == "CASILLERO":
             inv.cantidad_cajas = det.cantidad_cajas
         else:
-            inv.cantidad_cajas = _botellas_a_cajas_enteras(det.cantidad_botellas)
+            inv.cantidad_cajas = _botellas_a_cajas_enteras(det.cantidad_botellas, det.presentacion)
 
     db.commit()
     db.refresh(reporte)
@@ -396,7 +396,7 @@ def obtener_detalle_reporte(db: Session, reporte_id: int) -> RetornableReporteCo
 
         esperado_botellas = anterior_botellas
         esperado_cajas_final = (
-            _botellas_a_cajas_enteras(esperado_botellas)
+            _botellas_a_cajas_enteras(esperado_botellas, det.presentacion)
             if det.estado != "CASILLERO"
             else anterior_cajas
         )
@@ -447,7 +447,7 @@ def registrar_movimiento(
     if estado == "CASILLERO":
         inv.cantidad_cajas += delta_botellas
     else:
-        inv.cantidad_cajas = _botellas_a_cajas_enteras(inv.cantidad_botellas)
+        inv.cantidad_cajas = _botellas_a_cajas_enteras(inv.cantidad_botellas, presentacion)
 
     mov = RetornableMovimiento(
         presentacion=presentacion,
@@ -683,8 +683,8 @@ def _stock_productos(db: Session, presentacion: str) -> tuple[int, int]:
             select(Product).where(Product.id == asoc.producto_id)
         ).scalars().first()
         if prod:
-            total_botellas += prod.stock_cajas * BOTTLES_PER_CASE + prod.stock_unidades
-    return total_botellas, _botellas_a_cajas_enteras(total_botellas)
+            total_botellas += prod.stock_cajas * BOTELLAS_POR_CAJA[presentacion] + prod.stock_unidades
+    return total_botellas, _botellas_a_cajas_enteras(total_botellas, presentacion)
 
 
 def obtener_comparacion(db: Session) -> ComparacionOut:
@@ -717,7 +717,7 @@ def obtener_comparacion(db: Session) -> ComparacionOut:
                 sys_b, sys_c = 0, rep_c + delta
             else:
                 sys_b = rep_b + delta
-                sys_c = _botellas_a_cajas_enteras(sys_b)
+                sys_c = _botellas_a_cajas_enteras(sys_b, pres)
 
             lineas_sistema.append(ComparacionLineaOut(
                 presentacion=pres,

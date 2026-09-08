@@ -4,7 +4,7 @@ interface Props {
   data: RetornablePresentacionOut;
 }
 
-const BOTTLES_PER_CASE = 36;
+const BOTELLAS_POR_CAJA: Record<string, number> = { "222": 36, "333": 24 };
 
 function EstadoCard({
   label,
@@ -52,7 +52,7 @@ function EstadoCard({
 
 export function ResumenPresentacion({ data }: Props) {
   const totalVacioLlenoBotellas = data.vacio.total_botellas + data.lleno.total_botellas;
-  const totalVacioLlenoCajas = Math.floor(totalVacioLlenoBotellas / BOTTLES_PER_CASE);
+  const totalVacioLlenoCajas = Math.floor(totalVacioLlenoBotellas / BOTELLAS_POR_CAJA[data.presentacion]);
 
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
@@ -89,7 +89,7 @@ export function ResumenPresentacion({ data }: Props) {
             Lleno esperado (sistema)
           </span>
           <span className="text-sm font-semibold text-slate-800">
-            {Math.floor(data.lleno_esperado_botellas / BOTTLES_PER_CASE)} cajas
+            {Math.floor(data.lleno_esperado_botellas / BOTELLAS_POR_CAJA[data.presentacion])} cajas
             <span className="text-xs font-normal text-slate-500 ml-1">
               ({data.lleno_esperado_botellas.toLocaleString()} botellas)
             </span>
@@ -118,7 +118,7 @@ export function ResumenPresentacion({ data }: Props) {
             Vacío esperado (sistema)
           </span>
           <span className="text-sm font-semibold text-slate-800">
-            {Math.floor((data.vacio_esperado_botellas ?? 0) / BOTTLES_PER_CASE)} cajas
+            {Math.floor((data.vacio_esperado_botellas ?? 0) / BOTELLAS_POR_CAJA[data.presentacion])} cajas
             <span className="text-xs font-normal text-slate-500 ml-1">
               ({(data.vacio_esperado_botellas ?? 0).toLocaleString()} botellas)
             </span>
