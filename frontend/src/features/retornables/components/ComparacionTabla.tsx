@@ -25,15 +25,20 @@ function formatDate(s: string) {
   });
 }
 
-function DifBadge({ value, showCajas }: { value: number; showCajas?: boolean }) {
-  if (value === 0) {
+function DifBadge({ cajas, botellas, esCasillero }: { cajas: number; botellas: number; esCasillero: boolean }) {
+  if (cajas === 0) {
     return <span className="text-emerald-600 font-semibold text-sm">0</span>;
   }
-  const color = value > 0 ? "text-amber-600" : "text-red-600";
+  const color = cajas > 0 ? "text-amber-600" : "text-red-600";
+  const sign = cajas > 0 ? "+" : "";
   return (
     <span className={`${color} font-semibold text-sm`}>
-      {value > 0 ? "+" : ""}{value}
-      {showCajas ? " c" : " b"}
+      {sign}{cajas} c
+      {!esCasillero && (
+        <span className="text-xs font-normal opacity-70 ml-0.5">
+          ({sign}{botellas} b)
+        </span>
+      )}
     </span>
   );
 }
@@ -117,7 +122,7 @@ function FilaComparado({ linea }: { linea: ComparacionLineaOut }) {
 function FilaDif({ linea }: { linea: ComparacionLineaOut }) {
   return (
     <div className="flex items-center justify-center px-2 py-2 border-b border-slate-50 last:border-0">
-      <DifBadge value={linea.dif_cajas} showCajas />
+      <DifBadge cajas={linea.dif_cajas} botellas={linea.dif_botellas} esCasillero={linea.estado === "CASILLERO"} />
     </div>
   );
 }
@@ -136,7 +141,7 @@ export function ComparacionTabla({ vistas }: Props) {
       {vistas.map((vista, vi) => (
         <div key={vi}>
           <h4 className="text-sm font-bold text-slate-700 mb-3">{vista.titulo}</h4>
-          <div className="grid grid-cols-[1fr_100px_1fr] gap-0 border border-slate-200 rounded-lg overflow-hidden bg-white">
+          <div className="grid grid-cols-[1fr_140px_1fr] gap-0 border border-slate-200 rounded-lg overflow-hidden bg-white">
             {/* Card izquierda */}
             <div className="border-r border-slate-200">
               <div className="border-l-4 border-blue-500">
