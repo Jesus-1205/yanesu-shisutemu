@@ -131,31 +131,33 @@ function VistaComparacion({ vista }: { vista: Props["vistas"][0] }) {
   return (
     <div>
       <h4 className="text-sm font-bold text-slate-700 mb-3">{vista.titulo}</h4>
-      <div className="border border-slate-200 rounded-lg bg-white">
-        <div className="grid grid-cols-1 md:grid-cols-3 border-b border-slate-200">
-          <div className="border-r-2 border-r-blue-500 md:border-r-2 md:border-r-blue-500 border-b md:border-b-0 border-b-slate-200">
-            <CardHeader side={vista.izquierda} />
+      <div className="overflow-x-auto">
+        <div className="min-w-[600px] border border-slate-200 rounded-lg bg-white">
+          <div className="grid grid-cols-3 border-b border-slate-200">
+            <div className="border-r-2 border-r-blue-500">
+              <CardHeader side={vista.izquierda} />
+            </div>
+            <div className="flex items-center justify-center px-2 py-3">
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Dif</p>
+            </div>
+            <div className="border-l-2 border-l-emerald-500">
+              <CardHeader side={vista.derecha} />
+            </div>
           </div>
-          <div className="flex items-center justify-center px-2 py-3 border-b md:border-b-0 border-b-slate-200">
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Dif</p>
-          </div>
-          <div className="border-l-0 md:border-l-2 md:border-l-emerald-500">
-            <CardHeader side={vista.derecha} />
-          </div>
+          {vista.lineas.map((l, i) => (
+            <div key={i} className="grid grid-cols-3">
+              <div className="border-r-2 border-r-blue-500">
+                <FilaCard linea={l} />
+              </div>
+              <div>
+                <FilaDif linea={l} />
+              </div>
+              <div className="border-l-2 border-l-emerald-500">
+                <FilaComparado linea={l} />
+              </div>
+            </div>
+          ))}
         </div>
-        {vista.lineas.map((l, i) => (
-          <div key={i} className="grid grid-cols-1 md:grid-cols-3">
-            <div className="border-r-2 border-r-blue-500 md:border-r-2 md:border-r-blue-500 border-b md:border-b-0 border-b-slate-200">
-              <FilaCard linea={l} />
-            </div>
-            <div className="border-b md:border-b-0 border-b-slate-200">
-              <FilaDif linea={l} />
-            </div>
-            <div className="border-l-0 md:border-l-2 md:border-l-emerald-500">
-              <FilaComparado linea={l} />
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
