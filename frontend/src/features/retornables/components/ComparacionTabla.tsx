@@ -66,7 +66,7 @@ function CardHeader({ side }: { side: Side }) {
 function FilaCard({ linea }: { linea: ComparacionLineaOut }) {
   const esCasillero = linea.estado === "CASILLERO";
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0">
+    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0 h-[38px]">
       <div className="flex items-center gap-2">
         <span className="font-mono text-xs font-bold text-slate-500 w-7">{linea.presentacion}</span>
         <span className={`text-xs px-1.5 py-0.5 rounded ${
@@ -94,7 +94,7 @@ function FilaCard({ linea }: { linea: ComparacionLineaOut }) {
 function FilaComparado({ linea }: { linea: ComparacionLineaOut }) {
   const esCasillero = linea.estado === "CASILLERO";
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0">
+    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0 h-[38px]">
       <div className="flex items-center gap-2">
         <span className="font-mono text-xs font-bold text-slate-500 w-7">{linea.presentacion}</span>
         <span className={`text-xs px-1.5 py-0.5 rounded ${
@@ -121,8 +121,42 @@ function FilaComparado({ linea }: { linea: ComparacionLineaOut }) {
 
 function FilaDif({ linea }: { linea: ComparacionLineaOut }) {
   return (
-    <div className="flex items-center justify-center px-2 py-2 border-b border-slate-50 last:border-0">
+    <div className="flex items-center justify-center px-2 py-2 border-b border-slate-50 last:border-0 h-[38px]">
       <DifBadge cajas={linea.dif_cajas} botellas={linea.dif_botellas} esCasillero={linea.estado === "CASILLERO"} />
+    </div>
+  );
+}
+
+function VistaComparacion({ vista }: { vista: Props["vistas"][0] }) {
+  return (
+    <div>
+      <h4 className="text-sm font-bold text-slate-700 mb-3">{vista.titulo}</h4>
+      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+        <div className="grid grid-cols-3 border-b border-slate-200">
+          <div className="border-r border-slate-200 border-l-4 border-blue-500">
+            <CardHeader side={vista.izquierda} />
+          </div>
+          <div className="flex items-center justify-center px-2 py-3">
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Dif</p>
+          </div>
+          <div className="border-l-4 border-emerald-500">
+            <CardHeader side={vista.derecha} />
+          </div>
+        </div>
+        {vista.lineas.map((l, i) => (
+          <div key={i} className="grid grid-cols-3">
+            <div className="border-r border-slate-200 border-l-4 border-blue-500">
+              <FilaCard linea={l} />
+            </div>
+            <div>
+              <FilaDif linea={l} />
+            </div>
+            <div className="border-l-4 border-emerald-500">
+              <FilaComparado linea={l} />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -139,40 +173,7 @@ export function ComparacionTabla({ vistas }: Props) {
   return (
     <div className="space-y-8">
       {vistas.map((vista, vi) => (
-        <div key={vi}>
-          <h4 className="text-sm font-bold text-slate-700 mb-3">{vista.titulo}</h4>
-          <div className="grid grid-cols-[1fr_140px_1fr] gap-0 border border-slate-200 rounded-lg overflow-hidden bg-white">
-            {/* Card izquierda */}
-            <div className="border-r border-slate-200">
-              <div className="border-l-4 border-blue-500">
-                <CardHeader side={vista.izquierda} />
-                {vista.lineas.map((l, i) => (
-                  <FilaCard key={i} linea={l} />
-                ))}
-              </div>
-            </div>
-
-            {/* Diferencia centro */}
-            <div className="flex flex-col justify-center bg-slate-50">
-              <div className="py-2">
-                <p className="text-[10px] text-center font-bold text-slate-400 uppercase">Dif</p>
-              </div>
-              {vista.lineas.map((l, i) => (
-                <FilaDif key={i} linea={l} />
-              ))}
-            </div>
-
-            {/* Card derecha */}
-            <div className="border-l border-slate-200">
-              <div className="border-l-4 border-emerald-500">
-                <CardHeader side={vista.derecha} />
-                {vista.lineas.map((l, i) => (
-                  <FilaComparado key={i} linea={l} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <VistaComparacion key={vi} vista={vista} />
       ))}
     </div>
   );

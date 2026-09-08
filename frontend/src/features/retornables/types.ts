@@ -14,4 +14,4 @@ export type {
   RetornableProductoCreate,
 } from "@/types/api";
 
-export type TabResumen = "resumen" | "reportes" | "historico" | "comparacion";
+export type TabResumen = "resumen" | "reportes" | "historico";

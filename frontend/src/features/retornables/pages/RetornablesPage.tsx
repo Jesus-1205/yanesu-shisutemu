@@ -6,8 +6,7 @@ import ErrorBanner from "@/ui-components/ErrorBanner";
 import Spinner from "@/ui-components/Spinner";
 import Select from "@/ui-components/Select";
 import Input from "@/ui-components/Input";
-import { useRetornableResumen, useRetornableReportes, useRetornableHistorico, useRetornableProductos, useRetornableComparacion } from "../hooks/useRetornable";
-import { ResumenPresentacion } from "../components/ResumenPresentacion";
+import { useRetornableReportes, useRetornableHistorico, useRetornableProductos, useRetornableComparacion } from "../hooks/useRetornable";
 import { ReportesTable } from "../components/ReportesTable";
 import { MovimientosTable } from "../components/MovimientosTable";
 import { ComparacionTabla } from "../components/ComparacionTabla";
@@ -28,7 +27,6 @@ export default function RetornablesPage() {
     fecha_hasta?: string;
   }>({});
 
-  const resumen = useRetornableResumen();
   const reportes = useRetornableReportes(reportePage);
   const historico = useRetornableHistorico(historicoPage, 20, histFilters);
   const productos = useRetornableProductos();
@@ -38,17 +36,7 @@ export default function RetornablesPage() {
     { value: "resumen", label: "Resumen" },
     { value: "reportes", label: "Reportes" },
     { value: "historico", label: "Histórico" },
-    { value: "comparacion", label: "Comparación" },
   ];
-
-  const formatDate = (s: string) =>
-    new Date(s).toLocaleDateString("es-VE", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
 
   return (
     <div>
@@ -67,36 +55,50 @@ export default function RetornablesPage() {
         }
       />
 
-      {resumen.error && <ErrorBanner onRetry={resumen.refetch}>{resumen.error}</ErrorBanner>}
-
       <Tabs tabs={tabs} value={activeTab} onChange={(key: string) => setActiveTab(key as TabResumen)} />
 
       <div className="mt-4">
         {activeTab === "resumen" && (
-          <>
-            {resumen.loading ? (
+          <div>
+            {comparacion.loading ? (
               <div className="py-20 flex justify-center">
                 <Spinner size="lg" />
               </div>
-            ) : resumen.data ? (
-              <div className="space-y-6">
-                {resumen.data.ultimo_reporte_fecha && (
-                  <div className="text-sm text-slate-500">
-                    Último reporte: {formatDate(resumen.data.ultimo_reporte_fecha)} —{" "}
-                    <span className="font-medium text-slate-700">
-                      {resumen.data.ultimo_reporte_realizado_por}
-                    </span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {resumen.data.presentaciones.map((pres) => (
-                    <ResumenPresentacion key={pres.presentacion} data={pres} />
-                  ))}
-                </div>
-              </div>
+            ) : comparacion.error ? (
+              <ErrorBanner>{comparacion.error}</ErrorBanner>
+            ) : comparacion.data ? (
+              <ComparacionTabla
+                vistas={[
+                  {
+                    titulo: "Último reporte vs Sistema (movimientos desde último reporte)",
+                    izquierda: {
+                      titulo: "Reporte actual",
+                      reporte: comparacion.data.ultimo_reporte,
+                    },
+                    derecha: {
+                      titulo: "Sistema esperado",
+                      reporte: null,
+                      sinReporte: true,
+                    },
+                    lineas: comparacion.data.lineas_sistema,
+                  },
+                  {
+                    titulo: "Último reporte vs Reporte anterior",
+                    izquierda: {
+                      titulo: "Reporte actual",
+                      reporte: comparacion.data.ultimo_reporte,
+                    },
+                    derecha: {
+                      titulo: "Reporte anterior",
+                      reporte: comparacion.data.reporte_anterior,
+                      sinReporte: !comparacion.data.reporte_anterior,
+                    },
+                    lineas: comparacion.data.lineas_anterior,
+                  },
+                ]}
+              />
             ) : null}
-          </>
+          </div>
         )}
 
         {activeTab === "reportes" && (
@@ -234,55 +236,12 @@ export default function RetornablesPage() {
           </div>
         )}
 
-        {activeTab === "comparacion" && (
-          <div>
-            {comparacion.loading ? (
-              <div className="py-20 flex justify-center">
-                <Spinner size="lg" />
-              </div>
-            ) : comparacion.error ? (
-              <ErrorBanner>{comparacion.error}</ErrorBanner>
-            ) : comparacion.data ? (
-              <ComparacionTabla
-                vistas={[
-                  {
-                    titulo: "Último reporte vs Sistema (movimientos desde último reporte)",
-                    izquierda: {
-                      titulo: "Reporte actual",
-                      reporte: comparacion.data.ultimo_reporte,
-                    },
-                    derecha: {
-                      titulo: "Sistema esperado",
-                      reporte: null,
-                      sinReporte: true,
-                    },
-                    lineas: comparacion.data.lineas_sistema,
-                  },
-                  {
-                    titulo: "Último reporte vs Reporte anterior",
-                    izquierda: {
-                      titulo: "Reporte actual",
-                      reporte: comparacion.data.ultimo_reporte,
-                    },
-                    derecha: {
-                      titulo: "Reporte anterior",
-                      reporte: comparacion.data.reporte_anterior,
-                      sinReporte: !comparacion.data.reporte_anterior,
-                    },
-                    lineas: comparacion.data.lineas_anterior,
-                  },
-                ]}
-              />
-            ) : null}
-          </div>
-        )}
       </div>
 
       <NuevoReporteModal
         open={showNuevoReporte}
         onClose={() => setShowNuevoReporte(false)}
         onSaved={() => {
-          resumen.refetch();
           reportes.refetch();
           historico.refetch();
           comparacion.refetch();
@@ -293,7 +252,6 @@ export default function RetornablesPage() {
         open={showGestionarProductos}
         onClose={() => setShowGestionarProductos(false)}
         onSaved={() => {
-          resumen.refetch();
           productos.refetch();
         }}
         productos={productos.data}

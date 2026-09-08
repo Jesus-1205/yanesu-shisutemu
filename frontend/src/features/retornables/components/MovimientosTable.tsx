@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { RetornableMovimientoOut } from "@/types/api";
 import Spinner from "@/ui-components/Spinner";
 
@@ -89,9 +90,16 @@ export function MovimientosTable({ movimientos, loading }: Props) {
                 </span>
               </td>
               <td className="p-3 text-slate-500 text-xs">
-                {m.referencia_tipo && m.referencia_id
-                  ? `${m.referencia_tipo} #${m.referencia_id}`
-                  : m.observaciones || "—"}
+                {m.referencia_tipo && m.referencia_id ? (
+                  <Link
+                    to={m.referencia_tipo === "VENTA" ? `/sales/${m.referencia_id}` : `/invoices/${m.referencia_id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {m.referencia_tipo} #{m.referencia_id}
+                  </Link>
+                ) : (
+                  m.observaciones || "—"
+                )}
               </td>
               <td className="p-3 text-slate-500 text-xs">{m.usuario_nombre}</td>
             </tr>
