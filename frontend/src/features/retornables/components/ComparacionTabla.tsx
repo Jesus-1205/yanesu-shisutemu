@@ -117,11 +117,7 @@ function FilaComparado({ linea }: { linea: ComparacionLineaOut }) {
 function FilaDif({ linea }: { linea: ComparacionLineaOut }) {
   return (
     <div className="flex items-center justify-center px-2 py-2 border-b border-slate-50 last:border-0">
-      {linea.estado === "CASILLERO" ? (
-        <DifBadge value={linea.dif_cajas} showCajas />
-      ) : (
-        <DifBadge value={linea.dif_botellas} />
-      )}
+      <DifBadge value={linea.dif_cajas} showCajas />
     </div>
   );
 }
@@ -140,7 +136,7 @@ export function ComparacionTabla({ vistas }: Props) {
       {vistas.map((vista, vi) => (
         <div key={vi}>
           <h4 className="text-sm font-bold text-slate-700 mb-3">{vista.titulo}</h4>
-          <div className="grid grid-cols-[1fr_60px_1fr] gap-0 border border-slate-200 rounded-lg overflow-hidden bg-white">
+          <div className="grid grid-cols-[1fr_100px_1fr] gap-0 border border-slate-200 rounded-lg overflow-hidden bg-white">
             {/* Card izquierda */}
             <div className="border-r border-slate-200">
               <div className="border-l-4 border-blue-500">
