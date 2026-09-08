@@ -701,7 +701,7 @@ def obtener_comparacion(db: Session) -> ComparacionOut:
     anterior = db.execute(anterior_stmt).scalars().first() if ultimo else None
     anterior_detalle = _detalle_a_dict(db, anterior.id) if anterior else {}
 
-    movimientos = _calcular_movimientos_desde(db, ultimo.fecha if ultimo else None)
+    movimientos = _calcular_movimientos_desde(db, anterior.fecha if anterior else None)
 
     lineas_sistema: list[ComparacionLineaOut] = []
     lineas_anterior: list[ComparacionLineaOut] = []
@@ -714,9 +714,9 @@ def obtener_comparacion(db: Session) -> ComparacionOut:
 
             delta = movimientos.get(clave, 0)
             if estado == "CASILLERO":
-                sys_b, sys_c = 0, rep_c + delta
+                sys_b, sys_c = 0, ant_c + delta
             else:
-                sys_b = rep_b + delta
+                sys_b = ant_b + delta
                 sys_c = _botellas_a_cajas_enteras(sys_b, pres)
 
             lineas_sistema.append(ComparacionLineaOut(

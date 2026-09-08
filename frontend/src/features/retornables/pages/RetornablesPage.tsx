@@ -65,7 +65,7 @@ export default function RetornablesPage() {
               <ComparacionTabla
                 vistas={[
                   {
-                    titulo: "Último reporte vs Sistema (movimientos desde último reporte)",
+                    titulo: "Reporte actual vs Sistema esperado (anterior + movimientos)",
                     izquierda: {
                       titulo: "Reporte actual",
                       reporte: comparacion.data.ultimo_reporte,
