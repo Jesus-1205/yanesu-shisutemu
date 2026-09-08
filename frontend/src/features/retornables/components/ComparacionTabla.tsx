@@ -1,24 +1,133 @@
-import type { ComparacionLineaOut } from "@/types/api";
+import type { ComparacionLineaOut, RetornableReporteOut } from "@/types/api";
 
-interface Props {
+interface Side {
   titulo: string;
-  subtitulo?: string;
-  lineas: ComparacionLineaOut[];
+  reporte: RetornableReporteOut | null;
+  sinReporte?: boolean;
 }
 
-function DifBadge({ value }: { value: number }) {
+interface Props {
+  vistas: {
+    titulo: string;
+    izquierda: Side;
+    derecha: Side;
+    lineas: ComparacionLineaOut[];
+  }[];
+}
+
+function formatDate(s: string) {
+  return new Date(s).toLocaleDateString("es-VE", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function DifBadge({ value, showCajas }: { value: number; showCajas?: boolean }) {
   if (value === 0) {
-    return <span className="text-emerald-600 font-semibold">0</span>;
+    return <span className="text-emerald-600 font-semibold text-sm">0</span>;
   }
+  const color = value > 0 ? "text-amber-600" : "text-red-600";
   return (
-    <span className={`font-semibold ${value > 0 ? "text-amber-600" : "text-red-600"}`}>
+    <span className={`${color} font-semibold text-sm`}>
       {value > 0 ? "+" : ""}{value}
+      {showCajas ? " c" : " b"}
     </span>
   );
 }
 
-export function ComparacionTabla({ titulo, subtitulo, lineas }: Props) {
-  if (lineas.length === 0) {
+function CardHeader({ side }: { side: Side }) {
+  return (
+    <div className="px-4 py-3 border-b border-slate-200">
+      <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{side.titulo}</p>
+      {side.sinReporte ? (
+        <p className="text-xs text-slate-400 mt-1">Sin reporte registrado</p>
+      ) : side.reporte ? (
+        <div className="mt-1">
+          <p className="text-sm font-semibold text-slate-700">
+            Reporte #{side.reporte.id}
+          </p>
+          <p className="text-xs text-slate-500">
+            {side.reporte.realizado_por} — {formatDate(side.reporte.fecha)}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function FilaCard({ linea }: { linea: ComparacionLineaOut }) {
+  const esCasillero = linea.estado === "CASILLERO";
+  return (
+    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0">
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-xs font-bold text-slate-500 w-7">{linea.presentacion}</span>
+        <span className={`text-xs px-1.5 py-0.5 rounded ${
+          linea.estado === "LLENO" ? "bg-emerald-50 text-emerald-700" :
+          linea.estado === "VACIO" ? "bg-amber-50 text-amber-700" :
+          "bg-slate-100 text-slate-600"
+        }`}>
+          {linea.estado}
+        </span>
+      </div>
+      <div className="text-right">
+        <span className="text-sm font-semibold text-slate-800">
+          {linea.reporte_cajas} cajas
+        </span>
+        {!esCasillero && (
+          <span className="text-xs text-slate-400 ml-1">
+            ({linea.reporte_botellas.toLocaleString()} bot)
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilaComparado({ linea }: { linea: ComparacionLineaOut }) {
+  const esCasillero = linea.estado === "CASILLERO";
+  return (
+    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0">
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-xs font-bold text-slate-500 w-7">{linea.presentacion}</span>
+        <span className={`text-xs px-1.5 py-0.5 rounded ${
+          linea.estado === "LLENO" ? "bg-emerald-50 text-emerald-700" :
+          linea.estado === "VACIO" ? "bg-amber-50 text-amber-700" :
+          "bg-slate-100 text-slate-600"
+        }`}>
+          {linea.estado}
+        </span>
+      </div>
+      <div className="text-right">
+        <span className="text-sm font-semibold text-slate-800">
+          {linea.comparado_cajas} cajas
+        </span>
+        {!esCasillero && (
+          <span className="text-xs text-slate-400 ml-1">
+            ({linea.comparado_botellas.toLocaleString()} bot)
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilaDif({ linea }: { linea: ComparacionLineaOut }) {
+  return (
+    <div className="flex items-center justify-center px-2 py-2 border-b border-slate-50 last:border-0">
+      {linea.estado === "CASILLERO" ? (
+        <DifBadge value={linea.dif_cajas} showCajas />
+      ) : (
+        <DifBadge value={linea.dif_botellas} />
+      )}
+    </div>
+  );
+}
+
+export function ComparacionTabla({ vistas }: Props) {
+  if (vistas.length === 0) {
     return (
       <div className="py-8 text-center text-slate-500">
         No hay datos para comparar
@@ -27,69 +136,43 @@ export function ComparacionTabla({ titulo, subtitulo, lineas }: Props) {
   }
 
   return (
-    <div className="mb-6">
-      <h4 className="text-sm font-bold text-slate-700 mb-1">{titulo}</h4>
-      {subtitulo && (
-        <p className="text-xs text-slate-400 mb-2">{subtitulo}</p>
-      )}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="p-2 text-left font-semibold text-slate-600">Present.</th>
-              <th className="p-2 text-left font-semibold text-slate-600">Estado</th>
-              <th className="p-2 text-right font-semibold text-slate-600" colSpan={2}>Reporte</th>
-              <th className="p-2 text-right font-semibold text-slate-600" colSpan={2}>Comparado</th>
-              <th className="p-2 text-right font-semibold text-slate-600" colSpan={2}>Dif</th>
-            </tr>
-            <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-400">
-              <th />
-              <th />
-              <th className="p-2 text-right">Cajas</th>
-              <th className="p-2 text-right">Botellas</th>
-              <th className="p-2 text-right">Cajas</th>
-              <th className="p-2 text-right">Botellas</th>
-              <th className="p-2 text-right">Cajas</th>
-              <th className="p-2 text-right">Botellas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lineas.map((l, i) => (
-              <tr
-                key={i}
-                className={`border-b border-slate-100 ${
-                  l.dif_botellas !== 0 || l.dif_cajas !== 0 ? "bg-red-50" : ""
-                }`}
-              >
-                <td className="p-2 font-semibold">{l.presentacion}</td>
-                <td className="p-2">{l.estado}</td>
-                <td className="p-2 text-right font-mono">
-                  {l.estado === "CASILLERO" ? l.reporte_cajas : l.reporte_cajas}
-                </td>
-                <td className="p-2 text-right font-mono">
-                  {l.estado === "CASILLERO" ? "—" : l.reporte_botellas.toLocaleString()}
-                </td>
-                <td className="p-2 text-right font-mono">
-                  {l.comparado_cajas}
-                </td>
-                <td className="p-2 text-right font-mono">
-                  {l.estado === "CASILLERO" ? "—" : l.comparado_botellas.toLocaleString()}
-                </td>
-                <td className="p-2 text-right font-mono">
-                  <DifBadge value={l.dif_cajas} />
-                </td>
-                <td className="p-2 text-right font-mono">
-                  {l.estado === "CASILLERO" ? (
-                    <span className="text-slate-400">—</span>
-                  ) : (
-                    <DifBadge value={l.dif_botellas} />
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-8">
+      {vistas.map((vista, vi) => (
+        <div key={vi}>
+          <h4 className="text-sm font-bold text-slate-700 mb-3">{vista.titulo}</h4>
+          <div className="grid grid-cols-[1fr_60px_1fr] gap-0 border border-slate-200 rounded-lg overflow-hidden bg-white">
+            {/* Card izquierda */}
+            <div className="border-r border-slate-200">
+              <div className="border-l-4 border-blue-500">
+                <CardHeader side={vista.izquierda} />
+                {vista.lineas.map((l, i) => (
+                  <FilaCard key={i} linea={l} />
+                ))}
+              </div>
+            </div>
+
+            {/* Diferencia centro */}
+            <div className="flex flex-col justify-center bg-slate-50">
+              <div className="py-2">
+                <p className="text-[10px] text-center font-bold text-slate-400 uppercase">Dif</p>
+              </div>
+              {vista.lineas.map((l, i) => (
+                <FilaDif key={i} linea={l} />
+              ))}
+            </div>
+
+            {/* Card derecha */}
+            <div className="border-l border-slate-200">
+              <div className="border-l-4 border-emerald-500">
+                <CardHeader side={vista.derecha} />
+                {vista.lineas.map((l, i) => (
+                  <FilaComparado key={i} linea={l} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

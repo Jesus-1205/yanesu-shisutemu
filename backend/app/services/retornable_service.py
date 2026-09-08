@@ -688,7 +688,7 @@ def _stock_productos(db: Session, presentacion: str) -> tuple[int, int]:
 
 
 def obtener_comparacion(db: Session) -> ComparacionOut:
-    """Compara ultimo reporte vs sistema (productos) y vs reporte anterior."""
+    """Compara ultimo reporte vs sistema (movimientos) y vs reporte anterior."""
     ultimo = _obtener_ultimo_reporte(db)
     ultimo_detalle = _detalle_a_dict(db, ultimo.id) if ultimo else {}
 
@@ -701,21 +701,23 @@ def obtener_comparacion(db: Session) -> ComparacionOut:
     anterior = db.execute(anterior_stmt).scalars().first() if ultimo else None
     anterior_detalle = _detalle_a_dict(db, anterior.id) if anterior else {}
 
+    movimientos = _calcular_movimientos_desde(db, ultimo.fecha if ultimo else None)
+
     lineas_sistema: list[ComparacionLineaOut] = []
     lineas_anterior: list[ComparacionLineaOut] = []
 
     for pres in PRESENTACIONES:
-        stock_botellas, stock_cajas = _stock_productos(db, pres)
-
         for estado in ESTADOS:
             clave = (pres, estado)
             rep_b, rep_c = ultimo_detalle.get(clave, (0, 0))
             ant_b, ant_c = anterior_detalle.get(clave, (0, 0))
 
-            if estado == "LLENO":
-                sys_b, sys_c = stock_botellas, stock_cajas
+            delta = movimientos.get(clave, 0)
+            if estado == "CASILLERO":
+                sys_b, sys_c = 0, rep_c + delta
             else:
-                sys_b, sys_c = rep_b, rep_c
+                sys_b = rep_b + delta
+                sys_c = _botellas_a_cajas_enteras(sys_b)
 
             lineas_sistema.append(ComparacionLineaOut(
                 presentacion=pres,

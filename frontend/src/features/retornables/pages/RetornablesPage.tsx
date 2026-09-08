@@ -243,31 +243,36 @@ export default function RetornablesPage() {
             ) : comparacion.error ? (
               <ErrorBanner>{comparacion.error}</ErrorBanner>
             ) : comparacion.data ? (
-              <div>
-                {comparacion.data.ultimo_reporte && (
-                  <p className="text-sm text-slate-500 mb-4">
-                    Último reporte: #{comparacion.data.ultimo_reporte.id} —{" "}
-                    {formatDate(comparacion.data.ultimo_reporte.fecha)} por{" "}
-                    {comparacion.data.ultimo_reporte.realizado_por}
-                  </p>
-                )}
-
-                <ComparacionTabla
-                  titulo="Último reporte vs Sistema (productos asociados)"
-                  subtitulo="Comparación del conteo físico con el stock esperado según los productos asociados"
-                  lineas={comparacion.data.lineas_sistema}
-                />
-
-                <ComparacionTabla
-                  titulo="Último reporte vs Reporte anterior"
-                  subtitulo={
-                    comparacion.data.reporte_anterior
-                      ? `Comparación con reporte #${comparacion.data.reporte_anterior.id} del ${formatDate(comparacion.data.reporte_anterior.fecha)}`
-                      : "No hay reporte anterior"
-                  }
-                  lineas={comparacion.data.lineas_anterior}
-                />
-              </div>
+              <ComparacionTabla
+                vistas={[
+                  {
+                    titulo: "Último reporte vs Sistema (movimientos desde último reporte)",
+                    izquierda: {
+                      titulo: "Reporte actual",
+                      reporte: comparacion.data.ultimo_reporte,
+                    },
+                    derecha: {
+                      titulo: "Sistema esperado",
+                      reporte: null,
+                      sinReporte: true,
+                    },
+                    lineas: comparacion.data.lineas_sistema,
+                  },
+                  {
+                    titulo: "Último reporte vs Reporte anterior",
+                    izquierda: {
+                      titulo: "Reporte actual",
+                      reporte: comparacion.data.ultimo_reporte,
+                    },
+                    derecha: {
+                      titulo: "Reporte anterior",
+                      reporte: comparacion.data.reporte_anterior,
+                      sinReporte: !comparacion.data.reporte_anterior,
+                    },
+                    lineas: comparacion.data.lineas_anterior,
+                  },
+                ]}
+              />
             ) : null}
           </div>
         )}
