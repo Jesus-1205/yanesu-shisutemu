@@ -10,14 +10,13 @@ import { useRetornableReportes, useRetornableHistorico, useRetornableProductos, 
 import { ReportesTable } from "../components/ReportesTable";
 import { MovimientosTable } from "../components/MovimientosTable";
 import { ComparacionTabla } from "../components/ComparacionTabla";
+import { ProductosAsociadosTab } from "../components/ProductosAsociadosTab";
 import { NuevoReporteModal } from "../components/NuevoReporteModal";
-import { GestionarProductosModal } from "../components/GestionarProductosModal";
 import type { TabResumen } from "../types";
 
 export default function RetornablesPage() {
   const [activeTab, setActiveTab] = useState<TabResumen>("resumen");
   const [showNuevoReporte, setShowNuevoReporte] = useState(false);
-  const [showGestionarProductos, setShowGestionarProductos] = useState(false);
   const [reportePage, setReportePage] = useState(1);
   const [historicoPage, setHistoricoPage] = useState(1);
   const [histFilters, setHistFilters] = useState<{
@@ -36,6 +35,7 @@ export default function RetornablesPage() {
     { value: "resumen", label: "Resumen" },
     { value: "reportes", label: "Reportes" },
     { value: "historico", label: "Histórico" },
+    { value: "productos", label: "Productos" },
   ];
 
   return (
@@ -44,14 +44,9 @@ export default function RetornablesPage() {
         title="Inventario Retornable"
         description="Control de casilleros, cajas vacías y llenas"
         actions={
-          <div className="flex gap-2">
-            <Button variant="accent" onClick={() => setShowNuevoReporte(true)}>
-              Nuevo Reporte
-            </Button>
-            <Button variant="outline" onClick={() => setShowGestionarProductos(true)}>
-              Gestionar Productos
-            </Button>
-          </div>
+          <Button variant="accent" onClick={() => setShowNuevoReporte(true)}>
+            Nuevo Reporte
+          </Button>
         }
       />
 
@@ -236,6 +231,14 @@ export default function RetornablesPage() {
           </div>
         )}
 
+        {activeTab === "productos" && (
+          <ProductosAsociadosTab
+            productos={productos.data ?? []}
+            loading={productos.loading}
+            onRefresh={productos.refetch}
+          />
+        )}
+
       </div>
 
       <NuevoReporteModal
@@ -246,15 +249,6 @@ export default function RetornablesPage() {
           historico.refetch();
           comparacion.refetch();
         }}
-      />
-
-      <GestionarProductosModal
-        open={showGestionarProductos}
-        onClose={() => setShowGestionarProductos(false)}
-        onSaved={() => {
-          productos.refetch();
-        }}
-        productos={productos.data}
       />
     </div>
   );
