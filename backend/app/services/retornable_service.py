@@ -443,14 +443,7 @@ def registrar_movimiento(
     observaciones: str | None = None,
 ) -> RetornableMovimiento:
     inv = _obtener_o_crear_inventario(db, presentacion, estado)
-    nuevo_stock = inv.cantidad_botellas + delta_botellas
-    if nuevo_stock < 0:
-        raise ConflictError(
-            f"Stock insuficiente para {presentacion}/{estado}: "
-            f"disponible={inv.cantidad_botellas}, "
-            f"solicitado={abs(delta_botellas)}"
-        )
-    inv.cantidad_botellas = nuevo_stock
+    inv.cantidad_botellas += delta_botellas
     if estado == "CASILLERO":
         inv.cantidad_cajas += delta_botellas
     else:

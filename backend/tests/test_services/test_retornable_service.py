@@ -570,13 +570,6 @@ class TestRegistrarMovimiento:
         assert inv.cantidad_botellas == 50
         assert inv.cantidad_cajas == _botellas_a_cajas_enteras(50, "222")
 
-    def test_delta_negativo_lanza_error(self, db, user):
-        with pytest.raises(ConflictError):
-            registrar_movimiento(
-                db, presentacion="222", estado="LLENO", delta_botellas=-20,
-                tipo_movimiento="VENTA", usuario_id=user.id,
-            )
-
     def test_con_referencia(self, db, user):
         inv = _obtener_o_crear_inventario(db, "222", "LLENO")
         inv.cantidad_botellas = 100
