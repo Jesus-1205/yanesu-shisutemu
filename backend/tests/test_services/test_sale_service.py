@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
@@ -663,16 +663,20 @@ def test_get_top_week_sales_returns_highest_revenue_week(db):
     u = _user(db)
     p = _product(db)
     pm = _payment_method(db)
+    now = datetime.now(timezone.utc)
+    # Week A (this week): $200 — should win
     s1 = Sale(usuario_id=u.id,  tasa_bcv_aplicada=Decimal("50"),
-              fecha_venta=datetime(2026, 7, 6, 10, 0, tzinfo=timezone.utc),
+              fecha_venta=now - timedelta(days=now.weekday()),  # monday of this week
               monto_exento_usd=Decimal("200"), base_imponible_usd=Decimal("0"),
               monto_iva_usd=Decimal("0"))
+    # Week B (last week): $100
     s2 = Sale(usuario_id=u.id,  tasa_bcv_aplicada=Decimal("50"),
-              fecha_venta=datetime(2026, 7, 13, 10, 0, tzinfo=timezone.utc),
+              fecha_venta=now - timedelta(days=now.weekday() + 7),
               monto_exento_usd=Decimal("100"), base_imponible_usd=Decimal("0"),
               monto_iva_usd=Decimal("0"))
+    # Week B (last week, tuesday): $50
     s3 = Sale(usuario_id=u.id,  tasa_bcv_aplicada=Decimal("50"),
-              fecha_venta=datetime(2026, 7, 14, 10, 0, tzinfo=timezone.utc),
+              fecha_venta=now - timedelta(days=now.weekday() + 6),
               monto_exento_usd=Decimal("50"), base_imponible_usd=Decimal("0"),
               monto_iva_usd=Decimal("0"))
     db.add_all([s1, s2, s3])
@@ -680,7 +684,8 @@ def test_get_top_week_sales_returns_highest_revenue_week(db):
 
     result = get_top_week_sales(db)
     assert result is not None
-    assert result.periodo == "2026-07-06"
+    expected_monday = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+    assert result.periodo == expected_monday
     assert result.total_ventas == 1
     assert result.total_usd == Decimal("200")
     assert result.total_ves == Decimal("10000")
@@ -690,12 +695,15 @@ def test_get_top_week_sales_with_mixed_amounts(db):
     u = _user(db)
     p = _product(db)
     pm = _payment_method(db)
+    now = datetime.now(timezone.utc)
+    # Week A (last week): $100
     s1 = Sale(usuario_id=u.id,  tasa_bcv_aplicada=Decimal("60"),
-              fecha_venta=datetime(2026, 7, 6, 10, 0, tzinfo=timezone.utc),
+              fecha_venta=now - timedelta(days=now.weekday() + 7),
               monto_exento_usd=Decimal("100"), base_imponible_usd=Decimal("0"),
               monto_iva_usd=Decimal("0"))
+    # Week B (this week): $120 — should win
     s2 = Sale(usuario_id=u.id,  tasa_bcv_aplicada=Decimal("50"),
-              fecha_venta=datetime(2026, 7, 13, 10, 0, tzinfo=timezone.utc),
+              fecha_venta=now - timedelta(days=now.weekday()),
               monto_exento_usd=Decimal("80"), base_imponible_usd=Decimal("30"),
               monto_iva_usd=Decimal("10"))
     db.add_all([s1, s2])
@@ -703,6 +711,7 @@ def test_get_top_week_sales_with_mixed_amounts(db):
 
     result = get_top_week_sales(db)
     assert result is not None
-    assert result.periodo == "2026-07-13"
+    expected_monday = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+    assert result.periodo == expected_monday
     assert result.total_ventas == 1
     assert result.total_usd == Decimal("120")
