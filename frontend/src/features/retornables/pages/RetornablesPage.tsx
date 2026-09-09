@@ -6,6 +6,7 @@ import ErrorBanner from "@/ui-components/ErrorBanner";
 import Spinner from "@/ui-components/Spinner";
 import Select from "@/ui-components/Select";
 import Input from "@/ui-components/Input";
+import Pagination from "@/ui-components/Pagination";
 import { useRetornableReportes, useRetornableHistorico, useRetornableProductos, useRetornableComparacion } from "../hooks/useRetornable";
 import { ReportesTable } from "../components/ReportesTable";
 import { MovimientosTable } from "../components/MovimientosTable";
@@ -107,29 +108,12 @@ export default function RetornablesPage() {
               reportes={reportes.data?.items ?? []}
               loading={reportes.loading}
             />
-            {reportes.data && reportes.data.pages > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={reportePage <= 1}
-                  onClick={() => setReportePage((p) => p - 1)}
-                >
-                  Anterior
-                </Button>
-                <span className="text-sm text-slate-500 py-1">
-                  Página {reportes.data.page} de {reportes.data.pages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={reportePage >= reportes.data.pages}
-                  onClick={() => setReportePage((p) => p + 1)}
-                >
-                  Siguiente
-                </Button>
-              </div>
-            )}
+            <Pagination
+              page={reportePage}
+              totalPages={reportes.data?.pages ?? 1}
+              onPageChange={setReportePage}
+              className="mt-4"
+            />
           </div>
         )}
 
@@ -205,29 +189,12 @@ export default function RetornablesPage() {
               loading={historico.loading}
             />
 
-            {historico.data && historico.data.pages > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={historicoPage <= 1}
-                  onClick={() => setHistoricoPage((p) => p - 1)}
-                >
-                  Anterior
-                </Button>
-                <span className="text-sm text-slate-500 py-1">
-                  Página {historico.data.page} de {historico.data.pages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={historicoPage >= historico.data.pages}
-                  onClick={() => setHistoricoPage((p) => p + 1)}
-                >
-                  Siguiente
-                </Button>
-              </div>
-            )}
+            <Pagination
+              page={historicoPage}
+              totalPages={historico.data?.pages ?? 1}
+              onPageChange={setHistoricoPage}
+              className="mt-4"
+            />
           </div>
         )}
 
