@@ -948,3 +948,10 @@ export interface ComparacionOut {
   lineas_anterior: ComparacionLineaOut[];
 }
 
+export interface DashboardStatsOut {
+  total_productos: number;
+  sin_stock: number;
+  total_categorias: number;
+  total_proveedores: number;
+}
+

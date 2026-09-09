@@ -26,6 +26,7 @@ import type {
   InvoicePaymentSummary,
   InvoicePendingSummaryOut,
   InvoiceStatsOut,
+  DashboardStatsOut,
   TopSupplier,
   PaymentMethodCreate,
   PaymentMethodOut,
@@ -536,6 +537,9 @@ export const api = {
 
   getInvoicePendingSummary: () =>
     request<InvoicePendingSummaryOut>("/invoices/pending-summary"),
+
+  getDashboardStats: () =>
+    request<DashboardStatsOut>("/dashboard/stats"),
 
   getTopSuppliers: () =>
     request<TopSupplier[]>("/invoices/top-suppliers"),

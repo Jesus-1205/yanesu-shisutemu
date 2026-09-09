@@ -11,7 +11,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { api } from "@/services/api";
-import type { ProductOut, SalesSummaryItem, InvoiceStatsOut, InvoicePendingSummaryOut } from "@/types/api";
+import type { DashboardStatsOut, ProductOut, SalesSummaryItem, InvoiceStatsOut, InvoicePendingSummaryOut } from "@/types/api";
 import StatCard from "@/ui-components/StatCard";
 import Spinner from "@/ui-components/Spinner";
 import ChartContainer from "@/ui-components/charts/ChartContainer";
@@ -23,10 +23,7 @@ import { formatCurrency } from "@/lib/utils";
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
-  const [totalProductos, setTotalProductos] = useState(0);
-  const [sinStock, setSinStock] = useState(0);
-  const [totalCategorias, setTotalCategorias] = useState(0);
-  const [totalProveedores, setTotalProveedores] = useState(0);
+  const [stats, setStats] = useState<DashboardStatsOut | null>(null);
   const [ventasSemana, setVentasSemana] = useState<SalesSummaryItem | null>(null);
   const [salesSummary, setSalesSummary] = useState<SalesSummaryItem[]>([]);
   const [topProducts, setTopProducts] = useState<{ producto: ProductOut; total_vendido: number }[]>([]);
@@ -42,32 +39,19 @@ export default function DashboardPage() {
     const fechaHasta = lastSunday.toISOString().slice(0, 10);
 
     Promise.allSettled([
-      api.getProducts({ page_size: 9999 }),
-      api.getCategories(),
-      api.getSuppliers(),
+      api.getDashboardStats(),
       api.getSalesSummary({ rango: "semanal", fecha_desde: fechaDesde, fecha_hasta: fechaHasta }),
       api.getTopSellingProducts(5),
       api.getInvoiceStats(),
       api.getInvoicePendingSummary(),
     ]).then(([
-      productsRes,
-      categoriesRes,
-      suppliersRes,
+      statsRes,
       salesSummaryRes,
       topProductsRes,
       invoiceStatsRes,
       pendingSummaryRes,
     ]) => {
-      if (productsRes.status === "fulfilled") {
-        setTotalProductos(productsRes.value.total);
-        setSinStock(
-          productsRes.value.items.filter(
-            (p) => (p.stock_cajas * p.unidades_por_caja + p.stock_unidades) === 0
-          ).length
-        );
-      }
-      if (categoriesRes.status === "fulfilled") setTotalCategorias(categoriesRes.value.length);
-      if (suppliersRes.status === "fulfilled") setTotalProveedores(suppliersRes.value.length);
+      if (statsRes.status === "fulfilled") setStats(statsRes.value);
       if (salesSummaryRes.status === "fulfilled") {
         const data = salesSummaryRes.value;
         setSalesSummary(data.slice(-5));
@@ -139,7 +123,7 @@ export default function DashboardPage() {
         <Link to="/products" className="block lg:col-span-2">
           <StatCard
             label="Productos"
-            value={String(totalProductos)}
+            value={String(stats?.total_productos ?? 0)}
             icon={<Package className="size-5" />}
             className="cursor-pointer transition-shadow hover:shadow-md"
           />
@@ -147,7 +131,7 @@ export default function DashboardPage() {
         <Link to="/categories" className="block lg:col-span-2">
           <StatCard
             label="Categorías"
-            value={String(totalCategorias)}
+            value={String(stats?.total_categorias ?? 0)}
             icon={<ShoppingBag className="size-5" />}
             className="cursor-pointer transition-shadow hover:shadow-md"
           />
@@ -155,7 +139,7 @@ export default function DashboardPage() {
         <Link to="/suppliers" className="block lg:col-span-2">
           <StatCard
             label="Proveedores"
-            value={String(totalProveedores)}
+            value={String(stats?.total_proveedores ?? 0)}
             icon={<Building2 className="size-5" />}
             className="cursor-pointer transition-shadow hover:shadow-md"
           />
@@ -163,9 +147,9 @@ export default function DashboardPage() {
         <Link to="/products?stock=agotado" className="block lg:col-span-2">
           <StatCard
             label="Sin stock"
-            value={String(sinStock)}
+            value={String(stats?.sin_stock ?? 0)}
             icon={<AlertTriangle className="size-5" />}
-            variant={sinStock > 0 ? "danger" : "success"}
+            variant={(stats?.sin_stock ?? 0) > 0 ? "danger" : "success"}
             className="cursor-pointer transition-shadow hover:shadow-md"
           />
         </Link>
