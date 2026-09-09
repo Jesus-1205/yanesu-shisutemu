@@ -241,6 +241,10 @@ class TestCalcularMovimientosDesde:
         assert resultado == {}
 
     def test_con_fecha_none_acumula_todos(self, db, user):
+        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv.cantidad_botellas = 100
+        db.commit()
+
         registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
@@ -255,6 +259,10 @@ class TestCalcularMovimientosDesde:
         assert resultado[("222", "LLENO")] == -15
 
     def test_con_fecha_filtra(self, db, user):
+        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv.cantidad_botellas = 100
+        db.commit()
+
         registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
@@ -266,6 +274,12 @@ class TestCalcularMovimientosDesde:
         assert resultado == {}
 
     def test_acumula_por_clave(self, db, user):
+        inv_lleno_222 = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv_lleno_222.cantidad_botellas = 100
+        inv_lleno_333 = _obtener_o_crear_inventario(db, "333", "LLENO")
+        inv_lleno_333.cantidad_botellas = 50
+        db.commit()
+
         registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
@@ -409,6 +423,27 @@ class TestConfirmarReporte:
         db.refresh(r)
         assert r.es_actual is True
 
+        # Verificar que el inventario se actualizo con los valores del reporte
+        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
+        assert inv.cantidad_botellas == 200  # valor del reporte
+
+    def test_confirmar_genera_movimientos_si_hay_delta(self, db, user):
+        r = _crear_reporte(db, user.id)
+        # Alterar el inventario para crear un delta
+        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv.cantidad_botellas = 180  # reporte dice 200, inventario tiene 180
+        db.commit()
+
+        confirmar_reporte(db, r.id)
+
+        from app.models.retornable import RetornableMovimiento
+        movimientos = db.execute(
+            select(RetornableMovimiento).where(
+                RetornableMovimiento.tipo_movimiento == "REPORTE"
+            )
+        ).scalars().all()
+        assert len(movimientos) > 0  # delta=20, se crea movimiento
+
     def test_reporte_no_existe(self, db):
         with pytest.raises(EntityNotFoundError):
             confirmar_reporte(db, 9999)
@@ -504,6 +539,10 @@ class TestObtenerDetalleReporte:
 
 class TestRegistrarMovimiento:
     def test_registro_exitoso(self, db, user):
+        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv.cantidad_botellas = 100
+        db.commit()
+
         mov = registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
@@ -531,16 +570,18 @@ class TestRegistrarMovimiento:
         assert inv.cantidad_botellas == 50
         assert inv.cantidad_cajas == _botellas_a_cajas_enteras(50, "222")
 
-    def test_delta_negativo(self, db, user):
-        registrar_movimiento(
-            db, presentacion="222", estado="LLENO", delta_botellas=-20,
-            tipo_movimiento="VENTA", usuario_id=user.id,
-        )
-        db.commit()
-        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
-        assert inv.cantidad_botellas == -20
+    def test_delta_negativo_lanza_error(self, db, user):
+        with pytest.raises(ConflictError):
+            registrar_movimiento(
+                db, presentacion="222", estado="LLENO", delta_botellas=-20,
+                tipo_movimiento="VENTA", usuario_id=user.id,
+            )
 
     def test_con_referencia(self, db, user):
+        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv.cantidad_botellas = 100
+        db.commit()
+
         mov = registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", referencia_id=1,
@@ -566,12 +607,20 @@ class TestRegistrarMovimiento:
 
 
 class TestListarMovimientos:
+    def _setup_stock(self, db):
+        inv = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv.cantidad_botellas = 100
+        inv2 = _obtener_o_crear_inventario(db, "333", "LLENO")
+        inv2.cantidad_botellas = 50
+        db.commit()
+
     def test_sin_movimientos(self, db):
         result = listar_movimientos(db)
         assert result.total == 0
         assert result.items == []
 
     def test_con_movimientos(self, db, user):
+        self._setup_stock(db)
         registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
@@ -581,6 +630,7 @@ class TestListarMovimientos:
         assert result.total == 1
 
     def test_filtro_por_presentacion(self, db, user):
+        self._setup_stock(db)
         registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
@@ -595,12 +645,13 @@ class TestListarMovimientos:
         assert result.items[0].presentacion == "222"
 
     def test_filtro_por_tipo(self, db, user):
+        self._setup_stock(db)
         registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
         )
         registrar_movimiento(
-            db, presentacion="222", estado="LLENO", delta_botellas=10,
+            db, presentacion="222", estado="VACIO", delta_botellas=10,
             tipo_movimiento="COMPRA", usuario_id=user.id,
         )
         db.commit()
@@ -608,6 +659,7 @@ class TestListarMovimientos:
         assert result.total == 1
 
     def test_usuario_nombre(self, db, user):
+        self._setup_stock(db)
         registrar_movimiento(
             db, presentacion="222", estado="LLENO", delta_botellas=-10,
             tipo_movimiento="VENTA", usuario_id=user.id,
@@ -617,6 +669,7 @@ class TestListarMovimientos:
         assert result.items[0].usuario_nombre == "Admin Test"
 
     def test_paginacion(self, db, user):
+        self._setup_stock(db)
         for _ in range(5):
             registrar_movimiento(
                 db, presentacion="222", estado="LLENO", delta_botellas=-10,
@@ -689,6 +742,11 @@ class TestListarProductosAsociados:
 class TestProcesarVenta:
     def test_producto_asociado_genera_movimientos(self, db, user, product_222):
         asociar_producto(db, product_222.id, "222")
+        # Set up initial stock so sale doesn't go negative
+        inv_lleno = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv_lleno.cantidad_botellas = 100
+        db.commit()
+
         procesar_venta(
             db, product=product_222, botellas_descontadas=10,
             referencia_id=1, usuario_id=user.id,
@@ -708,16 +766,24 @@ class TestProcesarVenta:
 
     def test_lleno_delta_negativo(self, db, user, product_222):
         asociar_producto(db, product_222.id, "222")
+        inv_lleno = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv_lleno.cantidad_botellas = 50
+        db.commit()
+
         procesar_venta(
             db, product=product_222, botellas_descontadas=10,
             referencia_id=1, usuario_id=user.id,
         )
         db.commit()
         inv = _obtener_o_crear_inventario(db, "222", "LLENO")
-        assert inv.cantidad_botellas == -10
+        assert inv.cantidad_botellas == 40  # 50 - 10
 
     def test_vacio_delta_positivo(self, db, user, product_222):
         asociar_producto(db, product_222.id, "222")
+        inv_lleno = _obtener_o_crear_inventario(db, "222", "LLENO")
+        inv_lleno.cantidad_botellas = 100
+        db.commit()
+
         procesar_venta(
             db, product=product_222, botellas_descontadas=10,
             referencia_id=1, usuario_id=user.id,
@@ -730,6 +796,10 @@ class TestProcesarVenta:
 class TestProcesarCompra:
     def test_producto_asociado_genera_movimientos(self, db, user, product_333):
         asociar_producto(db, product_333.id, "333")
+        inv_vacio = _obtener_o_crear_inventario(db, "333", "VACIO")
+        inv_vacio.cantidad_botellas = 50
+        db.commit()
+
         procesar_compra(
             db, product=product_333, botellas_agregadas=24,
             referencia_id=1, usuario_id=user.id,
@@ -749,6 +819,10 @@ class TestProcesarCompra:
 
     def test_lleno_delta_positivo(self, db, user, product_333):
         asociar_producto(db, product_333.id, "333")
+        inv_vacio = _obtener_o_crear_inventario(db, "333", "VACIO")
+        inv_vacio.cantidad_botellas = 50
+        db.commit()
+
         procesar_compra(
             db, product=product_333, botellas_agregadas=24,
             referencia_id=1, usuario_id=user.id,
@@ -759,13 +833,17 @@ class TestProcesarCompra:
 
     def test_vacio_delta_negativo(self, db, user, product_333):
         asociar_producto(db, product_333.id, "333")
+        inv_vacio = _obtener_o_crear_inventario(db, "333", "VACIO")
+        inv_vacio.cantidad_botellas = 50
+        db.commit()
+
         procesar_compra(
             db, product=product_333, botellas_agregadas=24,
             referencia_id=1, usuario_id=user.id,
         )
         db.commit()
         inv = _obtener_o_crear_inventario(db, "333", "VACIO")
-        assert inv.cantidad_botellas == -24
+        assert inv.cantidad_botellas == 26  # 50 - 24
 
 
 # ===========================================================================
@@ -855,10 +933,11 @@ class TestCalcularLlenoEsperado:
         assert _calcular_lleno_esperado(db, "222") == esperado
 
     def test_dos_productos_misma_presentacion(self, db, product_222, product_333):
-        # Solo product_222 asociado a 222
         asociar_producto(db, product_222.id, "222")
-        esperado = 10 * 36 + 18  # 378
-        assert _calcular_lleno_esperado(db, "222") == esperado
+        asociar_producto(db, product_333.id, "222")
+        esperado_222 = 10 * 36 + 18  # 378
+        esperado_333 = 5 * 36 + 12  # 192
+        assert _calcular_lleno_esperado(db, "222") == esperado_222 + esperado_333
 
 
 # ===========================================================================

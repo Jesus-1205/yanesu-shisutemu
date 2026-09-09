@@ -36,6 +36,10 @@ _PRODUCT_333 = {
 
 def _login(client, user):
     client.post("/api/auth/register", json=user)
+    client.post("/api/auth/login", json={
+        "username": user["username"],
+        "password": user["password"],
+    })
 
 
 def _crear_producto(client):
