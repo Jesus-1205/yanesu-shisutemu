@@ -187,3 +187,44 @@ class TestToggleActive:
         response = client.patch("/api/users/999/toggle-active")
         assert response.status_code == 404
         assert "Usuario no encontrado" in response.json()["detail"]
+
+
+class TestDeleteUser:
+    def test_delete_success(self, client):
+        _register_admin(client)
+        _register_operator(client)
+        _login_as_admin(client)
+        response = client.delete("/api/users/2")
+        assert response.status_code == 204
+
+        response = client.get("/api/users/2")
+        assert response.status_code == 404
+
+        all_users = client.get("/api/users").json()
+        assert all(u["id"] != 2 for u in all_users)
+
+    def test_delete_not_found(self, client):
+        _register_admin(client)
+        _login_as_admin(client)
+        response = client.delete("/api/users/999")
+        assert response.status_code == 404
+
+    def test_delete_self_forbidden(self, client):
+        _register_admin(client)
+        _login_as_admin(client)
+        response = client.delete("/api/users/1")
+        assert response.status_code == 400
+        assert "eliminarte a ti mismo" in response.json()["detail"]
+
+    def test_delete_unauthenticated(self, client):
+        response = client.delete("/api/users/1")
+        assert response.status_code == 401
+
+    def test_delete_as_operator_forbidden(self, client):
+        _register_operator(client)
+        client.post("/api/auth/login", json={
+            "username": "operator",
+            "password": "op123",
+        })
+        response = client.delete("/api/users/1")
+        assert response.status_code == 403

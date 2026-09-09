@@ -161,3 +161,70 @@ def test_admin_required(client):
     })
     response = client.get("/admin-only")
     assert response.status_code == 403
+
+
+class TestSetupStatus:
+    def test_setup_status_needs_setup(self, client):
+        response = client.get("/api/auth/setup-status")
+        assert response.status_code == 200
+        data = response.json()
+        assert "needs_setup" in data
+        assert data["needs_setup"] is True
+
+    def test_setup_status_after_register(self, client):
+        client.post("/api/auth/register", json={
+            "username": "first",
+            "email": "first@test.com",
+            "password": "pass123",
+            "nombre_completo": "First",
+            "rol_id": 1,
+        })
+        response = client.get("/api/auth/setup-status")
+        assert response.status_code == 200
+        assert response.json()["needs_setup"] is False
+
+
+class TestSetupAdmin:
+    def test_setup_creates_admin(self, client):
+        response = client.post("/api/auth/setup", json={
+            "username": "setupadmin",
+            "email": "setup@test.com",
+            "password": "admin123",
+            "nombre_completo": "Setup Admin",
+            "rol_id": 1,
+        })
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "setupadmin"
+        assert data["rol_nombre"] == "ADMINISTRADOR"
+        assert "id" in data
+
+        cookies = response.headers.get("set-cookie")
+        assert cookies is not None
+        assert "access_token" in cookies
+
+        me = client.get("/api/auth/me")
+        assert me.status_code == 200
+        assert me.json()["username"] == "setupadmin"
+
+    def test_setup_fails_if_users_exist(self, client):
+        client.post("/api/auth/register", json={
+            "username": "existing",
+            "email": "exists@test.com",
+            "password": "pass123",
+            "nombre_completo": "Existing",
+            "rol_id": 1,
+        })
+        response = client.post("/api/auth/setup", json={
+            "username": "another",
+            "email": "another@test.com",
+            "password": "pass123",
+            "nombre_completo": "Another",
+            "rol_id": 1,
+        })
+        assert response.status_code == 400
+        assert "ya tiene usuarios" in response.json()["detail"]
+
+    def test_setup_missing_fields(self, client):
+        response = client.post("/api/auth/setup", json={"username": "incomplete"})
+        assert response.status_code == 422
