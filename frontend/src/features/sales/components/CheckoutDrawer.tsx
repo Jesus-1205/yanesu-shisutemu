@@ -368,7 +368,7 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                 </button>
               </div>
 
-              <div className={`mb-2 grid gap-1.5 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
+              <div className={`mb-2 grid gap-1.5 px-0.5 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
                 {methods.map((m) => (
                   <div key={m.id}>
                     <label
