@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, SlidersHorizontal, FileText, Download, Star } from "lucide-react";
+import { Plus, SlidersHorizontal, FileText, Download, Star, Boxes, Tags, ChevronDown } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut, CategoryOut, SupplierOut } from "@/types/api";
 import type { Column } from "@/ui-components/Table";
@@ -96,6 +96,22 @@ export default function ProductsPage() {
 
   const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [catalogMenuOpen, setCatalogMenuOpen] = useState(false);
+  const catalogMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (catalogMenuRef.current && !catalogMenuRef.current.contains(e.target as Node)) {
+        setCatalogMenuOpen(false);
+      }
+    };
+    if (catalogMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [catalogMenuOpen]);
 
   useEffect(() => {
     const stockParam = searchParams.get("stock");
@@ -372,6 +388,53 @@ export default function ProductsPage() {
         {/* Actions row */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {!isOperator && <ViewToggle view={view} onChange={setView} />}
+          {!isOperator && (
+            <div className="relative" ref={catalogMenuRef}>
+              <Button
+                variant="outline"
+                onClick={() => setCatalogMenuOpen((prev) => !prev)}
+                title="Gestión de Catálogo"
+              >
+                <Boxes className="size-4 text-brand-blue" />
+                <span className="hidden xl:inline">Catálogo</span>
+                <ChevronDown
+                  className={`size-3.5 transition-transform duration-200 ${
+                    catalogMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </Button>
+              {catalogMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-56 rounded-xl border border-slate-200 bg-surface p-1.5 shadow-lg">
+                  <button
+                    onClick={() => {
+                      setCatalogMenuOpen(false);
+                      navigate("/combos");
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    <Boxes className="size-4 text-brand-blue" />
+                    <div>
+                      <p className="font-semibold text-text-main">Combos</p>
+                      <p className="text-xs text-slate-400">Gestionar paquetes</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCatalogMenuOpen(false);
+                      navigate("/price-rules");
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    <Tags className="size-4 text-emerald-600" />
+                    <div>
+                      <p className="font-semibold text-text-main">Reglas de Precio</p>
+                      <p className="text-xs text-slate-400">Precios en divisas</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <Button variant="accent" onClick={openCreate}>
             <Plus className="size-4" />
             <span className="xs:inline hidden">Nuevo</span>
