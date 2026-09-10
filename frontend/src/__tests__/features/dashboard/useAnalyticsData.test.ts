@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useAnalyticsData } from "@/features/dashboard/hooks/useAnalyticsData";
 
 // ── Estado inicial ────────────────────────────────────────────────────────────
@@ -108,11 +108,12 @@ describe("useAnalyticsData - refetch manual", () => {
 
     expect(result.current.data).toEqual({ call: 1 });
 
-    result.current.refetch();
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => {
+      result.current.refetch();
+    });
+    await waitFor(() => expect(result.current.data).toEqual({ call: 2 }));
 
     expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(result.current.data).toEqual({ call: 2 });
   });
 
   it("refetch tras error limpia el error anterior", async () => {
@@ -126,11 +127,12 @@ describe("useAnalyticsData - refetch manual", () => {
 
     expect(result.current.error).toBe("Fallo");
 
-    result.current.refetch();
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => {
+      result.current.refetch();
+    });
+    await waitFor(() => expect(result.current.data).toEqual({ ok: true }));
 
     expect(result.current.error).toBeNull();
-    expect(result.current.data).toEqual({ ok: true });
   });
 
   it("immediate=false: refetch manual ejecuta el fetcher", async () => {
@@ -141,11 +143,12 @@ describe("useAnalyticsData - refetch manual", () => {
 
     expect(fetcher).not.toHaveBeenCalled();
 
-    result.current.refetch();
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => {
+      result.current.refetch();
+    });
+    await waitFor(() => expect(result.current.data).toEqual({ on_demand: true }));
 
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(result.current.data).toEqual({ on_demand: true });
   });
 });
 
