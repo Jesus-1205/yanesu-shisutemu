@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Boxes, CreditCard, Sparkles, CheckCircle2, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, Sparkles, CheckCircle2, Layers } from "lucide-react";
 import { api } from "@/services/api";
 import type { ComboOut, ComboCreate, ComboUpdate, PaymentMethodOut, ComboGroupEntry } from "@/types/api";
 import Table from "@/ui-components/Table";

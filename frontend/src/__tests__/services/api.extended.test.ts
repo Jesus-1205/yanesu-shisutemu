@@ -111,7 +111,7 @@ describe("api - ventas (createSale payload completo)", () => {
     };
 
     mockFetch.mockResolvedValueOnce(mockOk({ id: 99, total_usd: "40.80" }));
-    const result = await api.createSale(payload as Parameters<typeof api.createSale>[0]);
+    const result = await api.createSale(payload as unknown as Parameters<typeof api.createSale>[0]);
 
     expect(result.id).toBe(99);
     expect(result.total_usd).toBe(40.8);
@@ -130,7 +130,7 @@ describe("api - ventas (createSale payload completo)", () => {
       mockOk({ items: [], combo_items: [], total_usd: "0.00" }),
     );
     await api.calculateSale({
-      items: [{ producto_id: 1, cantidad: 1, tipo_empaque: "UNIDAD" }],
+      items: [{ producto_id: 1, cantidad: 1, tipo_empaque: "UNIDAD", usa_precio_divisas: false }],
       combos: [],
       metodo_pago_ids: [1],
     });
@@ -421,9 +421,9 @@ describe("api - settings / api keys", () => {
   });
 
   it("testGeminiConnection envía POST y retorna el resultado", async () => {
-    mockFetch.mockResolvedValueOnce(mockOk({ ok: true, message: "Conexión exitosa" }));
+    mockFetch.mockResolvedValueOnce(mockOk({ success: true, message: "Conexión exitosa", models: [] }));
     const result = await api.testGeminiConnection({ clave: "GEMINI_API_KEY", valor: "abc123" });
-    expect(result.ok).toBe(true);
+    expect(result.success).toBe(true);
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/settings/api-key/test",
       expect.objectContaining({ method: "POST" }),
@@ -438,19 +438,19 @@ describe("api - normalización de decimales (responses complejas)", () => {
     mockFetch.mockResolvedValueOnce(
       mockOk({
         id: 1,
-        monto_total_usd: "1500.75",
+        total_usd: "1500.75",
         saldo_pendiente_usd: "500.25",
         detalles: [
-          { precio_unitario_usd: "10.50", subtotal_usd: "21.00", cantidad: 2 },
+          { costo_unitario_usd: "10.50", subtotal_usd: "21.00", cantidad: 2 },
         ],
-        pagos: [{ monto_usd: "1000.50" }],
+        total_pagado_usd: "1000.50",
       }),
     );
     const result = await api.getInvoice(1);
-    expect(result.monto_total_usd).toBe(1500.75);
+    expect(result.total_usd).toBe(1500.75);
     expect(result.saldo_pendiente_usd).toBe(500.25);
-    expect(result.detalles[0].precio_unitario_usd).toBe(10.5);
-    expect(result.pagos[0].monto_usd).toBe(1000.5);
+    expect(result.detalles[0].costo_unitario_usd).toBe(10.5);
+    expect(result.total_pagado_usd).toBe(1000.5);
   });
 
   it("preserva fields de ExchangeRatesResponse (rates como objeto)", async () => {

@@ -105,7 +105,7 @@ describe("Settings Sub-páginas wrappers", () => {
   });
 
   it("SettingsSystemPage monta el componente SystemSettingsPage", async () => {
-    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false });
+    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false, clave: "GEMINI_API_KEY", descripcion: null });
     render(
       <MemoryRouter>
         <SettingsSystemPage />
@@ -121,7 +121,7 @@ describe("Settings Sub-páginas wrappers", () => {
 
 describe("SystemSettingsPage", () => {
   it("muestra estado de carga inicial y luego badge 'No configurada'", async () => {
-    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false });
+    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false, clave: "GEMINI_API_KEY", descripcion: null });
 
     render(
       <MemoryRouter>
@@ -137,7 +137,7 @@ describe("SystemSettingsPage", () => {
   });
 
   it("muestra badge 'Configurada' y botón 'Eliminar' si ya existe key", async () => {
-    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: true });
+    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: true, clave: "GEMINI_API_KEY", descripcion: "Google Gemini" });
 
     render(
       <MemoryRouter>
@@ -152,7 +152,7 @@ describe("SystemSettingsPage", () => {
   });
 
   it("permite guardar una nueva API Key y muestra toast de éxito", async () => {
-    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false });
+    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false, clave: "GEMINI_API_KEY", descripcion: null });
     vi.mocked(api.saveApiKey).mockResolvedValueOnce({ message: "Guardado" });
 
     render(
@@ -184,10 +184,11 @@ describe("SystemSettingsPage", () => {
   });
 
   it("permite probar la conexión con Gemini y muestra resultado exitoso", async () => {
-    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false });
+    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: false, clave: "GEMINI_API_KEY", descripcion: null });
     vi.mocked(api.testGeminiConnection).mockResolvedValueOnce({
       success: true,
       message: "Modelos disponibles: gemini-1.5-flash",
+      models: ["gemini-1.5-flash"],
     });
 
     render(
@@ -217,7 +218,7 @@ describe("SystemSettingsPage", () => {
   });
 
   it("elimina la API Key y actualiza el estado a no configurada", async () => {
-    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: true });
+    vi.mocked(api.getApiKeyStatus).mockResolvedValueOnce({ configured: true, clave: "GEMINI_API_KEY", descripcion: "Google Gemini" });
     vi.mocked(api.deleteApiKey).mockResolvedValueOnce({ message: "Eliminado" });
 
     render(

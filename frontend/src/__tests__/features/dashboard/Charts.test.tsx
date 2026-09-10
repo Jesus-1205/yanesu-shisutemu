@@ -52,8 +52,8 @@ describe("SalesTrendChart", () => {
 
   it("renderiza el gráfico de área cuando hay datos diarios", () => {
     const data: SalesSummaryItem[] = [
-      { periodo: "2025-01-15", total_usd: 150.5, total_bs: 6772.5, cantidad_ventas: 5 },
-      { periodo: "2025-01-16", total_usd: 320.0, total_bs: 14400.0, cantidad_ventas: 12 },
+      { periodo: "2025-01-15", total_usd: 150.5, total_ves: 6772.5, total_ventas: 5, costo_usd: 100, margen_usd: 50.5 },
+      { periodo: "2025-01-16", total_usd: 320.0, total_ves: 14400.0, total_ventas: 12, costo_usd: 200, margen_usd: 120 },
     ];
 
     const { container } = render(<SalesTrendChart data={data} />);
@@ -63,8 +63,8 @@ describe("SalesTrendChart", () => {
 
   it("renderiza con formato mensual (YYYY-MM)", () => {
     const data: SalesSummaryItem[] = [
-      { periodo: "2025-01", total_usd: 5000, total_bs: 225000, cantidad_ventas: 120 },
-      { periodo: "2025-02", total_usd: 6200, total_bs: 279000, cantidad_ventas: 150 },
+      { periodo: "2025-01", total_usd: 5000, total_ves: 225000, total_ventas: 120, costo_usd: 3000, margen_usd: 2000 },
+      { periodo: "2025-02", total_usd: 6200, total_ves: 279000, total_ventas: 150, costo_usd: 3800, margen_usd: 2400 },
     ];
 
     const { container } = render(<SalesTrendChart data={data} />);
