@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Plus, CheckCircle2, Trash2 } from "lucide-react";
 import type { ComboOut, ComboCreate, ComboUpdate, PaymentMethodOut } from "@/types/api";
 import { useComboForm } from "../hooks/useComboForm";
@@ -23,8 +23,8 @@ export default function ComboFormModal({
   paymentMethods,
 }: ComboFormModalProps) {
   const form = useComboForm();
+  const [saving, setSaving] = useState(false);
 
-  // Reset form when modal opens with/without combo
   useEffect(() => {
     if (open) {
       form.resetForm(editingCombo);
@@ -35,11 +35,11 @@ export default function ComboFormModal({
     const { valid, payload } = form.validateAndBuildPayload();
     if (!valid || !payload) return;
 
-    form.setSaving(true);
+    setSaving(true);
     try {
       await onSave(payload, !!editingCombo);
     } finally {
-      form.setSaving(false);
+      setSaving(false);
     }
   };
 
@@ -243,13 +243,13 @@ export default function ComboFormModal({
         </div>
 
         <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-          <Button variant="ghost" onClick={onClose} disabled={form.saving}>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
           <Button
             variant="accent"
             onClick={handleSubmit}
-            loading={form.saving}
+            loading={saving}
             disabled={isSaveDisabled}
           >
             {editingCombo ? "Guardar Cambios" : "Crear Combo"}

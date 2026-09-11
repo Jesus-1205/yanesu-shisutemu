@@ -23,8 +23,6 @@ interface UseComboFormReturn {
   setFormPrecio: (v: string) => void;
   formGroups: FormGroup[];
   formMethodIds: number[];
-  saving: boolean;
-  setSaving: (v: boolean) => void;
   resetForm: (combo?: ComboOut | null) => void;
 
   handleProductSearch: (query: string) => Promise<{ value: number; label: string; subtitle?: string }[]>;
@@ -46,7 +44,6 @@ export function useComboForm(): UseComboFormReturn {
   const [formPrecio, setFormPrecio] = useState("");
   const [formGroups, setFormGroups] = useState<FormGroup[]>([]);
   const [formMethodIds, setFormMethodIds] = useState<number[]>([]);
-  const [saving, setSaving] = useState(false);
 
   const resetForm = useCallback((combo?: ComboOut | null) => {
     if (combo) {
@@ -156,7 +153,6 @@ export function useComboForm(): UseComboFormReturn {
     formDesc, setFormDesc,
     formPrecio, setFormPrecio,
     formGroups, formMethodIds,
-    saving, setSaving,
     resetForm,
     handleProductSearch,
     addGroup, updateGroup, removeGroup,
