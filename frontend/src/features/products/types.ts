@@ -36,6 +36,36 @@ export const FILTERS_DEFAULT: ProductFiltersState = {
   tipo_iva: "",
 };
 
+export interface ProductFormData {
+  nombre: string;
+  codigo_barra: string;
+  categoria_ids: number[];
+  precio_costo_caja_usd: number | "";
+  precio_unidad_usd: number | "";
+  tipo_iva: "GRAVADO" | "EXENTO";
+  stock_cajas: number | "";
+  stock_unidades: number | "";
+  stock_minimo: number | "";
+  unidades_por_caja: number | "";
+  precio_caja_usd: number | "";
+  proveedor_id: number | null;
+}
+
+export const PRODUCT_FORM_INITIAL: ProductFormData = {
+  nombre: "",
+  codigo_barra: "",
+  categoria_ids: [],
+  precio_costo_caja_usd: "",
+  precio_unidad_usd: "",
+  tipo_iva: "GRAVADO",
+  stock_cajas: "",
+  stock_unidades: "",
+  stock_minimo: "",
+  unidades_por_caja: "",
+  precio_caja_usd: "",
+  proveedor_id: null,
+};
+
 export interface MarginDisplay {
   margen: number;
   label: string;
