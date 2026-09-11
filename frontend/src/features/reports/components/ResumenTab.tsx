@@ -5,7 +5,6 @@ import { api } from "@/services/api";
 import type { ProductOut } from "@/types/api";
 import type { SalesSummaryItem } from "@/features/sales/types";
 import { formatPeriodRange } from "@/utils/dateUtils";
-import { useSortableData } from "@/hooks/useSortableData";
 import StatCard from "@/ui-components/StatCard";
 import Table from "@/ui-components/Table";
 import Select from "@/ui-components/Select";
