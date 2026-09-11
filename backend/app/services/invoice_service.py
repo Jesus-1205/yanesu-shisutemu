@@ -484,6 +484,7 @@ def create_invoice(
     )
 
     detalles = []
+    productos_retornables: dict[int, tuple[Product, int]] = {}
     for item in data.detalles:
         stmt_prod = select(Product).where(Product.id == item.producto_id)
         product = db.execute(stmt_prod).scalars().first()
@@ -519,6 +520,14 @@ def create_invoice(
         subtotal_bs = Decimal(item.cantidad) * costo_bs
         total_usd += subtotal_usd
         total_bs += subtotal_bs
+
+        if product.id in productos_retornables:
+            productos_retornables[product.id] = (
+                product,
+                productos_retornables[product.id][1] + unidades_ingresadas,
+            )
+        else:
+            productos_retornables[product.id] = (product, unidades_ingresadas)
 
         stock_total_actual = Decimal(
             product.stock_unidades + (product.stock_cajas * product.unidades_por_caja)
@@ -568,6 +577,18 @@ def create_invoice(
         if item.unidades_por_caja and item.unidades_por_caja != product.unidades_por_caja:
             product.unidades_por_caja = item.unidades_por_caja
 
+        if item.tipo_empaque == TipoEmpaqueFactura.CAJA:
+            obseq_unidades = item.cantidad * (item.unidades_por_caja or product.unidades_por_caja)
+        else:
+            obseq_unidades = item.cantidad
+        if product.id in productos_retornables:
+            productos_retornables[product.id] = (
+                product,
+                productos_retornables[product.id][1] + obseq_unidades,
+            )
+        else:
+            productos_retornables[product.id] = (product, obseq_unidades)
+
     factura.detalles = detalles
     factura.obsequios = obsequios
     factura.total_usd = total_usd.quantize(Decimal("0.01"))
@@ -580,6 +601,19 @@ def create_invoice(
     db.add(factura)
     db.commit()
     db.refresh(factura)
+
+    from app.services.retornable_service import procesar_compra
+
+    for prod, uni in productos_retornables.values():
+        procesar_compra(
+            db,
+            product=prod,
+            botellas_agregadas=uni,
+            referencia_id=factura.id,
+            usuario_id=factura.usuario_id,
+        )
+    db.commit()
+
     return factura
 
 

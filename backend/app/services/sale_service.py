@@ -33,7 +33,7 @@ def _dentro_tolerancia(valor: Decimal, esperado: Decimal) -> bool:
 
 
 def _compute_sale_amounts(
-    item_products: list[tuple[SaleItemCreate, Product]],
+    item_products: list[tuple[SaleItemCreate, Product, int]],
     combos_by_id: dict[int, Combo] | None = None,
 ) -> tuple[Decimal, Decimal, Decimal]:
     """Recalcula los montos canónicos (exento, base, IVA) de la venta.
@@ -51,7 +51,7 @@ def _compute_sale_amounts(
     base = Decimal("0")
     iva = Decimal("0")
     combo_exento: dict[int, Decimal] = {}
-    for item_data, product in item_products:
+    for item_data, product, _unidades in item_products:
         if item_data.combo_id:
             combo_id = item_data.combo_id
             subtotal = (Decimal(item_data.cantidad) * item_data.precio_unitario_usd).quantize(
@@ -102,7 +102,7 @@ def _to_ve_boundary(
 
 def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
     items: list[SaleItem] = []
-    item_products: list[tuple[SaleItemCreate, Product]] = []
+    item_products: list[tuple[SaleItemCreate, Product, int]] = []
     for item_data in data.items:
         stmt = select(Product).where(Product.id == item_data.producto_id)
         product = db.execute(stmt).scalars().first()
@@ -172,7 +172,7 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             usa_precio_divisas=item_data.usa_precio_divisas,
             combo_id=item_data.combo_id,
         ))
-        item_products.append((item_data, product))
+        item_products.append((item_data, product, unidades))
 
     pagos: list[SalePayment] = []
     for pago_data in data.pagos:
@@ -280,7 +280,7 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
     if not _dentro_tolerancia(data.monto_iva_usd, iva):
         errores.append(f"monto_iva_usd: esperado {iva}, recibido {data.monto_iva_usd}")
 
-    for item_data, product in item_products:
+    for item_data, product, _unidades in item_products:
         iva_esperado = _iva_rate_for(item_data, product)
         if not _dentro_tolerancia(item_data.iva_porcentaje, iva_esperado):
             errores.append(
@@ -322,6 +322,19 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
     db.add(sale)
     db.commit()
     db.refresh(sale)
+
+    from app.services.retornable_service import procesar_venta
+
+    for item_data, product, unidades_calc in item_products:
+        procesar_venta(
+            db,
+            product=product,
+            botellas_descontadas=unidades_calc,
+            referencia_id=sale.id,
+            usuario_id=usuario_id,
+        )
+    db.commit()
+
     return sale
 
 

@@ -72,8 +72,11 @@ def get_products(
         )
     if proveedor_id is not None:
         base_stmt = base_stmt.where(Product.proveedor_id == proveedor_id)
+
+    stock_total = Product.stock_cajas * Product.unidades_por_caja + Product.stock_unidades
+
     if sin_stock:
-        base_stmt = base_stmt.where(Product.stock_unidades == 0)
+        base_stmt = base_stmt.where(stock_total == 0)
     if precio_min is not None:
         base_stmt = base_stmt.where(Product.precio_unidad_usd >= precio_min)
     if precio_max is not None:
@@ -84,15 +87,11 @@ def get_products(
             or_(_accent_fold(Product.nombre).ilike(pattern), _accent_fold(Product.codigo_barra).ilike(pattern))
         )
     if stock_status == "disponible":
-        base_stmt = base_stmt.where(
-            Product.stock_unidades > Product.stock_minimo
-        )
+        base_stmt = base_stmt.where(stock_total > Product.stock_minimo)
     elif stock_status == "bajo":
-        base_stmt = base_stmt.where(
-            (Product.stock_unidades > 0) & (Product.stock_unidades <= Product.stock_minimo)
-        )
+        base_stmt = base_stmt.where((stock_total > 0) & (stock_total <= Product.stock_minimo))
     elif stock_status == "agotado":
-        base_stmt = base_stmt.where(Product.stock_unidades == 0)
+        base_stmt = base_stmt.where(stock_total == 0)
     if tipo_iva:
         base_stmt = base_stmt.where(Product.tipo_iva == tipo_iva)
     if es_favorito is not None:

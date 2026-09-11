@@ -12,6 +12,13 @@ from app.models.invoice import Factura, DetalleFactura
 from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.price_rule import PriceRule, PriceRuleProduct, PriceRulePaymentMethod
 from app.models.system_setting import SystemSetting
+from app.models.retornable import (
+    RetornableProducto,
+    RetornableReporte,
+    RetornableReporteDetalle,
+    RetornableInventario,
+    RetornableMovimiento,
+)
 
 __all__ = [
     "Role",
@@ -37,4 +44,9 @@ __all__ = [
     "PriceRuleProduct",
     "PriceRulePaymentMethod",
     "SystemSetting",
+    "RetornableProducto",
+    "RetornableReporte",
+    "RetornableReporteDetalle",
+    "RetornableInventario",
+    "RetornableMovimiento",
 ]

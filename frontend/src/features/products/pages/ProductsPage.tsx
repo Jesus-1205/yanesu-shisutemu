@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, SlidersHorizontal, FileText, Download, Star } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Plus, SlidersHorizontal, FileText, Download, Star, Boxes, Tags, ChevronDown } from "lucide-react";
 import { api } from "@/services/api";
 import type { ProductOut, CategoryOut, SupplierOut } from "@/types/api";
 import type { Column } from "@/ui-components/Table";
@@ -75,6 +75,7 @@ function countActiveFilters(filters: ProductFiltersState): number {
 export default function ProductsPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const isOperator = user?.rol_nombre !== "ADMINISTRADOR";
   const [products, setProducts] = useState<Product[]>([]);
@@ -95,6 +96,30 @@ export default function ProductsPage() {
 
   const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [catalogMenuOpen, setCatalogMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const catalogMenuRef = useRef<HTMLDivElement>(null);
+
+  const toggleCatalogMenu = () => {
+    if (!catalogMenuOpen && catalogMenuRef.current) {
+      const rect = catalogMenuRef.current.getBoundingClientRect();
+      const menuWidth = 224;
+      const left = Math.min(rect.left, window.innerWidth - menuWidth - 16);
+      setMenuPosition({
+        top: rect.bottom + 6,
+        left: Math.max(8, left),
+      });
+    }
+    setCatalogMenuOpen((prev) => !prev);
+  };
+
+  useEffect(() => {
+    const stockParam = searchParams.get("stock");
+    if (stockParam && ["disponible", "bajo", "agotado"].includes(stockParam)) {
+      setFilters((prev) => ({ ...prev, stockStatus: stockParam as ProductFiltersState["stockStatus"] }));
+      setDraftFilters((prev) => ({ ...prev, stockStatus: stockParam as ProductFiltersState["stockStatus"] }));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openCreate = () => {
     navigate("/products/new");
@@ -311,8 +336,8 @@ export default function ProductsPage() {
       {/* Toolbar - responsive */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Search + Filters row */}
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="relative max-w-sm min-w-45 flex-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs md:max-w-md">
             <SearchInput
               ref={searchRef}
               value={filters.search}
@@ -328,7 +353,7 @@ export default function ProductsPage() {
           </div>
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`rounded-lg p-2 transition-colors ${
+            className={`shrink-0 rounded-lg p-2 transition-colors ${
               showFavoritesOnly
                 ? "bg-yellow-100 text-yellow-600"
                 : "text-slate-400 hover:bg-yellow-50 hover:text-yellow-500"
@@ -338,7 +363,7 @@ export default function ProductsPage() {
             <Star className={`size-4 ${showFavoritesOnly ? "fill-yellow-400" : ""}`} />
           </button>
           {!isOperator && (
-            <div className="hidden w-56 md:block lg:w-72">
+            <div className="hidden w-44 md:block lg:w-48">
               <Select
                 value={sortValue}
                 onChange={(e) => handleSortChange(e.target.value)}
@@ -361,11 +386,67 @@ export default function ProductsPage() {
         </div>
 
         {/* Actions row */}
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-3">
           {!isOperator && <ViewToggle view={view} onChange={setView} />}
+          {!isOperator && (
+            <div className="relative" ref={catalogMenuRef}>
+              <Button
+                variant="outline"
+                onClick={toggleCatalogMenu}
+                title="Gestión de Catálogo"
+              >
+                <Boxes className="size-4 text-brand-blue" />
+                <span className="hidden xl:inline">Catálogo</span>
+                <ChevronDown
+                  className={`size-3.5 transition-transform duration-200 ${
+                    catalogMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </Button>
+              {catalogMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setCatalogMenuOpen(false)}
+                  />
+                  <div
+                    style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+                    className="fixed z-50 w-56 rounded-xl border border-slate-200 bg-surface p-1.5 shadow-xl"
+                  >
+                    <button
+                      onClick={() => {
+                        setCatalogMenuOpen(false);
+                        navigate("/combos");
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                    >
+                      <Boxes className="size-4 text-brand-blue" />
+                      <div>
+                        <p className="font-semibold text-text-main">Combos</p>
+                        <p className="text-xs text-slate-400">Gestionar paquetes</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCatalogMenuOpen(false);
+                        navigate("/price-rules");
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                    >
+                      <Tags className="size-4 text-emerald-600" />
+                      <div>
+                        <p className="font-semibold text-text-main">Reglas de Precio</p>
+                        <p className="text-xs text-slate-400">Precios en divisas</p>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           <Button variant="accent" onClick={openCreate}>
             <Plus className="size-4" />
-            <span className="xs:inline hidden">Nuevo</span>
+            <span>Nuevo</span>
           </Button>
           <Button variant="outline" onClick={() => navigate("/invoices/new")}>
             <FileText className="size-4" />

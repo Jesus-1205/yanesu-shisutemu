@@ -36,9 +36,8 @@ export default function PaymentDrawer({ open, onClose, invoice, onSuccess }: Pay
       setReferencia("");
       setComprobantes([]);
       setObservaciones("");
-      api.getPaymentMethods().then((data) => {
-        const active = Array.isArray(data) ? data.filter((m: PaymentMethodOut) => m.activo) : [];
-        setMethods(active);
+      api.getPaymentMethods(true).then((data) => {
+        setMethods(Array.isArray(data) ? data : []);
       }).catch(() => {});
     }
   }, [open, saldoPendiente]);

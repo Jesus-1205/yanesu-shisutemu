@@ -29,25 +29,12 @@ const adminSidebarItems: SidebarItem[] = [
       { label: "Historial de Ventas", to: "/sales" },
     ],
   },
-  {
-    label: "INVENTARIO",
-    icon: <Package size={18} />,
-    items: [
-      { label: "Productos", to: "/products" },
-      { label: "Combos", to: "/combos" },
-    ],
-  },
-  {
-    label: "CATÁLOGO",
-    icon: <Tags size={18} />,
-    items: [
-      { label: "Categorías", to: "/categories" },
-      { label: "Precios Div.", to: "/price-rules" },
-    ],
-  },
+  { label: "Productos", icon: <Package size={18} />, to: "/products" },
+  { label: "Categorías", icon: <Tags size={18} />, to: "/categories" },
   { label: "Facturas", icon: <Truck size={18} />, to: "/buys" },
   { label: "Tasas de Cambio", icon: <DollarSign size={18} />, to: "/exchange-rates" },
   { label: "Reportes", icon: <BarChart3 size={18} />, to: "/reports" },
+  { label: "Retornables", icon: <Package size={18} />, to: "/retornables" },
 ];
 
 const operatorSidebarItems: SidebarItem[] = [
@@ -81,6 +68,7 @@ const breadcrumbMap: Record<string, string> = {
   roles: "Roles",
   "exchange-rates": "Tasas de Cambio",
   reports: "Reportes",
+  retornables: "Retornables",
   invoices: "Facturas de Compra",
   "payment-methods": "Métodos de Pago",
   "price-rules": "Precios Div.",

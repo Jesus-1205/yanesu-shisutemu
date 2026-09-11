@@ -390,6 +390,165 @@ class TestPaymentOnBsInvoice:
         assert summary["saldo_pendiente_usd"] == "29.00"
 
 
+class TestListPayments:
+
+    def test_list_payments_empty(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-LIST-001")
+        )}).json()
+        resp = client.get(f"/api/invoices/{invoice['id']}/payments")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["pagos"] == []
+        assert data["resumen"]["cantidad_pagos"] == 0
+
+    def test_list_payments_with_data(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-LIST-002")
+        )}).json()
+        client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 5, "monto_bs": 0,
+        })})
+        client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 5, "monto_bs": 0,
+        })})
+        resp = client.get(f"/api/invoices/{invoice['id']}/payments")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["pagos"]) == 2
+        assert data["resumen"]["cantidad_pagos"] == 2
+
+    def test_list_payments_not_found(self, client):
+        _login(client)
+        resp = client.get("/api/invoices/999/payments")
+        assert resp.status_code == 404
+
+    def test_list_payments_unauthenticated(self, client):
+        resp = client.get("/api/invoices/1/payments")
+        assert resp.status_code == 401
+
+
+class TestRemovePayment:
+
+    def test_remove_payment_success(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-DEL-001")
+        )}).json()
+        payment = client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 5, "monto_bs": 0,
+        })}).json()
+        resp = client.delete(f"/api/invoices/{invoice['id']}/payments/{payment['id']}")
+        assert resp.status_code == 204
+        summary = client.get(f"/api/invoices/{invoice['id']}/payments/summary").json()
+        assert summary["cantidad_pagos"] == 0
+
+    def test_remove_payment_not_found(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-DEL-002")
+        )}).json()
+        resp = client.delete(f"/api/invoices/{invoice['id']}/payments/999")
+        assert resp.status_code == 404
+
+    def test_remove_payment_unauthenticated(self, client):
+        resp = client.delete("/api/invoices/1/payments/1")
+        assert resp.status_code == 401
+
+    def test_remove_payment_operator_forbidden(self, client):
+        client.post("/api/auth/register", json={
+            "username": "oper", "email": "oper@test.com", "password": "oper123",
+            "nombre_completo": "Oper", "rol_id": 2,
+        })
+        resp = client.delete("/api/invoices/1/payments/1")
+        assert resp.status_code == 403
+
+
+class TestPaymentSummary:
+
+    def test_summary_no_payments(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-SUM-001")
+        )}).json()
+        resp = client.get(f"/api/invoices/{invoice['id']}/payments/summary")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["estado_pago"] == "PENDIENTE"
+        assert data["cantidad_pagos"] == 0
+        assert data["saldo_pendiente_usd"] == str(Decimal(invoice["total_usd"]))
+
+    def test_summary_after_full_payment(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-SUM-002", costo_usd=10)
+        )}).json()
+        client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 10, "monto_bs": 0,
+        })})
+        resp = client.get(f"/api/invoices/{invoice['id']}/payments/summary")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["estado_pago"] == "PAGADA"
+        assert data["saldo_pendiente_usd"] == "0.00"
+
+    def test_summary_not_found(self, client):
+        _login(client)
+        resp = client.get("/api/invoices/999/payments/summary")
+        assert resp.status_code == 404
+
+    def test_summary_unauthenticated(self, client):
+        resp = client.get("/api/invoices/1/payments/summary")
+        assert resp.status_code == 401
+
+
+class TestCreatePaymentEdgeCases:
+
+    def test_create_payment_invoice_not_found(self, client):
+        _login(client)
+        pm = _create_payment_method(client).json()
+        resp = client.post("/api/invoices/999/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 10, "monto_bs": 0,
+        })})
+        assert resp.status_code == 404
+
+    def test_create_payment_overpayment(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-OVER-001", costo_usd=10)
+        )}).json()
+        resp = client.post(f"/api/invoices/{invoice['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"], "monto_usd": 50, "monto_bs": 0,
+        })})
+        assert resp.status_code == 409
+
+    def test_create_payment_unauthenticated(self, client):
+        resp = client.post("/api/invoices/1/payments", data={"data": json.dumps({
+            "metodo_pago_id": 1, "monto_usd": 10, "monto_bs": 0,
+        })})
+        assert resp.status_code == 401
+
+
 def _invoice_payload_bs(sup_id, prod_id, num, tasa_bs=36.5, cajas=1, costo_bs=1825):
     costo_usd = round(costo_bs / tasa_bs, 2)
     return {

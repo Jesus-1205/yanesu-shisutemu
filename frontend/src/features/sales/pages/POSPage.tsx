@@ -71,7 +71,7 @@ export default function POSPage() {
   const loadProducts = useCallback(async (q?: string) => {
     setLoadingProducts(true);
     try {
-      const data = await api.getProducts(q ? { search: q } : undefined);
+      const data = await api.getProducts(q ? { search: q, page_size: 100 } : { page_size: 100 });
       setProducts(data.items);
     } catch {
       toastRef.current("Error al cargar productos", "error");

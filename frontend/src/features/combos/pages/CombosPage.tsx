@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, Sparkles, CheckCircle2, Layers } from "lucide-react";
 import { api } from "@/services/api";
 import type { ComboOut, ComboCreate, ComboUpdate, PaymentMethodOut, ComboGroupEntry } from "@/types/api";
 import Table from "@/ui-components/Table";
@@ -10,6 +10,7 @@ import Input from "@/ui-components/Input";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
 import ConfirmDialog from "@/ui-components/ConfirmDialog";
 import ErrorBanner from "@/ui-components/ErrorBanner";
+import Badge from "@/ui-components/Badge";
 import { useToast } from "@/ui-components/Toast";
 import { formatCurrency } from "@/lib/utils";
 
@@ -223,11 +224,13 @@ export default function CombosPage() {
     }
   };
 
+  const activeCombosCount = combos.filter((c) => c.activo).length;
+
   return (
-    <div>
+    <div className="space-y-5">
       <PageHeader
         title="Combos y Promociones"
-        description="Define combos con precios especiales y métodos de pago"
+        description="Arma paquetes promocionales con selección dinámica de productos y métodos de pago"
         actions={
           <Button variant="accent" onClick={openCreate}>
             <Plus className="size-4" />
@@ -237,71 +240,144 @@ export default function CombosPage() {
       />
 
       {error && (
-        <div className="mb-4">
-          <ErrorBanner onRetry={fetchCombos}>
-            {error}
-          </ErrorBanner>
-        </div>
+        <ErrorBanner onRetry={fetchCombos}>
+          {error}
+        </ErrorBanner>
       )}
 
-      <Table
-        columns={[
-          { key: "nombre", header: "Nombre" },
-          {
-            key: "precio_total_usd",
-            header: "Precio",
-            render: (c: ComboOut) => formatCurrency(c.precio_total_usd),
-          },
-          {
-            key: "grupos",
-            header: "Opciones",
-            render: (c: ComboOut) => (
-              <span className="block max-w-sm truncate text-xs" title={c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad}: ${g.products.length} prods.)`).join(", ")}>
-                {c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad}: ${g.products.length} prods.)`).join(", ")}
-              </span>
-            ),
-          },
-          {
-            key: "metodos",
-            header: "Métodos",
-            render: (c: ComboOut) => (
-              <span className="block max-w-30 truncate text-xs" title={c.metodo_pago_ids.map((id) => paymentMethods.find((pm) => pm.id === id)?.nombre ?? `#${id}`).join(", ")}>
-                {c.metodo_pago_ids.map((id) => paymentMethods.find((pm) => pm.id === id)?.nombre ?? `#${id}`).join(", ")}
-              </span>
-            ),
-          },
-          {
-            key: "activo",
-            header: "Estado",
-            render: (c: ComboOut) => (
-              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                c.activo ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-              }`}>
-                {c.activo ? "Activo" : "Inactivo"}
-              </span>
-            ),
-          },
-          {
-            key: "acciones",
-            header: "Acciones",
-            exportable: false,
-            render: (c: ComboOut) => (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                  <Pencil className="size-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(c)}>
-                  <Trash2 className="size-4 text-danger" />
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-        data={combos}
-        keyExtractor={(c) => c.id}
-        loading={loading}
-        emptyMessage="No hay combos registrados"
-      />
+      {/* Hero card informativa */}
+      <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 p-4 sm:flex-row sm:items-center sm:p-5">
+        <div className="flex items-start gap-3.5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
+            <Sparkles className="size-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-text-main">
+              Venta de paquetes y combos
+            </h4>
+            <p className="mt-0.5 text-xs text-slate-600">
+              Permite agrupar productos con un precio fijo cerrado. En el Punto de Venta (POS) el cajero seleccionará las cantidades de cada grupo.
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge variant="info">
+            {activeCombosCount} {activeCombosCount === 1 ? "combo activo" : "combos activos"}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-surface shadow-sm">
+        <Table
+          columns={[
+            {
+              key: "nombre",
+              header: "Nombre / Detalle",
+              className: "min-w-44",
+              render: (c: ComboOut) => (
+                <div>
+                  <p className="font-semibold text-text-main">{c.nombre}</p>
+                  {c.descripcion && (
+                    <p className="mt-0.5 text-xs text-slate-500">{c.descripcion}</p>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: "precio_total_usd",
+              header: "Precio Total",
+              className: "w-28",
+              render: (c: ComboOut) => (
+                <span className="font-bold text-emerald-600 text-sm">
+                  {formatCurrency(c.precio_total_usd)}
+                </span>
+              ),
+            },
+            {
+              key: "grupos",
+              header: "Opciones y Grupos",
+              render: (c: ComboOut) => (
+                <div className="flex max-w-md flex-wrap gap-1.5 py-1">
+                  {c.groups.map((g, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700"
+                    >
+                      <Layers className="size-3 text-brand-blue" />
+                      <span className="font-medium text-text-main">{g.nombre}</span>
+                      <span className="rounded bg-slate-200/70 px-1 py-0.5 text-[10px] text-slate-600">
+                        {g.min_cantidad}–{g.max_cantidad} uds
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        ({g.products.length} {g.products.length === 1 ? "opción" : "opciones"})
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              key: "metodos",
+              header: "Métodos de Pago",
+              hideOnMobile: true,
+              render: (c: ComboOut) => (
+                <div className="flex flex-wrap gap-1">
+                  {c.metodo_pago_ids.map((id) => {
+                    const method = paymentMethods.find((pm) => pm.id === id);
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-brand-blue ring-1 ring-blue-500/10"
+                      >
+                        <CreditCard className="size-3" />
+                        {method ? method.nombre : `#${id}`}
+                      </span>
+                    );
+                  })}
+                </div>
+              ),
+            },
+            {
+              key: "activo",
+              header: "Estado",
+              className: "text-center w-24",
+              render: (c: ComboOut) => (
+                <Badge variant={c.activo ? "success" : "neutral"}>
+                  {c.activo ? "Activo" : "Inactivo"}
+                </Badge>
+              ),
+            },
+            {
+              key: "acciones",
+              header: "",
+              exportable: false,
+              className: "text-right w-24",
+              render: (c: ComboOut) => (
+                <div className="flex items-center justify-end gap-1">
+                  <button
+                    onClick={() => openEdit(c)}
+                    className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-brand-blue/10 hover:text-brand-blue"
+                    aria-label="Editar combo"
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(c)}
+                    className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-danger/10 hover:text-danger"
+                    aria-label="Eliminar combo"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              ),
+            },
+          ]}
+          data={combos}
+          keyExtractor={(c) => c.id}
+          loading={loading}
+          emptyMessage="No hay combos registrados"
+        />
+      </div>
 
       <Modal
         open={modalOpen}
@@ -309,106 +385,113 @@ export default function CombosPage() {
         title={editingCombo ? "Editar Combo" : "Nuevo Combo"}
         className="max-w-2xl"
       >
-        <div className="max-h-[75vh] space-y-4 overflow-y-auto">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">Nombre del combo</label>
-              <Input
-                label=""
-                variant="sm"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="Ej: 8 Latas Mix x $5"
-              />
+        <div className="max-h-[75vh] space-y-5 overflow-y-auto pr-1">
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              1. Datos Principales
+            </h5>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Nombre del combo *</label>
+                <Input
+                  label=""
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Ej: 8 Latas Mix x $5"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-700">Precio total (USD) *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formPrecio}
+                    onChange={(e) => setFormPrecio(e.target.value)}
+                    placeholder="0.00"
+                    autoComplete="off"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-7 pr-3 text-sm font-semibold text-emerald-600 placeholder:text-slate-400 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">Precio total (USD)</label>
+              <label className="mb-1 block text-xs font-medium text-slate-700">Descripción (opcional)</label>
               <Input
                 label=""
-                variant="sm"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={formPrecio}
-                onChange={(e) => setFormPrecio(e.target.value)}
-                placeholder="5.00"
+                value={formDesc}
+                onChange={(e) => setFormDesc(e.target.value)}
+                placeholder="Ej: Incluye 8 latas a elección del cliente"
               />
             </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">Descripción</label>
-            <Input
-              label=""
-              variant="sm"
-              value={formDesc}
-              onChange={(e) => setFormDesc(e.target.value)}
-              placeholder="Opcional"
-            />
           </div>
 
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="text-sm font-medium text-text-main">Opciones del combo</label>
-              <button
-                type="button"
-                onClick={addGroup}
-                className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs text-brand-blue transition-colors hover:bg-brand-blue/5"
-              >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h5 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+                  2. Grupos y Selección de Productos
+                </h5>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Establece cuántos productos de cada grupo debe elegir el cliente.
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={addGroup}>
                 <Plus className="size-3.5" />
-                Agregar opción
-              </button>
+                Agregar Opción
+              </Button>
             </div>
-            <p className="mb-2 text-xs text-slate-400">
-              Cada opción agrupa productos del mismo tipo. Mín. y máx. indican cuántos productos de esa opción puede elegir el cliente.
-            </p>
-            <div className="max-h-60 space-y-3 overflow-y-auto pr-1">
+
+            <div className="space-y-3">
               {formGroups.map((group, gIdx) => (
-                <div key={gIdx} className="space-y-3 rounded-lg border border-slate-200 p-3">
+                <div key={gIdx} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Input
                       label=""
-                      variant="sm"
                       value={group.nombre}
                       onChange={(e) => updateGroup(gIdx, "nombre", e.target.value)}
-                      placeholder="Nombre de la opción (Ej: Cervezas)"
+                      placeholder="Nombre del grupo (Ej: Cervezas)"
                       className="flex-1"
                     />
                     <div className="flex shrink-0 items-center gap-2">
                       <label className="flex flex-col">
-                        <span className="text-[10px] font-medium tracking-wide text-slate-400 uppercase">Mín.</span>
+                        <span className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">Mín.</span>
                         <input
                           type="number"
                           min="0"
                           value={group.min_cantidad}
                           onChange={(e) => updateGroup(gIdx, "min_cantidad", Number(e.target.value))}
-                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
+                          className="h-10 w-16 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-center text-xs font-medium text-text-main focus:border-brand-blue focus:outline-none"
                           autoComplete="off"
-                          title="Cantidad mínima de productos que el cliente debe elegir"
+                          title="Mínimo de unidades requeridas"
                         />
                       </label>
                       <label className="flex flex-col">
-                        <span className="text-[10px] font-medium tracking-wide text-slate-400 uppercase">Máx.</span>
+                        <span className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">Máx.</span>
                         <input
                           type="number"
                           min="1"
                           value={group.max_cantidad}
                           onChange={(e) => updateGroup(gIdx, "max_cantidad", Number(e.target.value))}
-                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-brand-blue focus:outline-none"
+                          className="h-10 w-16 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-center text-xs font-medium text-text-main focus:border-brand-blue focus:outline-none"
                           autoComplete="off"
-                          title="Cantidad máxima de productos que el cliente puede elegir"
+                          title="Máximo de unidades permitidas"
                         />
                       </label>
                       <button
                         type="button"
                         onClick={() => removeGroup(gIdx)}
-                        className="mt-3.5 text-danger hover:text-red-700"
-                        title="Eliminar opción"
+                        className="mt-4 cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-danger/10 hover:text-danger"
+                        title="Eliminar grupo"
                       >
                         <Trash2 className="size-4" />
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-1.5">
+
+                  <div className="space-y-2 pt-1">
                     {group.productos.map((prod, pIdx) => (
                       <div key={pIdx} className="flex items-center gap-2">
                         <div className="flex-1">
@@ -416,7 +499,7 @@ export default function CombosPage() {
                             value={prod.producto_id > 0 ? prod.producto_id : null}
                             onChange={(val) => updateProductInGroup(gIdx, pIdx, val ? Number(val) : 0)}
                             onSearch={handleProductSearch}
-                            placeholder="Buscar producto..."
+                            placeholder="Buscar producto seleccionable..."
                             allowClear
                             initialOptions={prod._nombre ? [{ value: prod.producto_id, label: prod._nombre }] : []}
                           />
@@ -424,7 +507,7 @@ export default function CombosPage() {
                         <button
                           type="button"
                           onClick={() => removeProductFromGroup(gIdx, pIdx)}
-                          className="mt-1 shrink-0 text-danger hover:text-red-700"
+                          className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-danger/10 hover:text-danger"
                           title="Quitar producto"
                         >
                           <Trash2 className="size-4" />
@@ -434,54 +517,60 @@ export default function CombosPage() {
                     <button
                       type="button"
                       onClick={() => addProductToGroup(gIdx)}
-                      className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs text-brand-blue transition-colors hover:bg-brand-blue/5"
+                      className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-brand-blue transition-colors hover:bg-brand-blue/10"
                     >
-                      <Plus className="size-3" />
-                      Agregar producto
+                      <Plus className="size-3.5" />
+                      Agregar producto a este grupo
                     </button>
                   </div>
                 </div>
               ))}
+
               {formGroups.length === 0 && (
-                <p className="py-3 text-center text-xs text-slate-400">
-                  Agrega al menos una opción de productos
-                </p>
+                <div className="rounded-xl border border-dashed border-slate-300 py-6 text-center text-xs text-slate-400">
+                  Haz clic en &quot;Agregar Opción&quot; para definir los grupos seleccionables de este combo.
+                </div>
               )}
             </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-text-main">Métodos de pago</label>
-            <p className="mb-2 text-xs text-slate-400">
-              Métodos de pago con los que se puede comprar este combo.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {paymentMethods.map((pm) => (
-                <label
-                  key={pm.id}
-                  className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
-                    formMethodIds.includes(pm.id)
-                      ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formMethodIds.includes(pm.id)}
-                    onChange={() => toggleMethod(pm.id)}
-                    autoComplete="off"
-                    className="sr-only"
-                  />
-                  {pm.nombre}
-                </label>
-              ))}
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              3. Métodos de Pago Habilitados
+            </h5>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 max-h-40 overflow-y-auto">
+              {paymentMethods.map((pm) => {
+                const isSelected = formMethodIds.includes(pm.id);
+                return (
+                  <label
+                    key={pm.id}
+                    className={`flex cursor-pointer items-center justify-between rounded-xl border p-2.5 text-xs transition-all ${
+                      isSelected
+                        ? "border-brand-blue bg-blue-50/70 font-semibold text-brand-blue shadow-xs"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="truncate">{pm.nombre}</span>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleMethod(pm.id)}
+                      autoComplete="off"
+                      className="sr-only"
+                    />
+                    {isSelected && <CheckCircle2 className="size-4 text-brand-blue shrink-0" />}
+                  </label>
+                );
+              })}
             </div>
-            <p className={`mt-1 text-xs transition-opacity ${formMethodIds.length > 0 ? "opacity-0" : "text-slate-400 opacity-100"}`}>
-              Selecciona al menos un método de pago
-            </p>
+            {formMethodIds.length === 0 && (
+              <p className="text-[11px] text-amber-600 font-medium">
+                ⚠️ Selecciona al menos un método de pago para habilitar el combo.
+              </p>
+            )}
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
             <Button variant="ghost" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>
@@ -497,7 +586,7 @@ export default function CombosPage() {
                 formMethodIds.length === 0
               }
             >
-              {editingCombo ? "Guardar cambios" : "Crear combo"}
+              {editingCombo ? "Guardar Cambios" : "Crear Combo"}
             </Button>
           </div>
         </div>
@@ -508,7 +597,7 @@ export default function CombosPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="Eliminar combo"
-        message={`¿Eliminar el combo "${deleteTarget?.nombre}"?`}
+        message={`¿Estás seguro de eliminar el combo "${deleteTarget?.nombre}"?`}
         confirmText="Eliminar"
         loading={deleting}
       />

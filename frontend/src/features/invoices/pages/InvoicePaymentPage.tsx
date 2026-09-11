@@ -197,10 +197,10 @@ export default function InvoicePaymentPage() {
     if (!id) return;
     try {
       const [methodsData, paymentsData] = await Promise.all([
-        api.getPaymentMethods(),
+        api.getPaymentMethods(true),
         api.getInvoicePayments(Number(id)),
       ]);
-      setMethods(Array.isArray(methodsData) ? methodsData.filter((m) => m.activo) : []);
+      setMethods(Array.isArray(methodsData) ? methodsData : []);
       setPaymentSummary(paymentsData.resumen);
     } catch {
       // silently fail

@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Drawer from "@/ui-components/Drawer";
 import Button from "@/ui-components/Button";
-import Input from "@/ui-components/Input";
 import { useToast } from "@/ui-components/Toast";
 import { useCartStore, computeTotals, getDivisasTotal } from "../store/cartStore";
 import { api } from "@/services/api";
@@ -318,18 +317,26 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
               {methods
                 .filter((m) => m.acepta_referencia && Number(amounts[m.id]) > 0)
                 .map((m) => (
-                  <Input
-                    key={`ref-${m.id}`}
-                    label={`Referencia ${formatPaymentMethodName(m.nombre)}`}
-                    type="text"
-                    maxLength={20}
-                    value={references[m.id] ?? ""}
-                    onChange={(e) =>
-                      setReferences((prev) => ({ ...prev, [m.id]: e.target.value }))
-                    }
-                    placeholder="Número de referencia"
-                    className="px-2.5 pt-3 pb-1 text-xs"
-                  />
+                  <div key={`ref-${m.id}`} className="mb-2">
+                    <label
+                      htmlFor={`express-ref-${m.id}`}
+                      className="mb-0.5 block text-[11px] font-medium text-slate-500"
+                    >
+                      Ref. {formatPaymentMethodName(m.nombre)}
+                    </label>
+                    <input
+                      id={`express-ref-${m.id}`}
+                      type="text"
+                      maxLength={20}
+                      value={references[m.id] ?? ""}
+                      onChange={(e) =>
+                        setReferences((prev) => ({ ...prev, [m.id]: e.target.value }))
+                      }
+                      placeholder="Número de referencia"
+                      autoComplete="off"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue focus:outline-none"
+                    />
+                  </div>
                 ))}
 
               <button
@@ -361,19 +368,27 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                 </button>
               </div>
 
-              <div className={`mb-2 grid gap-1.5 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
+              <div className={`mb-2 grid gap-1.5 px-0.5 ${methods.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
                 {methods.map((m) => (
-                  <Input
-                    key={m.id}
-                    label={`${formatPaymentMethodName(m.nombre)} (${m.moneda_default})`}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={amounts[m.id] ?? ""}
-                    onChange={(e) => setAmount(m.id, e.target.value)}
-                    placeholder="0.00"
-                    className="px-2.5 pt-3 pb-1 text-xs"
-                  />
+                  <div key={m.id}>
+                    <label
+                      htmlFor={`amount-${m.id}`}
+                      className="mb-0.5 block text-[11px] font-medium text-slate-500"
+                    >
+                      {formatPaymentMethodName(m.nombre)} ({m.moneda_default})
+                    </label>
+                    <input
+                      id={`amount-${m.id}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={amounts[m.id] ?? ""}
+                      onChange={(e) => setAmount(m.id, e.target.value)}
+                      placeholder="0.00"
+                      autoComplete="off"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 placeholder:text-slate-300 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                  </div>
                 ))}
               </div>
 
@@ -382,18 +397,26 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
                   {methods
                     .filter((m) => m.acepta_referencia && Number(amounts[m.id]) > 0)
                     .map((m) => (
-                      <Input
-                        key={`ref-${m.id}`}
-                        label={`Referencia ${formatPaymentMethodName(m.nombre)}`}
-                        type="text"
-                        maxLength={20}
-                        value={references[m.id] ?? ""}
-                        onChange={(e) =>
-                          setReferences((prev) => ({ ...prev, [m.id]: e.target.value }))
-                        }
-                        placeholder="Número de referencia"
-                        className="px-2.5 pt-3 pb-1 text-xs"
-                      />
+                      <div key={`ref-${m.id}`}>
+                        <label
+                          htmlFor={`ref-${m.id}`}
+                          className="mb-0.5 block text-[11px] font-medium text-slate-500"
+                        >
+                          Ref. {formatPaymentMethodName(m.nombre)}
+                        </label>
+                        <input
+                          id={`ref-${m.id}`}
+                          type="text"
+                          maxLength={20}
+                          value={references[m.id] ?? ""}
+                          onChange={(e) =>
+                            setReferences((prev) => ({ ...prev, [m.id]: e.target.value }))
+                          }
+                          placeholder="Número de referencia"
+                          autoComplete="off"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 placeholder:text-slate-300 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue focus:outline-none"
+                        />
+                      </div>
                     ))}
                 </div>
               )}
