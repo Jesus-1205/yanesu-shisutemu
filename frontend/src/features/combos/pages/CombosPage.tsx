@@ -305,7 +305,7 @@ export default function CombosPage() {
                     >
                       <Layers className="size-3 text-brand-blue" />
                       <span className="font-medium text-text-main">{g.nombre}</span>
-                      <span className="rounded bg-slate-200/70 px-1 py-0.2 text-[10px] text-slate-600">
+                      <span className="rounded bg-slate-200/70 px-1 py-0.5 text-[10px] text-slate-600">
                         {g.min_cantidad}–{g.max_cantidad} uds
                       </span>
                       <span className="text-[10px] text-slate-400">
