@@ -239,3 +239,40 @@ def test_get_supplier_analytics_with_sales(db):
     prov = result.proveedores[0]
     assert prov.unidades_vendidas == 4
     assert prov.ingresos_usd == Decimal("40")
+
+
+def test_get_supplier_detail_analytics(db):
+    from app.services.supplier_service import get_supplier_detail_analytics
+    s = create_supplier(db, SupplierCreate(nombre="PROV DETALLE"))
+    p = Product(
+        nombre="Prod Detalle",
+        precio_costo_caja_usd=Decimal("120"), precio_costo_usd=Decimal("5"), precio_unidad_usd=Decimal("10"),
+        precio_caja_usd=Decimal("240"), stock_unidades=50,
+        proveedor_id=s.id,
+        unidades_por_caja=24,
+    )
+    db.add(p)
+    db.commit()
+
+    detail = get_supplier_detail_analytics(db, s.id)
+    assert detail is not None
+    assert detail.id == s.id
+    assert detail.total_productos == 1
+    assert detail.stock_total == 50
+
+    none_detail = get_supplier_detail_analytics(db, 99999)
+    assert none_detail is None
+
+
+def test_get_suppliers_paginated(db):
+    from app.services.supplier_service import get_suppliers_paginated
+    create_supplier(db, SupplierCreate(nombre="Prov Pagi A"))
+    create_supplier(db, SupplierCreate(nombre="Prov Pagi B"))
+    create_supplier(db, SupplierCreate(nombre="Prov Pagi C"))
+
+    res = get_suppliers_paginated(db, page=1, page_size=2)
+    assert res["total"] == 3
+    assert len(res["items"]) == 2
+    assert res["pages"] == 2
+
+

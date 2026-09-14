@@ -568,3 +568,31 @@ class TestCreateSaleCombo:
         })
         assert resp.status_code == 409
         assert "Faltan" in resp.json()["detail"]
+
+
+class TestCalculateEndpointEdgeCases:
+
+    def test_calculate_missing_product(self, client):
+        _login(client, _ADMIN)
+        methods = _get_method_ids(client)
+        resp = client.post("/api/sales/calculate", json={
+            "items": [{"producto_id": 99999, "tipo_empaque": "UNIDAD", "cantidad": 1, "usa_precio_divisas": False}],
+            "combos": [],
+            "metodo_pago_ids": [methods["DIVISAS"]]
+        })
+        assert resp.status_code == 404
+        assert "no encontrado" in resp.json()["detail"]
+
+    def test_calculate_missing_divisas_price(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        methods = _get_method_ids(client)
+        resp = client.post("/api/sales/calculate", json={
+            "items": [{"producto_id": prod["id"], "tipo_empaque": "UNIDAD", "cantidad": 1, "usa_precio_divisas": True}],
+            "combos": [],
+            "metodo_pago_ids": [methods["DIVISAS"]]
+        })
+        assert resp.status_code == 400
+        assert "no tiene precio divisas activo" in resp.json()["detail"]
+
+

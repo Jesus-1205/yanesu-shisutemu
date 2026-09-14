@@ -130,3 +130,46 @@ def test_drain_and_write(audit_file):
     assert len(lines) == 2
     assert "drain1" in lines[0]
     assert "drain2" in lines[1]
+
+
+def test_audit_queue_full_handled():
+    from unittest.mock import patch
+    with patch.object(_queue, "put_nowait", side_effect=queue.Full):
+        # No debería levantar excepción, sólo loguear warning
+        log_action(usuario="admin", ip="127.0.0.1", accion="TEST", entidad="test")
+
+
+def test_rotate_if_needed_exceptions(audit_file):
+    from unittest.mock import patch
+    from app.services.audit_service import _rotate_if_needed
+
+    # Archivo no existe -> retorna sin error
+    _rotate_if_needed("/ruta/inexistente/audit.log")
+
+    # Error al renombrar
+    with open(audit_file, "w", encoding="utf-8") as f:
+        f.write("x" * (6 * 1024 * 1024))
+
+    with patch("os.rename", side_effect=OSError("Permiso denegado")):
+        _rotate_if_needed(audit_file)
+
+
+def test_cleanup_old_oserror(tmp_path):
+    from unittest.mock import patch
+    from app.services.audit_service import _cleanup_old
+
+    for i in range(10):
+        p = tmp_path / f"audit.log.{i:03d}"
+        p.write_text(f"line {i}")
+        os.utime(str(p), (i, i))
+
+    with patch("os.remove", side_effect=OSError("Lock")):
+        _cleanup_old(str(tmp_path / "audit.log"))
+
+
+def test_append_exceptions():
+    from app.services.audit_service import _append_line, _append_lines
+    # Intentar escribir a una ruta inválida o donde falle open
+    _append_line("invalid_dir_nonexistent://audit.log", "test")
+    _append_lines("invalid_dir_nonexistent://audit.log", ["test1", "test2"])
+

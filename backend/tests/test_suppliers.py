@@ -181,3 +181,32 @@ class TestCreateSupplierOperator:
         assert response.status_code == 201
         data = response.json()
         assert data["nombre"] == "Distribuidora XYZ"
+
+
+class TestSupplierDetailAnalyticsAndPagination:
+
+    def test_get_suppliers_paginated(self, client):
+        _register_admin(client)
+        for i in range(5):
+            client.post("/api/suppliers", json={"nombre": f"Proveedor Pagi {i}"})
+        resp = client.get("/api/suppliers?page=1&page_size=2")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 5
+        assert len(data["items"]) == 2
+        assert data["pages"] == 3
+
+    def test_get_supplier_detail_analytics(self, client):
+        _register_admin(client)
+        created = client.post("/api/suppliers", json={"nombre": "Proveedor Detalle"}).json()
+        resp = client.get(f"/api/suppliers/{created['id']}/analytics")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == created["id"]
+        assert data["nombre"] == "Proveedor Detalle"
+
+    def test_get_supplier_detail_analytics_not_found(self, client):
+        _register_admin(client)
+        resp = client.get("/api/suppliers/99999/analytics")
+        assert resp.status_code == 404
+

@@ -211,3 +211,21 @@ class TestCreateCategoryOperator:
         assert response.status_code == 201
         data = response.json()
         assert data["nombre"] == "Cervezas Import"
+
+
+class TestCategoryDetailAnalyticsRoute:
+
+    def test_get_category_detail_analytics(self, client):
+        _register_admin(client)
+        created = client.post("/api/categories", json={"nombre": "Vinos Tintos"}).json()
+        resp = client.get(f"/api/categories/{created['id']}/analytics")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == created["id"]
+        assert data["nombre"] == "Vinos Tintos"
+
+    def test_get_category_detail_analytics_not_found(self, client):
+        _register_admin(client)
+        resp = client.get("/api/categories/99999/analytics")
+        assert resp.status_code == 404
+

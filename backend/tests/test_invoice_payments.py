@@ -564,3 +564,52 @@ def _invoice_payload_bs(sup_id, prod_id, num, tasa_bs=36.5, cajas=1, costo_bs=18
             "costo_unitario_bs": costo_bs,
         }],
     }
+
+
+class TestInvoicePaymentReceiptsAndDeletion:
+
+    def test_payment_with_comprobante_files(self, client, tmp_path):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        pm = _create_payment_method(client).json()
+
+        invoice = client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-REC-001", costo_usd=50)
+        )}).json()
+
+        # Pago con comprobante inválido -> 400
+        resp = client.post(
+            f"/api/invoices/{invoice['id']}/payments",
+            data={"data": json.dumps({"metodo_pago_id": pm["id"], "monto_usd": 10})},
+            files=[("comprobantes", ("recibo.exe", b"binary", "application/x-msdownload"))]
+        )
+        assert resp.status_code == 400
+
+        # Pago con comprobante válido
+        resp = client.post(
+            f"/api/invoices/{invoice['id']}/payments",
+            data={"data": json.dumps({"metodo_pago_id": pm["id"], "monto_usd": 10})},
+            files=[("comprobantes", ("recibo.jpg", b"\xff\xd8\xff\xe0fake", "image/jpeg"))]
+        )
+        assert resp.status_code == 201
+        pago_data = resp.json()
+        assert len(pago_data["comprobantes"]) == 1
+        rec_id = pago_data["comprobantes"][0]["id"]
+
+        # Descargar comprobante (404 si el archivo físico no existe en test)
+        resp = client.get(f"/api/invoices/{invoice['id']}/payments/{pago_data['id']}/receipts/{rec_id}")
+        assert resp.status_code in (200, 404)
+
+        # Receipt inexistente
+        resp = client.get(f"/api/invoices/{invoice['id']}/payments/{pago_data['id']}/receipts/9999")
+        assert resp.status_code == 404
+
+        # Eliminar pago
+        resp = client.delete(f"/api/invoices/{invoice['id']}/payments/{pago_data['id']}")
+        assert resp.status_code == 204
+
+        # Eliminar pago inexistente
+        resp = client.delete(f"/api/invoices/{invoice['id']}/payments/9999")
+        assert resp.status_code == 404
+

@@ -356,3 +356,26 @@ def test_get_low_rotation_categories_orders(db):
     result = get_low_rotation_categories(db)
     assert result[0][0].nombre == "SinVentas"
     assert result[0][1] == 0
+
+
+def test_get_category_detail_analytics(db):
+    from app.services.category_service import get_category_detail_analytics
+    cat = create_category(db, CategoryCreate(nombre="LICORES PREMIUM"))
+    p = Product(
+        nombre="Whisky 18", precio_costo_caja_usd=Decimal("120"), precio_costo_usd=Decimal("10"), precio_unidad_usd=Decimal("20"),
+        precio_caja_usd=Decimal("240"), stock_unidades=10, unidades_por_caja=12,
+    )
+    p.categories = [cat]
+    db.add(p)
+    db.commit()
+
+    detail = get_category_detail_analytics(db, cat.id)
+    assert detail is not None
+    assert detail.id == cat.id
+    assert detail.total_productos == 1
+    assert len(detail.top_productos) == 1
+    assert detail.top_productos[0].stock_unidades == 10
+
+    none_detail = get_category_detail_analytics(db, 99999)
+    assert none_detail is None
+

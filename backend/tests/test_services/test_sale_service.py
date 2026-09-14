@@ -659,6 +659,144 @@ def test_get_top_week_sales_empty(db):
     assert get_top_week_sales(db) is None
 
 
+class TestSaleServiceCoverageAndEdgeCases:
+
+    def test_to_ve_boundary_none(self):
+        from app.services.sale_service import _to_ve_boundary
+        assert _to_ve_boundary(None) is None
+
+    def test_period_key_ranges(self):
+        from app.services.sale_service import _period_key
+        dt1 = datetime(2026, 3, 10, 12, 0, tzinfo=timezone.utc)
+        dt2 = datetime(2026, 3, 20, 12, 0, tzinfo=timezone.utc)
+        dt3 = datetime(2026, 8, 10, 12, 0, tzinfo=timezone.utc)
+
+        assert _period_key(dt1, "quincenal") == "2026-03-01"
+        assert _period_key(dt2, "quincenal") == "2026-03-16"
+        assert _period_key(dt1, "trimestral") == "2026-Q1"
+        assert _period_key(dt3, "trimestral") == "2026-Q3"
+        assert _period_key(dt1, "semestral") == "2026-H1"
+        assert _period_key(dt3, "semestral") == "2026-H2"
+
+        with pytest.raises(ValueError, match="Rango no válido"):
+            _period_key(dt1, "anual_invalido")
+
+    def test_get_sales_summary_with_date_filters(self, db):
+        u = _user(db)
+        s1 = Sale(
+            usuario_id=u.id, tasa_bcv_aplicada=Decimal("50"),
+            fecha_venta=datetime(2026, 7, 10, 10, 0, tzinfo=timezone.utc),
+            monto_exento_usd=Decimal("50"), base_imponible_usd=Decimal("0"), monto_iva_usd=Decimal("0")
+        )
+        s2 = Sale(
+            usuario_id=u.id, tasa_bcv_aplicada=Decimal("50"),
+            fecha_venta=datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc),
+            monto_exento_usd=Decimal("100"), base_imponible_usd=Decimal("0"), monto_iva_usd=Decimal("0")
+        )
+        db.add_all([s1, s2])
+        db.commit()
+
+        res = get_sales_summary(
+            db, rango="diario",
+            fecha_desde=datetime(2026, 7, 15, 0, 0, tzinfo=timezone.utc),
+            fecha_hasta=datetime(2026, 7, 25, 0, 0, tzinfo=timezone.utc),
+        )
+        assert len(res) == 1
+        assert res[0]["total_usd"] == Decimal("100")
+
+    def test_create_sale_unpacking_boxes_for_units(self, db):
+        from app.models.category import Category
+        u = _user(db)
+        cat = db.execute(select(Category).where(Category.nombre == "CAT")).scalar_one()
+        p = Product(
+            nombre="Cerveza Unpack Test",
+            precio_costo_caja_usd=Decimal("12"),
+            precio_costo_usd=Decimal("1"),
+            precio_unidad_usd=Decimal("2"),
+            precio_caja_usd=Decimal("20"),
+            stock_unidades=2,
+            stock_cajas=2,
+            unidades_por_caja=12,
+            stock_minimo=5,
+        )
+        p.categories.append(cat)
+        db.add(p)
+        db.commit()
+
+        pm = _payment_method(db)
+        # Requerimos 10 unidades. Tenemos 2 sueltas y 2 cajas (24 sueltas).
+        # Debe tomar las 2 sueltas y desempacar 1 caja.
+        item_req = _item(p.id, tipo="UNIDAD", cantidad=10, precio=Decimal("2"))
+        data = _sale_data(pm, [item_req])
+        sale = create_sale(db, data, usuario_id=u.id)
+
+        assert sale.id is not None
+        db.refresh(p)
+        # Original: 2 sueltas + 2 cajas (24 u) = 26 u total.
+        # Descontado: 10 u -> Quedan 16 u = 1 caja (12 u) + 4 sueltas.
+        assert p.stock_cajas == 1
+        assert p.stock_unidades == 4
+
+    def test_create_sale_packing_units_for_box(self, db):
+        from app.models.category import Category
+        u = _user(db)
+        cat = db.execute(select(Category).where(Category.nombre == "CAT")).scalar_one()
+        p = Product(
+            nombre="Cerveza Pack Test",
+            precio_costo_caja_usd=Decimal("12"),
+            precio_costo_usd=Decimal("1"),
+            precio_unidad_usd=Decimal("2"),
+            precio_caja_usd=Decimal("20"),
+            stock_unidades=24,
+            stock_cajas=0,
+            unidades_por_caja=12,
+            stock_minimo=5,
+        )
+        p.categories.append(cat)
+        db.add(p)
+        db.commit()
+
+        pm = _payment_method(db)
+        # Requerimos 1 caja (12 u). Tenemos 0 cajas y 24 sueltas.
+        item_req = _item(p.id, tipo="CAJA", cantidad=1, precio=Decimal("20"))
+        data = _sale_data(pm, [item_req])
+        sale = create_sale(db, data, usuario_id=u.id)
+
+        assert sale.id is not None
+        db.refresh(p)
+        assert p.stock_cajas == 0
+        assert p.stock_unidades == 12
+
+    def test_create_sale_inactive_payment_method(self, db):
+        u = _user(db)
+        p = _product(db)
+        pm = PaymentMethod(nombre="INACTIVO", activo=False)
+        db.add(pm)
+        db.commit()
+
+        data = _sale_data(pm, [_item(p.id)])
+        with pytest.raises(ConflictError, match="no está activo"):
+            create_sale(db, data, usuario_id=u.id)
+
+    def test_create_sale_divisas_missing_price_rule(self, db):
+        u = _user(db)
+        p = _product(db)
+        pm = _payment_method(db)
+
+        item_req = SaleItemCreate(
+            producto_id=p.id,
+            tipo_empaque="UNIDAD",
+            cantidad=1,
+            unidades_descontadas=1,
+            precio_unitario_usd=Decimal("8"),
+            usa_precio_divisas=True,
+        )
+        data = _sale_data(pm, [item_req])
+        with pytest.raises(ConflictError, match="no tiene precio divisas activo"):
+            create_sale(db, data, usuario_id=u.id)
+
+
+
 def test_get_top_week_sales_returns_highest_revenue_week(db):
     u = _user(db)
     p = _product(db)
