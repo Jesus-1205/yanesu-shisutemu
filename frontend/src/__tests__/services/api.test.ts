@@ -197,3 +197,156 @@ describe("api - invoice with FormData", () => {
     expect(callArgs[1].headers).toEqual({});
   });
 });
+
+describe("api - exchange rates & BCV", () => {
+  it("getBcvRates sends GET request for BCV rates", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ rates: { USD: "45.5" }, fecha_ultima_actualizacion: "2025-01-15" }),
+    );
+    const result = await api.getBcvRates();
+    expect(result.rates.USD).toBe("45.5");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/exchange-rates/bcv",
+      expect.anything(),
+    );
+  });
+
+  it("getLatestRates fetches current active rates", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ rates: { USD: "45.0", EUR: "48.0" } }),
+    );
+    const rates = await api.getLatestRates();
+    expect(rates.rates.USD).toBe("45.0");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/exchange-rates/latest",
+      expect.anything(),
+    );
+  });
+
+  it("saveBulkRates sends POST with updated rate payload", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ id: 2, tasa_usd: 46.2, tasa_eur: 48.0 }),
+    );
+    const result = await api.saveBulkRates({ usd: "46.2", eur: "48.0" });
+    expect(result.tasa_usd).toBe(46.2);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/exchange-rates/save-rates",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ usd: "46.2", eur: "48.0" }),
+      }),
+    );
+  });
+});
+
+describe("api - retornables endpoints", () => {
+  it("getRetornableResumen fetches summary", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({
+        ultimo_reporte_fecha: "2025-01-15",
+        ultimo_reporte_realizado_por: "Admin",
+        presentaciones: [],
+      }),
+    );
+    const result = await api.getRetornableResumen();
+    expect(result.ultimo_reporte_realizado_por).toBe("Admin");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/retornable/resumen",
+      expect.anything(),
+    );
+  });
+
+  it("asociarRetornableProducto sends POST with payload", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ detail: "Asociado", id: 1 }),
+    );
+    const result = await api.asociarRetornableProducto({
+      producto_id: 10,
+      presentacion: "222",
+    });
+    expect(result.detail).toBe("Asociado");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/retornable/productos",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("desasociarRetornableProducto sends DELETE", async () => {
+    mockFetch.mockResolvedValueOnce(mock204());
+    const result = await api.desasociarRetornableProducto(5);
+    expect(result).toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/retornable/productos/5",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+});
+
+describe("api - combos & price rules", () => {
+  it("getCombos fetches combos list", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse([{ id: 1, nombre: "Combo Fiesta", precio_combo_usd: 25.0 }]),
+    );
+    const combos = await api.getCombos();
+    expect(combos).toHaveLength(1);
+    expect(combos[0].nombre).toBe("Combo Fiesta");
+  });
+
+  it("getPriceRules fetches price rules list", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockResponse([{ id: 1, nombre: "Descuento 10%", porcentaje_ajuste: 10 }]),
+    );
+    const rules = await api.getPriceRules();
+    expect(rules).toHaveLength(1);
+    expect(rules[0].nombre).toBe("Descuento 10%");
+  });
+
+  it("createPriceRule sends POST with payload", async () => {
+    const payload = {
+      nombre: "Promo Verano",
+      tipo_regla: "DESCUENTO" as const,
+      porcentaje_ajuste: 15,
+      es_general: true,
+      tipo_alcance: "GLOBAL" as const,
+      productos: [],
+      metodo_pago_ids: [],
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse({ id: 2, ...payload }));
+    const result = await api.createPriceRule(payload);
+    expect(result.id).toBe(2);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/price-rules",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+});
+
+describe("api - system & setup", () => {
+  it("getSetupStatus fetches setup status", async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse({ needs_setup: false }));
+    const result = await api.getSetupStatus();
+    expect(result.needs_setup).toBe(false);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/auth/setup-status",
+      expect.anything(),
+    );
+  });
+
+  it("setupAdmin sends POST with admin initial data", async () => {
+    const adminData = {
+      username: "admin",
+      password: "password123",
+      email: "admin@test.com",
+      nombre_completo: "Super Admin",
+    };
+    mockFetch.mockResolvedValueOnce(
+      mockResponse({ id: 1, username: "admin" }),
+    );
+    const result = await api.setupAdmin(adminData);
+    expect(result.username).toBe("admin");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/auth/setup",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+});
