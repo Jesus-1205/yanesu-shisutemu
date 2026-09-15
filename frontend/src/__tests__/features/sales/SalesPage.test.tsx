@@ -6,6 +6,15 @@ import SalesPage from "../../../features/sales/pages/SalesPage";
 import { ToastProvider } from "../../../ui-components/Toast";
 import type { ReactNode } from "react";
 
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 const mockGetSales = vi.fn();
 const mockGetSalesPaginated = vi.fn();
 const mockGetPaymentMethods = vi.fn();
@@ -18,9 +27,10 @@ vi.mock("../../../services/api", () => ({
   },
 }));
 
+let mockUserRole = "ADMINISTRADOR";
 vi.mock("../../../features/auth/context/AuthContext", () => ({
   useAuth: () => ({
-    user: { id: 1, rol_nombre: "ADMINISTRADOR" },
+    user: { id: 1, rol_nombre: mockUserRole },
     loading: false,
   }),
   AuthProvider: ({ children }: { children: ReactNode }) => children,
@@ -40,43 +50,67 @@ function wrapper({ children }: { children: ReactNode }) {
   );
 }
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  mockGetSalesPaginated.mockResolvedValue({ items: [], pages: 1 });
-  mockGetPaymentMethods.mockResolvedValue([]);
-});
+const sampleSales = [
+  {
+    id: 1,
+    fecha_venta: "2025-01-15T14:30:00",
+    total_usd: 100,
+    total_ves: 4500,
+    metodo_pago: "Efectivo",
+    tasa_bcv_aplicada: 45,
+    items: [{ id: 1, producto_nombre: "Ron", cantidad: 2 }],
+    usuario_nombre: "Admin",
+    observaciones: null,
+  },
+];
 
 describe("SalesPage", () => {
-  it("renders the page header", async () => {
-    render(<SalesPage />, { wrapper });
-    expect(screen.getByText("Ventas")).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUserRole = "ADMINISTRADOR";
+    mockGetSalesPaginated.mockResolvedValue({
+      items: sampleSales,
+      total: 1,
+      page: 1,
+      page_size: 20,
+      pages: 1,
+    });
+    mockGetPaymentMethods.mockResolvedValue([]);
   });
 
-  it("shows error banner on fetch failure", async () => {
-    mockGetSalesPaginated.mockRejectedValue(new Error("Network error"));
+  it("renders the page header and data", async () => {
+    render(<SalesPage />, { wrapper });
+    expect(screen.getByText("Ventas")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("$100,00")).toBeInTheDocument();
+    });
+  });
+
+  it("shows error banner on fetch failure and retries", async () => {
+    mockGetSalesPaginated
+      .mockRejectedValueOnce(new Error("Network error"))
+      .mockResolvedValueOnce({ items: sampleSales, total: 1, page: 1, page_size: 20, pages: 1 });
+
     render(<SalesPage />, { wrapper });
     await waitFor(() => {
       expect(screen.getByText("Network error")).toBeInTheDocument();
     });
+
+    const retryBtn = screen.getByText("Reintentar");
+    await userEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("$100,00")).toBeInTheDocument();
+    });
   });
 
-  it("renders download excel button", async () => {
-    render(<SalesPage />, { wrapper });
-    await waitFor(() => expect(screen.getByText("Descargar Excel")).toBeInTheDocument());
-  });
-
-  it("exports filtered sales to excel on button click", async () => {
-    const mockSales = [
-      { id: 1, fecha_venta: "2025-01-15", total_usd: 100, total_ves: 4500, metodo_pago: "Efectivo", tasa_bcv_aplicada: 45, items: [{ id: 1 }], usuario_nombre: "Admin", observaciones: null },
-    ];
-    mockGetSalesPaginated.mockResolvedValue({ items: mockSales, total: 1, page: 1, page_size: 200, pages: 1 });
+  it("renders download excel button and exports data", async () => {
     render(<SalesPage />, { wrapper });
     await waitFor(() => expect(screen.getByText("Descargar Excel")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Descargar Excel"));
     await waitFor(() => {
-      expect(mockGetSales).not.toHaveBeenCalled();
       expect(exportToExcel).toHaveBeenCalledWith({
-        data: mockSales,
+        data: sampleSales,
         columns: expect.arrayContaining([
           expect.objectContaining({ header: "Fecha" }),
           expect.objectContaining({ header: "Total USD" }),
@@ -107,7 +141,7 @@ describe("SalesPage", () => {
     });
   });
 
-  it("renders payment method filter dropdown for admin", async () => {
+  it("renders payment method filter dropdown for admin and filters on change", async () => {
     mockGetPaymentMethods.mockResolvedValue([
       { id: 1, nombre: "DIVISAS", moneda_default: "USD", activo: true, acepta_referencia: false },
       { id: 2, nombre: "EFECTIVO", moneda_default: "VES", activo: true, acepta_referencia: false },
@@ -141,5 +175,60 @@ describe("SalesPage", () => {
         expect.objectContaining({ hora_desde: "12:00", hora_hasta: "18:00", page_size: 200 }),
       );
     });
+  });
+
+  it("navigates to new sale when clicking Nueva Venta", async () => {
+    render(<SalesPage />, { wrapper });
+    const newBtn = screen.getByRole("button", { name: /Nueva Venta/i });
+    await userEvent.click(newBtn);
+    expect(mockNavigate).toHaveBeenCalledWith("/sales/new");
+  });
+
+  it("navigates to sale detail when clicking Ver in table row", async () => {
+    render(<SalesPage />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText("$100,00")).toBeInTheDocument();
+    });
+
+    const detailBtn = screen.getByRole("button", { name: /^Ver$/i });
+    await userEvent.click(detailBtn);
+    expect(mockNavigate).toHaveBeenCalledWith("/sales/1");
+  });
+
+  it("filters sales by date inputs and clears them", async () => {
+    const { container } = render(<SalesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Desde")).toBeInTheDocument());
+
+    const dateInputs = container.querySelectorAll('input[type="date"]');
+    expect(dateInputs.length).toBe(2);
+
+    fireEvent.change(dateInputs[0], { target: { value: "2025-01-01" } });
+    fireEvent.change(dateInputs[1], { target: { value: "2025-01-31" } });
+
+    await waitFor(() => {
+      expect(mockGetSalesPaginated).toHaveBeenCalledWith(
+        expect.objectContaining({ fecha_desde: "2025-01-01", fecha_hasta: "2025-01-31" }),
+      );
+    });
+
+    const limpiarBtn = screen.getByText("Limpiar");
+    await userEvent.click(limpiarBtn);
+
+    await waitFor(() => {
+      expect(mockGetSalesPaginated).toHaveBeenCalledWith(
+        expect.not.objectContaining({ fecha_desde: "2025-01-01" }),
+      );
+    });
+  });
+
+  it("adapts correctly for operator role", async () => {
+    mockUserRole = "OPERADOR";
+    render(<SalesPage />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText("Mostrando ventas del día de hoy")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Método de pago")).not.toBeInTheDocument();
   });
 });

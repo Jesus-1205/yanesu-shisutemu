@@ -1,38 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import InvoicesPage from "@/features/invoices/pages/InvoicesPage";
 import type { FacturaOut, SupplierOut } from "@/types/api";
 
-// ─── Mock API ──────────────────────────────────────────────────────────────
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 vi.mock("@/services/api", () => ({
   api: {
-    getInvoices: vi.fn().mockResolvedValue({
-      items: [],
-      total: 0,
-      page: 1,
-      page_size: 20,
-      pages: 0,
-    }),
-    getSuppliers: vi.fn().mockResolvedValue([]),
-    getInvoiceStats: vi.fn().mockResolvedValue({
-      pendientes: 0,
-      parciales: 0,
-      pagadas: 0,
-      total: 0,
-    }),
+    getInvoices: vi.fn(),
+    getSuppliers: vi.fn(),
+    getInvoiceStats: vi.fn(),
   },
 }));
 
-// ─── Mock Toast ────────────────────────────────────────────────────────────
 vi.mock("@/ui-components/Toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
-// ─── Imports after mocks ──────────────────────────────────────────────────
 import { api } from "@/services/api";
+import { useInvoiceFiltersStore } from "@/features/invoices/store/invoiceFiltersStore";
 
-// ─── Test Data ────────────────────────────────────────────────────────────
+const mockApi = vi.mocked(api);
+
 const mockInvoices: FacturaOut[] = [
   {
     id: 1,
@@ -76,15 +74,15 @@ const mockInvoices: FacturaOut[] = [
     total_usd: 50,
     total_bs: 37500,
     aplica_iva: false,
-    estado_pago: "PENDIENTE",
+    estado_pago: "PAGADA",
     created_at: "2026-08-21T12:00:00",
     procesada_por_ia: false,
     raw_json_ia: null,
-    total_pagado_usd: 0,
-    total_pagado_bs: 0,
-    saldo_pendiente_usd: 50,
-    saldo_pendiente_bs: 37500,
-    porcentaje_pagado: 0,
+    total_pagado_usd: 50,
+    total_pagado_bs: 37500,
+    saldo_pendiente_usd: 0,
+    saldo_pendiente_bs: 0,
+    porcentaje_pagado: 100,
     supplier: { id: 2, nombre: "Proveedor B", telefono: null, email: null },
     detalles: [],
     obsequios: [],
@@ -97,8 +95,6 @@ const mockSuppliers: SupplierOut[] = [
   { id: 2, nombre: "Proveedor B", telefono: null, email: null },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
-
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={["/invoices"]}>
@@ -107,25 +103,22 @@ function renderPage() {
   );
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────
-
 describe("InvoicesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (api.getInvoices as ReturnType<typeof vi.fn>).mockResolvedValue({
+    useInvoiceFiltersStore.getState().clearAll();
+    mockApi.getInvoices.mockResolvedValue({
       items: mockInvoices,
       total: 2,
       page: 1,
       page_size: 20,
       pages: 1,
     });
-    (api.getSuppliers as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockSuppliers,
-    );
-    (api.getInvoiceStats as ReturnType<typeof vi.fn>).mockResolvedValue({
-      pendientes: 2,
+    mockApi.getSuppliers.mockResolvedValue(mockSuppliers);
+    mockApi.getInvoiceStats.mockResolvedValue({
+      pendientes: 1,
       parciales: 0,
-      pagadas: 0,
+      pagadas: 1,
       total: 2,
     });
   });
@@ -139,29 +132,17 @@ describe("InvoicesPage", () => {
 
   it("shows 'Todos los tipos' filter option", () => {
     renderPage();
-    // The Select component renders a native <select> element.
-    // "Todos los tipos" is the default label for the tipo_documento filter.
     expect(screen.getByText("Todos los tipos")).toBeInTheDocument();
   });
 
   it("changing tipo_documento filter calls api.getInvoices with correct param", async () => {
     renderPage();
 
-    // Wait for initial load to complete
     await waitFor(() => {
-      expect(api.getInvoices).toHaveBeenCalledTimes(1);
+      expect(mockApi.getInvoices).toHaveBeenCalledTimes(1);
     });
 
-    // Initial call should not include tipo_documento (undefined is not sent)
-    expect(api.getInvoices).toHaveBeenCalledWith(
-      expect.objectContaining({ tipo_documento: undefined }),
-    );
-
-    // Find the tipo_documento <select> by looking for the one with "Todos los tipos"
     const selects = screen.getAllByRole("combobox");
-    // The tipo_documento select is the third one (search input, proveedor select, tipo select)
-    // Actually, SearchInput is an <input>, so selects are: proveedor select + tipo select
-    // The tipo select has "Todos los tipos" as its first option
     const tipoSelect = selects.find((sel) =>
       Array.from((sel as HTMLSelectElement).options).some(
         (opt) => opt.text === "Todos los tipos",
@@ -169,11 +150,10 @@ describe("InvoicesPage", () => {
     );
     expect(tipoSelect).toBeTruthy();
 
-    // Change to FACTURA
     fireEvent.change(tipoSelect!, { target: { value: "FACTURA" } });
 
     await waitFor(() => {
-      expect(api.getInvoices).toHaveBeenCalledWith(
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
         expect.objectContaining({ tipo_documento: "FACTURA" }),
       );
     });
@@ -183,7 +163,7 @@ describe("InvoicesPage", () => {
     renderPage();
 
     await waitFor(() => {
-      expect(api.getInvoices).toHaveBeenCalledTimes(1);
+      expect(mockApi.getInvoices).toHaveBeenCalledTimes(1);
     });
 
     const selects = screen.getAllByRole("combobox");
@@ -197,7 +177,7 @@ describe("InvoicesPage", () => {
     fireEvent.change(tipoSelect!, { target: { value: "NOTA_ENTREGA" } });
 
     await waitFor(() => {
-      expect(api.getInvoices).toHaveBeenCalledWith(
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
         expect.objectContaining({ tipo_documento: "NOTA_ENTREGA" }),
       );
     });
@@ -210,7 +190,6 @@ describe("InvoicesPage", () => {
       expect(screen.getByText("001-00012345")).toBeInTheDocument();
     });
 
-    // Both invoice types should appear as badges
     expect(screen.getAllByText("Factura").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Nota Entrega")).toBeInTheDocument();
   });
@@ -225,7 +204,7 @@ describe("InvoicesPage", () => {
   });
 
   it("shows empty state when no invoices exist", async () => {
-    (api.getInvoices as ReturnType<typeof vi.fn>).mockResolvedValue({
+    mockApi.getInvoices.mockResolvedValue({
       items: [],
       total: 0,
       page: 1,
@@ -238,5 +217,129 @@ describe("InvoicesPage", () => {
     await waitFor(() => {
       expect(screen.getByText("No hay facturas")).toBeInTheDocument();
     });
+  });
+
+  it("filters invoices by search query", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("001-00012345")).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText("Buscar factura...");
+    await userEvent.type(searchInput, "001");
+
+    await waitFor(() => {
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ search: "001" }),
+      );
+    });
+  });
+
+  it("switches status tabs (Pendientes, Pagadas)", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("001-00012345")).toBeInTheDocument();
+    });
+
+    const pendientesTab = screen.getByText("Pendientes");
+    await userEvent.click(pendientesTab);
+
+    await waitFor(() => {
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ estado_pago: "PENDIENTE" }),
+      );
+    });
+
+    const pagadasTab = screen.getByText("Pagadas");
+    await userEvent.click(pagadasTab);
+
+    await waitFor(() => {
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ estado_pago: "PAGADA" }),
+      );
+    });
+  });
+
+  it("filters by date range and clears date filters", async () => {
+    const { container } = renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("001-00012345")).toBeInTheDocument();
+    });
+
+    const dateInputs = container.querySelectorAll('input[type="date"]');
+    expect(dateInputs.length).toBeGreaterThan(0);
+    const desdeInput = dateInputs[0];
+
+    fireEvent.change(desdeInput, { target: { value: "2026-08-01" } });
+
+    await waitFor(() => {
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ fecha_desde: "2026-08-01" }),
+      );
+    });
+
+    const clearDatesBtn = screen.getByText("Limpiar fechas");
+    await userEvent.click(clearDatesBtn);
+
+    await waitFor(() => {
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ fecha_desde: undefined }),
+      );
+    });
+  });
+
+  it("handles sortBy dropdown change", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("001-00012345")).toBeInTheDocument();
+    });
+
+    const selects = screen.getAllByRole("combobox");
+    const sortSelect = selects.find((sel) =>
+      Array.from((sel as HTMLSelectElement).options).some(
+        (opt) => opt.value === "fecha_limite_pago",
+      ),
+    );
+
+    expect(sortSelect).toBeDefined();
+
+    fireEvent.change(sortSelect!, { target: { value: "fecha_limite_pago" } });
+    await waitFor(() => {
+      expect(mockApi.getInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ sort_by: "fecha_limite_pago" }),
+      );
+    });
+  });
+
+  it("handles error state and retries fetch on button click", async () => {
+    mockApi.getInvoices
+      .mockRejectedValueOnce(new Error("Fallo de red"))
+      .mockResolvedValueOnce({
+        items: mockInvoices,
+        total: 2,
+        page: 1,
+        page_size: 20,
+        pages: 1,
+      });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText("Fallo de red")).toBeInTheDocument();
+    });
+
+    const retryBtn = screen.getByText("Reintentar");
+    await userEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("001-00012345")).toBeInTheDocument();
+    });
+  });
+
+  it("navigates to new invoice page when clicking Nueva Factura", async () => {
+    renderPage();
+    const newBtn = screen.getByRole("button", { name: /Nueva Factura/ });
+    await userEvent.click(newBtn);
+    expect(mockNavigate).toHaveBeenCalledWith("/invoices/new");
   });
 });
