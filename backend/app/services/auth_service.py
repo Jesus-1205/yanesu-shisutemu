@@ -85,6 +85,42 @@ def register_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
     return user, token
 
 
+def setup_first_admin(db: Session, data: UserCreate) -> tuple[User, str]:
+    from sqlalchemy import func
+    from app.models.role import Role
+    from app.core.exceptions import EntityNotFoundError
+
+    if db.execute(select(func.count()).select_from(User)).scalar() > 0:
+        raise ValueError("El sistema ya tiene usuarios configurados")
+
+    admin_role = db.execute(
+        select(Role).where(Role.nombre == "ADMINISTRADOR")
+    ).scalars().first()
+
+    if not admin_role:
+        raise EntityNotFoundError("Rol ADMINISTRADOR no encontrado")
+
+    if _exists(db, "username", data.username):
+        raise ConflictError("El nombre de usuario ya está registrado")
+    if _exists(db, "email", data.email):
+        raise ConflictError("El email ya está registrado")
+
+    hashed = hash_password(data.password)
+    user = User(
+        username=data.username,
+        email=data.email,
+        hashed_password=hashed,
+        nombre_completo=data.nombre_completo,
+        rol_id=admin_role.id,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token({"sub": str(user.id)})
+    return user, token
+
+
 def login_user(db: Session, username: str, password: str) -> tuple[User, str] | None:
     user = authenticate_user(db, username, password)
     if not user or not user.is_active:
