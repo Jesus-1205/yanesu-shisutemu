@@ -358,16 +358,21 @@ def _payment_method_filter(
 
 
 def _normalize_time(value: str | None) -> str | None:
-    """Normaliza 'HH:MM' o 'HH:MM:SS' a 'HH:MM:SS' para comparar con func.time()."""
+    """Normaliza 'HH:MM' o 'HH:MM:SS' a 'HH:MM:SS' para comparación lexicográfica."""
     if not value or not value.strip():
         return None
     parts = value.strip().split(":")
     if len(parts) < 2:
         return None
-    hh = parts[0].strip().zfill(2)
-    mm = parts[1].strip().zfill(2)
-    ss = parts[2].strip().zfill(2) if len(parts) > 2 else "00"
-    return f"{hh}:{mm}:{ss}"
+    try:
+        hh = int(parts[0].strip())
+        mm = int(parts[1].strip())
+        ss = int(parts[2].strip()) if len(parts) > 2 else 0
+        if not (0 <= hh <= 23 and 0 <= mm <= 59 and 0 <= ss <= 59):
+            return None
+        return f"{hh:02d}:{mm:02d}:{ss:02d}"
+    except (ValueError, TypeError):
+        return None
 
 
 def _time_window_filter(hora_desde: str | None, hora_hasta: str | None):

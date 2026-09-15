@@ -37,7 +37,7 @@ class HORA_DIAClause(ColumnElement):
 
 @compiles(HORA_DIAClause)
 def compile_hora_dia_pg(element, compiler, **kw):
-    return f"CAST({compiler.process(element.column)} AS TIME)"
+    return f"TO_CHAR({compiler.process(element.column)}, 'HH24:MI:SS')"
 
 
 @compiles(HORA_DIAClause, "sqlite")
