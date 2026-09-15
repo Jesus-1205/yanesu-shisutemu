@@ -48,3 +48,26 @@ def test_get_rate_history_limit(db):
 def test_get_rate_history_empty(db):
     history = get_rate_history(db)
     assert len(history) == 0
+
+
+def test_fetch_bcv_rates_caching():
+    import time
+    from unittest.mock import patch
+    from app.services.exchange_rate_service import fetch_bcv_rates, _bcv_cache
+
+    _bcv_cache["rates"] = {"USD": Decimal("50.0000"), "EUR": Decimal("55.0000")}
+    _bcv_cache["ts"] = time.monotonic()
+
+    # Debería retornar de cache sin llamar a scraper
+    with patch("app.services.exchange_rate_service._scrape_bcv") as mock_scrape:
+        res = fetch_bcv_rates()
+        assert res["USD"] == Decimal("50.0000")
+        mock_scrape.assert_not_called()
+
+    # Expira cache
+    _bcv_cache["ts"] = time.monotonic() - 400
+    with patch("app.services.exchange_rate_service._scrape_bcv", return_value={"USD": Decimal("51.0000")}) as mock_scrape:
+        res = fetch_bcv_rates()
+        assert res["USD"] == Decimal("51.0000")
+        mock_scrape.assert_called_once()
+

@@ -149,3 +149,24 @@ class TestRateHistory:
         assert response.status_code == 200
         data = response.json()
         assert len(data["history"]) == 1
+
+
+class TestExchangeRatesBcvEndpoints:
+
+    def test_get_bcv_rates_error_502(self, client):
+        from unittest.mock import patch
+        _register_admin(client)
+
+        with patch("app.routes.exchange_rates.fetch_bcv_rates", side_effect=ConnectionError("BCV caído")):
+            resp = client.get("/api/exchange-rates/bcv")
+            assert resp.status_code == 502
+            assert "BCV caído" in resp.json()["detail"]
+
+    def test_get_daily_status_endpoint(self, client):
+        _register_admin(client)
+        resp = client.get("/api/exchange-rates/daily-status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "needs_update" in data
+        assert "last_update_today" in data
+

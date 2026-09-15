@@ -14,7 +14,15 @@ from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.product import Product
 from app.models.supplier import Supplier
 from app.services.product_service import _accent_fold, _accent_fold_pattern
-from app.schemas.invoice import ExtractedProduct, FacturaCreate, InvoiceAnalysisOut, InvoicePaymentCreate, InvoicePaymentSummary, ObsequioFacturaCreate
+from app.schemas.invoice import (
+    ExtractedProduct,
+    FacturaCreate,
+    FacturaOut,
+    InvoiceAnalysisOut,
+    InvoicePaymentCreate,
+    InvoicePaymentSummary,
+    ObsequioFacturaCreate,
+)
 
 IVA_RATE = Decimal("16")
 GEMINI_MODEL = "gemini-3.5-flash-lite"
@@ -1009,3 +1017,27 @@ def delete_invoice_payment(db: Session, factura_id: int, payment_id: int) -> Non
         _recalculate_invoice_payment_status(db, factura)
 
     db.commit()
+
+
+def get_payment_receipt(db: Session, payment_id: int, receipt_id: int) -> InvoicePaymentReceipt:
+    receipt = db.get(InvoicePaymentReceipt, receipt_id)
+    if not receipt or receipt.pago_id != payment_id:
+        raise EntityNotFoundError("Comprobante no encontrado")
+    return receipt
+
+
+def enrich_invoice_out(factura: Factura) -> FacturaOut:
+    out = FacturaOut.model_validate(factura)
+    if factura.payments:
+        total_pagado_usd = sum(p.monto_usd for p in factura.payments)
+        total_pagado_bs = sum(p.monto_bs for p in factura.payments)
+        out.total_pagado_usd = total_pagado_usd
+        out.total_pagado_bs = total_pagado_bs
+        if out.moneda_principal == "BS" and out.total_bs > 0:
+            out.porcentaje_pagado = min(float(total_pagado_bs / out.total_bs * 100), 100.0)
+        elif out.total_usd > 0:
+            out.porcentaje_pagado = min(float(total_pagado_usd / out.total_usd * 100), 100.0)
+    out.saldo_pendiente_usd = max(out.total_usd - out.total_pagado_usd, Decimal("0"))
+    out.saldo_pendiente_bs = max(out.total_bs - out.total_pagado_bs, Decimal("0"))
+    return out
+

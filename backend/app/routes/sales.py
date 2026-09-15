@@ -1,27 +1,24 @@
 from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import require_role
-from app.models.product import Product
+from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.user import User
 from app.schemas.sale import (
     CalculateRequest,
     CalculateResponse,
-    CalculateResponseItem,
     SaleCreate,
     SaleOut,
     SalePaginationOut,
     TopWeekOut,
 )
 from app.services.audit_service import log_action
-from app.services.price_rule_service import get_active_divisas_prices, get_divisas_payment_method_ids
-from app.services.combo_service import distribute_combo_price, get_combo as get_combo_by_id
 from app.services.sale_service import (
+    calculate_sale,
     create_sale,
     current_day_range,
     current_week_range,
@@ -169,113 +166,18 @@ def get_by_id(
     return SaleOut.model_validate(sale)
 
 
-@router.post("/calculate", status_code=status.HTTP_200_OK)
+@router.post("/calculate", response_model=CalculateResponse, status_code=status.HTTP_200_OK)
 def calculate(
     data: CalculateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
-    divisas_prices = get_active_divisas_prices(db)
-    divisas_method_ids = get_divisas_payment_method_ids(db)
-
-    response_items: list[CalculateResponseItem] = []
-    combo_items: list[CalculateResponseItem] = []
-    total_usd = Decimal("0")
-    total_divisas_usd = Decimal("0")
-    total_normal_usd = Decimal("0")
-    ahorro_usd = Decimal("0")
-
-    for combo_req in data.combos:
-        combo = get_combo_by_id(db, combo_req.combo_id)
-        if not combo.activo:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Combo '{combo.nombre}' no está activo",
-            )
-
-        combo_pm_ids = {pm.metodo_pago_id for pm in combo.payment_methods}
-        divisas_method_ids |= combo_pm_ids
-
-        selections: dict[int, list[tuple[int, int]]] = {}
-        for sel in combo_req.selecciones:
-            selections[sel.grupo_id] = list(zip(sel.productos, sel.cantidades))
-
-        total_qtys = sum(sum(cantidad for _, cantidad in product_selections) for product_selections in selections.values())
-        for qty_multiplier in range(combo_req.cantidad):
-            distributed = distribute_combo_price(db, combo, selections)
-
-            for d in distributed:
-                producto_id = d["producto_id"]
-                cantidad = d["cantidad"]
-                precio_final = d["precio_unitario"]
-
-                stmt = select(Product).where(Product.id == producto_id)
-                product = db.execute(stmt).scalars().first()
-                precio_normal = product.precio_unidad_usd if product else Decimal("0")
-
-                total_divisas_usd += precio_final * Decimal(cantidad)
-                total_usd += precio_final * Decimal(cantidad)
-                ahorro_usd += (precio_normal - precio_final) * Decimal(cantidad)
-
-                combo_items.append(CalculateResponseItem(
-                    producto_id=producto_id,
-                    producto_nombre=d.get("producto_nombre", ""),
-                    tipo_empaque="UNIDAD",
-                    cantidad=cantidad,
-                    precio_unitario_usd=precio_final,
-                    precio_original_usd=precio_normal,
-                    usa_precio_divisas=True,
-                ))
-
-    for item in data.items:
-        stmt = select(Product).where(Product.id == item.producto_id)
-        product = db.execute(stmt).scalars().first()
-        if not product:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Producto ID {item.producto_id} no encontrado",
-            )
-
-        precio_normal = (
-            product.precio_unidad_usd
-            if item.tipo_empaque == "UNIDAD"
-            else product.precio_caja_usd
+    """POST /sales/calculate - Calcular desglose de precios y totales para POS."""
+    try:
+        return calculate_sale(db, data)
+    except (ConflictError, ValueError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
         )
 
-        if item.usa_precio_divisas:
-            dp = divisas_prices.get(item.producto_id, {})
-            precio_divisas = dp.get(item.tipo_empaque)
-            if precio_divisas is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Producto ID {item.producto_id} no tiene precio divisas activo para {item.tipo_empaque}",
-                )
-            precio_final = precio_divisas
-            ahorro_item = (precio_normal - precio_divisas) * Decimal(item.cantidad)
-            total_divisas_usd += precio_final * Decimal(item.cantidad)
-            ahorro_usd += ahorro_item
-        else:
-            precio_final = precio_normal
-            total_normal_usd += precio_final * Decimal(item.cantidad)
-
-        total_usd += precio_final * Decimal(item.cantidad)
-
-        response_items.append(CalculateResponseItem(
-            producto_id=item.producto_id,
-            producto_nombre=product.nombre,
-            tipo_empaque=item.tipo_empaque,
-            cantidad=item.cantidad,
-            precio_unitario_usd=precio_final,
-            precio_original_usd=precio_normal,
-            usa_precio_divisas=item.usa_precio_divisas,
-        ))
-
-    return CalculateResponse(
-        items=response_items,
-        total_usd=total_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-        total_divisas_usd=total_divisas_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-        total_normal_usd=total_normal_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-        ahorro_usd=ahorro_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-        metodos_divisas_disponibles=list(divisas_method_ids),
-        combo_items=combo_items,
-    )

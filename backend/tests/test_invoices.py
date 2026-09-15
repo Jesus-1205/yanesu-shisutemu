@@ -852,3 +852,69 @@ class TestPendingSummaryExtended:
         assert resp.status_code == 200
         data = resp.json()
         assert data["total_pendiente_usd"] == "150.00"
+
+
+class TestInvoiceRouteUploadsAndAI:
+
+    def test_analyze_endpoint_validation_and_flow(self, client):
+        from unittest.mock import patch, MagicMock
+        _login(client)
+
+        # Sin archivos -> 422 o 400
+        resp = client.post("/api/invoices/analyze")
+        assert resp.status_code in (400, 422)
+
+        # Archivo con tipo no soportado
+        resp = client.post(
+            "/api/invoices/analyze",
+            files=[("files", ("test.txt", b"plain text", "text/plain"))]
+        )
+        assert resp.status_code == 400
+        assert "Tipo de archivo no soportado" in resp.json()["detail"]
+
+        # Archivo válido con mock
+        mock_result = MagicMock()
+        mock_result.model_dump.return_value = {
+            "proveedor_nombre": "PROV AI",
+            "numero_factura": "F-AI-01",
+            "fecha_factura": "2026-05-01",
+            "fecha_limite_pago": None,
+            "moneda": "USD",
+            "tipo_documento": "FACTURA",
+            "productos": [],
+            "raw_json_ia": {}
+        }
+        with patch("app.routes.invoices.analyze_invoice_from_image", return_value=mock_result):
+            resp = client.post(
+                "/api/invoices/analyze",
+                files=[("files", ("factura.jpg", b"\xff\xd8\xff\xe0fakejpeg", "image/jpeg"))]
+            )
+            assert resp.status_code == 200
+
+    def test_create_invoice_with_image_upload(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = _invoice_payload(sup["id"], prod["id"], "F-IMG-001")
+        resp = client.post(
+            "/api/invoices",
+            data={"data": json.dumps(payload), "procesada_por_ia": "true", "raw_json_ia": '{"test": 1}'},
+            files={"image": ("factura.jpg", b"\xff\xd8\xff\xe0fake", "image/jpeg")}
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["numero_factura"] == "F-IMG-001"
+
+    def test_get_invoice_image_not_found(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+
+        payload = _invoice_payload(sup["id"], prod["id"], "F-NO-IMG")
+        inv = client.post("/api/invoices", data={"data": json.dumps(payload)}).json()
+
+        resp = client.get(f"/api/invoices/{inv['id']}/image")
+        assert resp.status_code == 404
+        assert "no tiene imagen" in resp.json()["detail"]
+

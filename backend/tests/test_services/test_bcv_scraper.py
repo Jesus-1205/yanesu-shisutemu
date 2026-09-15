@@ -61,6 +61,31 @@ def test_fetch_bcv_rates_missing_rates():
             fetch_bcv_rates()
 
 
+def test_fetch_bcv_rates_request_exception():
+    import requests
+    with patch("app.core.bcv_scraper.requests.get", side_effect=requests.RequestException("Network down")):
+        with pytest.raises(ConnectionError, match="No se pudo conectar"):
+            fetch_bcv_rates()
+
+
+def test_extract_rate_edge_cases():
+    from bs4 import BeautifulSoup
+    from app.core.bcv_scraper import _extract_rate
+
+    # Contenedor sin strong
+    soup1 = BeautifulSoup('<div id="dolar"><span>No strong</span></div>', "html.parser")
+    assert _extract_rate(soup1, "dolar") is None
+
+    # Strong vacío
+    soup2 = BeautifulSoup('<div id="dolar"><strong class="strong-tb">   </strong></div>', "html.parser")
+    assert _extract_rate(soup2, "dolar") is None
+
+    # Texto no numérico
+    soup3 = BeautifulSoup('<div id="dolar"><strong class="strong-tb">invalido</strong></div>', "html.parser")
+    assert _extract_rate(soup3, "dolar") is None
+
+
+
 def test_fetch_bcv_rates_connection_error():
     with patch("app.core.bcv_scraper.requests.get", side_effect=ConnectionError("timeout")):
         with pytest.raises(ConnectionError):

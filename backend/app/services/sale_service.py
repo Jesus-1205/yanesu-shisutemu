@@ -13,7 +13,15 @@ from app.models.product import Product
 from app.models.sale import Sale, SaleItem
 
 from app.models.sale_payment import SalePayment
-from app.schemas.sale import PaymentMethodSummaryOut, SaleCreate, SaleItemCreate, TopWeekOut
+from app.schemas.sale import (
+    CalculateRequest,
+    CalculateResponse,
+    CalculateResponseItem,
+    PaymentMethodSummaryOut,
+    SaleCreate,
+    SaleItemCreate,
+    TopWeekOut,
+)
 from app.services.price_rule_service import get_active_divisas_prices, get_divisas_payment_method_ids
 
 IVA_RATE = Decimal("16.00")
@@ -656,3 +664,104 @@ def get_payment_method_summary(
 
     result.sort(key=lambda r: r.total_equivalente_usd, reverse=True)
     return result
+
+
+def calculate_sale(db: Session, data: CalculateRequest) -> CalculateResponse:
+    from app.services.combo_service import get_combo, distribute_combo_price
+
+    divisas_prices = get_active_divisas_prices(db)
+    divisas_method_ids = get_divisas_payment_method_ids(db)
+
+    response_items: list[CalculateResponseItem] = []
+    combo_items: list[CalculateResponseItem] = []
+    total_usd = Decimal("0")
+    total_divisas_usd = Decimal("0")
+    total_normal_usd = Decimal("0")
+    ahorro_usd = Decimal("0")
+
+    for combo_req in data.combos:
+        combo = get_combo(db, combo_req.combo_id)
+        if not combo.activo:
+            raise ConflictError(f"Combo '{combo.nombre}' no está activo")
+
+        combo_pm_ids = {pm.metodo_pago_id for pm in combo.payment_methods}
+        divisas_method_ids |= combo_pm_ids
+
+        selections: dict[int, list[tuple[int, int]]] = {}
+        for sel in combo_req.selecciones:
+            selections[sel.grupo_id] = list(zip(sel.productos, sel.cantidades))
+
+        for _ in range(combo_req.cantidad):
+            distributed = distribute_combo_price(db, combo, selections)
+
+            for d in distributed:
+                producto_id = d["producto_id"]
+                cantidad = d["cantidad"]
+                precio_final = d["precio_unitario"]
+
+                stmt = select(Product).where(Product.id == producto_id)
+                product = db.execute(stmt).scalars().first()
+                precio_normal = product.precio_unidad_usd if product else Decimal("0")
+
+                total_divisas_usd += precio_final * Decimal(cantidad)
+                total_usd += precio_final * Decimal(cantidad)
+                ahorro_usd += (precio_normal - precio_final) * Decimal(cantidad)
+
+                combo_items.append(CalculateResponseItem(
+                    producto_id=producto_id,
+                    producto_nombre=d.get("producto_nombre", ""),
+                    tipo_empaque="UNIDAD",
+                    cantidad=cantidad,
+                    precio_unitario_usd=precio_final,
+                    precio_original_usd=precio_normal,
+                    usa_precio_divisas=True,
+                ))
+
+    for item in data.items:
+        stmt = select(Product).where(Product.id == item.producto_id)
+        product = db.execute(stmt).scalars().first()
+        if not product:
+            raise EntityNotFoundError(f"Producto ID {item.producto_id} no encontrado")
+
+        precio_normal = (
+            product.precio_unidad_usd
+            if item.tipo_empaque == "UNIDAD"
+            else product.precio_caja_usd
+        )
+
+        if item.usa_precio_divisas:
+            dp = divisas_prices.get(item.producto_id, {})
+            precio_divisas = dp.get(item.tipo_empaque)
+            if precio_divisas is None:
+                raise ConflictError(
+                    f"Producto ID {item.producto_id} no tiene precio divisas activo para {item.tipo_empaque}"
+                )
+            precio_final = precio_divisas
+            ahorro_item = (precio_normal - precio_divisas) * Decimal(item.cantidad)
+            total_divisas_usd += precio_final * Decimal(item.cantidad)
+            ahorro_usd += ahorro_item
+        else:
+            precio_final = precio_normal
+            total_normal_usd += precio_final * Decimal(item.cantidad)
+
+        total_usd += precio_final * Decimal(item.cantidad)
+
+        response_items.append(CalculateResponseItem(
+            producto_id=item.producto_id,
+            producto_nombre=product.nombre,
+            tipo_empaque=item.tipo_empaque,
+            cantidad=item.cantidad,
+            precio_unitario_usd=precio_final,
+            precio_original_usd=precio_normal,
+            usa_precio_divisas=item.usa_precio_divisas,
+        ))
+
+    return CalculateResponse(
+        items=response_items,
+        total_usd=total_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_divisas_usd=total_divisas_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_normal_usd=total_normal_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        ahorro_usd=ahorro_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        metodos_divisas_disponibles=list(divisas_method_ids),
+        combo_items=combo_items,
+    )

@@ -608,3 +608,58 @@ def test_get_products_pagination(db):
     assert p2["page"] == 2
     assert p2["items"][0].nombre == "Prod 10"
 
+
+def test_get_products_filter_proveedor_id(db):
+    from app.models.supplier import Supplier
+    sup = Supplier(nombre="Proveedor P")
+    db.add(sup)
+    db.commit()
+
+    p1 = create_product(db, ProductCreate(
+        nombre="Prod Prov", categoria_ids=[_cat(db)], proveedor_id=sup.id,
+        precio_costo_caja_usd=Decimal("1"), precio_unidad_usd=Decimal("2"), precio_caja_usd=Decimal("48"),
+    ))
+    p2 = create_product(db, ProductCreate(
+        nombre="Prod Sin Prov", categoria_ids=[_cat(db)],
+        precio_costo_caja_usd=Decimal("1"), precio_unidad_usd=Decimal("2"), precio_caja_usd=Decimal("48"),
+    ))
+
+    res = get_products(db, proveedor_id=sup.id)["items"]
+    assert len(res) == 1
+    assert res[0].nombre == "Prod Prov"
+
+
+def test_update_product_cost_and_categories(db):
+    cat1 = _cat(db)
+    from app.models.category import Category
+    cat2 = Category(nombre="CAT EXTRA")
+    db.add(cat2)
+    db.commit()
+
+    p = create_product(db, ProductCreate(
+        nombre="Prod Upd", categoria_ids=[cat1], unidades_por_caja=12,
+        precio_costo_caja_usd=Decimal("24"), precio_unidad_usd=Decimal("3"), precio_caja_usd=Decimal("48"),
+    ))
+    assert p.precio_costo_usd == Decimal("2.00")
+
+    # Update precio_costo_caja
+    upd = update_product(db, p.id, ProductUpdate(precio_costo_caja_usd=Decimal("36"), categoria_ids=[cat2.id]))
+    assert upd.precio_costo_usd == Decimal("3.00")
+    assert len(upd.categories) == 1
+    assert upd.categories[0].id == cat2.id
+
+    # Update clear categories
+    upd_clear = update_product(db, p.id, ProductUpdate(categoria_ids=[]))
+    assert len(upd_clear.categories) == 0
+
+
+def test_product_matrix_dates(db):
+    from datetime import date
+    from app.services.product_service import get_product_matrix
+    res = get_product_matrix(db, fecha_desde=date(2026, 1, 1), fecha_hasta=date(2026, 12, 31))
+    assert isinstance(res, list)
+
+    res_hasta_only = get_product_matrix(db, fecha_hasta=date(2026, 12, 31))
+    assert isinstance(res_hasta_only, list)
+
+

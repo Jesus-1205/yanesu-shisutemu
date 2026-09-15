@@ -1,15 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
-from app.core.exceptions import ConflictError
-from app.models.role import Role
 from app.models.user import User
 from app.schemas.user import UserCreate, UserOut, LoginRequest
 from app.services.audit_service import log_action
-from app.services.auth_service import register_user, login_user, set_token_cookie, clear_token_cookie, hash_password, create_access_token
+from app.services.auth_service import (
+    clear_token_cookie,
+    login_user,
+    register_user,
+    set_token_cookie,
+    setup_first_admin,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -25,50 +28,12 @@ def setup_status(db: Session = Depends(get_db)):
 @router.post("/setup")
 def setup_admin(data: UserCreate, response: Response, request: Request, db: Session = Depends(get_db)):
     """Crea el primer usuario administrador. Solo funciona si no hay usuarios."""
-    if db.execute(select(func.count()).select_from(User)).scalar() > 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El sistema ya tiene usuarios configurados",
-        )
-
-    admin_role = db.execute(
-        select(Role).where(Role.nombre == "ADMINISTRADOR")
-    ).scalars().first()
-
-    if not admin_role:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Rol ADMINISTRADOR no encontrado",
-        )
-
-    if _exists(db, "username", data.username):
-        raise ConflictError("El nombre de usuario ya está registrado")
-    if _exists(db, "email", data.email):
-        raise ConflictError("El email ya está registrado")
-
-    hashed = hash_password(data.password)
-    user = User(
-        username=data.username,
-        email=data.email,
-        hashed_password=hashed,
-        nombre_completo=data.nombre_completo,
-        rol_id=admin_role.id,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    token = create_access_token({"sub": str(user.id)})
+    user, token = setup_first_admin(db, data)
     set_token_cookie(response, token)
     ip = request.client.host if request.client else "local"
     log_action(usuario=user.username, ip=ip, accion="SETUP", entidad="usuario", entidad_id=user.id, detalle=f"Setup inicial: administrador '{user.username}' creado")
     return UserOut.model_validate(user)
 
-
-def _exists(db: Session, field: str, value: str) -> bool:
-    column = getattr(User, field)
-    stmt = select(User).where(column == value)
-    return db.execute(stmt).scalars().first() is not None
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)

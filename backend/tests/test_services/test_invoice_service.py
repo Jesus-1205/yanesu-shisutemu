@@ -1906,3 +1906,121 @@ class TestGetInvoicePaymentSummaryCurrency:
         summary = get_invoice_payment_summary(db, factura.id)
         # Pago BS = 10*900 = 9000; esperado BS = 10*800 = 8000; diferencia = 1000
         assert summary.diferencia_cambiaria_bs == Decimal("1000.00")
+
+
+class TestInvoiceEdgeCasesAndCoverage:
+
+    def test_create_invoice_obsequio_product_not_found(self, db):
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-OBS-NF",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("10"), costo_unitario_bs=Decimal("10")
+            )],
+            obsequios=[ObsequioFacturaCreate(
+                producto_id=99999, tipo_empaque="CAJA", cantidad=1, justificacion="Muestra"
+            )]
+        )
+        with pytest.raises(EntityNotFoundError, match="Producto ID 99999 no encontrado"):
+            create_invoice(db, data, usuario_id=user.id)
+
+    def test_create_invoice_obsequio_updates_unidades_por_caja(self, db):
+        sup = _sup(db)
+        prod = _prod(db, unidades_caja=12)
+        user = _user(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-OBS-UPC",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="UNIDAD", cantidad=1,
+                costo_unitario_usd=Decimal("5"), costo_unitario_bs=Decimal("5")
+            )],
+            obsequios=[ObsequioFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                unidades_por_caja=24, justificacion="Promo 24u"
+            )]
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+        assert len(factura.obsequios) == 1
+        db.refresh(prod)
+        assert prod.unidades_por_caja == 24
+
+    def test_pending_invoices_summary_with_bs_payments(self, db):
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("100"))
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-PEND-BS",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("50.00"),
+            aplica_iva=False,
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=2,
+                costo_unitario_usd=Decimal("50.00"), costo_unitario_bs=Decimal("2500.00")
+            )]
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+
+        # Total es 100 USD. Pagamos 2500 Bs (equivale a 50 USD con tasa 50) con monto_usd=0
+        register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("0"), monto_bs=Decimal("2500.00")),
+            usuario_id=user.id
+        )
+
+        res = get_pending_invoices_summary(db)
+        # 100 USD total - 50 USD pagado = 50 USD pendiente
+        assert res["total_pendiente_usd"] >= Decimal("50.00")
+
+    def test_delete_invoice_payment_with_files(self, db, tmp_path):
+        from unittest.mock import patch
+        from app.models.invoice_payment import InvoicePaymentReceipt
+        sup = _sup(db)
+        prod = _prod(db)
+        user = _user(db)
+        mp = _metodo_pago(db)
+
+        data = FacturaCreate(
+            proveedor_id=sup.id,
+            numero_factura="F-DEL-PAY",
+            moneda_principal=MonedaEnum.USD,
+            tasa_bs=Decimal("1"),
+            detalles=[DetalleFacturaCreate(
+                producto_id=prod.id, tipo_empaque="CAJA", cantidad=1,
+                costo_unitario_usd=Decimal("10"), costo_unitario_bs=Decimal("10")
+            )]
+        )
+        factura = create_invoice(db, data, usuario_id=user.id)
+        pago = register_invoice_payment(
+            db, factura.id,
+            InvoicePaymentCreate(metodo_pago_id=mp.id, monto_usd=Decimal("5")),
+            usuario_id=user.id
+        )
+
+        dummy_file = tmp_path / "recibo.jpg"
+        dummy_file.write_bytes(b"recibo")
+
+        rec = InvoicePaymentReceipt(
+            pago_id=pago.id,
+            archivo_path=str(dummy_file),
+            nombre_original="recibo.jpg",
+            tipo_archivo="image/jpeg",
+        )
+        db.add(rec)
+        db.commit()
+
+        delete_invoice_payment(db, factura.id, pago.id)
+        assert not dummy_file.exists()

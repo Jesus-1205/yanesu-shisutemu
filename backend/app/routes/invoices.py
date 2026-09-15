@@ -31,11 +31,13 @@ from app.services.invoice_service import (
     analyze_invoice_from_image,
     create_invoice,
     delete_invoice_payment,
+    enrich_invoice_out,
     get_invoice,
     get_invoice_payment_summary,
     get_invoice_payments,
     get_invoice_stats,
     get_invoices,
+    get_payment_receipt,
     get_pending_invoices_summary,
     get_top_suppliers_by_purchases,
     optimize_image,
@@ -184,7 +186,7 @@ async def create(
     )
     ip = request.client.host if request else "local"
     log_action(usuario=current_user.username, ip=ip, accion="CREAR", entidad="factura", entidad_id=factura.id, detalle=f"Creada factura #{factura.numero_factura} proveedor '{proveedor_nombre}'")
-    return _factura_to_out(factura)
+    return enrich_invoice_out(factura)
 
 
 @router.get("", response_model=FacturaPaginationOut, status_code=status.HTTP_200_OK)
@@ -220,7 +222,7 @@ def list_all(
         page_size=page_size,
     )
     return {
-        "items": [_factura_to_out(f) for f in result["items"]],
+        "items": [enrich_invoice_out(f) for f in result["items"]],
         "total": result["total"],
         "page": result["page"],
         "page_size": result["page_size"],
@@ -279,7 +281,7 @@ def get_by_id(
     Devuelve: 200 + FacturaOut | 404
     """
     factura = get_invoice(db, invoice_id)
-    return _factura_to_out(factura)
+    return enrich_invoice_out(factura)
 
 
 @router.get("/{invoice_id}/image", status_code=status.HTTP_200_OK)
@@ -299,22 +301,6 @@ def get_image(
         raise HTTPException(status_code=404, detail="Esta factura no tiene imagen asociada")
 
     return FileResponse(factura.image_path)
-
-
-def _factura_to_out(factura) -> FacturaOut:
-    out = FacturaOut.model_validate(factura)
-    if factura.payments:
-        total_pagado_usd = sum(p.monto_usd for p in factura.payments)
-        total_pagado_bs = sum(p.monto_bs for p in factura.payments)
-        out.total_pagado_usd = total_pagado_usd
-        out.total_pagado_bs = total_pagado_bs
-        if out.moneda_principal == "BS" and out.total_bs > 0:
-            out.porcentaje_pagado = min(float(total_pagado_bs / out.total_bs * 100), 100.0)
-        elif out.total_usd > 0:
-            out.porcentaje_pagado = min(float(total_pagado_usd / out.total_usd * 100), 100.0)
-    out.saldo_pendiente_usd = max(out.total_usd - out.total_pagado_usd, Decimal("0"))
-    out.saldo_pendiente_bs = max(out.total_bs - out.total_pagado_bs, Decimal("0"))
-    return out
 
 
 # ── Pagos de Factura ────────────────────────────────────────────────────────
@@ -454,11 +440,7 @@ def download_payment_receipt(
     current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
 ):
     """GET /invoices/{id}/payments/{pid}/receipts/{rid} - Descargar comprobante de pago"""
-    from app.models.invoice_payment import InvoicePaymentReceipt, InvoicePayment
-
-    receipt = db.get(InvoicePaymentReceipt, receipt_id)
-    if not receipt or receipt.pago_id != payment_id:
-        raise HTTPException(status_code=404, detail="Comprobante no encontrado")
+    receipt = get_payment_receipt(db, payment_id, receipt_id)
 
     from pathlib import Path
     file_path = Path(receipt.archivo_path)
@@ -470,3 +452,4 @@ def download_payment_receipt(
         media_type=receipt.tipo_archivo,
         filename=receipt.nombre_original,
     )
+
