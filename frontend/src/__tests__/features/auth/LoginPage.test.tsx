@@ -34,17 +34,19 @@ beforeEach(() => {
 });
 
 describe("LoginPage", () => {
-  it("renders login form with username and password fields", () => {
+  it("renders login form with username and password fields", async () => {
     render(<LoginPage />, { wrapper });
     expect(screen.getByPlaceholderText("tu_usuario")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeInTheDocument();
+    await waitFor(() => expect(api.getSetupStatus).toHaveBeenCalled());
   });
 
   it("shows error when submitting empty form", async () => {
     render(<LoginPage />, { wrapper });
     await userEvent.click(screen.getByRole("button", { name: "Iniciar sesión" }));
     expect(screen.getByText("Completa todos los campos")).toBeInTheDocument();
+    await waitFor(() => expect(api.getSetupStatus).toHaveBeenCalled());
   });
 
   it("calls login on valid submit and navigates on success", async () => {
@@ -87,5 +89,6 @@ describe("LoginPage", () => {
     expect(screen.getByPlaceholderText("tu_usuario")).toBeDisabled();
     expect(screen.getByPlaceholderText("••••••••")).toBeDisabled();
     resolveLogin!(undefined);
+    await waitFor(() => expect(screen.getByPlaceholderText("tu_usuario")).not.toBeDisabled());
   });
 });

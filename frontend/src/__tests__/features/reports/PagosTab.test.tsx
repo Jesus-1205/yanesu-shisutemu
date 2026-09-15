@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import PagosTab from "@/features/reports/components/PagosTab";
 import { ToastProvider } from "@/ui-components/Toast";
@@ -66,7 +66,7 @@ describe("PagosTab", () => {
     expect(screen.queryByText("Detalle por Método de Pago")).not.toBeInTheDocument();
   });
 
-  it("calcula y muestra correctamente las tarjetas de resumen y totales acumulados", () => {
+  it("calcula y muestra correctamente las tarjetas de resumen y totales acumulados", async () => {
     renderWithToast(
       <PagosTab
         data={mockPaymentData}
@@ -78,6 +78,10 @@ describe("PagosTab", () => {
         onClear={vi.fn()}
       />,
     );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("payment-methods-donut")).toBeInTheDocument();
+    });
 
     // Totales calculados:
     // USD: 150.75 -> $150,75 (formato es-VE)
@@ -94,7 +98,7 @@ describe("PagosTab", () => {
     expect(screen.getAllByText("30").length).toBeGreaterThan(0);
   });
 
-  it("renderiza la tabla con los métodos de pago formateados", () => {
+  it("renderiza la tabla con los métodos de pago formateados", async () => {
     renderWithToast(
       <PagosTab
         data={mockPaymentData}
@@ -106,6 +110,10 @@ describe("PagosTab", () => {
         onClear={vi.fn()}
       />,
     );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("payment-methods-donut")).toBeInTheDocument();
+    });
 
     expect(screen.getByText("Detalle por Método de Pago")).toBeInTheDocument();
     expect(screen.getByText("Efectivo Usd")).toBeInTheDocument();

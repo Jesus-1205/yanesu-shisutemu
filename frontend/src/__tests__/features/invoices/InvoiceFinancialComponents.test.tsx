@@ -346,6 +346,10 @@ describe("PaymentDrawer", () => {
       </ToastProvider>,
     );
 
+    await waitFor(() => {
+      expect(screen.getByText("Zelle")).toBeInTheDocument();
+    });
+
     const amountInput = screen.getByDisplayValue("100");
     fireEvent.change(amountInput, { target: { value: "150" } });
 

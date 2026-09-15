@@ -123,16 +123,18 @@ describe("InvoicesPage", () => {
     });
   });
 
-  it("renders page with 'Facturas de Proveedor' header", () => {
+  it("renders page with 'Facturas de Proveedor' header", async () => {
     renderPage();
     expect(
       screen.getByRole("heading", { name: /Facturas de Proveedor/ }),
     ).toBeInTheDocument();
+    await waitFor(() => expect(mockApi.getInvoices).toHaveBeenCalled());
   });
 
-  it("shows 'Todos los tipos' filter option", () => {
+  it("shows 'Todos los tipos' filter option", async () => {
     renderPage();
     expect(screen.getByText("Todos los tipos")).toBeInTheDocument();
+    await waitFor(() => expect(mockApi.getInvoices).toHaveBeenCalled());
   });
 
   it("changing tipo_documento filter calls api.getInvoices with correct param", async () => {

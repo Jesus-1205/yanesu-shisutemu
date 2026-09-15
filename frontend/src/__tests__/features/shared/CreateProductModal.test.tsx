@@ -53,19 +53,22 @@ describe("CreateProductModal", () => {
     });
   });
 
-  it("shows Crear producto button", () => {
+  it("shows Crear producto button", async () => {
     render(<CreateProductModal open onClose={vi.fn()} onCreated={vi.fn()} />);
     expect(screen.getByText("Crear producto")).toBeInTheDocument();
+    await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
   });
 
-  it("shows Cancelar button", () => {
+  it("shows Cancelar button", async () => {
     render(<CreateProductModal open onClose={vi.fn()} onCreated={vi.fn()} />);
     expect(screen.getByText("Cancelar")).toBeInTheDocument();
+    await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
   });
 
   it("calls onClose when Cancelar clicked", async () => {
     const onClose = vi.fn();
     render(<CreateProductModal open onClose={onClose} onCreated={vi.fn()} />);
+    await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
     await userEvent.click(screen.getByText("Cancelar"));
     expect(onClose).toHaveBeenCalled();
   });

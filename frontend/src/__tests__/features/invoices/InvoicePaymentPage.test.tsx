@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import InvoicePaymentPage from "@/features/invoices/pages/InvoicePaymentPage";
@@ -151,7 +151,9 @@ describe("InvoicePaymentPage", () => {
     renderPage();
     await waitForPageLoad();
     await userEvent.click(screen.getByText("Divisas"));
-    usePaymentFormStore.setState({ monto: "0.75" });
+    act(() => {
+      usePaymentFormStore.setState({ monto: "0.75" });
+    });
     await waitFor(() => {
       const input = screen.getAllByRole("spinbutton")[0];
       expect(input).toHaveValue(0.75);
@@ -162,7 +164,9 @@ describe("InvoicePaymentPage", () => {
     renderPage();
     await waitForPageLoad();
     await userEvent.click(screen.getByText("Divisas"));
-    usePaymentFormStore.setState({ monto: "0.37" });
+    act(() => {
+      usePaymentFormStore.setState({ monto: "0.37" });
+    });
     await waitFor(() => {
       const input = screen.getAllByRole("spinbutton")[0];
       expect(input).toHaveValue(0.37);
@@ -173,7 +177,9 @@ describe("InvoicePaymentPage", () => {
     renderPage();
     await waitForPageLoad();
     await userEvent.click(screen.getByText("Divisas"));
-    usePaymentFormStore.setState({ monto: "100" });
+    act(() => {
+      usePaymentFormStore.setState({ monto: "100" });
+    });
     await waitFor(() => {
       expect(screen.getByText(/tasa bcv/i)).toBeInTheDocument();
     });
@@ -191,7 +197,9 @@ describe("InvoicePaymentPage", () => {
     renderPage();
     await waitForPageLoad();
     await userEvent.click(screen.getByText("Divisas"));
-    usePaymentFormStore.setState({ monto: "0.50" });
+    act(() => {
+      usePaymentFormStore.setState({ monto: "0.50" });
+    });
     await waitFor(() => {
       const submitButton = screen.getByRole("button", { name: /Registrar Pago/i });
       expect(submitButton).toBeEnabled();

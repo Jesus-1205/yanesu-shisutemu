@@ -92,6 +92,7 @@ describe("ReportsPage", () => {
     render(<ReportsPage />, { wrapper });
     expect(screen.getByText("Panel de Control")).toBeInTheDocument();
     expect(screen.getByText("Estadísticas detalladas del sistema")).toBeInTheDocument();
+    await waitFor(() => expect(api.getSalesSummary).toHaveBeenCalled());
   });
 
   it("renders the tab bar", async () => {
@@ -100,6 +101,7 @@ describe("ReportsPage", () => {
     expect(screen.getByText("Productos")).toBeInTheDocument();
     expect(screen.getByText("Categorías")).toBeInTheDocument();
     expect(screen.getByText("Proveedores")).toBeInTheDocument();
+    await waitFor(() => expect(api.getSalesSummary).toHaveBeenCalled());
   });
 
   it("starts on Resumen tab", async () => {

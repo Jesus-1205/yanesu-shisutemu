@@ -82,7 +82,7 @@ describe("SuppliersPage", () => {
   });
 
   it("muestra loading inicial", () => {
-    mockApi.getSuppliers.mockImplementation(() => new Promise(() => {}));
+    mockApi.getSuppliersPaginated.mockImplementation(() => new Promise(() => {}));
     renderPage();
     expect(screen.getByText("Proveedores")).toBeInTheDocument();
   });

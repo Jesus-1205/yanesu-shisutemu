@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CategoriasTab from "@/features/reports/components/CategoriasTab";
 import ProveedoresTab from "@/features/reports/components/ProveedoresTab";
@@ -123,7 +123,7 @@ describe("CategoriasTab", () => {
     expect(screen.getByText("Sin datos de categorías")).toBeInTheDocument();
   });
 
-  it("renderiza correctamente las métricas y tablas con datos", () => {
+  it("renderiza correctamente las métricas y tablas con datos", async () => {
     renderWithToast(
       <CategoriasTab
         data={mockCategoryData}
@@ -131,6 +131,10 @@ describe("CategoriasTab", () => {
         lowRotation={mockLowRotCats}
       />,
     );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("category-sales-donut")).toBeInTheDocument();
+    });
 
     expect(screen.getByText("Categorías")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
@@ -160,6 +164,10 @@ describe("CategoriasTab", () => {
       />,
     );
 
+    await waitFor(() => {
+      expect(screen.getByTestId("category-sales-donut")).toBeInTheDocument();
+    });
+
     const selects = screen.getAllByRole("combobox");
     expect(selects.length).toBeGreaterThanOrEqual(1);
 
@@ -174,8 +182,12 @@ describe("ProveedoresTab", () => {
     expect(screen.getByText("Sin datos de proveedores")).toBeInTheDocument();
   });
 
-  it("renderiza métricas principales y oculta proveedores inactivos por defecto", () => {
+  it("renderiza métricas principales y oculta proveedores inactivos por defecto", async () => {
     renderWithToast(<ProveedoresTab data={mockSupplierData} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("supplier-comparison-bar")).toBeInTheDocument();
+    });
 
     expect(screen.getByText("Proveedores")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
@@ -195,6 +207,10 @@ describe("ProveedoresTab", () => {
   it("muestra proveedores inactivos al marcar el checkbox 'Mostrar inactivos'", async () => {
     const user = userEvent.setup();
     renderWithToast(<ProveedoresTab data={mockSupplierData} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("supplier-comparison-bar")).toBeInTheDocument();
+    });
 
     const checkbox = screen.getByRole("checkbox", { name: /mostrar inactivos/i });
     expect(checkbox).not.toBeChecked();

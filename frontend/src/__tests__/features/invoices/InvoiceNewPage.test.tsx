@@ -143,12 +143,17 @@ const mockProduct: ProductOut = {
   precio_divisas_caja: null,
 };
 
-function renderPage() {
-  return render(
+async function renderPage() {
+  const view = render(
     <MemoryRouter initialEntries={["/invoices/new"]}>
       <InvoiceNewPage />
     </MemoryRouter>,
   );
+  await waitFor(() => {
+    expect(screen.getByRole("heading", { name: /Nueva Factura|Nueva Nota de Entrega/ })).toBeInTheDocument();
+    expect(api.getSuppliers).toHaveBeenCalled();
+  });
+  return view;
 }
 
 function fillTasa(value: string) {
@@ -204,7 +209,7 @@ describe("InvoiceNewPage", () => {
     });
   });
 
-  it("renders the page with header and form", () => {
+  it("renders the page with header and form", async () => {
     renderPage();
     expect(
       screen.getByRole("heading", { name: /Nueva Factura/ }),
@@ -212,6 +217,7 @@ describe("InvoiceNewPage", () => {
     expect(
       screen.getByRole("button", { name: /Registrar Factura/ }),
     ).toBeInTheDocument();
+    await waitFor(() => expect(mockApi.getSuppliers).toHaveBeenCalled());
   });
 
   it("subtotal for CAJA items = quantity × unit cost (not inflated by units_per_box)", async () => {
@@ -253,8 +259,8 @@ describe("InvoiceNewPage", () => {
     });
   });
 
-  it("currency conversion: secondary cost field shows converted value", () => {
-    renderPage();
+  it("currency conversion: secondary cost field shows converted value", async () => {
+    await renderPage();
     fillTasa("750");
 
     const secondaryField = screen.getByLabelText(/USD.*calc|Bs.*calc/);
@@ -264,8 +270,8 @@ describe("InvoiceNewPage", () => {
     expect((secondaryField as HTMLInputElement).value).toContain("16");
   });
 
-  it("currency conversion: BS mode shows USD as secondary", () => {
-    renderPage();
+  it("currency conversion: BS mode shows USD as secondary", async () => {
+    await renderPage();
     const bsButton = screen.getByRole("button", { name: /Bs\./ });
     fireEvent.click(bsButton);
 
@@ -277,7 +283,7 @@ describe("InvoiceNewPage", () => {
   });
 
   it("IVA breakdown in BS mode shows values in Bs", async () => {
-    renderPage();
+    await renderPage();
     const bsButton = screen.getByRole("button", { name: /Bs\./ });
     fireEvent.click(bsButton);
 
@@ -300,7 +306,7 @@ describe("InvoiceNewPage", () => {
   });
 
   it("total_usd = sum of subtotals when adding multiple items", async () => {
-    renderPage();
+    await renderPage();
     fillTasa("750");
 
     await selectProduct("Producto Test", 1);
@@ -324,8 +330,8 @@ describe("InvoiceNewPage", () => {
     });
   });
 
-  it("shows 'Nueva Factura' header and 'Registrar Factura' submit button by default", () => {
-    renderPage();
+  it("shows 'Nueva Factura' header and 'Registrar Factura' submit button by default", async () => {
+    await renderPage();
     expect(
       screen.getByRole("heading", { name: /Nueva Factura/ }),
     ).toBeInTheDocument();
@@ -334,8 +340,8 @@ describe("InvoiceNewPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("clicking 'Nota de Entrega' changes title and submit text", () => {
-    renderPage();
+  it("clicking 'Nota de Entrega' changes title and submit text", async () => {
+    await renderPage();
     fireEvent.click(screen.getByRole("button", { name: "Nota de Entrega" }));
     expect(
       screen.getByRole("heading", { name: /Nueva Nota de Entrega/ }),
@@ -346,7 +352,7 @@ describe("InvoiceNewPage", () => {
   });
 
   it("validates form requirements on submit and shows toast errors", async () => {
-    renderPage();
+    await renderPage();
     const submitBtn = screen.getByRole("button", { name: /Registrar Factura/ });
     
     mockToast.mockClear();
@@ -379,7 +385,7 @@ describe("InvoiceNewPage", () => {
       total_bs: 66000,
     } as unknown as FacturaOut);
 
-    renderPage();
+    await renderPage();
     fillTasa("750");
 
     useInvoiceFormStore.getState().setField("proveedorId", 1);
@@ -423,7 +429,7 @@ describe("InvoiceNewPage", () => {
       productos: [],
       raw_json_ia: { total: 100 },
     });
-    renderPage();
+    await renderPage();
 
     const fileListInput = document.querySelector('input[type="file"]');
     expect(fileListInput).toBeDefined();

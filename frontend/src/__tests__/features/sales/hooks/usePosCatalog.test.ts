@@ -167,12 +167,20 @@ describe("usePosCatalog", () => {
   it("resets search and restores favorites", async () => {
     const { result } = renderHook(() => usePosCatalog(), { wrapper });
 
+    await waitFor(() => {
+      expect(result.current.loadingProducts).toBe(false);
+    });
+
     act(() => {
       result.current.setSearch("test");
     });
 
     act(() => {
       result.current.resetSearch();
+    });
+
+    await waitFor(() => {
+      expect(result.current.loadingProducts).toBe(false);
     });
 
     expect(result.current.search).toBe("");

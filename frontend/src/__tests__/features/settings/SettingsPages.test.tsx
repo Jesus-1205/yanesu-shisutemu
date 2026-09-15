@@ -86,22 +86,24 @@ describe("SettingsPage", () => {
 // ── Wrappers de páginas delegadas ─────────────────────────────────────────────
 
 describe("Settings Sub-páginas wrappers", () => {
-  it("SettingsUsersPage monta sin error", () => {
+  it("SettingsUsersPage monta sin error", async () => {
     render(
       <MemoryRouter>
         <SettingsUsersPage />
       </MemoryRouter>,
     );
     expect(document.body).toBeDefined();
+    await waitFor(() => expect(api.getUsers).toHaveBeenCalled());
   });
 
-  it("SettingsPaymentMethodsPage monta sin error", () => {
+  it("SettingsPaymentMethodsPage monta sin error", async () => {
     render(
       <MemoryRouter>
         <SettingsPaymentMethodsPage />
       </MemoryRouter>,
     );
     expect(document.body).toBeDefined();
+    await waitFor(() => expect(api.getPaymentMethods).toHaveBeenCalled());
   });
 
   it("SettingsSystemPage monta el componente SystemSettingsPage", async () => {

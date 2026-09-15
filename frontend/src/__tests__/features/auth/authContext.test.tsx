@@ -61,7 +61,9 @@ describe("AuthContext - normal mode", () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    await result.current.login("user", "pass");
+    await waitFor(async () => {
+      await result.current.login("user", "pass");
+    });
     expect(api.login).toHaveBeenCalledWith("user", "pass");
     await waitFor(() => expect(result.current.user).toEqual(mockUser));
   });
@@ -74,7 +76,9 @@ describe("AuthContext - normal mode", () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.user).toEqual(mockUser));
 
-    await result.current.logout();
+    await waitFor(async () => {
+      await result.current.logout();
+    });
     expect(api.logout).toHaveBeenCalled();
     await waitFor(() => expect(result.current.user).toBeNull());
   });
@@ -89,5 +93,6 @@ describe("AuthContext - children render", () => {
       </AuthProvider>,
     );
     expect(screen.getByText("child")).toBeInTheDocument();
+    await waitFor(() => expect(api.getSetupStatus).toHaveBeenCalled());
   });
 });

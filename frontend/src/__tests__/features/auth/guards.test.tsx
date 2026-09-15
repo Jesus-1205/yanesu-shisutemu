@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PrivateRoute from "../../../features/auth/components/PrivateRoute";
 import RoleGuard from "../../../features/auth/components/RoleGuard";
@@ -44,8 +44,10 @@ describe("PrivateRoute", () => {
       </MemoryRouter>,
     );
 
-    const outlet = screen.queryByTestId("outlet");
-    expect(outlet).not.toBeInTheDocument();
+    await waitFor(() => {
+      const outlet = screen.queryByTestId("outlet");
+      expect(outlet).not.toBeInTheDocument();
+    });
   });
 });
 
@@ -65,6 +67,10 @@ describe("RoleGuard", () => {
         </AuthProvider>
       </MemoryRouter>,
     );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("guarded")).toBeInTheDocument();
+    });
   });
 
   it("navigates to / when user role is not allowed", async () => {
@@ -83,7 +89,9 @@ describe("RoleGuard", () => {
       </MemoryRouter>,
     );
 
-    const guarded = screen.queryByTestId("guarded");
-    expect(guarded).not.toBeInTheDocument();
+    await waitFor(() => {
+      const guarded = screen.queryByTestId("guarded");
+      expect(guarded).not.toBeInTheDocument();
+    });
   });
 });

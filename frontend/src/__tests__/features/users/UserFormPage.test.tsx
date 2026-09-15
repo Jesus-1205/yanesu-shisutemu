@@ -76,7 +76,7 @@ describe("UserFormPage", () => {
   });
 
   describe("New mode", () => {
-    it("renders empty form with required fields", () => {
+    it("renders empty form with required fields", async () => {
       renderNewPage();
       expect(screen.getByLabelText("Nombre de usuario")).toBeInTheDocument();
       expect(screen.getByLabelText("Nombre completo")).toBeInTheDocument();
@@ -84,12 +84,14 @@ describe("UserFormPage", () => {
       expect(screen.getByLabelText("Contraseña")).toBeInTheDocument();
       // Role select doesn't have proper label association, just check it exists
       expect(screen.getByText("Seleccionar rol")).toBeInTheDocument();
+      await waitFor(() => expect(mockApi.getRoles).toHaveBeenCalled());
     });
 
-    it("password is required in new mode", () => {
+    it("password is required in new mode", async () => {
       renderNewPage();
       const passwordInput = screen.getByLabelText("Contraseña");
       expect(passwordInput).toBeRequired();
+      await waitFor(() => expect(mockApi.getRoles).toHaveBeenCalled());
     });
 
     it("role select loads options from api.getRoles", async () => {
@@ -290,6 +292,7 @@ describe("UserFormPage", () => {
 describe("Loading states", () => {
     it("shows spinner while loading user in edit mode", () => {
       mockApi.getUser.mockImplementation(() => new Promise(() => {}));
+      mockApi.getRoles.mockImplementation(() => new Promise(() => {}));
       renderEditPage();
       // Spinner component renders a div with inline style containing --uib-speed
       const spinnerContainer = document.querySelector('[style*="--uib-speed"]');
