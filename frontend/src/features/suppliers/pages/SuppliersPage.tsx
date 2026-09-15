@@ -147,7 +147,7 @@ export default function SuppliersPage() {
   ], [navigate, setDeleteTarget]);
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Proveedores"
         description="Administra los proveedores del sistema"
@@ -168,23 +168,26 @@ export default function SuppliersPage() {
       <SupplierMicroKPIs data={analytics} loading={analyticsLoading} />
 
       {error && (
-        <div className="mb-4">
-          <ErrorBanner onRetry={fetchSuppliers}>
-            {error}
-          </ErrorBanner>
-        </div>
+        <ErrorBanner onRetry={fetchSuppliers}>
+          {error}
+        </ErrorBanner>
       )}
 
-      <Table
-        columns={columns}
-        data={suppliers}
-        keyExtractor={(s) => s.id}
-        loading={loading}
-        emptyMessage="No hay proveedores registrados"
-        onRowClick={handleRowClick}
-      />
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <Table
+          columns={columns}
+          data={suppliers}
+          keyExtractor={(s) => s.id}
+          loading={loading}
+          emptyMessage="No hay proveedores registrados"
+          onRowClick={handleRowClick}
+          className="!rounded-none !border-0 !shadow-none"
+        />
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} className="mt-4" />
+        <div className="border-t border-slate-100 bg-slate-50/50 p-4">
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </div>
+      </div>
 
       <SupplierAnalyticsDrawer
         open={drawerOpen}

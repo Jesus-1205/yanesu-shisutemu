@@ -1,5 +1,4 @@
 import { Crown, TrendingUp, Package } from "lucide-react";
-import StatCard from "@/ui-components/StatCard";
 import type { CategoryAnalyticsResponse } from "@/types/api";
 
 interface CategoryMicroKPIsProps {
@@ -10,9 +9,9 @@ interface CategoryMicroKPIsProps {
 export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsProps) {
   if (loading || !data) {
     return (
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs sm:grid-cols-3 sm:divide-x sm:divide-slate-100">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-surface p-5">
+          <div key={i} className="animate-pulse p-5">
             <div className="mb-3 h-4 w-24 rounded bg-slate-200" />
             <div className="h-7 w-20 rounded bg-slate-200" />
           </div>
@@ -30,24 +29,42 @@ export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsPr
     : null;
 
   return (
-    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <StatCard
-        label="Categoría Líder"
-        value={lider ? lider.nombre : "—"}
-        icon={<Crown className="size-5" />}
-        variant="info"
-      />
-      <StatCard
-        label="Mayor Margen"
-        value={mayorMargen ? `${Number(mayorMargen.margen_promedio).toFixed(1)}%` : "—"}
-        icon={<TrendingUp className="size-5" />}
-        variant="success"
-      />
-      <StatCard
-        label="Total Ítems"
-        value={String(data.total_productos)}
-        icon={<Package className="size-5" />}
-      />
+    <div className="mb-6 grid grid-cols-1 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs sm:grid-cols-3 sm:divide-y-0 sm:divide-x sm:divide-slate-200">
+      <div className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50/50">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <Crown className="size-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Categoría Líder</p>
+          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl" title={lider ? lider.nombre : undefined}>
+            {lider ? lider.nombre : "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50/50">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+          <TrendingUp className="size-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Mayor Margen</p>
+          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl">
+            {mayorMargen ? `${Number(mayorMargen.margen_promedio).toFixed(1)}%` : "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50/50">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+          <Package className="size-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Total Ítems</p>
+          <p className="text-xl font-bold text-slate-900 sm:text-2xl">
+            {String(data.total_productos)}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

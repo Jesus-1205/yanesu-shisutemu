@@ -151,7 +151,7 @@ export default function CategoriesPage() {
   ], [navigate, setDeleteTarget]);
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Categorías"
         description="Administra las categorías de productos"
@@ -172,32 +172,37 @@ export default function CategoriesPage() {
       <CategoryMicroKPIs data={analytics} loading={analyticsLoading} />
 
       {error && (
-        <div className="mb-4">
-          <ErrorBanner onRetry={() => fetchCategories(debouncedSearch)}>
-            {error}
-          </ErrorBanner>
-        </div>
+        <ErrorBanner onRetry={() => fetchCategories(debouncedSearch)}>
+          {error}
+        </ErrorBanner>
       )}
 
-      <div className="mb-4">
-        <SearchInput
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onClear={() => setSearch("")}
-          placeholder="Buscar categoría por nombre o descripción..."
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="border-b border-slate-100 p-4 sm:p-5">
+          <div className="w-full max-w-md">
+            <SearchInput
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClear={() => setSearch("")}
+              placeholder="Buscar categoría por nombre o descripción..."
+            />
+          </div>
+        </div>
+
+        <Table
+          columns={columns}
+          data={categories}
+          keyExtractor={(c) => c.id}
+          loading={loading}
+          emptyMessage="No hay categorías registradas"
+          onRowClick={handleRowClick}
+          className="!rounded-none !border-0 !shadow-none"
         />
+
+        <div className="border-t border-slate-100 bg-slate-50/50 p-4">
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </div>
       </div>
-
-      <Table
-        columns={columns}
-        data={categories}
-        keyExtractor={(c) => c.id}
-        loading={loading}
-        emptyMessage="No hay categorías registradas"
-        onRowClick={handleRowClick}
-      />
-
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} className="mt-4" />
 
       <CategoryAnalyticsDrawer
         open={drawerOpen}

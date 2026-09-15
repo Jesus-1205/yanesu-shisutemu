@@ -15,9 +15,17 @@ console.warn = (...args: unknown[]) => {
 
 // Mock URL.createObjectURL para entornos jsdom
 if (typeof window.URL.createObjectURL === 'undefined') {
-  Object.defineProperty(window.URL, 'createObjectURL', { value: vi.fn(() => 'mocked-url') });
+  Object.defineProperty(window.URL, 'createObjectURL', {
+    value: vi.fn(() => 'mocked-url'),
+    writable: true,
+    configurable: true,
+  });
 }
 if (typeof window.URL.revokeObjectURL === 'undefined') {
-  Object.defineProperty(window.URL, 'revokeObjectURL', { value: vi.fn() });
+  Object.defineProperty(window.URL, 'revokeObjectURL', {
+    value: vi.fn(),
+    writable: true,
+    configurable: true,
+  });
 }
 

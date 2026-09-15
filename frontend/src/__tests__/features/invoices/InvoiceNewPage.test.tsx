@@ -414,6 +414,12 @@ describe("InvoiceNewPage", () => {
 
   it("calls api.analyzeInvoice when a file is uploaded and the button is clicked", async () => {
     mockApi.analyzeInvoice.mockResolvedValue({
+      proveedor_nombre: "Polar",
+      numero_factura: "FAC-123",
+      fecha_factura: "2025-01-01",
+      fecha_limite_pago: null,
+      moneda: "USD",
+      tipo_documento: "FACTURA",
       productos: [],
       raw_json_ia: { total: 100 },
     });

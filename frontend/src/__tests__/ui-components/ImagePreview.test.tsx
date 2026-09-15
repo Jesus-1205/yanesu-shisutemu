@@ -5,8 +5,16 @@ import ImagePreview from "@/ui-components/ImagePreview";
 beforeEach(() => {
   vi.restoreAllMocks();
   // Mock createObjectURL & revokeObjectURL
-  window.URL.createObjectURL = vi.fn().mockReturnValue("blob:http://localhost/mock-uuid");
-  window.URL.revokeObjectURL = vi.fn();
+  Object.defineProperty(window.URL, "createObjectURL", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockReturnValue("blob:http://localhost/mock-uuid"),
+  });
+  Object.defineProperty(window.URL, "revokeObjectURL", {
+    writable: true,
+    configurable: true,
+    value: vi.fn(),
+  });
 });
 
 describe("ImagePreview", () => {
