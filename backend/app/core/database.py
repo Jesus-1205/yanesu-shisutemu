@@ -5,6 +5,12 @@ from app.core.config import Config
 
 DATABASE_URL = Config.SQLALCHEMY_DATABASE_URL
 
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
 if DATABASE_URL.startswith("postgresql"):
     engine = create_engine(
         DATABASE_URL,
@@ -17,12 +23,7 @@ else:
         DATABASE_URL,
         connect_args={"check_same_thread": False},
     )
-
-    @event.listens_for(engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
+    event.listen(engine, "connect", set_sqlite_pragma)
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

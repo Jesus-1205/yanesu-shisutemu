@@ -11,7 +11,7 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.core.config import Config
 from app.core.database import Base, engine
 from app.core.error_handler import register_error_handlers
-from app.models import Role, User, Supplier, Category, producto_categoria, Combo, ComboGroup, ComboGroupProduct, ComboPaymentMethod, Product, ExchangeRate, Sale, SaleItem, PaymentMethod, SalePayment, Factura, DetalleFactura, PriceRule, PriceRuleProduct, PriceRulePaymentMethod  # noqa: F401
+from app.models import Role, User, ApiKey, Supplier, Category, producto_categoria, Combo, ComboGroup, ComboGroupProduct, ComboPaymentMethod, Product, ExchangeRate, Sale, SaleItem, PaymentMethod, SalePayment, Factura, DetalleFactura, PriceRule, PriceRuleProduct, PriceRulePaymentMethod  # noqa: F401
 from app.routes.auth import router as auth_router
 from app.routes.categories import router as categories_router
 from app.routes.combos import router as combos_router
@@ -29,6 +29,7 @@ from app.routes.users import router as users_router
 from app.routes.system_settings import router as system_settings_router
 from app.routes.retornable import router as retornable_router
 from app.routes.dashboard import router as dashboard_router
+from app.routes.webhooks import router as webhooks_router
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
 
 app.include_router(health_router, prefix="/api")
@@ -79,6 +80,7 @@ app.include_router(invoices_router, prefix="/api")
 app.include_router(system_settings_router, prefix="/api")
 app.include_router(retornable_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(webhooks_router, prefix="/api")
 
 
 @app.exception_handler(EntityNotFoundError)

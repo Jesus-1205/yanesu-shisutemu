@@ -1,5 +1,6 @@
 from app.models.role import Role
 from app.models.user import User
+from app.models.api_key import ApiKey
 from app.models.supplier import Supplier
 from app.models.category import Category, producto_categoria
 from app.models.combo import Combo, ComboGroup, ComboGroupProduct, ComboPaymentMethod
@@ -23,6 +24,7 @@ from app.models.retornable import (
 __all__ = [
     "Role",
     "User",
+    "ApiKey",
     "Supplier",
     "Category",
     "producto_categoria",

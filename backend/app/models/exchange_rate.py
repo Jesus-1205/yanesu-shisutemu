@@ -15,10 +15,16 @@ class ExchangeRate(Base):
     tasa_eur: Mapped[Decimal] = mapped_column(DECIMAL(10, 4), nullable=False)
     fecha_registro: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=VE_NOW)
     registrado_por: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    api_key_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("api_keys.id", ondelete="SET NULL"), nullable=True)
 
     registered_by: Mapped["User | None"] = relationship("User", back_populates="exchange_rates")
+    api_key: Mapped["ApiKey | None"] = relationship("ApiKey", back_populates="exchange_rates")
     sales: Mapped[list["Sale"]] = relationship("Sale", back_populates="exchange_rate")
 
     @property
     def registrado_por_nombre(self) -> str | None:
-        return self.registered_by.nombre_completo if self.registered_by else None
+        if self.registered_by:
+            return self.registered_by.nombre_completo
+        if self.api_key:
+            return f"API Key ({self.api_key.name})"
+        return None

@@ -1,11 +1,37 @@
-from fastapi import Cookie, Depends, HTTPException, status
+import hashlib
+from fastapi import Cookie, Depends, Header, HTTPException, status
 from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import Config
 from app.core.database import get_db
+from app.models.api_key import ApiKey
 from app.models.user import User
+
+
+def hash_api_key(raw_key: str) -> str:
+    return hashlib.sha256(raw_key.strip().encode()).hexdigest()
+
+
+def verify_api_key(
+    x_api_key: str = Header(None, alias="X-API-Key"),
+    db: Session = Depends(get_db),
+) -> ApiKey:
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Header X-API-Key no proporcionado",
+        )
+    key_hash = hash_api_key(x_api_key)
+    stmt = select(ApiKey).where(ApiKey.key_hash == key_hash, ApiKey.is_active.is_(True))
+    api_key = db.execute(stmt).scalars().first()
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API Key inválida o inactiva",
+        )
+    return api_key
 
 
 def decode_access_token(token: str) -> dict | None:

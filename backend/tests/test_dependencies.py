@@ -95,3 +95,16 @@ def test_require_role_wrong(client):
     response = client.get("/admin-only")
     assert response.status_code == 403
     assert "No tienes permisos" in response.json()["detail"]
+
+
+# --- hash_api_key & verify_api_key ---
+
+def test_hash_api_key():
+    from app.core.dependencies import hash_api_key
+    h1 = hash_api_key("my-token-123")
+    h2 = hash_api_key("my-token-123")
+    h3 = hash_api_key("other-token")
+    assert h1 == h2
+    assert h1 != h3
+    assert len(h1) == 64
+
