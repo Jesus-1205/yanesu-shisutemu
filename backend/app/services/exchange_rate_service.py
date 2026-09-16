@@ -11,12 +11,8 @@ from app.schemas.exchange_rate import ExchangeRateBulkSave
 
 SCRAPE_HOUR = 17
 
-_BCV_CACHE_TTL_SECONDS = 300  # 5 minutos
-_bcv_cache: dict = {"ts": 0.0, "rates": None}
-
-
 def fetch_bcv_rates() -> dict[str, Decimal]:
-    """Obtiene las tasas del BCV redondeadas a 4 decimales, con caché de 5 min.
+    """Obtiene las tasas del BCV en tiempo real redondeadas a 4 decimales.
 
     Returns:
         dict con 'USD' y 'EUR' y sus valores Decimal.
@@ -25,15 +21,7 @@ def fetch_bcv_rates() -> dict[str, Decimal]:
         ConnectionError: si no puede conectar con el sitio.
         RuntimeError: si no encuentra las tasas.
     """
-    import time
-
-    now = time.monotonic()
-    if _bcv_cache["rates"] is not None and now - _bcv_cache["ts"] < _BCV_CACHE_TTL_SECONDS:
-        return _bcv_cache["rates"]
-    rates = _scrape_bcv()
-    _bcv_cache["rates"] = rates
-    _bcv_cache["ts"] = now
-    return rates
+    return _scrape_bcv()
 
 
 def get_latest_rate(db: Session) -> ExchangeRate | None:
@@ -75,16 +63,31 @@ def get_rate_history_paginated(db: Session, page: int = 1, page_size: int = 20) 
     return {"items": items, "total": total, "page": page, "page_size": page_size, "pages": pages}
 
 
-def save_rates(db: Session, data: ExchangeRateBulkSave, user_id: int) -> ExchangeRate:
+def save_rates(
+    db: Session,
+    data: ExchangeRateBulkSave,
+    user_id: int | None = None,
+    api_key_id: int | None = None,
+) -> tuple[ExchangeRate, bool]:
+    """Guarda nuevas tasas de cambio con idempotencia estricta.
+
+    Si las tasas entrantes son idénticas al último registro activo,
+    retorna el registro existente y created=False sin insertar duplicados.
+    """
+    latest = get_latest_rate(db)
+    if latest and latest.tasa_usd == data.usd and latest.tasa_eur == data.eur:
+        return latest, False
+
     rate = ExchangeRate(
         tasa_usd=data.usd,
         tasa_eur=data.eur,
         registrado_por=user_id,
+        api_key_id=api_key_id,
     )
     db.add(rate)
     db.commit()
     db.refresh(rate)
-    return rate
+    return rate, True
 
 
 def get_daily_rate_status(db: Session) -> dict:

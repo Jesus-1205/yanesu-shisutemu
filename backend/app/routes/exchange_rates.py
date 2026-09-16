@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -22,18 +22,22 @@ router = APIRouter(prefix="/exchange-rates", tags=["exchange-rates"])
 def save_bulk(
     data: ExchangeRateBulkSave,
     request: Request,
+    response: Response,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+    current_user: User = Depends(require_role("ADMINISTRADOR")),
 ):
-    """POST /exchange-rates/save-rates - Guardar tasas USD y EUR
+    """POST /exchange-rates/save-rates - Guardar tasas USD y EUR (Solo Administrador)
 
     Recibe: JSON body con usd (>0) y eur (>0)
-    Hace:   persiste un registro atómico con ambas tasas vinculado al usuario
-    Devuelve: 201 + tasa creada | 422 si validación falla | 401/403
+    Hace:   persiste un registro atómico con ambas tasas vinculado al usuario administrador
+    Devuelve: 201 + tasa creada (o 200 si no hubo cambios) | 422 si validación falla | 401/403
     """
-    rate = save_rates(db, data, current_user.id)
-    ip = request.client.host if request.client else "local"
-    log_action(usuario=current_user.username, ip=ip, accion="CONFIGURAR", entidad="tasa_cambio", entidad_id=rate.id, detalle=f"Guardadas tasas USD={rate.tasa_usd} EUR={rate.tasa_eur}")
+    rate, created = save_rates(db, data, user_id=current_user.id)
+    if created:
+        ip = request.client.host if request.client else "local"
+        log_action(usuario=current_user.username, ip=ip, accion="CONFIGURAR", entidad="tasa_cambio", entidad_id=rate.id, detalle=f"Guardadas tasas USD={rate.tasa_usd} EUR={rate.tasa_eur}")
+    else:
+        response.status_code = status.HTTP_200_OK
     return ExchangeRateOut.model_validate(rate)
 
 

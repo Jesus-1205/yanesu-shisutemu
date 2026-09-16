@@ -37,13 +37,28 @@ class TestSaveRates:
         assert "id" in data
         assert "fecha_registro" in data
 
-    def test_operator_can_save(self, client):
+    def test_operator_cannot_save(self, client):
         _register_operator(client)
         response = client.post("/api/exchange-rates/save-rates", json={
             "usd": 90.50,
             "eur": 98.00,
         })
-        assert response.status_code == 201
+        assert response.status_code == 403
+
+    def test_admin_save_rates_idempotent_returns_200(self, client):
+        _register_admin(client)
+        res1 = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 90.50,
+            "eur": 98.00,
+        })
+        assert res1.status_code == 201
+
+        res2 = client.post("/api/exchange-rates/save-rates", json={
+            "usd": 90.50,
+            "eur": 98.00,
+        })
+        assert res2.status_code == 200
+        assert res2.json()["id"] == res1.json()["id"]
 
     def test_unauthenticated_cannot_save(self, client):
         response = client.post("/api/exchange-rates/save-rates", json={
