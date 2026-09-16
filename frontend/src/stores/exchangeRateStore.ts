@@ -6,9 +6,7 @@ interface ExchangeRateState {
   tasaEUR: number;
   loading: boolean;
   fechaUltimaActualizacion: string | null;
-  needsUpdate: boolean;
   loadTasa: () => Promise<void>;
-  checkDailyStatus: () => Promise<void>;
 }
 
 export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
@@ -16,7 +14,6 @@ export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
   tasaEUR: 0,
   loading: true,
   fechaUltimaActualizacion: null,
-  needsUpdate: false,
 
   loadTasa: async () => {
     set({ loading: true });
@@ -32,15 +29,6 @@ export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
       });
     } catch {
       set({ loading: false });
-    }
-  },
-
-  checkDailyStatus: async () => {
-    try {
-      const data = await api.getDailyStatus();
-      set({ needsUpdate: data.needs_update });
-    } catch {
-      // Silently ignore
     }
   },
 }));

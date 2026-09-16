@@ -1,4 +1,4 @@
-import { Clock, RefreshCw, TrendingUp, TrendingDown, BadgeCheck, AlarmClock } from "lucide-react";
+import { Clock, RefreshCw, TrendingUp, TrendingDown, BadgeCheck } from "lucide-react";
 import Button from "@/ui-components/Button";
 import { formatRateFull, formatDateTimeVE } from "@/lib/utils";
 
@@ -8,7 +8,6 @@ interface RateHeroCardProps {
   fechaActualizacion?: string | null;
   previousUsd?: string | number | null;
   previousEur?: string | number | null;
-  needsUpdate: boolean;
   loading: boolean;
   onOpenPanel: () => void;
 }
@@ -66,7 +65,6 @@ export default function RateHeroCard({
   fechaActualizacion,
   previousUsd,
   previousEur,
-  needsUpdate,
   loading,
   onOpenPanel,
 }: RateHeroCardProps) {
@@ -81,24 +79,9 @@ export default function RateHeroCard({
           <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">
             Tasas oficiales BCV
           </h2>
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${
-              needsUpdate
-                ? "border-amber-200 bg-amber-50 text-amber-700"
-                : "border-green-200 bg-green-50 text-success"
-            }`}
-          >
-            {needsUpdate ? (
-              <>
-                <AlarmClock className="size-3.5" />
-                Pendiente de actualización
-              </>
-            ) : (
-              <>
-                <BadgeCheck className="size-3.5" />
-                Al día
-              </>
-            )}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-success">
+            <BadgeCheck className="size-3.5" />
+            Tasas activas
           </span>
         </div>
 

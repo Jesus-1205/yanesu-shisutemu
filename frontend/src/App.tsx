@@ -177,7 +177,6 @@ export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const loadTasa = useExchangeRateStore((s) => s.loadTasa);
-  const checkDailyStatus = useExchangeRateStore((s) => s.checkDailyStatus);
   const { user } = useAuth();
 
   const isOperator = user?.rol_nombre !== "ADMINISTRADOR";
@@ -195,12 +194,6 @@ export default function AppLayout() {
   useEffect(() => {
     loadTasa();
   }, [loadTasa]);
-
-  useEffect(() => {
-    checkDailyStatus();
-    const interval = setInterval(checkDailyStatus, 60_000);
-    return () => clearInterval(interval);
-  }, [checkDailyStatus]);
 
   return (
     <ToastProvider>

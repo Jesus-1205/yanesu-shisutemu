@@ -19,9 +19,7 @@ vi.mock("../stores/exchangeRateStore", () => ({
       tasa: 0,
       tasaEUR: 0,
       loading: false,
-      needsUpdate: false,
       loadTasa: vi.fn(),
-      checkDailyStatus: vi.fn(),
     }),
 }));
 

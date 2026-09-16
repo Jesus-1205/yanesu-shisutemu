@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCw, X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import ErrorBanner from "@/ui-components/ErrorBanner";
@@ -28,7 +28,6 @@ export default function ExchangeRatesPage() {
     setIntervalo,
     panelOpen,
     setPanelOpen,
-    needsUpdate,
     refreshAfterSave,
   } = useExchangeRates();
 
@@ -55,28 +54,12 @@ export default function ExchangeRatesPage() {
         </ErrorBanner>
       )}
 
-      {needsUpdate && (
-        <div className="flex flex-col justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 text-sm text-amber-800">
-            <AlertTriangle className="size-4 shrink-0" />
-            <span>
-              Las tasas no se han actualizado hoy (después de las 17:00). Se recomienda
-              actualizarlas antes de vender.
-            </span>
-          </div>
-          <Button variant="accent" size="sm" onClick={() => setPanelOpen(true)}>
-            Actualizar ahora
-          </Button>
-        </div>
-      )}
-
       <RateHeroCard
         usd={latest.USD}
         eur={latest.EUR}
         fechaActualizacion={fechaActualizacion}
         previousUsd={previousUsd}
         previousEur={previousEur}
-        needsUpdate={needsUpdate}
         loading={loading}
         onOpenPanel={() => setPanelOpen(true)}
       />

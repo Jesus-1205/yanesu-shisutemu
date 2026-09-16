@@ -91,7 +91,6 @@ describe("ExchangeRatesPage", () => {
       tasaEUR: 49.5,
       loading: false,
       fechaUltimaActualizacion: null,
-      needsUpdate: false,
     });
     mockApi.getLatestRates.mockResolvedValue({
       rates: mockLatestRates,
@@ -268,16 +267,6 @@ describe("ExchangeRatesPage", () => {
     await waitFor(() => {
       expect(screen.getByText("No hay tasas registradas")).toBeInTheDocument();
     });
-  });
-
-  it("muestra banner de tasas pendientes y abre el panel", async () => {
-    useExchangeRateStore.setState({ needsUpdate: true });
-    renderPage();
-    await waitFor(() => {
-      expect(screen.getByText(/no se han actualizado hoy/i)).toBeInTheDocument();
-    });
-    await userEvent.click(screen.getByText("Actualizar ahora"));
-    expect(screen.getByText("Actualizar tasas del día")).toBeInTheDocument();
   });
 
   it("navega entre páginas del historial", async () => {

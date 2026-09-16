@@ -47,9 +47,7 @@ vi.mock("@/stores/exchangeRateStore", () => ({
     tasaEUR: 805.32,
     loading: false,
     fechaUltimaActualizacion: "2026-08-24T12:00:00",
-    needsUpdate: false,
     loadTasa: vi.fn().mockResolvedValue(undefined),
-    checkDailyStatus: vi.fn().mockResolvedValue(undefined),
   })),
 }));
 

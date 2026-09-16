@@ -8,8 +8,6 @@ const PAGE_SIZE = 20;
 
 export function useExchangeRates() {
   const loadTasa = useExchangeRateStore((s) => s.loadTasa);
-  const checkDailyStatus = useExchangeRateStore((s) => s.checkDailyStatus);
-  const needsUpdate = useExchangeRateStore((s) => s.needsUpdate);
 
   const [latest, setLatest] = useState<{ USD?: string; EUR?: string }>({});
   const [fechaActualizacion, setFechaActualizacion] = useState<string | null>(null);
@@ -86,8 +84,7 @@ export function useExchangeRates() {
     await refreshLatestAndHistory();
     await loadTrend(intervalo);
     loadTasa();
-    checkDailyStatus();
-  }, [refreshLatestAndHistory, loadTrend, intervalo, loadTasa, checkDailyStatus]);
+  }, [refreshLatestAndHistory, loadTrend, intervalo, loadTasa]);
 
   return {
     latest,
@@ -106,7 +103,6 @@ export function useExchangeRates() {
     setIntervalo,
     panelOpen,
     setPanelOpen,
-    needsUpdate,
     refreshAfterSave,
   };
 }
