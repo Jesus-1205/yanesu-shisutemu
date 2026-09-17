@@ -26,5 +26,5 @@ class ExchangeRate(Base):
         if self.registered_by:
             return self.registered_by.nombre_completo
         if self.api_key:
-            return f"API Key ({self.api_key.name})"
-        return None
+            return "Automático"
+        return "Sistema"

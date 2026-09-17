@@ -7,6 +7,7 @@ interface ExchangeRateState {
   loading: boolean;
   fechaUltimaActualizacion: string | null;
   loadTasa: () => Promise<void>;
+  setRates: (usd: number, eur: number, fechaUltimaActualizacion?: string | null) => void;
 }
 
 export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
@@ -14,6 +15,15 @@ export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
   tasaEUR: 0,
   loading: true,
   fechaUltimaActualizacion: null,
+
+  setRates: (usd, eur, fechaUltimaActualizacion) => {
+    set((state) => ({
+      tasa: usd,
+      tasaEUR: eur,
+      loading: false,
+      fechaUltimaActualizacion: fechaUltimaActualizacion !== undefined ? fechaUltimaActualizacion : state.fechaUltimaActualizacion,
+    }));
+  },
 
   loadTasa: async () => {
     set({ loading: true });

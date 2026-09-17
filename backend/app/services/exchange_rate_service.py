@@ -5,6 +5,7 @@ from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
 
 from app.core.bcv_scraper import fetch_bcv_rates as _scrape_bcv
+from app.core.broadcaster import rate_broadcaster
 from app.core.config import VE_TZ
 from app.models.exchange_rate import ExchangeRate
 from app.schemas.exchange_rate import ExchangeRateBulkSave
@@ -87,6 +88,14 @@ def save_rates(
     db.add(rate)
     db.commit()
     db.refresh(rate)
+
+    rate_broadcaster.publish({
+        "usd": str(rate.tasa_usd),
+        "eur": str(rate.tasa_eur),
+        "id": rate.id,
+        "fecha_registro": rate.fecha_registro.isoformat() if rate.fecha_registro else None,
+    })
+
     return rate, True
 
 

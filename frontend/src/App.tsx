@@ -17,6 +17,8 @@ import { ToastProvider, useToast } from "./ui-components/Toast";
 import { useAuth } from "./features/auth/context/AuthContext";
 import TasaBcvIndicator from "./ui-components/TasaBcvIndicator";
 import { useExchangeRateStore } from "./stores/exchangeRateStore";
+import { useRateStream } from "./hooks/useRateStream";
+import { formatBs } from "./lib/text";
 import { api } from "./services/api";
 
 const adminSidebarItems: SidebarItem[] = [
@@ -233,6 +235,10 @@ function AppLayoutInner({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { logout } = useAuth();
+
+  useRateStream((newUsd) => {
+    toast(`Nueva tasa BCV sincronizada: ${formatBs(newUsd)} Bs/USD`, "info");
+  });
 
   const { pathname } = useLocation();
   const prevPathRef = useRef<string | null>(null);

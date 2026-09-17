@@ -1,6 +1,9 @@
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from app.core.broadcaster import rate_broadcaster
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
@@ -77,6 +80,46 @@ def latest(
         "rates": {m: str(v) for m, v in info["rates"].items()},
         "fecha_ultima_actualizacion": info["fecha_ultima_actualizacion"].isoformat() if info["fecha_ultima_actualizacion"] else None,
     }
+
+
+@router.get("/stream")
+async def stream_rates(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """GET /exchange-rates/stream - Server-Sent Events (SSE) para actualización de tasas en tiempo real
+
+    Recibe: cookie de autenticación
+    Hace:   mantiene una conexión HTTP abierta transmitiendo actualizaciones de tasa en formato SSE
+    Devuelve: Stream text/event-stream | 401 si no autenticado
+    """
+    queue = await rate_broadcaster.subscribe()
+
+    async def event_generator():
+        try:
+            yield ": connected\n\n"
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    message = await asyncio.wait_for(queue.get(), timeout=25.0)
+                    yield message
+                except asyncio.TimeoutError:
+                    yield ": ping\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            rate_broadcaster.unsubscribe(queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/history", status_code=status.HTTP_200_OK)

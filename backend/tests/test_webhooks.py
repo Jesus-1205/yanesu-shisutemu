@@ -33,7 +33,7 @@ class TestWebhookBcvSync:
         data = response.json()
         assert data["tasa_usd"] == "45.1234"
         assert data["tasa_eur"] == "49.5678"
-        assert data["registrado_por_nombre"] == f"API Key ({api_key.name})"
+        assert data["registrado_por_nombre"] == "Automático"
 
     def test_sync_bcv_rate_idempotent_returns_200(self, client):
         api_key, raw_key = _create_api_key()
