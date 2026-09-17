@@ -97,62 +97,93 @@ docker compose exec backend python scripts/generate_api_key.py "n8n-local-agent"
 ### Estructura de Nodos
 
 ```
-[Schedule Trigger] ➔ [HTTP Request (BCV)] ➔ [Code (Parser)] ➔ [HTTP Request (Webhook)]
+[Schedule Trigger] ➔ [HTTP Request (BCV)] ➔ [HTML (Extract DOM)] ➔ [Code (Normalizer)] ➔ [HTTP Request (Webhook)]
 ```
 
-#### Nodo 1: Schedule Trigger (Cron)
-* **Trigger Interval:** `Weeks` / `Days` o `Custom (Cron)`
-* **Cron Expression:** `0 9,13,17 * * 1-5` (Horas habituales de publicación del BCV: 9:00 AM, 1:00 PM y 5:30 PM).
+---
+
+### Nodo 1: Schedule Trigger (Disparador)
+* **Trigger Interval:** `Custom (Cron)`
+* **Cron Expression:** `0 9,13,17 * * 1-5` (Lunes a Viernes: 9:00 AM, 1:00 PM y 5:30 PM).
 * **Timezone:** `America/Caracas`.
 
-#### Nodo 2: HTTP Request (Obtener Web BCV)
+---
+
+### Nodo 2: HTTP Request (Consultar Web BCV)
 * **Method:** `GET`
 * **URL:** `https://www.bcv.org.ve/`
+* **Authentication:** `None`
 * **Options:**
-  * `Ignore SSL Issues`: `true`
-  * `Response Format`: `String` / `Text`
-  * `Headers`:
+  * **Ignore SSL Issues:** `true`
+  * **Response Format:** `String` (o Text)
+  * **Headers:**
     * `User-Agent`: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36`
 
-#### Nodo 3: Code Node (Extraer valores USD y EUR)
-* **Language:** JavaScript
+---
+
+### Nodo 3: HTML Node (Extraer contenido con Selectores CSS)
+Este nodo parsea el árbol DOM igual que BeautifulSoup:
+* **Operation:** `Extract HTML Content`
+* **Source Data:** `JSON`
+* **Data Property Name:** `data`
+* **Extraction Values:**
+  * **Elemento 1:**
+    * **Key:** `usd_raw`
+    * **CSS Selector:** `#dolar strong`
+    * **Return Value:** `Text`
+  * **Elemento 2:**
+    * **Key:** `eur_raw`
+    * **CSS Selector:** `#euro strong`
+    * **Return Value:** `Text`
+
+---
+
+### Nodo 4: Code Node (Normalización y validación)
+* **Language:** `JavaScript`
 * **Code:**
 ```javascript
-const html = $input.first().json.data;
+const rawUsd = $input.first().json.usd_raw;
+const rawEur = $input.first().json.eur_raw;
 
-// Expresión regular para extraer valor en el contenedor del Dólar y Euro
-const usdMatch = html.match(/id="dolar"[\s\S]*?<strong>\s*([\d,.]+)\s*<\/strong>/i);
-const eurMatch = html.match(/id="euro"[\s\S]*?<strong>\s*([\d,.]+)\s*<\/strong>/i);
-
-if (!usdMatch) {
-  throw new Error("No se pudo extraer la tasa USD del HTML del BCV");
+if (!rawUsd) {
+  throw new Error("No se pudo encontrar el selector '#dolar strong' en la web del BCV");
 }
 
 const parseRate = (val) => {
-  // Limpiar puntos de miles venezolanos y cambiar coma decimal por punto
+  if (!val) return 0;
+  // Quitar puntos de miles y sustituir coma por punto
   const cleaned = val.replace(/\./g, '').replace(',', '.').trim();
-  return parseFloat(cleaned);
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
 };
+
+const usd = parseRate(rawUsd);
+const eur = parseRate(rawEur);
+
+if (usd <= 0) {
+  throw new Error(`Valor de tasa USD inválido: ${rawUsd}`);
+}
 
 return [{
   json: {
-    usd: parseRate(usdMatch[1]),
-    eur: eurMatch ? parseRate(eurMatch[1]) : 0,
+    usd: usd,
+    eur: eur,
     timestamp: new Date().toISOString()
   }
 }];
 ```
 
-#### Nodo 4: HTTP Request (Sincronizar con Yanesu Shisutemu)
+---
+
+### Nodo 5: HTTP Request (Sincronizar con Yanesu Shisutemu)
 * **Method:** `POST`
 * **URL:** `http://backend:8000/api/webhooks/bcv-sync`
-* **Authentication:** Generic Credential Type -> Header Auth (o Headers manuales):
-  * Header Name: `X-API-Key`
-  * Header Value: `yn_live_tu_api_key_aqui`
+* **Authentication:** `Predefined Credential Type` ➔ `Header Auth` (Seleccionar `X-API-Key`).
 * **Send Headers:**
   * `Content-Type`: `application/json`
 * **Send Body:** `JSON`
-  * **JSON Body:**
+* **Specify Body:** `Using JSON`
+* **JSON:**
 ```json
 {
   "usd": {{ $json.usd }},
@@ -160,7 +191,7 @@ return [{
 }
 ```
 * **Options:**
-  * `Never Error`: `true` (para manejar respuestas `200` y `201` en condicionales posteriores).
+  * **Never Error:** `true`
 
 ---
 
