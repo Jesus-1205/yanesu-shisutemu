@@ -3,6 +3,7 @@ import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import ErrorBanner from "@/ui-components/ErrorBanner";
 import { isTodayInCaracas } from "@/lib/utils";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
 import RateHeroCard from "../components/RateHeroCard";
 import RateQuickUpdatePanel from "../components/RateQuickUpdatePanel";
@@ -11,6 +12,9 @@ import RateTrendChart from "../components/RateTrendChart";
 import RateHistoryTable from "../components/RateHistoryTable";
 
 export default function ExchangeRatesPage() {
+  const { user } = useAuth();
+  const isOperator = user?.rol_nombre !== "ADMINISTRADOR";
+
   const {
     latest,
     fechaActualizacion,
@@ -41,10 +45,12 @@ export default function ExchangeRatesPage() {
         title="Tasas de Cambio"
         description="Consulta y actualiza las tasas oficiales del día"
         actions={
-          <Button variant="accent" onClick={() => setPanelOpen((v) => !v)}>
-            {panelOpen ? <X className="size-4" /> : <RefreshCw className="size-4" />}
-            {panelOpen ? "Cerrar" : "Actualizar Tasas"}
-          </Button>
+          !isOperator ? (
+            <Button variant="accent" onClick={() => setPanelOpen((v) => !v)}>
+              {panelOpen ? <X className="size-4" /> : <RefreshCw className="size-4" />}
+              {panelOpen ? "Cerrar" : "Actualizar Tasas"}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -61,17 +67,20 @@ export default function ExchangeRatesPage() {
         previousUsd={previousUsd}
         previousEur={previousEur}
         loading={loading}
+        canUpdate={!isOperator}
         onOpenPanel={() => setPanelOpen(true)}
       />
 
-      <RateQuickUpdatePanel
-        open={panelOpen}
-        currentUsd={latest.USD}
-        currentEur={latest.EUR}
-        updatedToday={updatedToday}
-        onClose={() => setPanelOpen(false)}
-        onSaved={refreshAfterSave}
-      />
+      {!isOperator && (
+        <RateQuickUpdatePanel
+          open={panelOpen}
+          currentUsd={latest.USD}
+          currentEur={latest.EUR}
+          updatedToday={updatedToday}
+          onClose={() => setPanelOpen(false)}
+          onSaved={refreshAfterSave}
+        />
+      )}
 
       <RateKpis data={trend} intervalo={intervalo} loading={trendLoading} />
 

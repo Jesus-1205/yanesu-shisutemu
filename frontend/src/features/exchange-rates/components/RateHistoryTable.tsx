@@ -34,7 +34,8 @@ function variationBadge(current: number, previous: number | undefined) {
   if (previous === undefined || previous === 0) {
     return <span className="text-slate-300">—</span>;
   }
-  const pct = ((current - previous) / previous) * 100;
+  const diff = current - previous;
+  const pct = (diff / previous) * 100;
   const up = pct >= 0;
   return (
     <span
@@ -42,7 +43,8 @@ function variationBadge(current: number, previous: number | undefined) {
         up ? "text-success" : "text-danger"
       }`}
     >
-      {up ? "▲" : "▼"} {Math.abs(pct).toFixed(2)}%
+      {up ? "▲" : "▼"} {Math.abs(pct).toFixed(2)}% ({up ? "+" : "-"}
+      {Math.abs(diff).toFixed(4)} Bs)
     </span>
   );
 }

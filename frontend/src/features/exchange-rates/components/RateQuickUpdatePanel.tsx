@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Check, Globe, AlertTriangle } from "lucide-react";
 import { api } from "@/services/api";
 import Button from "@/ui-components/Button";
@@ -51,7 +51,7 @@ export default function RateQuickUpdatePanel({
   const sinCambios = usdIgual && eurIgual;
   const disabledSave = saving || usd.trim() === "" || eur.trim() === "" || sinCambios;
 
-  const handleLoadBcv = async () => {
+  const handleLoadBcv = useCallback(async () => {
     setBcvLoading(true);
     setBcvError(null);
     try {
@@ -66,7 +66,15 @@ export default function RateQuickUpdatePanel({
     } finally {
       setBcvLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (open) {
+      handleLoadBcv();
+    } else {
+      reset();
+    }
+  }, [open, handleLoadBcv, reset]);
 
   const handleSave = async () => {
     const usdNum = Number(usd);

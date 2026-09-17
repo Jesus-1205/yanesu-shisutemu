@@ -12,9 +12,11 @@ vi.mock("@/ui-components/Toast", () => ({
   ToastProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+let mockAuthUser: { id: number; rol_nombre: string } | null = { id: 1, rol_nombre: "ADMINISTRADOR" };
+
 vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => ({
-    user: { id: 1, rol_nombre: "ADMINISTRADOR" },
+    user: mockAuthUser,
     loading: false,
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -86,6 +88,7 @@ function renderPage() {
 describe("ExchangeRatesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthUser = { id: 1, rol_nombre: "ADMINISTRADOR" };
     useExchangeRateStore.setState({
       tasa: 45.123,
       tasaEUR: 49.5,
@@ -302,5 +305,15 @@ describe("ExchangeRatesPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/Ya se registró una actualización de tasas hoy/i)).toBeInTheDocument();
     });
+  });
+
+  it("oculta las acciones y panel de actualización al usuario operador", async () => {
+    mockAuthUser = { id: 2, rol_nombre: "OPERADOR" };
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Tasas de Cambio")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Actualizar Tasas")).not.toBeInTheDocument();
+    expect(screen.queryByText("Actualizar")).not.toBeInTheDocument();
   });
 });

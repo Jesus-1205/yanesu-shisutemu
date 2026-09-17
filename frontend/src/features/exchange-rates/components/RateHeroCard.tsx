@@ -9,24 +9,34 @@ interface RateHeroCardProps {
   previousUsd?: string | number | null;
   previousEur?: string | number | null;
   loading: boolean;
+  canUpdate?: boolean;
   onOpenPanel: () => void;
 }
 
-function variation(after?: string | null, before?: string | number | null): number | null {
+interface VariationResult {
+  pct: number;
+  abs: number;
+}
+
+function variation(after?: string | null, before?: string | number | null): VariationResult | null {
   if (!after || before === null || before === undefined) return null;
   const prev = Number(before);
-  if (!Number.isFinite(prev) || prev === 0) return null;
-  return ((Number(after) - prev) / prev) * 100;
+  const current = Number(after);
+  if (!Number.isFinite(prev) || prev === 0 || !Number.isFinite(current)) return null;
+  return {
+    pct: ((current - prev) / prev) * 100,
+    abs: current - prev,
+  };
 }
 
 function RateFigure({
   label,
   value,
-  variationPct,
+  variation,
 }: {
   label: string;
   value?: string | null;
-  variationPct: number | null;
+  variation: VariationResult | null;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
@@ -40,19 +50,20 @@ function RateFigure({
           {value ? `Bs ${formatRateFull(value)}` : "—"}
         </p>
       </div>
-      {variationPct !== null && (
+      {variation !== null && (
         <span
-          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold tabular-nums ${
-            variationPct >= 0 ? "bg-green-50 text-success" : "bg-red-50 text-danger"
+          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold tabular-nums ${
+            variation.pct >= 0 ? "bg-green-50 text-success" : "bg-red-50 text-danger"
           }`}
         >
-          {variationPct >= 0 ? (
+          {variation.pct >= 0 ? (
             <TrendingUp className="size-3.5" />
           ) : (
             <TrendingDown className="size-3.5" />
           )}
-          {variationPct > 0 ? "+" : ""}
-          {variationPct.toFixed(2)}%
+          {variation.pct > 0 ? "+" : ""}
+          {variation.pct.toFixed(2)}% ({variation.abs > 0 ? "+" : ""}
+          {variation.abs.toFixed(4)} Bs)
         </span>
       )}
     </div>
@@ -66,6 +77,7 @@ export default function RateHeroCard({
   previousUsd,
   previousEur,
   loading,
+  canUpdate = true,
   onOpenPanel,
 }: RateHeroCardProps) {
   const usdVar = variation(usd, previousUsd);
@@ -86,9 +98,9 @@ export default function RateHeroCard({
         </div>
 
         <div className="grid grid-cols-1 gap-x-10 gap-y-6 md:grid-cols-2">
-          <RateFigure label="Dólar (USD)" value={usd} variationPct={usdVar} />
+          <RateFigure label="Dólar (USD)" value={usd} variation={usdVar} />
           <div className="md:border-l md:border-slate-100 md:pl-10">
-            <RateFigure label="Euro (EUR)" value={eur} variationPct={eurVar} />
+            <RateFigure label="Euro (EUR)" value={eur} variation={eurVar} />
           </div>
         </div>
 
@@ -101,10 +113,12 @@ export default function RateHeroCard({
                 ? `Última actualización: ${formatDateTimeVE(fechaActualizacion)}`
                 : "Aún no se han registrado tasas"}
           </p>
-          <Button variant="outline" size="sm" onClick={onOpenPanel}>
-            <RefreshCw className="size-4" />
-            Actualizar
-          </Button>
+          {canUpdate && (
+            <Button variant="outline" size="sm" onClick={onOpenPanel}>
+              <RefreshCw className="size-4" />
+              Actualizar
+            </Button>
+          )}
         </div>
       </div>
     </div>
