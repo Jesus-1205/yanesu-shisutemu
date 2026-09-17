@@ -82,6 +82,18 @@ class TestWebhookBcvSync:
         assert response.status_code == 401
         assert "API Key inválida o inactiva" in response.json()["detail"]
 
+    def test_sync_bcv_rate_supports_many_decimals_and_large_numbers(self, client):
+        api_key, raw_key = _create_api_key()
+        response = client.post(
+            "/api/webhooks/bcv-sync",
+            headers={"X-API-Key": raw_key},
+            json={"usd": 848.54580000, "eur": 974.41908397},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["tasa_usd"] == "848.5458"
+        assert data["tasa_eur"] == "974.4191"
+
     def test_sync_bcv_rate_invalid_body_returns_422(self, client):
         _, raw_key = _create_api_key()
         response = client.post(
