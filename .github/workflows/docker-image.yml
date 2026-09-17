@@ -2,7 +2,7 @@ name: Build and Push Yanesu Images
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "testing" ]
 
 env:
   REGISTRY: ghcr.io
