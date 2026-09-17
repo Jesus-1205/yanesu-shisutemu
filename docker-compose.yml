@@ -60,9 +60,31 @@ services:
     networks:
       - yanesu_net
 
+  # n8n — automatizaciones e integraciones (BCV, Telegram)
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "${N8N_BIND_PORT:-127.0.0.1:5678}:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      - GENERIC_TIMEZONE=America/Caracas
+      - TZ=America/Caracas
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-}
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - yanesu_net
+
 volumes:
   pgdata:
   yanesu_data:
+  n8n_data:
 
 networks:
   yanesu_net:
