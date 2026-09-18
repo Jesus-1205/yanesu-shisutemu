@@ -133,3 +133,36 @@ def get_daily_rate_status(db: Session) -> dict:
         "last_update_today": today_rate.fecha_registro.isoformat() if today_rate else None,
         "now": ve_now.isoformat(),
     }
+
+
+def get_m2m_sync_status(db: Session, api_key_id: int | None = None) -> dict:
+    """Verifica si ya se registró una tasa hoy para el agente M2M.
+
+    Returns:
+        dict con:
+        - already_synced_today: bool → True si ya existe una tasa registrada hoy.
+        - last_synced_at: str | None → ISO timestamp de la tasa de hoy.
+        - current_rate: dict con usd y eur de la tasa actual.
+    """
+    ve_now = datetime.now(VE_TZ)
+    today_start = ve_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    stmt = (
+        select(ExchangeRate)
+        .where(ExchangeRate.fecha_registro >= today_start)
+        .where(ExchangeRate.fecha_registro <= today_end)
+        .order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id))
+        .limit(1)
+    )
+    today_rate = db.execute(stmt).scalars().first()
+    latest = get_latest_rate(db)
+
+    return {
+        "already_synced_today": today_rate is not None,
+        "last_synced_at": today_rate.fecha_registro.isoformat() if today_rate and today_rate.fecha_registro else None,
+        "current_rate": {
+            "usd": str(latest.tasa_usd) if latest else None,
+            "eur": str(latest.tasa_eur) if latest else None,
+        },
+    }

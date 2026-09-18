@@ -94,22 +94,57 @@ docker compose exec backend python scripts/generate_api_key.py "n8n-local-agent"
 
 ## 3. Configuración del Workflow BCV en n8n
 
-### Estructura de Nodos
+### Estructura de Nodos Inteligente (Pre-Check + Scraping)
 
 ```
-[Schedule Trigger] ➔ [HTTP Request (BCV)] ➔ [HTML (Extract DOM)] ➔ [Code (Normalizer)] ➔ [HTTP Request (Webhook)]
+[Schedule Trigger (Cada 15 min)] 
+         │
+         ▼
+[HTTP Request: GET /api/webhooks/bcv-sync] ➔ Consulta al Backend
+         │
+         ▼
+[IF: ¿already_synced_today === true?]
+         ├── (True)  ➔ [Stop / No Action]  (Ya se sincronizó hoy, no hace nada)
+         │
+         └── (False) ➔ [HTTP Request: GET bcv.org.ve]
+                                │
+                                ▼
+                       [HTML: Extract DOM]
+                                │
+                                ▼
+                       [Code: Normalizer]
+                                │
+                                ▼
+                       [HTTP Request: POST /api/webhooks/bcv-sync]
 ```
 
 ---
 
-### Nodo 1: Schedule Trigger (Disparador)
+### Nodo 1: Schedule Trigger (Disparador Frecuente)
 * **Trigger Interval:** `Custom (Cron)`
-* **Cron Expression:** `0 9,13,17 * * 1-5` (Lunes a Viernes: 9:00 AM, 1:00 PM y 5:30 PM).
+* **Cron Expression:** `*/15 13-19 * * 1-5` (Lunes a Viernes cada 15 minutos entre la 1:00 PM y las 7:00 PM hora de Caracas).
 * **Timezone:** `America/Caracas`.
 
 ---
 
-### Nodo 2: HTTP Request (Consultar Web BCV)
+### Nodo 2: HTTP Request (Pre-Check de Sincronización Diaria)
+* **Method:** `GET`
+* **URL:** `http://backend:8000/api/webhooks/bcv-sync`
+* **Authentication:** `Predefined Credential Type` ➔ `Header Auth` (Seleccionar `X-API-Key`).
+* **Send Headers:** `Content-Type: application/json`
+
+---
+
+### Nodo 3: IF (Condicional de Sincronización)
+* **Conditions:**
+  * **Value 1:** `{{ $json.already_synced_today }}`
+  * **Operation:** `Boolean is true`
+* **Salida `true`:** Conectar a nada (o a un log opcional). El flujo finaliza porque hoy ya se actualizó.
+* **Salida `false`:** Conectar al **Nodo 4 (Scraping del BCV)**.
+
+---
+
+### Nodo 4: HTTP Request (Consultar Web BCV)
 * **Method:** `GET`
 * **URL:** `https://www.bcv.org.ve/`
 * **Authentication:** `None`
@@ -121,7 +156,7 @@ docker compose exec backend python scripts/generate_api_key.py "n8n-local-agent"
 
 ---
 
-### Nodo 3: HTML Node (Extraer contenido con Selectores CSS)
+### Nodo 5: HTML Node (Extraer contenido con Selectores CSS)
 Este nodo parsea el árbol DOM igual que BeautifulSoup:
 * **Operation:** `Extract HTML Content`
 * **Source Data:** `JSON`
@@ -138,7 +173,7 @@ Este nodo parsea el árbol DOM igual que BeautifulSoup:
 
 ---
 
-### Nodo 4: Code Node (Normalización y validación)
+### Nodo 6: Code Node (Normalización y validación)
 * **Language:** `JavaScript`
 * **Code:**
 ```javascript
@@ -151,7 +186,6 @@ if (!rawUsd) {
 
 const parseRate = (val) => {
   if (!val) return 0;
-  // Quitar puntos de miles y sustituir coma por punto
   const cleaned = val.replace(/\./g, '').replace(',', '.').trim();
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
@@ -175,7 +209,7 @@ return [{
 
 ---
 
-### Nodo 5: HTTP Request (Sincronizar con Yanesu Shisutemu)
+### Nodo 7: HTTP Request (Guardar Tasa en Yanesu Shisutemu)
 * **Method:** `POST`
 * **URL:** `http://backend:8000/api/webhooks/bcv-sync`
 * **Authentication:** `Predefined Credential Type` ➔ `Header Auth` (Seleccionar `X-API-Key`).

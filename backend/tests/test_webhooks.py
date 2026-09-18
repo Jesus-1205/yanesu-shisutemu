@@ -102,3 +102,36 @@ class TestWebhookBcvSync:
             json={"usd": -5, "eur": 0},
         )
         assert response.status_code == 422
+
+    def test_get_bcv_sync_status_false_when_no_rates_today(self, client):
+        _, raw_key = _create_api_key()
+        response = client.get(
+            "/api/webhooks/bcv-sync",
+            headers={"X-API-Key": raw_key},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["already_synced_today"] is False
+
+    def test_get_bcv_sync_status_true_when_synced_today(self, client):
+        _, raw_key = _create_api_key()
+        # Create rate for today
+        client.post(
+            "/api/webhooks/bcv-sync",
+            headers={"X-API-Key": raw_key},
+            json={"usd": 848.5458, "eur": 974.4191},
+        )
+        response = client.get(
+            "/api/webhooks/bcv-sync",
+            headers={"X-API-Key": raw_key},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["already_synced_today"] is True
+        assert data["last_synced_at"] is not None
+        assert data["current_rate"]["usd"] == "848.5458"
+        assert data["current_rate"]["eur"] == "974.4191"
+
+    def test_get_bcv_sync_status_without_header_returns_401(self, client):
+        response = client.get("/api/webhooks/bcv-sync")
+        assert response.status_code == 401
