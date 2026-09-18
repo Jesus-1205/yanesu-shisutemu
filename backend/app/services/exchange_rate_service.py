@@ -140,7 +140,7 @@ def get_m2m_sync_status(db: Session, api_key_id: int | None = None) -> dict:
 
     Returns:
         dict con:
-        - already_synced_today: bool → True si ya existe una tasa registrada hoy.
+        - already_synced_today: bool → True si ya existe una tasa registrada hoy por este agente.
         - last_synced_at: str | None → ISO timestamp de la tasa de hoy.
         - current_rate: dict con usd y eur de la tasa actual.
     """
@@ -152,9 +152,11 @@ def get_m2m_sync_status(db: Session, api_key_id: int | None = None) -> dict:
         select(ExchangeRate)
         .where(ExchangeRate.fecha_registro >= today_start)
         .where(ExchangeRate.fecha_registro <= today_end)
-        .order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id))
-        .limit(1)
     )
+    if api_key_id is not None:
+        stmt = stmt.where(ExchangeRate.api_key_id == api_key_id)
+
+    stmt = stmt.order_by(desc(ExchangeRate.fecha_registro), desc(ExchangeRate.id)).limit(1)
     today_rate = db.execute(stmt).scalars().first()
     latest = get_latest_rate(db)
 

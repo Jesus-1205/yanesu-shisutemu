@@ -132,6 +132,33 @@ class TestWebhookBcvSync:
         assert data["current_rate"]["usd"] == "848.5458"
         assert data["current_rate"]["eur"] == "974.4191"
 
+    def test_get_bcv_sync_status_false_when_rate_registered_by_user_not_api_key(self, client):
+        db = _get_db()
+        try:
+            from decimal import Decimal
+            from app.models.exchange_rate import ExchangeRate
+            # Insert rate without api_key_id (e.g. manual / system)
+            manual_rate = ExchangeRate(
+                tasa_usd=Decimal("840.0000"),
+                tasa_eur=Decimal("960.0000"),
+                registrado_por=None,
+                api_key_id=None,
+            )
+            db.add(manual_rate)
+            db.commit()
+        finally:
+            db.close()
+
+        _, raw_key = _create_api_key()
+        response = client.get(
+            "/api/webhooks/bcv-sync",
+            headers={"X-API-Key": raw_key},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # Should be False because the bot itself has not synced today yet
+        assert data["already_synced_today"] is False
+
     def test_get_bcv_sync_status_without_header_returns_401(self, client):
         response = client.get("/api/webhooks/bcv-sync")
         assert response.status_code == 401
