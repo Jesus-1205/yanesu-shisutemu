@@ -19,6 +19,7 @@ from app.schemas.n8n_agent import (
     SalesMetricsOut,
     TopSupplierItem,
     UserToolItem,
+    WeeklyReportOut,
 )
 from app.services.audit_service import log_action
 from app.services.n8n_agent_service import (
@@ -29,6 +30,7 @@ from app.services.n8n_agent_service import (
     get_sales_peak_hours,
     get_system_users,
     get_top_suppliers,
+    get_weekly_sales_report,
     search_invoices,
     search_products,
     search_sales,
@@ -58,6 +60,18 @@ def get_daily_report_endpoint(
     """GET /n8n/reports/daily - Genera el reporte diario consolidado para Telegram."""
     _audit(api_key, request, "/reports/daily", f"date={target_date}")
     return get_daily_sales_report(db, target_date=target_date)
+
+
+@router.get("/reports/weekly", status_code=status.HTTP_200_OK, response_model=WeeklyReportOut)
+def get_weekly_report_endpoint(
+    request: Request,
+    target_date: date | None = Query(None, description="Fecha de referencia / corte (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    api_key: ApiKey = Depends(verify_api_key),
+):
+    """GET /n8n/reports/weekly - Genera el reporte semanal consolidado (Lunes a Sábado) para Telegram."""
+    _audit(api_key, request, "/reports/weekly", f"date={target_date}")
+    return get_weekly_sales_report(db, target_date=target_date)
 
 
 @router.get("/tools/products/search", status_code=status.HTTP_200_OK, response_model=List[ProductSearchToolItem])

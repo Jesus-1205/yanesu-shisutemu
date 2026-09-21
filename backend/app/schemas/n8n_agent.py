@@ -37,6 +37,44 @@ class DailyReportOut(BaseModel):
     top_products: List[TopProductSummary]
 
 
+class WeeklyReportSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    total_usd: Decimal
+    total_bs: Decimal
+    transactions_count: int
+    average_daily_usd: Decimal
+
+
+class BestDaySummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    date: str
+    day_name: str
+    total_usd: Decimal
+
+
+class PendingInvoicesSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    total_pending_usd: Decimal
+    total_invoices_pending: int
+    soonest_due_date: str | None = None
+
+
+class WeeklyReportOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    start_date: str
+    end_date: str
+    summary: WeeklyReportSummary
+    best_day: BestDaySummary | None = None
+    sales_by_method: Dict[str, PaymentMethodSummary]
+    top_category: str | None = None
+    top_products: List[TopProductSummary]
+    pending_invoices_summary: PendingInvoicesSummary
+
+
 class ProductSearchToolItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

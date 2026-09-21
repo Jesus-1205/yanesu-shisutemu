@@ -199,6 +199,70 @@ class TestN8nAgentAPI:
         assert data["summary"]["transactions_count"] >= 1
         assert len(data["top_products"]) >= 1
 
+    def test_weekly_report(self, client):
+        raw_key = _create_api_key()
+        _seed_sample_data()
+
+        # Seed another sale on a known past date (e.g. 2026-09-18 which is a Friday)
+        db = _get_db()
+        try:
+            user = db.execute(select(User)).scalars().first()
+            rate = db.execute(select(ExchangeRate)).scalars().first()
+            prod = db.execute(select(Product)).scalars().first()
+            pm = db.execute(select(PaymentMethod)).scalars().first()
+
+            past_sale = Sale(
+                usuario_id=user.id,
+                tasa_bcv_aplicada=rate.tasa_usd,
+                monto_exento_usd=Decimal("0.00"),
+                base_imponible_usd=Decimal("20.00"),
+                monto_iva_usd=Decimal("3.20"),
+                fecha_venta=datetime(2026, 9, 18, 14, 0, 0),
+            )
+            db.add(past_sale)
+            db.commit()
+            db.refresh(past_sale)
+
+            si = SaleItem(
+                venta_id=past_sale.id,
+                producto_id=prod.id,
+                tipo_empaque="UNIDAD",
+                cantidad=2,
+                unidades_descontadas=2,
+                precio_unitario_usd=Decimal("10.00"),
+                iva_porcentaje=Decimal("16.00"),
+            )
+            db.add(si)
+
+            sp = SalePayment(
+                venta_id=past_sale.id,
+                metodo_pago_id=pm.id,
+                monto_usd=Decimal("23.20"),
+                monto_ves=Decimal("1044.00"),
+            )
+            db.add(sp)
+            db.commit()
+        finally:
+            db.close()
+
+        # Target Sunday 2026-09-20 -> Week is 2026-09-14 to 2026-09-19
+        res = client.get(
+            "/api/n8n/reports/weekly",
+            params={"target_date": "2026-09-20"},
+            headers={"X-API-Key": raw_key},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["start_date"] == "2026-09-14"
+        assert data["end_date"] == "2026-09-19"
+        assert data["summary"]["transactions_count"] >= 1
+        assert Decimal(data["summary"]["total_usd"]) > Decimal("0.00")
+        assert data["best_day"] is not None
+        assert data["best_day"]["day_name"] == "Viernes"
+        assert "pending_invoices_summary" in data
+        assert data["pending_invoices_summary"]["total_invoices_pending"] >= 1
+        assert Decimal(data["pending_invoices_summary"]["total_pending_usd"]) > Decimal("0.00")
+
     def test_tools_products_search(self, client):
         raw_key = _create_api_key()
         prod_id, _, _ = _seed_sample_data()

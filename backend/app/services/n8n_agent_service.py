@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List
 
@@ -87,6 +87,143 @@ def get_daily_sales_report(db: Session, target_date: date | None = None) -> Dict
         },
         "sales_by_method": sales_by_method,
         "top_products": top_products,
+    }
+
+
+DAY_NAMES_ES = {
+    0: "Lunes",
+    1: "Martes",
+    2: "Miércoles",
+    3: "Jueves",
+    4: "Viernes",
+    5: "Sábado",
+    6: "Domingo",
+}
+
+
+def get_weekly_sales_report(db: Session, target_date: date | None = None) -> Dict[str, Any]:
+    ref_date = target_date or ve_today()
+    # End date is the Saturday on or preceding ref_date
+    days_back = (ref_date.weekday() - 5) % 7
+    end_d = ref_date - timedelta(days=days_back)
+    start_d = end_d - timedelta(days=5)  # Monday (6 days total: Mon-Sat)
+
+    start_str = start_d.isoformat()
+    end_str = end_d.isoformat()
+
+    # Sales in Monday - Saturday range
+    sales_stmt = select(Sale).options(
+        selectinload(Sale.payments).selectinload(SalePayment.payment_method),
+        selectinload(Sale.items).selectinload(SaleItem.product).selectinload(Product.categories),
+    ).where(
+        func.date(Sale.fecha_venta) >= start_str,
+        func.date(Sale.fecha_venta) <= end_str,
+    )
+    sales = db.execute(sales_stmt).scalars().all()
+
+    total_usd = Decimal("0.00")
+    total_bs = Decimal("0.00")
+    transactions_count = len(sales)
+
+    daily_totals: Dict[str, Decimal] = {}
+    sales_by_method: Dict[str, Dict[str, Any]] = {}
+    product_sales_count: Dict[str, int] = {}
+    category_sales_usd: Dict[str, Decimal] = {}
+
+    for sale in sales:
+        s_usd = sale.total_usd or Decimal("0.00")
+        s_bs = sale.total_ves or Decimal("0.00")
+        total_usd += s_usd
+        total_bs += s_bs
+
+        sale_d_str = sale.fecha_venta.date().isoformat() if hasattr(sale.fecha_venta, "date") else str(sale.fecha_venta)[:10]
+        daily_totals[sale_d_str] = daily_totals.get(sale_d_str, Decimal("0.00")) + s_usd
+
+        for payment in sale.payments:
+            method_name = payment.payment_method.nombre if payment.payment_method else "OTRO"
+            if method_name not in sales_by_method:
+                sales_by_method[method_name] = {
+                    "usd": Decimal("0.00"),
+                    "bs": Decimal("0.00"),
+                    "tx_count": 0,
+                }
+            sales_by_method[method_name]["usd"] += (payment.monto_usd or Decimal("0.00"))
+            sales_by_method[method_name]["bs"] += (payment.monto_ves or Decimal("0.00"))
+            sales_by_method[method_name]["tx_count"] += 1
+
+        for item in sale.items:
+            p_name = item.product.nombre if item.product else f"Producto #{item.producto_id}"
+            product_sales_count[p_name] = product_sales_count.get(p_name, 0) + item.cantidad
+            if item.product and item.product.categories:
+                for cat in item.product.categories:
+                    category_sales_usd[cat.nombre] = category_sales_usd.get(cat.nombre, Decimal("0.00")) + (item.subtotal_usd or Decimal("0.00"))
+
+    for m in sales_by_method.values():
+        m["usd"] = m["usd"].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        m["bs"] = m["bs"].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    total_usd = total_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    total_bs = total_bs.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    average_daily_usd = (total_usd / Decimal("6")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    best_day = None
+    if daily_totals:
+        best_date_str = max(daily_totals.items(), key=lambda x: x[1])[0]
+        best_dt = date.fromisoformat(best_date_str)
+        best_day = {
+            "date": best_date_str,
+            "day_name": DAY_NAMES_ES.get(best_dt.weekday(), ""),
+            "total_usd": daily_totals[best_date_str].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        }
+
+    top_category = None
+    if category_sales_usd:
+        top_category = max(category_sales_usd.items(), key=lambda x: x[1])[0]
+
+    top_products_sorted = sorted(product_sales_count.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_products = [{"name": name, "qty": qty} for name, qty in top_products_sorted]
+
+    # Facturas pendientes y por pagar
+    inv_stmt = select(Factura).options(
+        selectinload(Factura.payments),
+    ).where(Factura.estado_pago != "PAGADA")
+    pending_invoices = db.execute(inv_stmt).scalars().all()
+
+    total_pending_usd = Decimal("0.00")
+    total_invoices_pending = 0
+    due_dates: List[date] = []
+
+    for inv in pending_invoices:
+        total_pagado = sum((p.monto_usd or Decimal("0.00")) for p in inv.payments)
+        saldo_pendiente = (inv.total_usd or Decimal("0.00")) - total_pagado
+        if saldo_pendiente > Decimal("0.00"):
+            total_pending_usd += saldo_pendiente
+            total_invoices_pending += 1
+            if inv.fecha_limite_pago:
+                due_dates.append(inv.fecha_limite_pago)
+
+    soonest_due_date = min(due_dates).isoformat() if due_dates else None
+
+    pending_invoices_summary = {
+        "total_pending_usd": total_pending_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        "total_invoices_pending": total_invoices_pending,
+        "soonest_due_date": soonest_due_date,
+    }
+
+    return {
+        "start_date": start_str,
+        "end_date": end_str,
+        "summary": {
+            "total_usd": total_usd,
+            "total_bs": total_bs,
+            "transactions_count": transactions_count,
+            "average_daily_usd": average_daily_usd,
+        },
+        "best_day": best_day,
+        "sales_by_method": sales_by_method,
+        "top_category": top_category,
+        "top_products": top_products,
+        "pending_invoices_summary": pending_invoices_summary,
     }
 
 
