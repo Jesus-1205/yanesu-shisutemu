@@ -30,7 +30,7 @@ def get_daily_sales_report(db: Session, target_date: date | None = None) -> Dict
     sales_stmt = select(Sale).options(
         selectinload(Sale.payments).selectinload(SalePayment.payment_method),
         selectinload(Sale.items).selectinload(SaleItem.product),
-    ).where(func.date(Sale.fecha_venta) == date_str)
+    ).where(func.date(Sale.fecha_venta) == query_date)
     
     sales = db.execute(sales_stmt).scalars().all()
 
@@ -116,8 +116,8 @@ def get_weekly_sales_report(db: Session, target_date: date | None = None) -> Dic
         selectinload(Sale.payments).selectinload(SalePayment.payment_method),
         selectinload(Sale.items).selectinload(SaleItem.product).selectinload(Product.categories),
     ).where(
-        func.date(Sale.fecha_venta) >= start_str,
-        func.date(Sale.fecha_venta) <= end_str,
+        func.date(Sale.fecha_venta) >= start_d,
+        func.date(Sale.fecha_venta) <= end_d,
     )
     sales = db.execute(sales_stmt).scalars().all()
 
@@ -286,9 +286,9 @@ def get_product_sales_history(
     )
 
     if start_date:
-        stmt = stmt.where(func.date(Sale.fecha_venta) >= start_date.isoformat())
+        stmt = stmt.where(func.date(Sale.fecha_venta) >= start_date)
     if end_date:
-        stmt = stmt.where(func.date(Sale.fecha_venta) <= end_date.isoformat())
+        stmt = stmt.where(func.date(Sale.fecha_venta) <= end_date)
 
     items = db.execute(stmt).scalars().all()
 
@@ -311,13 +311,13 @@ def get_sales_metrics(
     db: Session,
     start_date: date,
     end_date: date,
-) -> Dict[str, Any]:
+    ) -> Dict[str, Any]:
     sales_stmt = select(Sale).options(
         selectinload(Sale.payments).selectinload(SalePayment.payment_method),
         selectinload(Sale.items).selectinload(SaleItem.product).selectinload(Product.categories),
     ).where(
-        func.date(Sale.fecha_venta) >= start_date.isoformat(),
-        func.date(Sale.fecha_venta) <= end_date.isoformat(),
+        func.date(Sale.fecha_venta) >= start_date,
+        func.date(Sale.fecha_venta) <= end_date,
     )
     sales = db.execute(sales_stmt).scalars().all()
 
@@ -373,8 +373,8 @@ def get_sales_peak_hours(
     end_date: date,
 ) -> List[Dict[str, Any]]:
     sales_stmt = select(Sale).where(
-        func.date(Sale.fecha_venta) >= start_date.isoformat(),
-        func.date(Sale.fecha_venta) <= end_date.isoformat(),
+        func.date(Sale.fecha_venta) >= start_date,
+        func.date(Sale.fecha_venta) <= end_date,
     )
     sales = db.execute(sales_stmt).scalars().all()
 
@@ -408,7 +408,7 @@ def search_sales(
     )
 
     if target_date:
-        stmt = stmt.where(func.date(Sale.fecha_venta) == target_date.isoformat())
+        stmt = stmt.where(func.date(Sale.fecha_venta) == target_date)
 
     if product_name:
         stmt = stmt.join(Sale.items).join(SaleItem.product).where(
