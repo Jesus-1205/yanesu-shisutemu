@@ -30,6 +30,7 @@ from app.routes.system_settings import router as system_settings_router
 from app.routes.retornable import router as retornable_router
 from app.routes.dashboard import router as dashboard_router
 from app.routes.webhooks import router as webhooks_router
+from app.routes.n8n_agent import router as n8n_agent_router
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ app.include_router(system_settings_router, prefix="/api")
 app.include_router(retornable_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(webhooks_router, prefix="/api")
+app.include_router(n8n_agent_router, prefix="/api")
 
 
 @app.exception_handler(EntityNotFoundError)
