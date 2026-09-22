@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Calendar, Download } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { api } from "@/services/api";
 import type { Sale } from "../types";
 import type { Column } from "@/ui-components/Table";
@@ -9,12 +9,13 @@ import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import Pagination from "@/ui-components/Pagination";
 import ErrorBanner from "@/ui-components/ErrorBanner";
-import MultiSelectTags from "@/ui-components/MultiSelectTags";
 import { formatCurrency, formatPaymentMethodName, formatRate } from "@/lib/utils";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToast } from "@/ui-components/Toast";
 import { exportToExcel } from "@/lib/exportToExcel";
-import type { PaymentMethodOut } from "@/types/api";
+import { useSalesFiltersStore } from "../store/salesFiltersStore";
+import SalesFilters from "../components/SalesFilters";
+import OperatorSalesNotice from "../components/OperatorSalesNotice";
 
 const PAGE_SIZE = 20;
 const EXPORT_PAGE_SIZE = 200;
@@ -27,14 +28,15 @@ export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fechaDesde, setFechaDesde] = useState("");
-  const [fechaHasta, setFechaHasta] = useState("");
-  const [horaDesde, setHoraDesde] = useState("");
-  const [horaHasta, setHoraHasta] = useState("");
-  const [metodoPagoIds, setMetodoPagoIds] = useState<number[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOut[]>([]);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const fechaDesde = useSalesFiltersStore((s) => s.fechaDesde);
+  const fechaHasta = useSalesFiltersStore((s) => s.fechaHasta);
+  const horaDesde = useSalesFiltersStore((s) => s.horaDesde);
+  const horaHasta = useSalesFiltersStore((s) => s.horaHasta);
+  const metodoPagoIds = useSalesFiltersStore((s) => s.metodoPagoIds);
+  const page = useSalesFiltersStore((s) => s.page);
+  const setField = useSalesFiltersStore((s) => s.setField);
 
   const fetchSales = useCallback(async () => {
     setLoading(true);
@@ -62,20 +64,6 @@ export default function SalesPage() {
     fetchSales();
   }, [fetchSales]);
 
-  useEffect(() => {
-    api.getPaymentMethods(true).then(setPaymentMethods).catch(() => {});
-  }, []);
-
-  const handleFilterChange = (setter: (v: string) => void) => (value: string) => {
-    setter(value);
-    setPage(1);
-  };
-
-  const handleMetodoPagoChange = (ids: number[]) => {
-    setMetodoPagoIds(ids);
-    setPage(1);
-  };
-
   const exportColumns: Column<Sale>[] = [
     {
       key: "fecha_venta",
@@ -97,7 +85,7 @@ export default function SalesPage() {
     {
       key: "metodo_pago",
       header: "Método de Pago",
-      render: (s: Sale) => s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-",
+      render: (s: Sale) => (s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-"),
     },
     {
       key: "tasa_bcv_aplicada",
@@ -175,78 +163,7 @@ export default function SalesPage() {
       )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
-        {isOperator ? (
-          <div className="border-b border-slate-100 p-4 sm:p-5">
-            <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-700">
-              <Calendar className="size-4" />
-              Mostrando ventas del día de hoy
-            </div>
-          </div>
-        ) : (
-          <div className="border-b border-slate-100 p-4 sm:p-5">
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Desde</label>
-                <input
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => handleFilterChange(setFechaDesde)(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Hasta</label>
-                <input
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => handleFilterChange(setFechaHasta)(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Hora desde</label>
-                <input
-                  type="time"
-                  value={horaDesde}
-                  onChange={(e) => handleFilterChange(setHoraDesde)(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Hora hasta</label>
-                <input
-                  type="time"
-                  value={horaHasta}
-                  onChange={(e) => handleFilterChange(setHoraHasta)(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="min-w-48">
-                <MultiSelectTags
-                  label="Método de pago"
-                  selected={metodoPagoIds}
-                  options={paymentMethods.map((m) => ({ value: m.id, label: m.nombre }))}
-                  onChange={handleMetodoPagoChange}
-                  placeholder="Todos"
-                />
-              </div>
-              {(fechaDesde || fechaHasta || horaDesde || horaHasta || metodoPagoIds.length > 0) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setFechaDesde(""); setFechaHasta(""); setHoraDesde(""); setHoraHasta(""); setMetodoPagoIds([]); setPage(1); }}
-                  className="mb-0.5"
-                >
-                  Limpiar
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
+        {isOperator ? <OperatorSalesNotice /> : <SalesFilters />}
 
         <Table
           columns={[
@@ -311,7 +228,7 @@ export default function SalesPage() {
         />
 
         <div className="border-t border-slate-100 bg-slate-50/50 p-4">
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={(p) => setField("page", p)} />
         </div>
       </div>
     </div>
