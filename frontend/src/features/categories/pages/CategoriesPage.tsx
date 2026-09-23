@@ -1,10 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Download } from "lucide-react";
-import { api } from "@/services/api";
-import type { Category } from "../types";
-import type { Column } from "@/ui-components/Table";
-import Table from "@/ui-components/Table";
+import { Plus, Download } from "lucide-react";
 import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
 import Pagination from "@/ui-components/Pagination";
@@ -12,143 +8,70 @@ import ErrorBanner from "@/ui-components/ErrorBanner";
 import ConfirmDialog from "@/ui-components/ConfirmDialog";
 import SearchInput from "@/ui-components/SearchInput";
 import { useToast } from "@/ui-components/Toast";
-import { exportToExcel } from "@/lib/exportToExcel";
 import CategoryMicroKPIs from "../components/CategoryMicroKPIs";
 import CategoryAnalyticsDrawer from "../components/CategoryAnalyticsDrawer";
+import CategoriesTable from "../components/CategoriesTable";
 import { useCategoryAnalytics } from "../hooks/useCategoryAnalytics";
+import { useCategoriesList } from "../hooks/useCategoriesList";
+import { useDeleteCategory } from "../hooks/useDeleteCategory";
+import { useExportCategories } from "../hooks/useExportCategories";
 import CreateCategoryModal from "@/features/shared/components/CreateCategoryModal";
-
-const PAGE_SIZE = 20;
+import type { Category } from "../types";
 
 export default function CategoriesPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const { data: analytics, loading: analyticsLoading } = useCategoryAnalytics();
+  const {
+    categories,
+    loading,
+    error,
+    page,
+    totalPages,
+    search,
+    setSearch,
+    setPage,
+    refetch,
+  } = useCategoriesList();
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [selectedCategoryName, setSelectedCategoryName] = useState("");
+  const { handleExportAll } = useExportCategories();
+  const {
+    data: analytics,
+    loading: analyticsLoading,
+    refetch: refetchAnalytics,
+  } = useCategoryAnalytics();
+
+  const refreshAll = useCallback(() => {
+    refetch();
+    refetchAnalytics();
+  }, [refetch, refetchAnalytics]);
+
+  const {
+    deleteTarget,
+    setDeleteTarget,
+    deleting,
+    confirmDelete,
+  } = useDeleteCategory({ onSuccess: refreshAll });
+
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const fetchCategories = useCallback(async (q = "") => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.getCategoriesPaginated({
-        page,
-        page_size: PAGE_SIZE,
-        ...(q ? { search: q } : {}),
-      });
-      setCategories(res.items);
-      setTotalPages(res.pages);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar categorías");
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
-
-  useEffect(() => {
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [search]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    fetchCategories(debouncedSearch);
-  }, [fetchCategories, debouncedSearch]);
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await api.deleteCategory(deleteTarget.id);
-      toast(`Categoría "${deleteTarget.nombre}" eliminada`, "success");
-      setDeleteTarget(null);
-      fetchCategories(debouncedSearch);
-    } catch (err) {
-      toast(
-        err instanceof Error ? err.message : "Error al eliminar categoría",
-        "error",
-      );
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   const handleRowClick = useCallback((cat: Category) => {
-    setSelectedCategoryId(cat.id);
-    setSelectedCategoryName(cat.nombre);
-    setDrawerOpen(true);
+    setSelectedCategory(cat);
   }, []);
+
+  const handleEdit = useCallback(
+    (cat: Category) => {
+      navigate(`/categories/${cat.id}`);
+    },
+    [navigate],
+  );
 
   const handleCategoryCreated = () => {
     toast(`Categoría creada`, "success");
     setCreateModalOpen(false);
-    fetchCategories(debouncedSearch);
+    refreshAll();
   };
-
-  const exportColumns: Column<Category>[] = [
-    { key: "nombre", header: "Nombre" },
-    { key: "descripcion", header: "Descripción" },
-  ];
-
-  const handleExportAll = async () => {
-    try {
-      const allCategories = await api.getCategories();
-      const name = exportToExcel({ data: allCategories, columns: exportColumns, filename: "Categorias" });
-      toast(`Archivo descargado: ${name}`, "success");
-    } catch {
-      toast("Error al exportar categorias", "error");
-    }
-  };
-
-  const columns: Column<Category>[] = useMemo(() => [
-    { key: "nombre", header: "Nombre" },
-    {
-      key: "descripcion",
-      header: "Descripción",
-      hideOnMobile: true,
-      render: (cat: Category) => cat.descripcion || "—",
-    },
-    {
-      key: "acciones",
-      header: "Acciones",
-      render: (cat: Category) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); navigate(`/categories/${cat.id}`); }}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); setDeleteTarget(cat); }}
-          >
-            <Trash2 className="size-4 text-danger" />
-          </Button>
-        </div>
-      ),
-    },
-  ], [navigate, setDeleteTarget]);
 
   return (
     <div className="space-y-6">
@@ -172,7 +95,7 @@ export default function CategoriesPage() {
       <CategoryMicroKPIs data={analytics} loading={analyticsLoading} />
 
       {error && (
-        <ErrorBanner onRetry={() => fetchCategories(debouncedSearch)}>
+        <ErrorBanner onRetry={refreshAll}>
           {error}
         </ErrorBanner>
       )}
@@ -189,14 +112,12 @@ export default function CategoriesPage() {
           </div>
         </div>
 
-        <Table
-          columns={columns}
-          data={categories}
-          keyExtractor={(c) => c.id}
+        <CategoriesTable
+          categories={categories}
           loading={loading}
-          emptyMessage="No hay categorías registradas"
           onRowClick={handleRowClick}
-          className="!rounded-none !border-0 !shadow-none"
+          onEdit={handleEdit}
+          onDelete={setDeleteTarget}
         />
 
         <div className="border-t border-slate-100 bg-slate-50/50 p-4">
@@ -205,10 +126,10 @@ export default function CategoriesPage() {
       </div>
 
       <CategoryAnalyticsDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        categoryId={selectedCategoryId}
-        categoryName={selectedCategoryName}
+        open={Boolean(selectedCategory)}
+        onClose={() => setSelectedCategory(null)}
+        categoryId={selectedCategory?.id ?? null}
+        categoryName={selectedCategory?.nombre ?? ""}
       />
 
       <ConfirmDialog
@@ -221,7 +142,7 @@ export default function CategoriesPage() {
         }
         confirmText="Eliminar"
         loading={deleting}
-        onConfirm={handleDelete}
+        onConfirm={confirmDelete}
         onClose={() => setDeleteTarget(null)}
       />
 
