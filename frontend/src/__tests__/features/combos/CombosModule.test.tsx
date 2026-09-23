@@ -182,9 +182,9 @@ describe("useComboForm hook", () => {
 
     const { valid, payload } = result.current.validateAndBuildPayload();
     expect(valid).toBe(true);
-    expect(payload.nombre).toBe("Super Pack");
-    expect(payload.precio_total_usd).toBe(30.5);
-    expect(payload.grupos[0].productos[0].producto_id).toBe(99);
+    expect(payload?.nombre).toBe("Super Pack");
+    expect(payload?.precio_total_usd).toBe(30.5);
+    expect(payload?.grupos[0].productos[0].producto_id).toBe(99);
 
     act(() => {
       result.current.removeProductFromGroup(0, 0);
