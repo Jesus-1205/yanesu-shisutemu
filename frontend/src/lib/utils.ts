@@ -125,3 +125,16 @@ export function generateUUID(): string {
     return v.toString(16);
   });
 }
+
+const MONTHS_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+export function formatPeriod(periodo: string): string {
+  if (periodo.length === 7) {
+    const [y, m] = periodo.split("-").map(Number);
+    return `${MONTHS_ES[m - 1]} ${y}`;
+  }
+  const parts = periodo.split("-").map(Number);
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  if (isNaN(d.getTime())) return periodo;
+  return `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`;
+}
