@@ -507,7 +507,25 @@ def search_invoices(
     return results
 
 
-def get_exchange_rate_info(db: Session, history: bool = False, limit: int = 5) -> Dict[str, Any]:
+def get_exchange_rate_info(db: Session, history: bool = False, limit: int = 5) -> Dict[str, Any] | List[Dict[str, Any]]:
+    if history:
+        stmt = (
+            select(ExchangeRate)
+            .options(selectinload(ExchangeRate.registered_by), selectinload(ExchangeRate.api_key))
+            .order_by(ExchangeRate.fecha_registro.desc(), ExchangeRate.id.desc())
+            .limit(limit)
+        )
+        rates = db.execute(stmt).scalars().all()
+        return [
+            {
+                "tasa_usd": r.tasa_usd,
+                "tasa_eur": r.tasa_eur,
+                "fecha_actualizacion": r.fecha_registro.isoformat() if r.fecha_registro else "",
+                "ultima_modificacion_por": r.registrado_por_nombre,
+            }
+            for r in rates
+        ]
+
     latest = get_latest_rate(db)
     if not latest:
         return {

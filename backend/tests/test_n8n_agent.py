@@ -367,6 +367,20 @@ class TestN8nAgentAPI:
         assert data["tasa_usd"] == "45.0000"
         assert data["ultima_modificacion_por"] == "Carlos Cajero"
 
+    def test_tools_exchange_rate_history(self, client):
+        raw_key = _create_api_key()
+        _seed_sample_data()
+
+        res = client.get(
+            "/api/n8n/tools/system/exchange-rate?history=true&limit=2",
+            headers={"X-API-Key": raw_key},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        assert data[0]["tasa_usd"] == "45.0000"
+
     def test_tools_users(self, client):
         raw_key = _create_api_key()
         _seed_sample_data()

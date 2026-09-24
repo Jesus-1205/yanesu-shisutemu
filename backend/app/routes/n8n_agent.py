@@ -180,7 +180,7 @@ def tool_search_invoices(
     )
 
 
-@router.get("/tools/system/exchange-rate", status_code=status.HTTP_200_OK, response_model=ExchangeRateToolOut)
+@router.get("/tools/system/exchange-rate", status_code=status.HTTP_200_OK, response_model=ExchangeRateToolOut | List[ExchangeRateToolOut])
 def tool_exchange_rate(
     request: Request,
     history: bool = Query(False, description="Consultar histórico"),
@@ -188,8 +188,8 @@ def tool_exchange_rate(
     db: Session = Depends(get_db),
     api_key: ApiKey = Depends(verify_api_key),
 ):
-    """GET /n8n/tools/system/exchange-rate - Consulta la tasa de cambio actual y quién la actualizó."""
-    _audit(api_key, request, "/tools/system/exchange-rate")
+    """GET /n8n/tools/system/exchange-rate - Consulta la tasa de cambio actual o su historial reciente."""
+    _audit(api_key, request, "/tools/system/exchange-rate", f"history={history} limit={limit}")
     return get_exchange_rate_info(db, history=history, limit=limit)
 
 
