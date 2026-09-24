@@ -346,7 +346,14 @@ class TestN8nAgentAPI:
 
         res = client.get(
             "/api/n8n/tools/invoices/search",
-            params={"status": "PENDIENTE"},
+            params={
+                "q": " ",
+                "status": "PENDIENTE",
+                "product_name": " ",
+                "due_after": "2020-01-01",
+                "due_before": "2030-12-31",
+                "limit": 50,
+            },
             headers={"X-API-Key": raw_key},
         )
         assert res.status_code == 200

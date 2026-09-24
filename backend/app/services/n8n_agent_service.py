@@ -238,7 +238,7 @@ def search_products(
         selectinload(Product.categories),
     )
 
-    if q:
+    if q and q.strip():
         q_clean = q.strip()
         stmt = stmt.where(
             or_(
@@ -410,10 +410,14 @@ def search_sales(
     if target_date:
         stmt = stmt.where(func.date(Sale.fecha_venta) == target_date)
 
-    if product_name:
-        stmt = stmt.join(Sale.items).join(SaleItem.product).where(
-            Product.nombre.ilike(f"%{product_name.strip()}%")
-        ).distinct()
+    if product_name and product_name.strip():
+        p_name = product_name.strip()
+        subq = (
+            select(SaleItem.venta_id)
+            .join(SaleItem.product)
+            .where(Product.nombre.ilike(f"%{p_name}%"))
+        )
+        stmt = stmt.where(Sale.id.in_(subq))
 
     stmt = stmt.order_by(Sale.fecha_venta.desc()).limit(limit)
     sales = db.execute(stmt).scalars().all()
@@ -457,7 +461,7 @@ def search_invoices(
         selectinload(Factura.payments),
     )
 
-    if q:
+    if q and q.strip():
         q_clean = q.strip()
         stmt = stmt.join(Factura.supplier).where(
             or_(
@@ -466,7 +470,7 @@ def search_invoices(
             )
         )
 
-    if status:
+    if status and status.strip():
         stmt = stmt.where(Factura.estado_pago == status.strip().upper())
 
     if due_after:
@@ -475,10 +479,14 @@ def search_invoices(
     if due_before:
         stmt = stmt.where(Factura.fecha_limite_pago <= due_before)
 
-    if product_name:
-        stmt = stmt.join(Factura.detalles).join(DetalleFactura.product).where(
-            Product.nombre.ilike(f"%{product_name.strip()}%")
-        ).distinct()
+    if product_name and product_name.strip():
+        p_name = product_name.strip()
+        subq = (
+            select(DetalleFactura.factura_id)
+            .join(DetalleFactura.product)
+            .where(Product.nombre.ilike(f"%{p_name}%"))
+        )
+        stmt = stmt.where(Factura.id.in_(subq))
 
     stmt = stmt.order_by(Factura.fecha_factura.desc()).limit(limit)
     invoices = db.execute(stmt).scalars().all()
