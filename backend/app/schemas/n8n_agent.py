@@ -172,3 +172,42 @@ class TopSupplierItem(BaseModel):
     supplier_name: str
     units_sold: int
     total_usd: Decimal
+
+
+class CategoryTopToolItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    descripcion: str | None = None
+    total_productos: int
+    stock_total: int
+    unidades_vendidas: int
+    ingresos_usd: Decimal
+    margen_promedio: Decimal
+
+
+class CategoryDetailProductSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    codigo_barra: str | None = None
+    stock_unidades: int
+    precio_unidad_usd: Decimal
+    unidades_vendidas: int
+    ingresos_usd: Decimal
+    margen_porcentaje: Decimal
+
+
+class CategorySearchToolItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    descripcion: str | None = None
+    total_productos: int
+    unidades_vendidas: int
+    ingresos_usd: Decimal
+    margen_promedio: Decimal
+    top_productos: List[CategoryDetailProductSummary]

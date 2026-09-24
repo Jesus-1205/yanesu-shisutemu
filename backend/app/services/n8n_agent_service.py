@@ -16,6 +16,7 @@ from app.models.sale import Sale, SaleItem
 from app.models.sale_payment import SalePayment
 from app.models.supplier import Supplier
 from app.models.user import User
+from app.services.category_service import get_category_analytics, get_category_detail_analytics
 from app.services.exchange_rate_service import get_latest_rate
 
 
@@ -587,5 +588,78 @@ def get_top_suppliers(db: Session, limit: int = 5) -> List[Dict[str, Any]]:
             "supplier_name": r.supplier_name,
             "units_sold": r.invoices_count,  # Represented as invoices/purchases count
             "total_usd": Decimal(str(r.total_usd or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        })
+    return results
+
+
+def get_top_categories(
+    db: Session,
+    order_by: str = "sales",
+    limit: int = 5,
+) -> List[Dict[str, Any]]:
+    analytics = get_category_analytics(db)
+    cats = analytics.categorias
+
+    if order_by == "margin":
+        cats_sorted = sorted(cats, key=lambda c: c.margen_promedio, reverse=True)
+    elif order_by == "revenue":
+        cats_sorted = sorted(cats, key=lambda c: c.ingresos_usd, reverse=True)
+    else:
+        cats_sorted = sorted(cats, key=lambda c: (c.unidades_vendidas, c.ingresos_usd), reverse=True)
+
+    top = cats_sorted[:limit]
+    return [
+        {
+            "id": c.id,
+            "nombre": c.nombre,
+            "descripcion": c.descripcion,
+            "total_productos": c.total_productos,
+            "stock_total": c.stock_total,
+            "unidades_vendidas": c.unidades_vendidas,
+            "ingresos_usd": c.ingresos_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+            "margen_promedio": c.margen_promedio.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
+        }
+        for c in top
+    ]
+
+
+def search_categories_summary(
+    db: Session,
+    q: str | None = None,
+    limit: int = 5,
+) -> List[Dict[str, Any]]:
+    stmt = select(Category)
+    if q and q.strip():
+        stmt = stmt.where(Category.nombre.ilike(f"%{q.strip()}%"))
+    stmt = stmt.order_by(Category.nombre).limit(limit)
+    categories = db.execute(stmt).scalars().all()
+
+    results = []
+    for cat in categories:
+        detail = get_category_detail_analytics(db, cat.id)
+        if not detail:
+            continue
+        top_prods = [
+            {
+                "id": p.id,
+                "nombre": p.nombre,
+                "codigo_barra": p.codigo_barra,
+                "stock_unidades": p.stock_unidades,
+                "precio_unidad_usd": p.precio_unidad_usd,
+                "unidades_vendidas": p.unidades_vendidas,
+                "ingresos_usd": p.ingresos_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                "margen_porcentaje": p.margen_porcentaje.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
+            }
+            for p in detail.top_productos[:5]
+        ]
+        results.append({
+            "id": cat.id,
+            "nombre": cat.nombre,
+            "descripcion": cat.descripcion,
+            "total_productos": detail.total_productos,
+            "unidades_vendidas": detail.unidades_vendidas,
+            "ingresos_usd": detail.ingresos_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+            "margen_promedio": detail.margen_promedio.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
+            "top_productos": top_prods,
         })
     return results

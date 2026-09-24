@@ -9,6 +9,8 @@ from app.core.dependencies import verify_api_key
 from app.core.timezone import ve_today
 from app.models.api_key import ApiKey
 from app.schemas.n8n_agent import (
+    CategorySearchToolItem,
+    CategoryTopToolItem,
     DailyReportOut,
     ExchangeRateToolOut,
     InvoiceSearchItem,
@@ -29,8 +31,10 @@ from app.services.n8n_agent_service import (
     get_sales_metrics,
     get_sales_peak_hours,
     get_system_users,
+    get_top_categories,
     get_top_suppliers,
     get_weekly_sales_report,
+    search_categories_summary,
     search_invoices,
     search_products,
     search_sales,
@@ -214,3 +218,29 @@ def tool_top_suppliers(
     """GET /n8n/tools/system/top-suppliers - Consulta proveedores con mayor volumen de compras/facturación."""
     _audit(api_key, request, "/tools/system/top-suppliers")
     return get_top_suppliers(db, limit=limit)
+
+
+@router.get("/tools/categories/top", status_code=status.HTTP_200_OK, response_model=List[CategoryTopToolItem])
+def tool_top_categories(
+    request: Request,
+    order_by: str = Query("sales", description="Criterio de ordenamiento: 'sales' (unidades), 'revenue' (ingresos) o 'margin' (margen %)"),
+    limit: int = Query(5, ge=1, le=50),
+    db: Session = Depends(get_db),
+    api_key: ApiKey = Depends(verify_api_key),
+):
+    """GET /n8n/tools/categories/top - Ranking de categorías por volumen de ventas, ingresos o margen de ganancia."""
+    _audit(api_key, request, "/tools/categories/top", f"order_by={order_by} limit={limit}")
+    return get_top_categories(db, order_by=order_by, limit=limit)
+
+
+@router.get("/tools/categories/search", status_code=status.HTTP_200_OK, response_model=List[CategorySearchToolItem])
+def tool_search_categories(
+    request: Request,
+    q: str | None = Query(None, description="Término de búsqueda para filtrar categorías por nombre"),
+    limit: int = Query(5, ge=1, le=20),
+    db: Session = Depends(get_db),
+    api_key: ApiKey = Depends(verify_api_key),
+):
+    """GET /n8n/tools/categories/search - Consulta categorías y el rendimiento de sus productos más vendidos."""
+    _audit(api_key, request, "/tools/categories/search", f"q={q}")
+    return search_categories_summary(db, q=q, limit=limit)

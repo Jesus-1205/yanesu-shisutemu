@@ -412,3 +412,32 @@ class TestN8nAgentAPI:
         suppliers = res.json()
         assert len(suppliers) >= 1
         assert suppliers[0]["supplier_name"] == "Distribuidora Polar"
+
+    def test_tools_top_categories(self, client):
+        raw_key = _create_api_key()
+        _seed_sample_data()
+
+        res = client.get(
+            "/api/n8n/tools/categories/top?order_by=sales&limit=5",
+            headers={"X-API-Key": raw_key},
+        )
+        assert res.status_code == 200
+        cats = res.json()
+        assert isinstance(cats, list)
+        assert len(cats) >= 1
+        assert any(c["nombre"] == "LICORES" for c in cats)
+
+    def test_tools_search_categories(self, client):
+        raw_key = _create_api_key()
+        _seed_sample_data()
+
+        res = client.get(
+            "/api/n8n/tools/categories/search?q=licor",
+            headers={"X-API-Key": raw_key},
+        )
+        assert res.status_code == 200
+        cats = res.json()
+        assert isinstance(cats, list)
+        assert len(cats) >= 1
+        assert cats[0]["nombre"] == "LICORES"
+        assert "top_productos" in cats[0]
