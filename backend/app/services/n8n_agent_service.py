@@ -18,6 +18,7 @@ from app.models.supplier import Supplier
 from app.models.user import User
 from app.services.category_service import get_category_analytics, get_category_detail_analytics
 from app.services.exchange_rate_service import get_latest_rate
+from app.services.invoice_service import _calcular_total_con_iva
 
 
 def get_daily_sales_report(db: Session, target_date: date | None = None) -> Dict[str, Any]:
@@ -187,7 +188,8 @@ def get_weekly_sales_report(db: Session, target_date: date | None = None) -> Dic
     # Facturas pendientes y por pagar
     inv_stmt = select(Factura).options(
         selectinload(Factura.payments),
-    ).where(Factura.estado_pago != "PAGADA")
+        selectinload(Factura.detalles),
+    ).where(Factura.estado_pago.in_(["PENDIENTE", "PARCIALMENTE_PAGADA"]))
     pending_invoices = db.execute(inv_stmt).scalars().all()
 
     total_pending_usd = Decimal("0.00")
@@ -195,8 +197,15 @@ def get_weekly_sales_report(db: Session, target_date: date | None = None) -> Dic
     due_dates: List[date] = []
 
     for inv in pending_invoices:
-        total_pagado = sum((p.monto_usd or Decimal("0.00")) for p in inv.payments)
-        saldo_pendiente = (inv.total_usd or Decimal("0.00")) - total_pagado
+        total_con_iva_usd, _ = _calcular_total_con_iva(inv, db)
+        total_pagado_usd = sum((p.monto_usd or Decimal("0.00")) for p in inv.payments)
+
+        pagos_bs_only = [p for p in inv.payments if (p.monto_usd or Decimal("0.00")) <= 0 and (p.monto_bs or Decimal("0.00")) > 0]
+        if inv.tasa_bs > 0 and pagos_bs_only:
+            total_pagado_bs_only = sum((p.monto_bs or Decimal("0.00")) for p in pagos_bs_only)
+            total_pagado_usd += (total_pagado_bs_only / inv.tasa_bs).quantize(Decimal("0.01"))
+
+        saldo_pendiente = total_con_iva_usd - total_pagado_usd
         if saldo_pendiente > Decimal("0.00"):
             total_pending_usd += saldo_pendiente
             total_invoices_pending += 1
@@ -494,10 +503,16 @@ def search_invoices(
 
     results = []
     for inv in invoices:
-        total_pagado = sum(
+        total_con_iva_usd, _ = _calcular_total_con_iva(inv, db)
+        total_pagado_usd = sum(
             (p.monto_usd or Decimal("0.00")) for p in inv.payments
         )
-        saldo_pendiente = max(Decimal("0.00"), (inv.total_usd or Decimal("0.00")) - total_pagado)
+        pagos_bs_only = [p for p in inv.payments if (p.monto_usd or Decimal("0.00")) <= 0 and (p.monto_bs or Decimal("0.00")) > 0]
+        if inv.tasa_bs > 0 and pagos_bs_only:
+            total_pagado_bs_only = sum((p.monto_bs or Decimal("0.00")) for p in pagos_bs_only)
+            total_pagado_usd += (total_pagado_bs_only / inv.tasa_bs).quantize(Decimal("0.01"))
+
+        saldo_pendiente = max(Decimal("0.00"), total_con_iva_usd - total_pagado_usd)
         items_desc = [
             f"{d.cantidad}x {d.product.nombre if d.product else 'Prod'}"
             for d in inv.detalles
@@ -507,7 +522,7 @@ def search_invoices(
             "numero_factura": inv.numero_factura,
             "cliente_nombre": inv.supplier.nombre if inv.supplier else "Proveedor Desconocido",
             "estado": inv.estado_pago,
-            "total_usd": (inv.total_usd or Decimal("0.00")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+            "total_usd": total_con_iva_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             "saldo_pendiente_usd": saldo_pendiente.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             "fecha_emision": inv.fecha_factura.isoformat() if inv.fecha_factura else "",
             "fecha_vencimiento": inv.fecha_limite_pago.isoformat() if inv.fecha_limite_pago else None,

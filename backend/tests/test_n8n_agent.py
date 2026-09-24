@@ -361,6 +361,47 @@ class TestN8nAgentAPI:
         assert len(items) >= 1
         assert items[0]["numero_factura"] == "FAC-999"
 
+    def test_tools_invoices_search_with_bs_payment(self, client):
+        raw_key = _create_api_key()
+        _, _, fac_id = _seed_sample_data()
+
+        # Add payment only in Bs
+        db = _get_db()
+        try:
+            fac = db.get(Factura, fac_id)
+            fac.tasa_bs = Decimal("50.00")
+            fac.estado_pago = "PARCIALMENTE_PAGADA"
+            db.commit()
+
+            pm = db.execute(select(PaymentMethod)).scalars().first()
+            user = db.execute(select(User)).scalars().first()
+
+            pago = InvoicePayment(
+                factura_id=fac_id,
+                metodo_pago_id=pm.id,
+                usuario_id=user.id,
+                monto_usd=Decimal("0.00"),
+                monto_bs=Decimal("2500.00"),  # Equivalent to $50 USD at tasa 50.00
+                tasa_bs=Decimal("50.00"),
+                fecha_pago=datetime.now(),
+            )
+            db.add(pago)
+            db.commit()
+        finally:
+            db.close()
+
+        res = client.get(
+            "/api/n8n/tools/invoices/search",
+            params={"status": "PARCIALMENTE_PAGADA"},
+            headers={"X-API-Key": raw_key},
+        )
+        assert res.status_code == 200
+        items = res.json()
+        assert len(items) >= 1
+        inv_item = next(i for i in items if i["id"] == fac_id)
+        # Total was 100 USD, paid 2500 Bs / 50 = 50 USD, remaining should be 50.00 USD
+        assert inv_item["saldo_pendiente_usd"] == "50.00"
+
     def test_tools_exchange_rate(self, client):
         raw_key = _create_api_key()
         _seed_sample_data()
