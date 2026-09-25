@@ -24,6 +24,7 @@ services:
 
   # Backend FastAPI — imágenes pre-construidas desde GHCR
   backend:
+    init: true
     image: ghcr.io/jesus-1205/sistema_inventario_local-backend:master
     restart: unless-stopped
     environment:
@@ -62,6 +63,7 @@ services:
 
   # n8n — automatizaciones e integraciones (BCV, Telegram)
   n8n:
+    init: true
     image: docker.n8n.io/n8nio/n8n:latest
     restart: unless-stopped
     ports:
