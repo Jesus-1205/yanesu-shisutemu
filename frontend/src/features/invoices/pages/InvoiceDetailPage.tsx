@@ -1,55 +1,50 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Bot, Download } from "lucide-react";
-import { api } from "@/services/api";
-import { calcularResumenFiscal } from "@/lib/iva";
+import { ArrowLeft, Bot } from "lucide-react";
 import Button from "@/ui-components/Button";
 import Spinner from "@/ui-components/Spinner";
 import ErrorBanner from "@/ui-components/ErrorBanner";
 import PageHeader from "@/ui-components/PageHeader";
-import Modal from "@/ui-components/Modal";
-import { useToast } from "@/ui-components/Toast";
 import { useInvoiceData } from "../hooks/useInvoiceData";
 import InvoiceMetaBar from "../components/InvoiceMetaBar";
 import InvoiceFinancialCards from "../components/InvoiceFinancialCards";
 import InvoicePaymentStatus from "../components/InvoicePaymentStatus";
 import InvoiceLedger from "../components/InvoiceLedger";
 import InvoiceFiscalSummary from "../components/InvoiceFiscalSummary";
-import InvoiceAIModalContent from "../components/InvoiceAIModalContent";
 import InvoiceLineItemsTable from "../components/InvoiceLineItemsTable";
 import InvoiceObsequiosSection from "../components/InvoiceObsequiosSection";
+import InvoiceImageViewer from "../components/InvoiceImageViewer";
+import InvoiceAIModal from "../components/InvoiceAIModal";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const { invoice, loading, error, payments, paymentSummary, fetchInvoice } = useInvoiceData(id);
-
   const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
 
-  const handleDownloadImage = async () => {
-    if (!invoice) return;
-    setDownloading(true);
-    try {
-      const name = await api.downloadInvoiceImage(invoice.id);
-      toast(`Imagen descargada: ${name}`, "success");
-    } catch (err) {
-      toast(err instanceof Error ? err.message : "Error al descargar la imagen", "error");
-    } finally {
-      setDownloading(false);
-    }
-  };
+  const {
+    invoice,
+    loading,
+    error,
+    payments,
+    paymentSummary,
+    resumen,
+    totalPrincipal,
+    totalSecundario,
+    nTasa,
+    fetchInvoice,
+  } = useInvoiceData(id);
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div>
+      <>
         <PageHeader
           title="Detalle de Factura"
           actions={
@@ -62,34 +57,14 @@ export default function InvoiceDetailPage() {
         <div className="mt-4">
           <ErrorBanner onRetry={fetchInvoice}>{error}</ErrorBanner>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!invoice) return null;
 
-  const resumen = invoice.detalles.length > 0
-    ? calcularResumenFiscal(
-        invoice.detalles.map(d => ({
-          subtotal_usd: d.cantidad * Number(d.costo_unitario_usd),
-          subtotal_bs: d.cantidad * Number(d.costo_unitario_bs),
-          tipo_iva: d.tipo_iva ?? "GRAVADO",
-        })),
-        invoice.moneda_principal,
-        invoice.aplica_iva,
-      )
-    : null;
-
-  const totalPrincipal = resumen?.total ?? 0;
-  const nTasa = Number(invoice.tasa_bs);
-  const totalSecundario = nTasa > 0
-    ? (invoice.moneda_principal === "BS"
-      ? Math.round((totalPrincipal / nTasa) * 100) / 100
-      : Math.round((totalPrincipal * nTasa) * 100) / 100)
-    : 0;
-
   return (
-    <div>
+    <>
       <PageHeader
         title={`${invoice.tipo_documento === "NOTA_ENTREGA" ? "Nota" : "Factura"} #${invoice.numero_factura}`}
         description={invoice.supplier?.nombre || "Proveedor desconocido"}
@@ -127,35 +102,11 @@ export default function InvoiceDetailPage() {
 
       <InvoiceLedger invoice={invoice} payments={payments} />
 
-      {invoice.image_path && (
-        <div className="mb-6">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-700">Imagen de Factura</p>
-            <Button variant="outline" size="sm" loading={downloading} onClick={handleDownloadImage}>
-              <Download className="size-4" />
-              Descargar
-            </Button>
-          </div>
-          <div
-            className="cursor-pointer overflow-hidden rounded-xl border border-slate-200 transition-colors hover:border-brand-blue"
-            onClick={() => setImagePreviewOpen(true)}
-          >
-            <img
-              src={api.getInvoiceImageUrl(invoice.id)}
-              alt={`Factura #${invoice.numero_factura}`}
-              className="max-h-80 w-full bg-slate-50 object-contain"
-            />
-          </div>
-        </div>
-      )}
-
-      <Modal open={imagePreviewOpen} onClose={() => setImagePreviewOpen(false)} title="Imagen de Factura" className="max-w-3xl">
-        <img
-          src={api.getInvoiceImageUrl(invoice.id)}
-          alt={`Factura #${invoice.numero_factura}`}
-          className="w-full rounded-lg object-contain"
-        />
-      </Modal>
+      <InvoiceImageViewer
+        invoiceId={invoice.id}
+        numeroFactura={invoice.numero_factura}
+        imagePath={invoice.image_path}
+      />
 
       <InvoiceLineItemsTable
         invoice={invoice}
@@ -182,14 +133,11 @@ export default function InvoiceDetailPage() {
         </div>
       )}
 
-      <Modal
+      <InvoiceAIModal
         open={aiModalOpen}
         onClose={() => setAiModalOpen(false)}
-        title="Información escaneada por IA"
-        className="max-w-lg"
-      >
-        <InvoiceAIModalContent invoice={invoice} />
-      </Modal>
-    </div>
+        invoice={invoice}
+      />
+    </>
   );
 }

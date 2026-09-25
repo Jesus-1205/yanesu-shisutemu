@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/services/api";
+import { calcularResumenFiscal, type ResumenFiscal } from "@/lib/iva";
 import type { Invoice } from "../types";
 import type { InvoicePaymentOut, InvoicePaymentSummary } from "@/types/api";
 
-interface UseInvoiceDataReturn {
+export interface UseInvoiceDataReturn {
   invoice: Invoice | null;
   loading: boolean;
   error: string | null;
   payments: InvoicePaymentOut[];
   paymentSummary: InvoicePaymentSummary | null;
+  resumen: ResumenFiscal | null;
+  totalPrincipal: number;
+  totalSecundario: number;
+  nTasa: number;
   fetchInvoice: () => Promise<void>;
   fetchPayments: () => Promise<void>;
 }
@@ -45,8 +50,48 @@ export function useInvoiceData(id: string | undefined): UseInvoiceDataReturn {
     }
   }, [id]);
 
-  useEffect(() => { fetchInvoice(); }, [fetchInvoice]);
-  useEffect(() => { fetchPayments(); }, [fetchPayments]);
+  useEffect(() => {
+    fetchInvoice();
+  }, [fetchInvoice]);
 
-  return { invoice, loading, error, payments, paymentSummary, fetchInvoice, fetchPayments };
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  const resumen = useMemo<ResumenFiscal | null>(() => {
+    if (!invoice || invoice.detalles.length === 0) return null;
+    return calcularResumenFiscal(
+      invoice.detalles.map((d) => ({
+        subtotal_usd: d.cantidad * Number(d.costo_unitario_usd),
+        subtotal_bs: d.cantidad * Number(d.costo_unitario_bs),
+        tipo_iva: d.tipo_iva ?? "GRAVADO",
+      })),
+      invoice.moneda_principal,
+      invoice.aplica_iva,
+    );
+  }, [invoice]);
+
+  const totalPrincipal = useMemo(() => resumen?.total ?? 0, [resumen]);
+  const nTasa = useMemo(() => Number(invoice?.tasa_bs ?? 0), [invoice?.tasa_bs]);
+
+  const totalSecundario = useMemo(() => {
+    if (!invoice || nTasa <= 0) return 0;
+    return invoice.moneda_principal === "BS"
+      ? Math.round((totalPrincipal / nTasa) * 100) / 100
+      : Math.round((totalPrincipal * nTasa) * 100) / 100;
+  }, [invoice, nTasa, totalPrincipal]);
+
+  return {
+    invoice,
+    loading,
+    error,
+    payments,
+    paymentSummary,
+    resumen,
+    totalPrincipal,
+    totalSecundario,
+    nTasa,
+    fetchInvoice,
+    fetchPayments,
+  };
 }
