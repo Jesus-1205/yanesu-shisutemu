@@ -1,43 +1,31 @@
 import { toCents } from "@/lib/money";
 import { formatBs, formatUsd } from "@/lib/text";
 import { usePaymentFormStore } from "../store/paymentFormStore";
+import type { UseInvoicePaymentFormReturn } from "../hooks/useInvoicePaymentForm";
 
 interface PaymentAmountSectionProps {
-  payInUsd: boolean;
-  saldoEnMonedaPago: number;
-  saldoPendienteUsd: number;
-  saldoPendienteBs: number;
-  saldoRestanteUsd: number;
-  saldoRestanteBs: number;
-  totalFacturaUsd: number;
-  totalFacturaBs: number;
-  montoNum: number;
-  montoMoraUsd: number;
-  montoMoraBs: number;
-  montoBs: number;
-  montoUsd: number;
+  data: UseInvoicePaymentFormReturn;
   tasaBs: number;
-  excedeSaldo: boolean;
 }
 
-export default function PaymentAmountSection({
-  payInUsd,
-  saldoEnMonedaPago,
-  saldoPendienteUsd,
-  saldoPendienteBs,
-  saldoRestanteUsd,
-  saldoRestanteBs,
-  totalFacturaUsd,
-  totalFacturaBs,
-  montoNum,
-  montoMoraUsd,
-  montoMoraBs,
-  montoBs,
-  montoUsd,
-  tasaBs,
-  excedeSaldo,
-}: PaymentAmountSectionProps) {
+export default function PaymentAmountSection({ data, tasaBs }: PaymentAmountSectionProps) {
   const store = usePaymentFormStore();
+  const {
+    payInUsd,
+    saldoEnMonedaPago,
+    saldoPendienteUsd,
+    saldoPendienteBs,
+    saldoRestanteUsd,
+    saldoRestanteBs,
+    totalFacturaUsd,
+    totalFacturaBs,
+    montoNum,
+    montoMoraUsd,
+    montoMoraBs,
+    montoBs,
+    montoUsd,
+    excedeSaldo,
+  } = data;
 
   return (
     <section>

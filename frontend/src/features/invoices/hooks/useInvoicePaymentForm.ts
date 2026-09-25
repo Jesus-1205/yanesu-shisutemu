@@ -15,7 +15,7 @@ interface UseInvoicePaymentFormProps {
   id: string | undefined;
 }
 
-interface UseInvoicePaymentFormReturn {
+export interface UseInvoicePaymentFormReturn {
   selectedMethod: PaymentMethodOut | undefined;
   payInUsd: boolean;
   saldoPendienteUsd: number;

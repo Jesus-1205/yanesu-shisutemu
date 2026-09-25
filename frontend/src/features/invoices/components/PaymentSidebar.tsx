@@ -4,36 +4,32 @@ import Badge from "@/ui-components/Badge";
 import Button from "@/ui-components/Button";
 import ErrorBanner from "@/ui-components/ErrorBanner";
 import { formatBs, formatUsd } from "@/lib/text";
+import type { UseInvoicePaymentFormReturn } from "../hooks/useInvoicePaymentForm";
 
 interface PaymentSidebarProps {
   invoice: Invoice;
   paymentSummary: InvoicePaymentSummary | null;
-  totalFacturaUsd: number;
-  totalFacturaBs: number;
-  totalPagadoUsd: number;
-  totalPagadoBs: number;
-  saldoPendienteUsd: number;
-  saldoPendienteBs: number;
-  isValid: boolean;
-  submitting: boolean;
-  submitError: string | null;
-  onSubmit: () => void;
+  data: UseInvoicePaymentFormReturn;
 }
 
 export default function PaymentSidebar({
   invoice,
   paymentSummary,
-  totalFacturaUsd,
-  totalFacturaBs,
-  totalPagadoUsd,
-  totalPagadoBs,
-  saldoPendienteUsd,
-  saldoPendienteBs,
-  isValid,
-  submitting,
-  submitError,
-  onSubmit,
+  data,
 }: PaymentSidebarProps) {
+  const {
+    totalFacturaUsd,
+    totalFacturaBs,
+    totalPagadoUsd,
+    totalPagadoBs,
+    saldoPendienteUsd,
+    saldoPendienteBs,
+    isValid,
+    submitting,
+    submitError,
+    handleSubmit,
+  } = data;
+
   return (
     <div className="shrink-0 lg:w-80">
       <div className="space-y-4 lg:sticky lg:top-20">
@@ -79,15 +75,19 @@ export default function PaymentSidebar({
 
           <Badge
             variant={
-              invoice.estado_pago === "PAGADA" ? "success"
-              : invoice.estado_pago === "PARCIALMENTE_PAGADA" ? "warning"
-              : "danger"
+              invoice.estado_pago === "PAGADA"
+                ? "success"
+                : invoice.estado_pago === "PARCIALMENTE_PAGADA"
+                  ? "warning"
+                  : "danger"
             }
             className="w-full justify-center"
           >
-            {invoice.estado_pago === "PAGADA" ? "Pagada"
-              : invoice.estado_pago === "PARCIALMENTE_PAGADA" ? "Parcial"
-              : "Pendiente"}
+            {invoice.estado_pago === "PAGADA"
+              ? "Pagada"
+              : invoice.estado_pago === "PARCIALMENTE_PAGADA"
+                ? "Parcial"
+                : "Pendiente"}
           </Badge>
         </div>
 
@@ -97,8 +97,8 @@ export default function PaymentSidebar({
             variant="accent"
             className="h-12 w-full text-base"
             disabled={!isValid || submitting}
-            onClick={onSubmit}
             loading={submitting}
+            onClick={handleSubmit}
           >
             <DollarSign className="size-5" />
             Registrar Pago
