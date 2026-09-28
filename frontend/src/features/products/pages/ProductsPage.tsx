@@ -18,7 +18,6 @@ import QuickEditModal from "../components/QuickEditModal";
 import ProductFiltersDrawer from "../components/ProductFiltersDrawer";
 import ViewToggle from "../components/ViewToggle";
 import type { ViewMode } from "../types";
-import { FILTERS_DEFAULT } from "../types";
 import { useProductsCatalog, filtersToParams } from "../hooks/useProductsCatalog";
 
 const PAGE_SIZE = 20;
@@ -50,14 +49,19 @@ export default function ProductsPage() {
     loading,
     error,
     deleteTarget,
-    setDeleteTarget,
+    requestDelete,
+    cancelDelete,
     deleting,
     filters,
-    setFilters,
     draftFilters,
-    setDraftFilters,
     showFavoritesOnly,
-    setShowFavoritesOnly,
+    setSearch,
+    clearSearch,
+    toggleFavoritesOnly,
+    syncDraftWithFilters,
+    updateDraftFilters,
+    applyDraftFilters,
+    resetFilters,
     page,
     totalPages,
     searchRef,
@@ -96,19 +100,17 @@ export default function ProductsPage() {
   const closeQuickEdit = useCallback(() => setQuickEditProduct(null), []);
 
   const openDrawer = () => {
-    setDraftFilters({ ...filters });
+    syncDraftWithFilters();
     setDrawerOpen(true);
   };
 
   const applyFilters = () => {
-    setFilters(draftFilters);
+    applyDraftFilters();
     setDrawerOpen(false);
   };
 
   const clearFilters = () => {
-    const cleared = FILTERS_DEFAULT;
-    setDraftFilters(cleared);
-    setFilters(cleared);
+    resetFilters();
     setDrawerOpen(false);
   };
 
@@ -145,8 +147,8 @@ export default function ProductsPage() {
             <SearchInput
               ref={searchRef}
               value={filters.search}
-              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-              onClear={() => setFilters((prev) => ({ ...prev, search: "" }))}
+              onChange={(e) => setSearch(e.target.value)}
+              onClear={clearSearch}
               placeholder="Buscar nombre o código... (Ctrl+K)"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -156,7 +158,7 @@ export default function ProductsPage() {
             />
           </div>
           <button
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            onClick={toggleFavoritesOnly}
             className={`shrink-0 rounded-lg p-2 transition-colors ${
               showFavoritesOnly
                 ? "bg-yellow-100 text-yellow-600"
@@ -276,7 +278,7 @@ export default function ProductsPage() {
             products={products}
             loading={loading}
             onEdit={openEdit}
-            onDelete={setDeleteTarget}
+            onDelete={requestDelete}
             onToggleFavorite={handleToggleFavorite}
             sortField={filters.sortField}
             sortOrder={filters.sortOrder}
@@ -298,7 +300,7 @@ export default function ProductsPage() {
                 key={p.id}
                 product={p}
                 onEdit={openEdit}
-                onDelete={setDeleteTarget}
+                onDelete={requestDelete}
                 onToggleFavorite={handleToggleFavorite}
               />
             ))}
@@ -324,7 +326,7 @@ export default function ProductsPage() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         draft={draftFilters}
-        onDraftChange={setDraftFilters}
+        onDraftChange={updateDraftFilters}
         onApply={applyFilters}
         onClear={clearFilters}
         categories={categories}
@@ -344,7 +346,7 @@ export default function ProductsPage() {
           confirmText="Eliminar"
           loading={deleting}
           onConfirm={handleDelete}
-          onClose={() => setDeleteTarget(null)}
+          onClose={cancelDelete}
         />
       )}
     </div>
