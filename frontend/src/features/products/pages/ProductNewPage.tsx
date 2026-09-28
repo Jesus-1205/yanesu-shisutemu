@@ -36,19 +36,7 @@ export default function ProductNewPage() {
       />
 
       <ProductForm
-        form={productForm.form}
-        setField={productForm.setField}
-        setForm={productForm.setForm}
-        numChange={productForm.numChange}
-        categories={productForm.categories}
-        suppliers={productForm.suppliers}
-        precioCostoUnitario={productForm.precioCostoUnitario}
-        unitMargin={productForm.unitMargin}
-        boxMargin={productForm.boxMargin}
-        precioSugerido={productForm.precioSugerido}
-        precioSugeridoCaja={productForm.precioSugeridoCaja}
-        onCategoryCreated={productForm.onCategoryCreated}
-        onSupplierCreated={productForm.onSupplierCreated}
+        formAPI={productForm}
         isOperator={isOperator}
         saving={saving}
         submitLabel="Crear Producto"

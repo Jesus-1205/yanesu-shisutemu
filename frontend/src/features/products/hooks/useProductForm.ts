@@ -155,3 +155,5 @@ export function useProductForm(initialProduct?: Product | null) {
     buildPayload,
   };
 }
+
+export type UseProductFormReturn = ReturnType<typeof useProductForm>;
