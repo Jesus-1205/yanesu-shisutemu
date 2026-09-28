@@ -2,21 +2,17 @@ import { useCallback, useState } from "react";
 import { api } from "@/services/api";
 import type { ProductOut as Product } from "@/types/api";
 import { useToast } from "@/ui-components/Toast";
+import { useProductsStore } from "../stores/useProductsStore";
 
 export function useCatalogMutations(
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>,
 ) {
   const { toast } = useToast();
-  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const requestDelete = useCallback((product: Product) => {
-    setDeleteTarget(product);
-  }, []);
-
-  const cancelDelete = useCallback(() => {
-    setDeleteTarget(null);
-  }, []);
+  const deleteTarget = useProductsStore((s) => s.deleteTarget);
+  const requestDelete = useProductsStore((s) => s.requestDelete);
+  const cancelDelete = useProductsStore((s) => s.cancelDelete);
 
   const handleToggleFavorite = useCallback(
     async (product: Product) => {
@@ -24,7 +20,9 @@ export function useCatalogMutations(
         const updated = await api.toggleProductFavorite(product.id);
         setProducts((prev) =>
           prev.map((p) =>
-            p.id === product.id ? { ...p, es_favorito: updated.es_favorito } : p,
+            p.id === product.id
+              ? { ...p, es_favorito: updated.es_favorito }
+              : p,
           ),
         );
         toast(
@@ -41,13 +39,14 @@ export function useCatalogMutations(
   );
 
   const handleDelete = useCallback(async () => {
-    if (!deleteTarget) return;
+    const target = useProductsStore.getState().deleteTarget;
+    if (!target) return;
     setDeleting(true);
     try {
-      await api.deleteProduct(deleteTarget.id);
-      setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-      toast(`Producto "${deleteTarget.nombre}" eliminado`, "success");
-      setDeleteTarget(null);
+      await api.deleteProduct(target.id);
+      setProducts((prev) => prev.filter((p) => p.id !== target.id));
+      toast(`Producto "${target.nombre}" eliminado`, "success");
+      useProductsStore.getState().cancelDelete();
     } catch (err) {
       toast(
         err instanceof Error ? err.message : "Error al eliminar producto",
@@ -56,13 +55,13 @@ export function useCatalogMutations(
     } finally {
       setDeleting(false);
     }
-  }, [deleteTarget, setProducts, toast]);
+  }, [setProducts, toast]);
 
   return {
     deleteTarget,
+    deleting,
     requestDelete,
     cancelDelete,
-    deleting,
     handleToggleFavorite,
     handleDelete,
   };

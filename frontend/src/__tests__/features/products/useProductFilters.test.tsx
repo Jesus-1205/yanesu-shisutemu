@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import React from "react";
 import {
@@ -7,9 +7,13 @@ import {
   filtersToParams,
   countActiveFilters,
 } from "@/features/products/hooks/useProductFilters";
+import { useProductsStore } from "@/features/products/stores/useProductsStore";
 import { FILTERS_DEFAULT } from "@/features/products/types";
 
 describe("filtersToParams and countActiveFilters", () => {
+  beforeEach(() => {
+    useProductsStore.getState().resetAll();
+  });
   it("converts default filters to empty params", () => {
     const params = filtersToParams(FILTERS_DEFAULT, false);
     expect(params).toEqual({});
@@ -47,6 +51,10 @@ describe("filtersToParams and countActiveFilters", () => {
 });
 
 describe("useProductFilters", () => {
+  beforeEach(() => {
+    useProductsStore.getState().resetAll();
+  });
+
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <MemoryRouter initialEntries={["/products?stock=bajo"]}>
       {children}
