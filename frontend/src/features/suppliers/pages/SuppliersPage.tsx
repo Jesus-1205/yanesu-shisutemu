@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Plus, Pencil, Trash2, Download } from "lucide-react";
 import { api } from "@/services/api";
 import type { Supplier } from "../types";
@@ -15,12 +15,11 @@ import { exportToExcel } from "@/lib/exportToExcel";
 import SupplierMicroKPIs from "../components/SupplierMicroKPIs";
 import SupplierAnalyticsDrawer from "../components/SupplierAnalyticsDrawer";
 import { useSupplierAnalytics } from "../hooks/useSupplierAnalytics";
-import CreateSupplierModal from "@/features/shared/components/CreateSupplierModal";
+import SupplierFormModal from "@/features/shared/components/SupplierFormModal";
 
 const PAGE_SIZE = 20;
 
 export default function SuppliersPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -36,7 +35,8 @@ export default function SuppliersPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null);
   const [selectedSupplierName, setSelectedSupplierName] = useState("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [editingSupplierId, setEditingSupplierId] = useState<number | null>(null);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -95,9 +95,13 @@ export default function SuppliersPage() {
     setDrawerOpen(true);
   }, []);
 
-  const handleSupplierCreated = () => {
-    toast(`Proveedor creado`, "success");
-    setCreateModalOpen(false);
+  const handleSupplierSaved = () => {
+    toast(
+      editingSupplierId ? "Proveedor actualizado" : "Proveedor creado",
+      "success",
+    );
+    setFormModalOpen(false);
+    setEditingSupplierId(null);
     fetchSuppliers();
   };
 
@@ -130,7 +134,11 @@ export default function SuppliersPage() {
             variant="ghost"
             size="sm"
             aria-label="Editar proveedor"
-            onClick={(e) => { e.stopPropagation(); navigate(`/suppliers/${s.id}`); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingSupplierId(s.id);
+              setFormModalOpen(true);
+            }}
           >
             <Pencil className="size-4" />
           </Button>
@@ -144,7 +152,7 @@ export default function SuppliersPage() {
         </div>
       ),
     },
-  ], [navigate, setDeleteTarget]);
+  ], [setDeleteTarget]);
 
   return (
     <div className="space-y-6">
@@ -157,7 +165,13 @@ export default function SuppliersPage() {
               <Download className="size-4" />
               Descargar Excel
             </Button>
-            <Button variant="accent" onClick={() => setCreateModalOpen(true)}>
+            <Button
+              variant="accent"
+              onClick={() => {
+                setEditingSupplierId(null);
+                setFormModalOpen(true);
+              }}
+            >
               <Plus className="size-4" />
               Nuevo Proveedor
             </Button>
@@ -210,10 +224,14 @@ export default function SuppliersPage() {
         onClose={() => setDeleteTarget(null)}
       />
 
-      <CreateSupplierModal
-        open={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
-        onCreated={handleSupplierCreated}
+      <SupplierFormModal
+        open={formModalOpen}
+        supplierId={editingSupplierId}
+        onClose={() => {
+          setFormModalOpen(false);
+          setEditingSupplierId(null);
+        }}
+        onSuccess={handleSupplierSaved}
       />
     </div>
   );
