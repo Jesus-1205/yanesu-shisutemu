@@ -1,12 +1,7 @@
 from sqlalchemy import select
 
-from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.role import Role
-from app.models.user import User
-from app.schemas.role import RoleCreate
-from app.services.role_service import (
-    get_roles, get_role, create_role, update_role, delete_role,
-)
+from app.services.role_service import get_roles, get_role
 
 
 def test_get_roles_empty(db):
@@ -32,71 +27,3 @@ def test_get_role_found(db):
 def test_get_role_not_found(db):
     assert get_role(db, 999) is None
 
-
-def test_create_role_success(db):
-    data = RoleCreate(nombre="VENTAS")
-    result = create_role(db, data)
-    assert result.nombre == "VENTAS"
-    assert result.id is not None
-
-
-def test_create_role_duplicate(db):
-    data = RoleCreate(nombre="ADMINISTRADOR")
-    try:
-        create_role(db, data)
-        assert False, "Should raise ConflictError"
-    except ConflictError as e:
-        assert "ya existe" in str(e)
-
-
-def test_update_role_success(db):
-    role = db.execute(select(Role).where(Role.nombre == "OPERADOR")).scalars().first()
-    data = RoleCreate(nombre="OPERADOR_V2")
-    result = update_role(db, role.id, data)
-    assert result.nombre == "OPERADOR_V2"
-
-
-def test_update_role_not_found(db):
-    data = RoleCreate(nombre="NUEVO")
-    try:
-        update_role(db, 999, data)
-        assert False, "Should raise EntityNotFoundError"
-    except EntityNotFoundError as e:
-        assert "Rol no encontrado" in str(e)
-
-
-def test_update_role_duplicate(db):
-    role = db.execute(select(Role).where(Role.nombre == "OPERADOR")).scalars().first()
-    data = RoleCreate(nombre="ADMINISTRADOR")
-    try:
-        update_role(db, role.id, data)
-        assert False, "Should raise ConflictError"
-    except ConflictError as e:
-        assert "ya está en uso" in str(e)
-
-
-def test_delete_role_success(db):
-    role = db.execute(select(Role).where(Role.nombre == "OPERADOR")).scalars().first()
-    delete_role(db, role.id)
-    assert get_role(db, role.id) is None
-
-
-def test_delete_role_not_found(db):
-    try:
-        delete_role(db, 999)
-        assert False, "Should raise EntityNotFoundError"
-    except EntityNotFoundError as e:
-        assert "Rol no encontrado" in str(e)
-
-
-def test_delete_role_with_users(db):
-    role = db.execute(select(Role).where(Role.nombre == "ADMINISTRADOR")).scalars().first()
-    user = User(username="admin_u", email="admin_u@test.com",
-                hashed_password="x", nombre_completo="Admin U", rol_id=role.id)
-    db.add(user)
-    db.commit()
-    try:
-        delete_role(db, role.id)
-        assert False, "Should raise ConflictError"
-    except ConflictError as e:
-        assert "usuarios asociados" in str(e)

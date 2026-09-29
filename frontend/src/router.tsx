@@ -53,10 +53,6 @@ export const router = createBrowserRouter([
             lazy: adminOnly(() => import("./features/users/pages/UserFormPage")),
           },
           {
-            path: "roles",
-            lazy: adminOnly(() => import("./features/roles/pages/RolesPage")),
-          },
-          {
             path: "products",
             lazy: lazyRoute(() => import("./features/products/pages/ProductsPage")),
           },

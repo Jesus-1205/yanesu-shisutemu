@@ -40,7 +40,6 @@ import type {
   ProductOut,
   ProductPaginationOut,
   ProductUpdate,
-  RoleCreate,
   RoleOut,
   SaleCreate,
   SaleOut,
@@ -150,24 +149,6 @@ export const api = {
   // ── Roles ──
   getRoles: () =>
     request<RoleOut[]>("/roles"),
-
-  getRole: (id: number) =>
-    request<RoleOut>(`/roles/${id}`),
-
-  createRole: (data: RoleCreate) =>
-    request<RoleOut>("/roles", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-
-  updateRole: (id: number, data: RoleCreate) =>
-    request<RoleOut>(`/roles/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
-
-  deleteRole: (id: number) =>
-    request<void>(`/roles/${id}`, { method: "DELETE" }),
 
   // ── Categorías ──
   getCategories: () =>

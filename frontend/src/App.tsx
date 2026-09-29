@@ -67,7 +67,6 @@ const breadcrumbMap: Record<string, string> = {
   suppliers: "Proveedores",
   sales: "Ventas",
   users: "Usuarios",
-  roles: "Roles",
   "exchange-rates": "Tasas de Cambio",
   reports: "Reportes",
   retornables: "Retornables",

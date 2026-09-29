@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "@/services/api";
-import type { User } from "@/types/api";
-import type { Role } from "@/features/roles/types";
+import type { User, RoleOut as Role } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Input from "@/ui-components/Input";
 import Select from "@/ui-components/Select";

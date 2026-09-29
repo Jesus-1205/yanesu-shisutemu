@@ -71,7 +71,7 @@ describe("api - core request", () => {
 
   it("returns undefined for 204", async () => {
     mockFetch.mockResolvedValueOnce(mock204());
-    const result = await api.deleteRole(1);
+    const result = await api.deleteUser(1);
     expect(result).toBeUndefined();
   });
 });
@@ -124,10 +124,11 @@ describe("api - CRUD endpoints", () => {
     expect(mockFetch).toHaveBeenCalledWith("/api/users/1", expect.objectContaining({ method: "PUT" }));
   });
 
-  it("deleteRole sends DELETE", async () => {
-    mockFetch.mockResolvedValueOnce(mock204());
-    await api.deleteRole(3);
-    expect(mockFetch).toHaveBeenCalledWith("/api/roles/3", expect.objectContaining({ method: "DELETE" }));
+  it("getRoles sends GET", async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse([{ id: 1, nombre: "ADMINISTRADOR" }]));
+    const result = await api.getRoles();
+    expect(result).toHaveLength(1);
+    expect(mockFetch).toHaveBeenCalledWith("/api/roles", expect.any(Object));
   });
 });
 
