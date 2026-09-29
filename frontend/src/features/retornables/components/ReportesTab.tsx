@@ -13,7 +13,7 @@ export function ReportesTab({ onNuevoReporte }: Props) {
   const reportes = useRetornableReportes(reportePage);
 
   return (
-    <div>
+    <>
       <div className="flex justify-end mb-4">
         <Button variant="accent" onClick={onNuevoReporte}>
           Nuevo Reporte
@@ -29,6 +29,6 @@ export function ReportesTab({ onNuevoReporte }: Props) {
         onPageChange={setReportePage}
         className="mt-4"
       />
-    </div>
+    </>
   );
 }

@@ -26,7 +26,7 @@ export default function RetornablesPage() {
   };
 
   return (
-    <div>
+    <>
       <PageHeader
         title="Inventario Retornable"
         description="Control de casilleros, cajas vacías y llenas"
@@ -56,6 +56,6 @@ export default function RetornablesPage() {
         onClose={() => setShowNuevoReporte(false)}
         onSaved={handleSaved}
       />
-    </div>
+    </>
   );
 }

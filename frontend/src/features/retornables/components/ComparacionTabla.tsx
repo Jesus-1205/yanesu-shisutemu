@@ -63,55 +63,37 @@ function CardHeader({ side }: { side: Side }) {
   );
 }
 
-function FilaCard({ linea }: { linea: ComparacionLineaOut }) {
-  const esCasillero = linea.estado === "CASILLERO";
+function FilaValores({
+  presentacion,
+  estado,
+  cajas,
+  botellas,
+}: {
+  presentacion: string;
+  estado: string;
+  cajas: number;
+  botellas: number;
+}) {
+  const esCasillero = estado === "CASILLERO";
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0 h-[38px]">
       <div className="flex items-center gap-2">
-        <span className="font-mono text-xs font-bold text-slate-500 w-7">{linea.presentacion}</span>
+        <span className="font-mono text-xs font-bold text-slate-500 w-7">{presentacion}</span>
         <span className={`text-xs px-1.5 py-0.5 rounded ${
-          linea.estado === "LLENO" ? "bg-emerald-50 text-emerald-700" :
-          linea.estado === "VACIO" ? "bg-amber-50 text-amber-700" :
+          estado === "LLENO" ? "bg-emerald-50 text-emerald-700" :
+          estado === "VACIO" ? "bg-amber-50 text-amber-700" :
           "bg-slate-100 text-slate-600"
         }`}>
-          {linea.estado}
+          {estado}
         </span>
       </div>
       <div className="text-right">
         <span className="text-sm font-semibold text-slate-800">
-          {linea.reporte_cajas} cajas
+          {cajas} cajas
         </span>
         {!esCasillero && (
           <span className="text-xs text-slate-400 ml-1">
-            ({linea.reporte_botellas.toLocaleString()} bot)
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function FilaComparado({ linea }: { linea: ComparacionLineaOut }) {
-  const esCasillero = linea.estado === "CASILLERO";
-  return (
-    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-50 last:border-0 h-[38px]">
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-xs font-bold text-slate-500 w-7">{linea.presentacion}</span>
-        <span className={`text-xs px-1.5 py-0.5 rounded ${
-          linea.estado === "LLENO" ? "bg-emerald-50 text-emerald-700" :
-          linea.estado === "VACIO" ? "bg-amber-50 text-amber-700" :
-          "bg-slate-100 text-slate-600"
-        }`}>
-          {linea.estado}
-        </span>
-      </div>
-      <div className="text-right">
-        <span className="text-sm font-semibold text-slate-800">
-          {linea.comparado_cajas} cajas
-        </span>
-        {!esCasillero && (
-          <span className="text-xs text-slate-400 ml-1">
-            ({linea.comparado_botellas.toLocaleString()} bot)
+            ({botellas.toLocaleString()} bot)
           </span>
         )}
       </div>
@@ -147,13 +129,23 @@ function VistaComparacion({ vista }: { vista: Props["vistas"][0] }) {
           {vista.lineas.map((l, i) => (
             <div key={i} className="grid grid-cols-[3fr_1fr_3fr]">
               <div className="border-r-2 border-r-blue-500">
-                <FilaCard linea={l} />
+                <FilaValores
+                  presentacion={l.presentacion}
+                  estado={l.estado}
+                  cajas={l.reporte_cajas}
+                  botellas={l.reporte_botellas}
+                />
               </div>
               <div>
                 <FilaDif linea={l} />
               </div>
               <div className="border-l-2 border-l-emerald-500">
-                <FilaComparado linea={l} />
+                <FilaValores
+                  presentacion={l.presentacion}
+                  estado={l.estado}
+                  cajas={l.comparado_cajas}
+                  botellas={l.comparado_botellas}
+                />
               </div>
             </div>
           ))}

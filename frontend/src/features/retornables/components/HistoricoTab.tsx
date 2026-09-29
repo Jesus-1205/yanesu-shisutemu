@@ -18,7 +18,7 @@ export function HistoricoTab() {
   const historico = useRetornableHistorico(historicoPage, 20, histFilters);
 
   return (
-    <div>
+    <>
       <div className="grid grid-cols-[auto_auto_1fr_1fr_auto] gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200 items-end">
         <Select
           label="Presentación"
@@ -95,6 +95,6 @@ export function HistoricoTab() {
         onPageChange={setHistoricoPage}
         className="mt-4"
       />
-    </div>
+    </>
   );
 }
