@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, Download } from "lucide-react";
 import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
@@ -11,6 +10,7 @@ import { useToast } from "@/ui-components/Toast";
 import CategoryMicroKPIs from "../components/CategoryMicroKPIs";
 import CategoryAnalyticsDrawer from "../components/CategoryAnalyticsDrawer";
 import CategoriesTable from "../components/CategoriesTable";
+import EditCategoryModal from "../components/EditCategoryModal";
 import { useCategoryAnalytics } from "../hooks/useCategoryAnalytics";
 import { useCategoriesList } from "../hooks/useCategoriesList";
 import { useDeleteCategory } from "../hooks/useDeleteCategory";
@@ -19,7 +19,6 @@ import CreateCategoryModal from "@/features/shared/components/CreateCategoryModa
 import type { Category } from "../types";
 
 export default function CategoriesPage() {
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const {
@@ -54,6 +53,7 @@ export default function CategoriesPage() {
   } = useDeleteCategory({ onSuccess: refreshAll });
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const handleRowClick = useCallback((cat: Category) => {
@@ -62,14 +62,20 @@ export default function CategoriesPage() {
 
   const handleEdit = useCallback(
     (cat: Category) => {
-      navigate(`/categories/${cat.id}`);
+      setCategoryToEdit(cat);
     },
-    [navigate],
+    [],
   );
 
   const handleCategoryCreated = () => {
     toast(`Categoría creada`, "success");
     setCreateModalOpen(false);
+    refreshAll();
+  };
+
+  const handleCategoryUpdated = () => {
+    toast(`Categoría actualizada`, "success");
+    setCategoryToEdit(null);
     refreshAll();
   };
 
@@ -150,6 +156,12 @@ export default function CategoriesPage() {
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onCreated={handleCategoryCreated}
+      />
+
+      <EditCategoryModal
+        category={categoryToEdit}
+        onClose={() => setCategoryToEdit(null)}
+        onUpdated={handleCategoryUpdated}
       />
     </div>
   );

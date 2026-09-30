@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Input from "@/ui-components/Input";
 import Button from "@/ui-components/Button";
 import type { CategoryCreate } from "@/types/api";
 
 interface CreateCategoryFormProps {
+  initialData?: { nombre: string; descripcion?: string | null } | null;
+  submitLabel?: string;
   onSubmit: (data: CategoryCreate) => void | Promise<void>;
   onCancel: () => void;
   saving?: boolean;
@@ -11,13 +13,22 @@ interface CreateCategoryFormProps {
 }
 
 export default function CreateCategoryForm({
+  initialData,
+  submitLabel,
   onSubmit,
   onCancel,
   saving = false,
   error = null,
 }: CreateCategoryFormProps) {
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
+  const [nombre, setNombre] = useState(initialData?.nombre ?? "");
+  const [descripcion, setDescripcion] = useState(initialData?.descripcion ?? "");
+
+  useEffect(() => {
+    if (initialData) {
+      setNombre(initialData.nombre ?? "");
+      setDescripcion(initialData.descripcion ?? "");
+    }
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +61,7 @@ export default function CreateCategoryForm({
           Cancelar
         </Button>
         <Button type="submit" variant="accent" loading={saving}>
-          Crear categoría
+          {submitLabel || (initialData ? "Guardar cambios" : "Crear categoría")}
         </Button>
       </div>
     </form>

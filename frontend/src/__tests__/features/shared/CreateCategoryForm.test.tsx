@@ -56,4 +56,19 @@ describe("CreateCategoryForm", () => {
     await userEvent.click(screen.getByText("Cancelar"));
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it("populates initial data and displays custom submit label", () => {
+    render(
+      <CreateCategoryForm
+        initialData={{ nombre: "Vodka", descripcion: "Importado" }}
+        submitLabel="Guardar cambios"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Vodka");
+    expect(screen.getByLabelText("Descripción")).toHaveValue("Importado");
+    expect(screen.getByText("Guardar cambios")).toBeInTheDocument();
+  });
 });
