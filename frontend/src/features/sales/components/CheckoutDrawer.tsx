@@ -1,5 +1,5 @@
 import Drawer from "@/ui-components/Drawer";
-import { useCheckout } from "../hooks/useCheckout";
+import { CheckoutProvider, useCheckoutContext } from "./CheckoutProvider";
 import CheckoutHeader from "./CheckoutHeader";
 import CheckoutSpeedPayment from "./CheckoutSpeedPayment";
 import CheckoutSplitPayment from "./CheckoutSplitPayment";
@@ -11,75 +11,17 @@ interface CheckoutDrawerProps {
   onSuccess: () => void;
 }
 
-export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDrawerProps) {
-  const {
-    methods,
-    amounts,
-    setAmount,
-    setAmounts,
-    references,
-    setReferences,
-    isSplit,
-    setIsSplit,
-    observaciones,
-    setObservaciones,
-    saving,
-    tasaNum,
-    totals,
-    totalUsd,
-    totalVes,
-    totalDivisasItems,
-    divisasSummary,
-    financials,
-    hasAnyAmount,
-    handleExpressClick,
-    handleConfirm,
-    handleKeyDown,
-  } = useCheckout({ open, onClose, onSuccess });
+function CheckoutDrawerContent({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { isSplit, observaciones, setObservaciones, handleKeyDown } = useCheckoutContext();
 
   return (
     <Drawer open={open} onClose={onClose} title="Cobro" className="w-105">
       <div className="flex h-full flex-col" onKeyDown={handleKeyDown}>
-        <CheckoutHeader
-          totalUsd={totalUsd}
-          totalVes={totalVes}
-          tasaNum={tasaNum}
-          totals={totals}
-          totalDivisasItems={totalDivisasItems}
-          divisasSummary={divisasSummary}
-        />
+        <CheckoutHeader />
 
         {/* Cuerpo scrolleable */}
         <div className="flex-1 space-y-2 overflow-y-auto">
-          {!isSplit ? (
-            <CheckoutSpeedPayment
-              methods={methods}
-              amounts={amounts}
-              references={references}
-              hasAnyAmount={hasAnyAmount}
-              onExpressClick={handleExpressClick}
-              onReferenceChange={(id, val) => setReferences((prev) => ({ ...prev, [id]: val }))}
-              onSwitchToSplit={() => {
-                setIsSplit(true);
-                if (!hasAnyAmount && methods.length > 0) {
-                  handleExpressClick(methods[0]);
-                }
-              }}
-            />
-          ) : (
-            <CheckoutSplitPayment
-              methods={methods}
-              amounts={amounts}
-              references={references}
-              progressPct={financials.progressPct}
-              onAmountChange={setAmount}
-              onReferenceChange={(id, val) => setReferences((prev) => ({ ...prev, [id]: val }))}
-              onBackToExpress={() => {
-                setAmounts({});
-                setIsSplit(false);
-              }}
-            />
-          )}
+          {!isSplit ? <CheckoutSpeedPayment /> : <CheckoutSplitPayment />}
         </div>
 
         {/* Observaciones compacto */}
@@ -99,14 +41,16 @@ export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDra
           />
         </div>
 
-        <CheckoutFooter
-          financials={financials}
-          saving={saving}
-          onClose={onClose}
-          onConfirm={handleConfirm}
-        />
+        <CheckoutFooter />
       </div>
     </Drawer>
   );
 }
 
+export default function CheckoutDrawer({ open, onClose, onSuccess }: CheckoutDrawerProps) {
+  return (
+    <CheckoutProvider open={open} onClose={onClose} onSuccess={onSuccess}>
+      <CheckoutDrawerContent open={open} onClose={onClose} />
+    </CheckoutProvider>
+  );
+}

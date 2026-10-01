@@ -1,25 +1,24 @@
 import { formatPaymentMethodName } from "@/lib/utils";
-import type { PaymentMethodOut as PaymentMethod } from "@/types/api";
+import { useCheckoutContext } from "./CheckoutProvider";
 
-interface CheckoutSpeedPaymentProps {
-  methods: PaymentMethod[];
-  amounts: Record<number, string>;
-  references: Record<number, string>;
-  hasAnyAmount: boolean;
-  onExpressClick: (m: PaymentMethod) => void;
-  onReferenceChange: (id: number, value: string) => void;
-  onSwitchToSplit: () => void;
-}
+export default function CheckoutSpeedPayment() {
+  const {
+    methods,
+    amounts,
+    references,
+    hasAnyAmount,
+    handleExpressClick,
+    setReferences,
+    setIsSplit,
+  } = useCheckoutContext();
 
-export default function CheckoutSpeedPayment({
-  methods,
-  amounts,
-  references,
-  hasAnyAmount,
-  onExpressClick,
-  onReferenceChange,
-  onSwitchToSplit,
-}: CheckoutSpeedPaymentProps) {
+  const handleSwitchToSplit = () => {
+    setIsSplit(true);
+    if (!hasAnyAmount && methods.length > 0) {
+      handleExpressClick(methods[0]);
+    }
+  };
+
   return (
     <>
       <p className="mb-1.5 text-xs font-semibold text-text-main">Cobro rápido</p>
@@ -30,7 +29,7 @@ export default function CheckoutSpeedPayment({
             <button
               key={m.id}
               type="button"
-              onClick={() => onExpressClick(m)}
+              onClick={() => handleExpressClick(m)}
               className={`
                 rounded-lg border-2 p-2 text-center transition-all duration-150
                 ${
@@ -68,7 +67,7 @@ export default function CheckoutSpeedPayment({
               type="text"
               maxLength={20}
               value={references[m.id] ?? ""}
-              onChange={(e) => onReferenceChange(m.id, e.target.value)}
+              onChange={(e) => setReferences((prev) => ({ ...prev, [m.id]: e.target.value }))}
               placeholder="Número de referencia"
               autoComplete="off"
               className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-300 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue focus:outline-none"
@@ -78,7 +77,7 @@ export default function CheckoutSpeedPayment({
 
       <button
         type="button"
-        onClick={onSwitchToSplit}
+        onClick={handleSwitchToSplit}
         className="mx-auto mb-2 block text-[11px] text-brand-blue hover:underline cursor-pointer"
       >
         Pago dividido / monto exacto?

@@ -1,34 +1,10 @@
 import Button from "@/ui-components/Button";
 import { formatCurrency } from "@/lib/utils";
+import { useCheckoutContext } from "./CheckoutProvider";
 
-export interface CheckoutFinancials {
-  pagadoUSD: number;
-  pagadoVES: number;
-  isPayingVES: boolean;
-  pagadoEnMonedaPago: number;
-  restanteEnMonedaPago: number;
-  restanteUSD: number;
-  restanteVES: number;
-  vueltoEnMonedaPago: number;
-  vueltoUSD: number;
-  vueltoVES: number;
-  suficiente: boolean;
-  progressPct: number;
-}
+export default function CheckoutFooter() {
+  const { financials, saving, onClose, handleConfirm } = useCheckoutContext();
 
-interface CheckoutFooterProps {
-  financials: CheckoutFinancials;
-  saving: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}
-
-export default function CheckoutFooter({
-  financials,
-  saving,
-  onClose,
-  onConfirm,
-}: CheckoutFooterProps) {
   const {
     pagadoUSD,
     pagadoVES,
@@ -85,7 +61,7 @@ export default function CheckoutFooter({
           size="sm"
           disabled={!suficiente || saving}
           loading={saving}
-          onClick={onConfirm}
+          onClick={handleConfirm}
           className="flex-2"
         >
           Procesar Cobro
