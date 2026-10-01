@@ -15,7 +15,6 @@ vi.mock("../../../services/api", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  localStorage.removeItem("skip-auth");
 });
 
 describe("PrivateRoute", () => {
