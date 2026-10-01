@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
-import { api } from "@/services/api";
-import type { PaymentMethodOut } from "@/types/api";
 import Button from "@/ui-components/Button";
 import MultiSelectTags from "@/ui-components/MultiSelectTags";
 import { useSalesFiltersStore } from "../store/salesFiltersStore";
+import { useSalesPaymentMethods } from "../hooks/useSalesPaymentMethods";
+import FilterField from "./FilterField";
 
 export default function SalesFilters() {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOut[]>([]);
+  const { methods: paymentMethods } = useSalesPaymentMethods();
 
   const fechaDesde = useSalesFiltersStore((s) => s.fechaDesde);
   const fechaHasta = useSalesFiltersStore((s) => s.fechaHasta);
@@ -16,59 +15,54 @@ export default function SalesFilters() {
   const setField = useSalesFiltersStore((s) => s.setField);
   const clearAll = useSalesFiltersStore((s) => s.clearAll);
 
-  useEffect(() => {
-    api.getPaymentMethods(true).then(setPaymentMethods).catch(() => {});
-  }, []);
-
   return (
     <div className="border-b border-slate-100 p-4 sm:p-5">
       <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Desde</label>
-          <input
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => { setField("fechaDesde", e.target.value); setField("page", 1); }}
-            className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-            autoComplete="off"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Hasta</label>
-          <input
-            type="date"
-            value={fechaHasta}
-            onChange={(e) => { setField("fechaHasta", e.target.value); setField("page", 1); }}
-            className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-            autoComplete="off"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Hora desde</label>
-          <input
-            type="time"
-            value={horaDesde}
-            onChange={(e) => { setField("horaDesde", e.target.value); setField("page", 1); }}
-            className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-            autoComplete="off"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-500 uppercase">Hora hasta</label>
-          <input
-            type="time"
-            value={horaHasta}
-            onChange={(e) => { setField("horaHasta", e.target.value); setField("page", 1); }}
-            className="rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-            autoComplete="off"
-          />
-        </div>
+        <FilterField
+          label="Desde"
+          type="date"
+          value={fechaDesde}
+          onChange={(val) => {
+            setField("fechaDesde", val);
+            setField("page", 1);
+          }}
+        />
+        <FilterField
+          label="Hasta"
+          type="date"
+          value={fechaHasta}
+          onChange={(val) => {
+            setField("fechaHasta", val);
+            setField("page", 1);
+          }}
+        />
+        <FilterField
+          label="Hora desde"
+          type="time"
+          value={horaDesde}
+          onChange={(val) => {
+            setField("horaDesde", val);
+            setField("page", 1);
+          }}
+        />
+        <FilterField
+          label="Hora hasta"
+          type="time"
+          value={horaHasta}
+          onChange={(val) => {
+            setField("horaHasta", val);
+            setField("page", 1);
+          }}
+        />
         <div className="min-w-48">
           <MultiSelectTags
             label="Método de pago"
             selected={metodoPagoIds}
             options={paymentMethods.map((m) => ({ value: m.id, label: m.nombre }))}
-            onChange={(ids) => { setField("metodoPagoIds", ids); setField("page", 1); }}
+            onChange={(ids) => {
+              setField("metodoPagoIds", ids);
+              setField("page", 1);
+            }}
             placeholder="Todos"
           />
         </div>
