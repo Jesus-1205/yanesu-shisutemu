@@ -40,6 +40,7 @@ export default function ExchangeRatesPage() {
     totalPages,
     setPage,
     refreshHistory,
+    fetchAllRates,
   } = useRateHistory();
 
   const {
@@ -134,6 +135,7 @@ export default function ExchangeRatesPage() {
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
+          onFetchAllData={fetchAllRates}
         />
       </div>
     </div>

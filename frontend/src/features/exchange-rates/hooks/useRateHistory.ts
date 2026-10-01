@@ -31,6 +31,22 @@ export function useRateHistory() {
     refreshHistory();
   }, [refreshHistory]);
 
+  const fetchAllRates = useCallback(async (): Promise<ExchangeRate[]> => {
+    const all: ExchangeRate[] = [];
+    let currentPage = 1;
+    let totalPagesCount = 1;
+    while (currentPage <= totalPagesCount) {
+      const res = await api.getRateHistoryPaginated({
+        page: currentPage,
+        page_size: 200,
+      });
+      all.push(...res.items);
+      totalPagesCount = res.pages;
+      currentPage += 1;
+    }
+    return all;
+  }, []);
+
   return {
     history,
     loading,
@@ -39,5 +55,6 @@ export function useRateHistory() {
     totalPages,
     setPage,
     refreshHistory,
+    fetchAllRates,
   };
 }

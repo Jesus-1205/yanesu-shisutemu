@@ -1,3 +1,5 @@
+import { calculateVariation } from "../utils/variations";
+
 interface RateChangeBadgeProps {
   label: string;
   before: string | number | null | undefined;
@@ -19,16 +21,12 @@ export default function RateChangeBadge({
 }: RateChangeBadgeProps) {
   const normBefore = norm(before);
   const normAfter = norm(after);
-  const hasBoth = normBefore !== null && normAfter !== null;
-  const unchanged = hasBoth && normBefore === normAfter;
-  const changed = hasBoth && !unchanged;
-
-  const diff = changed ? Math.abs(Number(normAfter) - Number(normBefore)) : 0;
-  const up = changed ? Number(normAfter) > Number(normBefore) : false;
+  const variation = calculateVariation(normAfter, normBefore);
+  const changed = variation !== null && variation.diff !== 0;
 
   const tone = !changed
     ? "bg-slate-50 text-slate-500 border-slate-200"
-    : up
+    : variation.up
       ? "bg-green-50 text-green-700 border-green-200"
       : "bg-amber-50 text-amber-700 border-amber-200";
 
@@ -40,9 +38,9 @@ export default function RateChangeBadge({
       <span className="tabular-nums">
         {normBefore !== null ? `${normBefore} → ${normAfter}` : `Nueva: ${normAfter ?? "—"}`}
       </span>
-      {changed && (
+      {changed && variation && (
         <span className="ml-auto font-semibold tabular-nums">
-          {up ? "▲" : "▼"} {diff.toFixed(4)}
+          {variation.up ? "▲" : "▼"} {Math.abs(variation.diff).toFixed(2)} Bs
         </span>
       )}
     </div>

@@ -2,6 +2,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { api } from "@/services/api";
 import { useRateHistory } from "@/features/exchange-rates/hooks/useRateHistory";
+import type { ExchangeRate } from "@/features/exchange-rates/types";
 
 vi.mock("@/services/api", () => ({
   api: {
@@ -106,5 +107,42 @@ describe("useRateHistory", () => {
     });
 
     expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledTimes(2);
+  });
+
+  it("fetches all pages iteratively with fetchAllRates", async () => {
+    mockApi.getRateHistoryPaginated
+      .mockResolvedValueOnce({
+        items: mockHistoryItems,
+        pages: 2,
+        total: 2,
+        page: 1,
+        page_size: 20,
+      })
+      .mockResolvedValueOnce({
+        items: [{ ...mockHistoryItems[0], id: 2 }],
+        pages: 2,
+        total: 2,
+        page: 2,
+        page_size: 200,
+      })
+      .mockResolvedValueOnce({
+        items: [{ ...mockHistoryItems[0], id: 3 }],
+        pages: 2,
+        total: 2,
+        page: 2,
+        page_size: 200,
+      });
+
+    const { result } = renderHook(() => useRateHistory());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let allRates: ExchangeRate[] = [];
+    await act(async () => {
+      allRates = await result.current.fetchAllRates();
+    });
+
+    expect(allRates.length).toBe(2);
+    expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 1, page_size: 200 });
+    expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 2, page_size: 200 });
   });
 });
