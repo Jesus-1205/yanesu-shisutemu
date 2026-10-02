@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Bot } from "lucide-react";
-import { api } from "@/services/api";
 import Button from "@/ui-components/Button";
 import Spinner from "@/ui-components/Spinner";
 import ErrorBanner from "@/ui-components/ErrorBanner";
@@ -33,6 +32,7 @@ export default function InvoiceDetailPage() {
     totalSecundario,
     nTasa,
     fetchInvoice,
+    viewReceipt,
   } = useInvoiceData(id);
 
   if (loading) {
@@ -103,9 +103,7 @@ export default function InvoiceDetailPage() {
 
       <InvoiceLedger
         payments={payments}
-        onViewReceipt={(paymentId, receiptId) => {
-          window.open(api.getPaymentReceiptUrl(invoice.id, paymentId, receiptId), "_blank");
-        }}
+        onViewReceipt={viewReceipt}
       />
 
       <InvoiceImageViewer

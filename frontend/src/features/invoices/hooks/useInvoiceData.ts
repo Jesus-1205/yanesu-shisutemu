@@ -16,6 +16,7 @@ export interface UseInvoiceDataReturn {
   nTasa: number;
   fetchInvoice: () => Promise<void>;
   fetchPayments: () => Promise<void>;
+  viewReceipt: (paymentId: number, receiptId: number) => void;
 }
 
 export function useInvoiceData(id: string | undefined): UseInvoiceDataReturn {
@@ -81,6 +82,15 @@ export function useInvoiceData(id: string | undefined): UseInvoiceDataReturn {
       : Math.round((totalPrincipal * nTasa) * 100) / 100;
   }, [invoice, nTasa, totalPrincipal]);
 
+  const viewReceipt = useCallback(
+    (paymentId: number, receiptId: number) => {
+      if (!invoice) return;
+      const url = api.getPaymentReceiptUrl(invoice.id, paymentId, receiptId);
+      window.open(url, "_blank");
+    },
+    [invoice],
+  );
+
   return {
     invoice,
     loading,
@@ -93,5 +103,6 @@ export function useInvoiceData(id: string | undefined): UseInvoiceDataReturn {
     nTasa,
     fetchInvoice,
     fetchPayments,
+    viewReceipt,
   };
 }

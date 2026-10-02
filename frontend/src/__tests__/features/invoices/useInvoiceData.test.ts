@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useInvoiceData } from "@/features/invoices/hooks/useInvoiceData";
 import { api } from "@/services/api";
-import type { FacturaOut } from "@/types/api";
+import type { FacturaOut, InvoicePaymentSummary } from "@/types/api";
 
 vi.mock("@/services/api", () => ({
   api: {
     getInvoice: vi.fn(),
     getInvoicePayments: vi.fn(),
+    getPaymentReceiptUrl: vi.fn(),
   },
 }));
 
@@ -63,6 +64,20 @@ const mockInvoiceData: FacturaOut = {
   fecha_limite_pago: "2026-08-30",
 };
 
+const mockResumen: InvoicePaymentSummary = {
+  total_factura_usd: 200,
+  total_factura_bs: 150000,
+  total_pagado_usd: 50,
+  total_pagado_bs: 37500,
+  total_mora_bs: 0,
+  diferencia_cambiaria_bs: 0,
+  saldo_pendiente_usd: 150,
+  saldo_pendiente_bs: 112500,
+  porcentaje_pagado: 25,
+  estado_pago: "PARCIALMENTE_PAGADA",
+  cantidad_pagos: 1,
+};
+
 describe("useInvoiceData", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,19 +94,7 @@ describe("useInvoiceData", () => {
     vi.mocked(api.getInvoice).mockResolvedValue(mockInvoiceData);
     vi.mocked(api.getInvoicePayments).mockResolvedValue({
       pagos: [],
-      resumen: {
-        total_factura_usd: 200,
-        total_factura_bs: 150000,
-        total_pagado_usd: 50,
-        total_pagado_bs: 37500,
-        total_mora_bs: 0,
-        diferencia_cambiaria_bs: 0,
-        saldo_pendiente_usd: 150,
-        saldo_pendiente_bs: 112500,
-        porcentaje_pagado: 25,
-        estado_pago: "PARCIALMENTE_PAGADA",
-        cantidad_pagos: 1,
-      },
+      resumen: mockResumen,
     });
 
     const { result } = renderHook(() => useInvoiceData("42"));
@@ -111,9 +114,29 @@ describe("useInvoiceData", () => {
     expect(result.current.totalSecundario).toBe(150000);
   });
 
+  it("calls viewReceipt properly using api.getPaymentReceiptUrl and window.open", async () => {
+    vi.mocked(api.getInvoice).mockResolvedValue(mockInvoiceData);
+    vi.mocked(api.getInvoicePayments).mockResolvedValue({
+      pagos: [],
+      resumen: mockResumen,
+    });
+    vi.mocked(api.getPaymentReceiptUrl).mockReturnValue("http://localhost/receipt.pdf");
+    const windowSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    const { result } = renderHook(() => useInvoiceData("42"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.viewReceipt(5, 9);
+    });
+
+    expect(api.getPaymentReceiptUrl).toHaveBeenCalledWith(42, 5, 9);
+    expect(windowSpy).toHaveBeenCalledWith("http://localhost/receipt.pdf", "_blank");
+  });
+
   it("sets error when fetching invoice fails", async () => {
     vi.mocked(api.getInvoice).mockRejectedValue(new Error("Factura no encontrada"));
-    vi.mocked(api.getInvoicePayments).mockResolvedValue({ pagos: [], resumen: {} as any });
+    vi.mocked(api.getInvoicePayments).mockResolvedValue({ pagos: [], resumen: mockResumen });
 
     const { result } = renderHook(() => useInvoiceData("999"));
 
