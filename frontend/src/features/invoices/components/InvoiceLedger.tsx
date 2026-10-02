@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Paperclip } from "lucide-react";
-import { api } from "@/services/api";
-import type { Invoice } from "../types";
 import type { InvoicePaymentOut } from "@/types/api";
 import Table from "@/ui-components/Table";
 import Button from "@/ui-components/Button";
@@ -25,11 +23,11 @@ function ObsCell({ text }: { text: string | null }) {
 }
 
 interface InvoiceLedgerProps {
-  invoice: Invoice;
   payments: InvoicePaymentOut[];
+  onViewReceipt?: (paymentId: number, receiptId: number) => void;
 }
 
-export default function InvoiceLedger({ invoice, payments }: InvoiceLedgerProps) {
+export default function InvoiceLedger({ payments, onViewReceipt }: InvoiceLedgerProps) {
   if (payments.length === 0) return null;
 
   return (
@@ -94,7 +92,7 @@ export default function InvoiceLedger({ invoice, payments }: InvoiceLedgerProps)
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => window.open(api.getPaymentReceiptUrl(invoice.id, p.id, p.comprobantes[0].id), "_blank")}
+                  onClick={() => onViewReceipt?.(p.id, p.comprobantes[0].id)}
                 >
                   <Paperclip className="size-3.5" />
                   Ver
