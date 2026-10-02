@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Download } from "lucide-react";
-import { api } from "@/services/api";
 import Button from "@/ui-components/Button";
 import Modal from "@/ui-components/Modal";
 import { useToast } from "@/ui-components/Toast";
+import { useInvoiceImage } from "../hooks/useInvoiceImage";
 
 export interface InvoiceImageViewerProps {
   invoiceId: number;
@@ -18,21 +18,16 @@ export const InvoiceImageViewer: React.FC<InvoiceImageViewerProps> = ({
 }) => {
   const { toast } = useToast();
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const { imageUrl, downloading, downloadImage } = useInvoiceImage(invoiceId);
 
   if (!imagePath) return null;
 
-  const imageUrl = api.getInvoiceImageUrl(invoiceId);
-
   const handleDownloadImage = async () => {
-    setDownloading(true);
     try {
-      const name = await api.downloadInvoiceImage(invoiceId);
+      const name = await downloadImage();
       toast(`Imagen descargada: ${name}`, "success");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Error al descargar la imagen", "error");
-    } finally {
-      setDownloading(false);
     }
   };
 
