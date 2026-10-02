@@ -87,10 +87,10 @@ export default function ProductsToolbar({
   };
 
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       {/* Search + Filters row */}
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-        <div className="relative min-w-0 flex-1 sm:max-w-xs md:max-w-md">
+        <div className="relative min-w-50 flex-1 sm:max-w-xs md:max-w-md">
           <SearchInput
             ref={searchRef}
             value={search}
@@ -106,11 +106,10 @@ export default function ProductsToolbar({
         </div>
         <button
           onClick={toggleFavoritesOnly}
-          className={`shrink-0 cursor-pointer rounded-lg p-2 transition-colors ${
-            showFavoritesOnly
+          className={`shrink-0 cursor-pointer rounded-lg p-2 transition-colors ${showFavoritesOnly
               ? "bg-yellow-100 text-yellow-600"
               : "text-slate-400 hover:bg-yellow-50 hover:text-yellow-500"
-          }`}
+            }`}
           title={
             showFavoritesOnly
               ? "Mostrar todos los productos"
@@ -158,9 +157,8 @@ export default function ProductsToolbar({
               <Boxes className="size-4 text-brand-blue" />
               <span className="hidden xl:inline">Catálogo</span>
               <ChevronDown
-                className={`size-3.5 transition-transform duration-200 ${
-                  catalogMenuOpen ? "rotate-180" : ""
-                }`}
+                className={`size-3.5 transition-transform duration-200 ${catalogMenuOpen ? "rotate-180" : ""
+                  }`}
               />
             </Button>
             {catalogMenuOpen && (
