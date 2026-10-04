@@ -1,22 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, ChevronDown } from "lucide-react";
 import type { ProductOut } from "@/types/api";
 import PageHeader from "@/ui-components/PageHeader";
-import ToggleSwitch from "@/ui-components/ToggleSwitch";
-import Modal from "@/ui-components/Modal";
-import Input from "@/ui-components/Input";
-import Button from "@/ui-components/Button";
 import { useToast } from "@/ui-components/Toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useExchangeRateStore } from "@/stores/exchangeRateStore";
 import { useCartStore, computeTotals } from "../store/cartStore";
 import { useHoldQueueStore } from "../store/holdQueueStore";
 import CheckoutDrawer from "../components/CheckoutDrawer";
-import ComboCard from "../components/ComboCard";
 import ComboSelectorModal from "../components/ComboSelectorModal";
 import ProductGrid from "../components/ProductGrid";
 import CartPanel from "../components/CartPanel";
 import HoldQueueDrawer from "../components/HoldQueueDrawer";
+import PosTopBar from "../components/PosTopBar";
+import PromoSection from "../components/PromoSection";
+import HoldCartModal from "../components/HoldCartModal";
 import { usePosKeyboard } from "../hooks/usePosKeyboard";
 import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
 import { usePosCatalog } from "../hooks/usePosCatalog";
@@ -53,7 +50,6 @@ export default function POSPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [holdDrawerOpen, setHoldDrawerOpen] = useState(false);
   const [holdModalOpen, setHoldModalOpen] = useState(false);
-  const [holdLabel, setHoldLabel] = useState("");
 
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
@@ -101,18 +97,16 @@ export default function POSPage() {
       toastRef.current("No hay productos para guardar", "error");
       return;
     }
-    setHoldLabel("");
     setHoldModalOpen(true);
   }, [itemCount]);
 
-  const handleConfirmHold = useCallback(() => {
-    const ok = useHoldQueueStore.getState().holdCurrentCart(holdLabel);
+  const handleConfirmHold = useCallback((label: string) => {
+    const ok = useHoldQueueStore.getState().holdCurrentCart(label);
     setHoldModalOpen(false);
-    setHoldLabel("");
     if (ok) {
       toastRef.current("Venta guardada", "success");
     }
-  }, [holdLabel]);
+  }, []);
 
   const handleOpenQueue = useCallback(() => {
     setHoldDrawerOpen(true);
@@ -149,57 +143,22 @@ export default function POSPage() {
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Left panel: products */}
         <div className="space-y-4 lg:col-span-2">
-          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
-              <input
-                ref={searchRef}
-                placeholder="Buscar productos o escanear código de barras..."
-                value={search}
-                onChange={handleSearchChange}
-                onFocus={(e) => e.target.select()}
-                className="w-full rounded-xl border border-slate-300 bg-surface py-2.5 pr-3 pl-10 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-                autoComplete="off"
-                autoFocus
-              />
-            </div>
-            <div className="shrink-0">
-              <ToggleSwitch
-                label="Ocultar sin stock"
-                checked={hideNoStock}
-                onChange={(e) => setHideNoStock(e.target.checked)}
-              />
-            </div>
-          </div>
+          <PosTopBar
+            search={search}
+            searchRef={searchRef}
+            hideNoStock={hideNoStock}
+            onSearchChange={handleSearchChange}
+            onToggleHideNoStock={setHideNoStock}
+          />
 
-          {combos.length > 0 && !debouncedSearch.trim() && (
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setShowPromos(!showPromos)}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 transition-colors hover:bg-amber-100"
-              >
-                <h2 className="flex-1 text-left text-sm font-bold tracking-wide text-amber-700 uppercase">
-                  Promociones ({combos.length})
-                </h2>
-                <ChevronDown
-                  size={16}
-                  className={`text-amber-700 transition-transform duration-200 ${showPromos ? "rotate-180" : ""}`}
-                />
-              </button>
-              {showPromos && (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {combos.map((combo) => (
-                    <ComboCard
-                      key={combo.id}
-                      combo={combo}
-                      onQuickAdd={() => addCombo(combo)}
-                      onCustomize={() => setCustomizingCombo(combo)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+          {!debouncedSearch.trim() && (
+            <PromoSection
+              combos={combos}
+              showPromos={showPromos}
+              onTogglePromos={() => setShowPromos(!showPromos)}
+              onQuickAddCombo={addCombo}
+              onCustomizeCombo={setCustomizingCombo}
+            />
           )}
 
           <ProductGrid
@@ -255,37 +214,11 @@ export default function POSPage() {
         />
       )}
 
-      <Modal
+      <HoldCartModal
         open={holdModalOpen}
         onClose={() => setHoldModalOpen(false)}
-        title="Guardar venta"
-      >
-        <p className="mb-4 text-sm text-slate-600">
-          El carrito actual se guardará en la cola de espera y quedará vacío para poder hacer otra venta.
-        </p>
-        <Input
-          label="Nombre / nota del cliente (opcional)"
-          placeholder="Cliente"
-          maxLength={60}
-          autoFocus
-          value={holdLabel}
-          onChange={(e) => setHoldLabel(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleConfirmHold();
-            }
-          }}
-        />
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => setHoldModalOpen(false)}>
-            Cancelar
-          </Button>
-          <Button variant="success" onClick={handleConfirmHold}>
-            Guardar
-          </Button>
-        </div>
-      </Modal>
+        onConfirm={handleConfirmHold}
+      />
     </div>
   );
 }

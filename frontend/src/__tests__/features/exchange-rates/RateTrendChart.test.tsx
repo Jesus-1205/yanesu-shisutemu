@@ -7,7 +7,7 @@ import type { RateTrendPoint } from "@/features/exchange-rates/types";
 const empty: RateTrendPoint[] = [];
 
 describe("RateTrendChart", () => {
-  it("renderiza el selector de intervalos", () => {
+  it("renders interval selector tabs", () => {
     render(
       <RateTrendChart data={empty} interval="30D" onIntervalChange={vi.fn()} loading={false} />,
     );
@@ -16,14 +16,14 @@ describe("RateTrendChart", () => {
     }
   });
 
-  it("muestra mensaje cuando no hay datos", () => {
+  it("shows empty state message when no data is provided", () => {
     render(
       <RateTrendChart data={empty} interval="30D" onIntervalChange={vi.fn()} loading={false} />,
     );
     expect(screen.getByText("Sin registros de tasas en este período")).toBeInTheDocument();
   });
 
-  it("notifica el cambio de intervalo", async () => {
+  it("notifies parent when interval is changed", async () => {
     const onChange = vi.fn();
     render(
       <RateTrendChart data={empty} interval="30D" onIntervalChange={onChange} loading={false} />,

@@ -122,6 +122,18 @@ describe("CategoriesPage", () => {
     await waitFor(() => expect(api.deleteCategory).toHaveBeenCalledWith(1));
   });
 
+  it("opens edit modal on edit button click", async () => {
+    const mockCategories = [{ id: 1, nombre: "Licores", descripcion: "Desc" }];
+    (api.getCategoriesPaginated as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ items: mockCategories, total: 1, page: 1, page_size: 20, pages: 1 });
+    render(<CategoriesPage />, { wrapper });
+    await waitFor(() => expect(screen.getByText("Licores")).toBeInTheDocument());
+    const editButtons = screen.getAllByRole("button", { name: "" });
+    await userEvent.click(editButtons[0]);
+    await waitFor(() => expect(screen.getByText("Editar Categoría")).toBeInTheDocument());
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Licores");
+    expect(screen.getByLabelText("Descripción")).toHaveValue("Desc");
+  });
+
   it("renders download excel button", async () => {
     (api.getCategoriesPaginated as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ items: [], total: 0, page: 1, page_size: 20, pages: 0 });
     render(<CategoriesPage />, { wrapper });

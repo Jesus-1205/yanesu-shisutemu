@@ -114,7 +114,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("renderiza el hero con las tasas más recientes", async () => {
+  it("renders hero card with latest rates", async () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getByText("Dólar (USD)")).toBeInTheDocument();
@@ -126,7 +126,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("renderiza historial, KPIs y sección del gráfico", async () => {
+  it("renders history, KPIs and trend chart section", async () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getByText("Historial de tasas")).toBeInTheDocument();
@@ -137,14 +137,14 @@ describe("ExchangeRatesPage", () => {
     expect(screen.getAllByText("admin").length).toBeGreaterThan(0);
   });
 
-  it("abre el panel de actualización al pulsar Actualizar Tasas", async () => {
+  it("opens quick update panel when clicking Actualizar Tasas", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText("Actualizar Tasas")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Actualizar Tasas"));
     expect(screen.getByText("Actualizar tasas del día")).toBeInTheDocument();
   });
 
-  it("carga tasas del BCV en el panel y guarda enviando strings", async () => {
+  it("loads BCV rates into panel and saves sending formatted strings", async () => {
     mockApi.getBcvRates.mockResolvedValue({ rates: { USD: "45.5", EUR: "49.8" } });
     mockApi.saveBulkRates.mockResolvedValue({
       id: 3,
@@ -169,7 +169,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("muestra error del BCV y mantiene los campos editables manualmente", async () => {
+  it("displays BCV error and keeps inputs editable manually", async () => {
     mockApi.getBcvRates.mockRejectedValue(new Error("Timeout"));
     renderPage();
     await waitFor(() => expect(screen.getByText("Actualizar Tasas")).toBeInTheDocument());
@@ -182,7 +182,7 @@ describe("ExchangeRatesPage", () => {
     expect(screen.getByLabelText("EUR / VES")).toBeInTheDocument();
   });
 
-  it("deshabilita Guardar cuando las tasas no cambian", async () => {
+  it("disables save button when rates did not change", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText("Actualizar Tasas")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Actualizar Tasas"));
@@ -191,7 +191,7 @@ describe("ExchangeRatesPage", () => {
     expect(screen.getByText("Guardar")).toBeDisabled();
   });
 
-  it("cambia el intervalo del gráfico y consulta el rango correcto", async () => {
+  it("changes chart interval and queries corresponding range", async () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getByTestId("interval-selected")).toHaveTextContent("30D");
@@ -204,7 +204,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("exporta los datos visibles de la tabla", async () => {
+  it("exports visible table data", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByTitle("Exportar a Excel")).toBeInTheDocument());
     await userEvent.click(screen.getByTitle("Exportar a Excel"));
@@ -222,7 +222,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("exporta todo el historial paginando", async () => {
+  it("exports all history data by paginating", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByTitle("Exportar a Excel")).toBeInTheDocument());
     await userEvent.click(screen.getByTitle("Exportar a Excel"));
@@ -244,7 +244,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("muestra error y permite reintentar", async () => {
+  it("shows error and allows retrying", async () => {
     mockApi.getLatestRates.mockRejectedValueOnce(new Error("Error de red"));
     mockApi.getRateHistoryPaginated.mockRejectedValueOnce(new Error("Error de red"));
     renderPage();
@@ -258,7 +258,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("muestra estado vacío cuando no hay historial", async () => {
+  it("displays empty state when history is empty", async () => {
     mockApi.getRateHistoryPaginated.mockResolvedValue({
       items: [],
       pages: 0,
@@ -272,7 +272,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("navega entre páginas del historial", async () => {
+  it("navigates between history pages", async () => {
     mockApi.getRateHistoryPaginated.mockResolvedValue({
       items: mockHistory,
       pages: 3,
@@ -288,7 +288,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("advierte en el panel si ya hay una actualización hoy", async () => {
+  it("warns in panel if an update has already occurred today", async () => {
     const todayKey = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Caracas",
       year: "numeric",
@@ -307,7 +307,7 @@ describe("ExchangeRatesPage", () => {
     });
   });
 
-  it("oculta las acciones y panel de actualización al usuario operador", async () => {
+  it("hides update action and panel from operator users", async () => {
     mockAuthUser = { id: 2, rol_nombre: "OPERADOR" };
     renderPage();
     await waitFor(() => {

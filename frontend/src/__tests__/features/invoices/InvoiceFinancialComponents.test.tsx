@@ -148,13 +148,13 @@ const mockPaymentSummary: InvoicePaymentSummary = {
 
 describe("InvoiceLedger", () => {
   it("renders nothing if payments array is empty", () => {
-    const { container } = render(<InvoiceLedger invoice={mockInvoice} payments={[]} />);
+    const { container } = render(<InvoiceLedger payments={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders payment details in table format and expands observation", () => {
-    vi.spyOn(api, "getPaymentReceiptUrl").mockReturnValue("http://localhost/receipt.pdf");
-    render(<InvoiceLedger invoice={mockInvoice} payments={mockPayments} />);
+  it("renders payment details in table format, expands observation and handles onViewReceipt", () => {
+    const onViewReceipt = vi.fn();
+    render(<InvoiceLedger payments={mockPayments} onViewReceipt={onViewReceipt} />);
 
     expect(screen.getByText("Historial de Pagos")).toBeInTheDocument();
     expect(screen.getByText("Transferencia Banesco")).toBeInTheDocument();
@@ -166,9 +166,8 @@ describe("InvoiceLedger", () => {
     expect(screen.getByTitle("Click para contraer")).toBeInTheDocument();
 
     const viewReceiptBtn = screen.getByRole("button", { name: /Ver/i });
-    const windowSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     fireEvent.click(viewReceiptBtn);
-    expect(windowSpy).toHaveBeenCalledWith("http://localhost/receipt.pdf", "_blank");
+    expect(onViewReceipt).toHaveBeenCalledWith(mockPayments[0].id, mockPayments[0].comprobantes[0].id);
   });
 });
 

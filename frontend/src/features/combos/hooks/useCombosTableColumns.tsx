@@ -1,0 +1,147 @@
+import { useMemo } from "react";
+import type { MouseEvent } from "react";
+import { CreditCard, Layers, Pencil, Trash2 } from "lucide-react";
+import type { ComboOut, PaymentMethodOut } from "@/types/api";
+import type { Column } from "@/ui-components/Table";
+import Badge from "@/ui-components/Badge";
+import { formatCurrency } from "@/lib/utils";
+
+interface UseCombosTableColumnsParams {
+  paymentMethods: PaymentMethodOut[];
+  onEdit: (combo: ComboOut) => void;
+  onDelete: (combo: ComboOut) => void;
+}
+
+export function useCombosTableColumns({
+  paymentMethods,
+  onEdit,
+  onDelete,
+}: UseCombosTableColumnsParams): Column<ComboOut>[] {
+  const paymentMethodMap = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const pm of paymentMethods) {
+      map.set(pm.id, pm.nombre);
+    }
+    return map;
+  }, [paymentMethods]);
+
+  return useMemo<Column<ComboOut>[]>(
+    () => [
+      {
+        key: "nombre",
+        header: "Nombre / Detalle",
+        className: "min-w-44",
+        exportValue: (c: ComboOut) => c.nombre,
+        render: (c: ComboOut) => (
+          <div>
+            <p className="font-semibold text-text-main">{c.nombre}</p>
+            {c.descripcion && (
+              <p className="mt-0.5 text-xs text-slate-500">{c.descripcion}</p>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: "precio_total_usd",
+        header: "Precio Total",
+        className: "w-28",
+        exportValue: (c: ComboOut) => c.precio_total_usd,
+        render: (c: ComboOut) => (
+          <span className="font-bold text-emerald-600 text-sm">
+            {formatCurrency(c.precio_total_usd)}
+          </span>
+        ),
+      },
+      {
+        key: "grupos",
+        header: "Opciones y Grupos",
+        exportValue: (c: ComboOut) =>
+          c.groups.map((g) => `${g.nombre} (${g.min_cantidad}-${g.max_cantidad} uds)`).join(", "),
+        render: (c: ComboOut) => (
+          <div className="flex max-w-md flex-wrap gap-1.5 py-1">
+            {c.groups.map((g) => (
+              <span
+                key={g.id}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700"
+              >
+                <Layers className="size-3 text-brand-blue" />
+                <span className="font-medium text-text-main">{g.nombre}</span>
+                <span className="rounded bg-slate-200/70 px-1 py-0.5 text-[10px] text-slate-600">
+                  {g.min_cantidad}–{g.max_cantidad} uds
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  ({g.products.length} {g.products.length === 1 ? "opción" : "opciones"})
+                </span>
+              </span>
+            ))}
+          </div>
+        ),
+      },
+      {
+        key: "metodos",
+        header: "Métodos de Pago",
+        hideOnMobile: true,
+        exportValue: (c: ComboOut) =>
+          c.metodo_pago_ids.map((id) => paymentMethodMap.get(id) || `#${id}`).join(", "),
+        render: (c: ComboOut) => (
+          <div className="flex flex-wrap gap-1">
+            {c.metodo_pago_ids.map((id) => {
+              const methodName = paymentMethodMap.get(id);
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-brand-blue ring-1 ring-blue-500/10"
+                >
+                  <CreditCard className="size-3" />
+                  {methodName ?? `#${id}`}
+                </span>
+              );
+            })}
+          </div>
+        ),
+      },
+      {
+        key: "activo",
+        header: "Estado",
+        className: "text-center w-24",
+        exportValue: (c: ComboOut) => (c.activo ? "Activo" : "Inactivo"),
+        render: (c: ComboOut) => (
+          <Badge variant={c.activo ? "success" : "neutral"}>
+            {c.activo ? "Activo" : "Inactivo"}
+          </Badge>
+        ),
+      },
+      {
+        key: "acciones",
+        header: "",
+        exportable: false,
+        className: "text-right w-24",
+        render: (c: ComboOut) => (
+          <div className="flex items-center justify-end gap-1">
+            <button
+              onClick={(e: MouseEvent) => {
+                e.stopPropagation();
+                onEdit(c);
+              }}
+              className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-brand-blue/10 hover:text-brand-blue"
+              aria-label="Editar combo"
+            >
+              <Pencil className="size-4" />
+            </button>
+            <button
+              onClick={(e: MouseEvent) => {
+                e.stopPropagation();
+                onDelete(c);
+              }}
+              className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-danger/10 hover:text-danger"
+              aria-label="Eliminar combo"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [paymentMethodMap, onEdit, onDelete],
+  );
+}

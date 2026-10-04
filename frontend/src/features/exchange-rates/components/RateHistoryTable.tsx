@@ -1,11 +1,16 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { History } from "lucide-react";
 import Table, { type Column } from "@/ui-components/Table";
 import Pagination from "@/ui-components/Pagination";
 import { useToast } from "@/ui-components/Toast";
-import { api } from "@/services/api";
 import { formatRateFull, formatDateTimeVE } from "@/lib/utils";
 import type { ExchangeRate } from "../types";
+import {
+  type HistoryRow,
+  enrichWithVariation,
+  variationBadge,
+  variationValue,
+} from "../utils/variations";
 
 interface RateHistoryTableProps {
   data: ExchangeRate[];
@@ -13,45 +18,7 @@ interface RateHistoryTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-}
-
-interface HistoryRow extends ExchangeRate {
-  previousUsd?: number;
-  previousEur?: number;
-}
-
-const PAGE_SIZE = 200;
-
-function enrichWithVariation(rates: ExchangeRate[]): HistoryRow[] {
-  return rates.map((r, i) => ({
-    ...r,
-    previousUsd: i < rates.length - 1 ? Number(rates[i + 1].tasa_usd) : undefined,
-    previousEur: i < rates.length - 1 ? Number(rates[i + 1].tasa_eur) : undefined,
-  }));
-}
-
-function variationBadge(current: number, previous: number | undefined) {
-  if (previous === undefined || previous === 0) {
-    return <span className="text-slate-300">—</span>;
-  }
-  const diff = current - previous;
-  const pct = (diff / previous) * 100;
-  const up = pct >= 0;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-semibold tabular-nums ${
-        up ? "text-success" : "text-danger"
-      }`}
-    >
-      {up ? "▲" : "▼"} {Math.abs(pct).toFixed(2)}% ({up ? "+" : "-"}
-      {Math.abs(diff).toFixed(4)} Bs)
-    </span>
-  );
-}
-
-function variationValue(current: number, previous: number | undefined): number | null {
-  if (previous === undefined || previous === 0) return null;
-  return Math.round(((current - previous) / previous) * 10000) / 100;
+  onFetchAllData?: () => Promise<ExchangeRate[]>;
 }
 
 export default function RateHistoryTable({
@@ -60,6 +27,7 @@ export default function RateHistoryTable({
   page,
   totalPages,
   onPageChange,
+  onFetchAllData,
 }: RateHistoryTableProps) {
   const { toast } = useToast();
 
@@ -104,21 +72,11 @@ export default function RateHistoryTable({
     },
   ];
 
-  const fetchAllRates = async (): Promise<HistoryRow[]> => {
-    const all: ExchangeRate[] = [];
-    let currentPage = 1;
-    let pages = 1;
-    do {
-      const res = await api.getRateHistoryPaginated({
-        page: currentPage,
-        page_size: PAGE_SIZE,
-      });
-      all.push(...res.items);
-      pages = res.pages;
-      currentPage += 1;
-    } while (currentPage <= pages);
+  const handleFetchAllData = useCallback(async (): Promise<HistoryRow[]> => {
+    if (!onFetchAllData) return [];
+    const all = await onFetchAllData();
     return enrichWithVariation(all);
-  };
+  }, [onFetchAllData]);
 
   return (
     <div>
@@ -136,7 +94,7 @@ export default function RateHistoryTable({
         emptyMessage="No hay tasas registradas"
         exportable
         exportFilename="Tasas_cambio"
-        fetchAllData={fetchAllRates}
+        fetchAllData={onFetchAllData ? handleFetchAllData : undefined}
         onExported={(name) => toast(`Archivo descargado: ${name}`, "success")}
       />
 

@@ -1,4 +1,3 @@
-import { useRef, useEffect } from "react";
 import Select from "@/ui-components/Select";
 import SearchInput from "@/ui-components/SearchInput";
 import type { CategoryOut, SupplierOut } from "@/types/api";
@@ -33,19 +32,6 @@ export default function ProductFilters({
   categories,
   suppliers,
 }: ProductFiltersProps) {
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
   const set = <K extends keyof ProductFiltersState>(key: K, value: ProductFiltersState[K]) => {
     onChange({ ...filters, [key]: value });
   };
@@ -61,7 +47,6 @@ export default function ProductFilters({
     <div className="mb-4 flex flex-wrap items-end gap-3">
       <div className="relative max-w-sm min-w-60 flex-1">
         <SearchInput
-          ref={searchRef}
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
           onClear={() => set("search", "")}

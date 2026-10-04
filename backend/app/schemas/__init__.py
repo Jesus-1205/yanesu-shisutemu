@@ -1,4 +1,4 @@
-from app.schemas.role import RoleCreate, RoleOut
+from app.schemas.role import RoleOut
 from app.schemas.user import (
     LoginRequest,
     Token,
@@ -13,7 +13,6 @@ from app.schemas.payment_method import PaymentMethodCreate, PaymentMethodUpdate,
 from app.schemas.system_setting import ApiKeyPayload, ApiKeyStatusResponse, TestConnectionResponse
 
 __all__ = [
-    "RoleCreate",
     "RoleOut",
     "UserCreate",
     "UserOut",

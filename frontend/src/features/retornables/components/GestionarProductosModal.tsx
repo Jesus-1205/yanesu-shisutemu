@@ -2,8 +2,7 @@ import { useState } from "react";
 import type { RetornableProductoOut } from "@/types/api";
 import Modal from "@/ui-components/Modal";
 import Button from "@/ui-components/Button";
-import { api } from "@/services/api";
-import { useToast } from "@/ui-components/Toast";
+import { useDesasociarProductoRetornable } from "../hooks/useRetornableMutations";
 import { AsociarProductoModal } from "./AsociarProductoModal";
 
 interface Props {
@@ -14,21 +13,13 @@ interface Props {
 }
 
 export function GestionarProductosModal({ open, onClose, onSaved, productos }: Props) {
-  const { toast } = useToast();
   const [showAsociar, setShowAsociar] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { desasociar, isDesasociando } = useDesasociarProductoRetornable();
 
   const handleDisassociate = async (id: number) => {
-    setLoading(true);
-    try {
-      await api.desasociarRetornableProducto(id);
-      toast("Producto desasociado", "success");
+    await desasociar(id, () => {
       onSaved();
-    } catch (e: unknown) {
-      toast(e instanceof Error ? e.message : "Error al desasociar", "error");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   return (
@@ -71,7 +62,7 @@ export function GestionarProductosModal({ open, onClose, onSaved, productos }: P
                         variant="danger"
                         size="sm"
                         onClick={() => handleDisassociate(p.id)}
-                        loading={loading}
+                        loading={isDesasociando}
                       >
                         Quitar
                       </Button>

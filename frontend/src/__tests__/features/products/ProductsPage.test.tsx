@@ -91,6 +91,8 @@ vi.mock("@/services/api", () => ({
 import { api } from "@/services/api";
 import { exportToExcel } from "@/lib/exportToExcel";
 
+import { useProductsStore } from "@/features/products/stores/useProductsStore";
+
 const mockApi = vi.mocked(api);
 
 function renderPage() {
@@ -104,6 +106,7 @@ function renderPage() {
 describe("ProductsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useProductsStore.getState().resetAll();
     mockUserRole = "ADMINISTRADOR";
     mockApi.getCategories.mockResolvedValue([
       { id: 1, nombre: "Licores", descripcion: null },

@@ -91,4 +91,34 @@ describe("CartItemRow", () => {
     render(<CartItemRow item={baseItem} />);
     expect(screen.getByText(/IVA\s*16%/)).toBeInTheDocument();
   });
+
+  it("renders combo item correctly", () => {
+    const comboItem: CartItem = {
+      ...baseItem,
+      cartItemId: "combo_1",
+      combo_id: 5,
+      comboDetalle: {
+        nombre: "Super Combo",
+        metodo_pago_ids: [1],
+        productos: [{ producto_id: 1, nombre: "Ron", tipo_iva: "GRAVADO", cantidad: 1, precio_unitario: 15 }],
+      },
+    };
+    render(<CartItemRow item={comboItem} />);
+    expect(screen.getByText("Super Combo")).toBeInTheDocument();
+    expect(screen.getByText("COMBO")).toBeInTheDocument();
+    expect(screen.getByText("Ron")).toBeInTheDocument();
+  });
+
+  it("handles divisas toggle when available", async () => {
+    const divisasItem: CartItem = {
+      ...baseItem,
+      precioDivisasUnidad: 12,
+      usaPrecioDivisas: false,
+    };
+    const spy = vi.spyOn(useCartStore.getState(), "toggleDivisas");
+    render(<CartItemRow item={divisasItem} />);
+    const checkbox = screen.getByRole("checkbox");
+    await userEvent.click(checkbox);
+    expect(spy).toHaveBeenCalledWith("1_UNIDAD");
+  });
 });

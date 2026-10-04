@@ -33,12 +33,20 @@ vi.mock("@/features/suppliers/components/SupplierAnalyticsDrawer", () => ({
   default: () => null,
 }));
 
-vi.mock("@/features/shared/components/CreateSupplierModal", () => ({
-  default: ({ open, onCreated }: { open: boolean; onCreated: () => void }) =>
+vi.mock("@/features/shared/components/SupplierFormModal", () => ({
+  default: ({
+    open,
+    supplierId,
+    onSuccess,
+  }: {
+    open: boolean;
+    supplierId?: number | null;
+    onSuccess: () => void;
+  }) =>
     open ? (
-      <div>
-        <span>Crear proveedor</span>
-        <button onClick={onCreated}>Crear</button>
+      <div data-testid="supplier-form-modal">
+        <span>Modal: {supplierId ? "Editar Proveedor" : "Nuevo Proveedor"}</span>
+        <button onClick={onSuccess}>Guardar</button>
       </div>
     ) : null,
 }));
@@ -113,11 +121,11 @@ describe("SuppliersPage", () => {
 
     await user.click(screen.getByText("Nuevo Proveedor"));
     await waitFor(() => {
-      expect(screen.getByText("Crear proveedor")).toBeInTheDocument();
+      expect(screen.getByText("Modal: Nuevo Proveedor")).toBeInTheDocument();
     });
   });
 
-  it("navega a editar proveedor", async () => {
+  it("abre modal de editar proveedor", async () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText("Distribuidora ABC")).toBeInTheDocument());
@@ -125,7 +133,9 @@ describe("SuppliersPage", () => {
     const pencilBtn = screen.getAllByRole("button", { name: "Editar proveedor" })[0];
     await user.click(pencilBtn);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/suppliers/1");
+    await waitFor(() => {
+      expect(screen.getByText("Modal: Editar Proveedor")).toBeInTheDocument();
+    });
   });
 
   it("elimina un proveedor", async () => {

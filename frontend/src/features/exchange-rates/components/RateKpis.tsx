@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { TrendingUp, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import StatCard from "@/ui-components/StatCard";
 import { formatRateFull } from "@/lib/utils";
 import type { RateInterval, RateTrendPoint } from "../types";
@@ -11,8 +11,8 @@ interface RateKpisProps {
 }
 
 interface KpiSummary {
-  usdVar: number | null;
-  eurVar: number | null;
+  usdDiff: number | null;
+  usdPct: number | null;
   usdMax: number;
   usdMin: number;
 }
@@ -21,13 +21,14 @@ function computeKpis(data: RateTrendPoint[]): KpiSummary | null {
   if (!data.length) return null;
   const first = data[0];
   const last = data[data.length - 1];
-  const pct = (a: number, b: number): number | null =>
-    a > 0 && b > 0 ? ((b - a) / a) * 100 : null;
+  const diff = first.usd > 0 && last.usd > 0 ? last.usd - first.usd : null;
+  const pct =
+    first.usd > 0 && last.usd > 0 ? ((last.usd - first.usd) / first.usd) * 100 : null;
   const usdMax = Math.max(...data.map((d) => d.usd));
   const usdMin = Math.min(...data.map((d) => d.usd));
   return {
-    usdVar: pct(first.usd, last.usd),
-    eurVar: pct(first.eur, last.eur),
+    usdDiff: diff,
+    usdPct: pct,
     usdMax,
     usdMin,
   };
@@ -38,8 +39,8 @@ export default function RateKpis({ data, intervalo, loading }: RateKpisProps) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50" />
         ))}
       </div>
@@ -54,27 +55,25 @@ export default function RateKpis({ data, intervalo, loading }: RateKpisProps) {
     );
   }
 
-  const trendFor = (value: number | null) =>
-    value === null
+  const trendFor = (diff: number | null, pct: number | null) =>
+    diff === null || pct === null
       ? undefined
       : {
-          direction: (value >= 0 ? "up" : "down") as "up" | "down",
-          value: `${value > 0 ? "+" : ""}${value.toFixed(2)}%`,
+          direction: (diff >= 0 ? "up" : "down") as "up" | "down",
+          value: `${pct > 0 ? "+" : ""}${pct.toFixed(2)}%`,
         };
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <StatCard
         label={`Variación USD (${intervalo})`}
-        value={kpis.usdVar !== null ? `${kpis.usdVar > 0 ? "+" : ""}${kpis.usdVar.toFixed(2)}%` : "—"}
+        value={
+          kpis.usdDiff !== null
+            ? `${kpis.usdDiff > 0 ? "+" : ""}${kpis.usdDiff.toFixed(2)} Bs`
+            : "—"
+        }
         icon={<TrendingUp className="size-5" />}
-        trend={trendFor(kpis.usdVar)}
-      />
-      <StatCard
-        label={`Variación EUR (${intervalo})`}
-        value={kpis.eurVar !== null ? `${kpis.eurVar > 0 ? "+" : ""}${kpis.eurVar.toFixed(2)}%` : "—"}
-        icon={<TrendingDown className="size-5" />}
-        trend={trendFor(kpis.eurVar)}
+        trend={trendFor(kpis.usdDiff, kpis.usdPct)}
       />
       <StatCard
         label={`Máximo USD (${intervalo})`}

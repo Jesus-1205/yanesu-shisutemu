@@ -25,7 +25,6 @@ describe("router configuration", () => {
     expect(childPaths).toContain("index");
     expect(childPaths).toContain("dashboard");
     expect(childPaths).toContain("users");
-    expect(childPaths).toContain("roles");
     expect(childPaths).toContain("products");
     expect(childPaths).toContain("categories");
     expect(childPaths).toContain("suppliers");

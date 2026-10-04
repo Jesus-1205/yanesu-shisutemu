@@ -78,3 +78,6 @@ licoreria-desktop/src-tauri/target/
 # ──────────────────────────────────────
 .opencode/opencode.json
 .agents/
+
+# Notas personales / tareas temporales
+NEXT_TASK.md

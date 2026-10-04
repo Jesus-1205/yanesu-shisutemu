@@ -30,7 +30,6 @@ function wrapper({ children }: { children: React.ReactNode }) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  localStorage.removeItem("skip-auth");
 });
 
 describe("LoginPage", () => {

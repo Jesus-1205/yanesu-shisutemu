@@ -44,12 +44,12 @@ describe("RateQuickUpdatePanel", () => {
     vi.clearAllMocks();
   });
 
-  it("no renderiza nada cuando está cerrado", () => {
+  it("does not render when closed", () => {
     renderPanel({ open: false });
     expect(screen.queryByText("Actualizar tasas del día")).not.toBeInTheDocument();
   });
 
-  it("carga las tasas del BCV al pulsar el botón", async () => {
+  it("loads BCV rates on button click", async () => {
     mockApi.getBcvRates.mockResolvedValue({ rates: { USD: "45.5", EUR: "49.8" } });
     renderPanel();
     await userEvent.click(screen.getByText("Cargar desde BCV"));
@@ -60,7 +60,7 @@ describe("RateQuickUpdatePanel", () => {
     });
   });
 
-  it("guarda las tasas enviando strings y notifica", async () => {
+  it("saves rates as formatted strings and notifies success", async () => {
     mockApi.getBcvRates.mockResolvedValue({ rates: { USD: "45.5", EUR: "49.8" } });
     mockApi.saveBulkRates.mockResolvedValue(mockCreatedRate);
     const onSaved = vi.fn();
@@ -76,7 +76,7 @@ describe("RateQuickUpdatePanel", () => {
     });
   });
 
-  it("muestra error del BCV y mantiene los campos editables", async () => {
+  it("displays BCV error banner while keeping inputs editable", async () => {
     mockApi.getBcvRates.mockRejectedValue(new Error("Sin conexión"));
     renderPanel();
     await userEvent.click(screen.getByText("Cargar desde BCV"));
@@ -87,7 +87,7 @@ describe("RateQuickUpdatePanel", () => {
     expect(screen.getByText(/Puede ingresar los valores manualmente/i)).toBeInTheDocument();
   });
 
-  it("deshabilita Guardar cuando no hay cambios", async () => {
+  it("disables save button when rates did not change", async () => {
     renderPanel();
     await userEvent.type(screen.getByLabelText("USD / VES"), "45.1230");
     await userEvent.type(screen.getByLabelText("EUR / VES"), "49.5000");
@@ -95,7 +95,7 @@ describe("RateQuickUpdatePanel", () => {
     expect(mockApi.saveBulkRates).not.toHaveBeenCalled();
   });
 
-  it("valida valores no positivos", async () => {
+  it("validates non-positive values before saving", async () => {
     renderPanel();
     await userEvent.type(screen.getByLabelText("USD / VES"), "-5");
     await userEvent.type(screen.getByLabelText("EUR / VES"), "10");
@@ -106,7 +106,7 @@ describe("RateQuickUpdatePanel", () => {
     });
   });
 
-  it("advierte si ya hay actualización hoy pero permite guardar", async () => {
+  it("warns if an update already occurred today but allows saving", async () => {
     mockApi.getBcvRates.mockResolvedValue({ rates: { USD: "46.1", EUR: "50.2" } });
     mockApi.saveBulkRates.mockResolvedValue(mockCreatedRate);
     const onSaved = vi.fn();

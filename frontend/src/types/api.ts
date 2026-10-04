@@ -47,10 +47,6 @@ export interface RoleOut {
   nombre: string;
 }
 
-export interface RoleCreate {
-  nombre: string;
-}
-
 // ─── Categorías ─────────────────────────────────────────────
 export interface CategoryOut {
   id: number;

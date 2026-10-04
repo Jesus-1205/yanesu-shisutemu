@@ -6,48 +6,41 @@ import { useMarginInput } from "./useMarginInput";
 
 export const n = (v: number | ""): number => (v === "" ? 0 : v);
 
+export function getInitialProductFormState(
+  initialProduct?: Product | null,
+): ProductFormData {
+  if (initialProduct) {
+    return {
+      nombre: initialProduct.nombre,
+      codigo_barra: initialProduct.codigo_barra ?? "",
+      categoria_ids: initialProduct.categories.map((c) => c.id),
+      precio_costo_caja_usd: Number(initialProduct.precio_costo_caja_usd) || 0,
+      precio_unidad_usd: Number(initialProduct.precio_unidad_usd) || 0,
+      tipo_iva: initialProduct.tipo_iva,
+      stock_cajas: initialProduct.stock_cajas ?? 0,
+      stock_unidades: initialProduct.stock_unidades ?? 0,
+      stock_minimo: initialProduct.stock_minimo ?? 0,
+      unidades_por_caja: initialProduct.unidades_por_caja ?? 1,
+      precio_caja_usd: Number(initialProduct.precio_caja_usd) || 0,
+      proveedor_id: initialProduct.proveedor_id,
+    };
+  }
+  return PRODUCT_FORM_INITIAL;
+}
+
 export function useProductForm(initialProduct?: Product | null) {
   const [categories, setCategories] = useState<CategoryOut[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierOut[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
-  const [form, setForm] = useState<ProductFormData>(() => {
-    if (initialProduct) {
-      return {
-        nombre: initialProduct.nombre,
-        codigo_barra: initialProduct.codigo_barra ?? "",
-        categoria_ids: initialProduct.categories.map((c) => c.id),
-        precio_costo_caja_usd: Number(initialProduct.precio_costo_caja_usd) || 0,
-        precio_unidad_usd: Number(initialProduct.precio_unidad_usd) || 0,
-        tipo_iva: initialProduct.tipo_iva,
-        stock_cajas: initialProduct.stock_cajas ?? 0,
-        stock_unidades: initialProduct.stock_unidades ?? 0,
-        stock_minimo: initialProduct.stock_minimo ?? 0,
-        unidades_por_caja: initialProduct.unidades_por_caja ?? 1,
-        precio_caja_usd: Number(initialProduct.precio_caja_usd) || 0,
-        proveedor_id: initialProduct.proveedor_id,
-      };
-    }
-    return PRODUCT_FORM_INITIAL;
-  });
+  const [form, setForm] = useState<ProductFormData>(() =>
+    getInitialProductFormState(initialProduct),
+  );
 
   // Re-sync if initialProduct is loaded asynchronously
   useEffect(() => {
     if (initialProduct) {
-      setForm({
-        nombre: initialProduct.nombre,
-        codigo_barra: initialProduct.codigo_barra ?? "",
-        categoria_ids: initialProduct.categories.map((c) => c.id),
-        precio_costo_caja_usd: Number(initialProduct.precio_costo_caja_usd) || 0,
-        precio_unidad_usd: Number(initialProduct.precio_unidad_usd) || 0,
-        tipo_iva: initialProduct.tipo_iva,
-        stock_cajas: initialProduct.stock_cajas ?? 0,
-        stock_unidades: initialProduct.stock_unidades ?? 0,
-        stock_minimo: initialProduct.stock_minimo ?? 0,
-        unidades_por_caja: initialProduct.unidades_por_caja ?? 1,
-        precio_caja_usd: Number(initialProduct.precio_caja_usd) || 0,
-        proveedor_id: initialProduct.proveedor_id,
-      });
+      setForm(getInitialProductFormState(initialProduct));
     }
   }, [initialProduct]);
 
@@ -155,3 +148,5 @@ export function useProductForm(initialProduct?: Product | null) {
     buildPayload,
   };
 }
+
+export type UseProductFormReturn = ReturnType<typeof useProductForm>;

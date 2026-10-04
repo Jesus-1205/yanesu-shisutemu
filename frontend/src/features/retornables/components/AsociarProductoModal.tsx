@@ -3,8 +3,11 @@ import Modal from "@/ui-components/Modal";
 import Button from "@/ui-components/Button";
 import Select from "@/ui-components/Select";
 import AsyncCombobox from "@/ui-components/AsyncCombobox";
-import { api } from "@/services/api";
 import { useToast } from "@/ui-components/Toast";
+import {
+  useSearchProductosSelect,
+  useAsociarProductoRetornable,
+} from "../hooks/useRetornableMutations";
 
 interface Props {
   open: boolean;
@@ -16,36 +19,27 @@ export function AsociarProductoModal({ open, onClose, onSaved }: Props) {
   const { toast } = useToast();
   const [productoId, setProductoId] = useState<number | null>(null);
   const [presentacion, setPresentacion] = useState<"222" | "333">("222");
-  const [loading, setLoading] = useState(false);
 
-  const searchProducts = async (query: string) => {
-    const result = await api.getProducts({ search: query || undefined, page_size: 10 });
-    return result.items.map((p) => ({
-      value: p.id,
-      label: p.nombre,
-      subtitle: p.codigo_barra || undefined,
-    }));
-  };
+  const { searchProducts } = useSearchProductosSelect();
+  const { asociar, isAsociando } = useAsociarProductoRetornable();
 
   const handleAssociate = async () => {
     if (!productoId) {
       toast("Selecciona un producto", "error");
       return;
     }
-    setLoading(true);
-    try {
-      await api.asociarRetornableProducto({
+    const success = await asociar(
+      {
         producto_id: productoId,
         presentacion,
-      });
-      toast("Producto asociado exitosamente", "success");
-      onSaved();
-      onClose();
+      },
+      () => {
+        onSaved();
+        handleClose();
+      }
+    );
+    if (success) {
       setProductoId(null);
-    } catch (e: unknown) {
-      toast(e instanceof Error ? e.message : "Error al asociar", "error");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -81,7 +75,7 @@ export function AsociarProductoModal({ open, onClose, onSaved }: Props) {
           <Button variant="ghost" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleAssociate} loading={loading}>
+          <Button variant="primary" onClick={handleAssociate} loading={isAsociando}>
             Asociar
           </Button>
         </div>

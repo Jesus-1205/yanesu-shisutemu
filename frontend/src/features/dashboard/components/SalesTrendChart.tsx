@@ -1,20 +1,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { chartColors } from "@/ui-components/charts/theme";
 import type { SalesSummaryItem } from "@/types/api";
-import { formatCurrency } from "@/lib/utils";
-
-const MONTHS_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
-function formatPeriod(periodo: string): string {
-  if (periodo.length === 7) {
-    const [y, m] = periodo.split("-").map(Number);
-    return `${MONTHS_ES[m - 1]} ${y}`;
-  }
-  const parts = periodo.split("-").map(Number);
-  const d = new Date(parts[0], parts[1] - 1, parts[2]);
-  if (isNaN(d.getTime())) return periodo;
-  return `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`;
-}
+import { formatCurrency, formatPeriod } from "@/lib/utils";
 
 interface SalesTrendChartProps {
   data: SalesSummaryItem[];

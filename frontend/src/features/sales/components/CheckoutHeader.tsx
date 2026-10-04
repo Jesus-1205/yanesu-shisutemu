@@ -1,30 +1,16 @@
 import { formatCurrency, formatRate } from "@/lib/utils";
+import { useCheckoutContext } from "./CheckoutProvider";
 
-interface CheckoutHeaderProps {
-  totalUsd: number;
-  totalVes: number;
-  tasaNum: number;
-  totals: {
-    monto_exento_usd: number;
-    base_imponible_usd: number;
-    monto_iva_usd: number;
-  };
-  totalDivisasItems: number;
-  divisasSummary: {
-    pagadoDivisas: number;
-    faltante: number;
-    cubierto: boolean;
-  } | null;
-}
+export default function CheckoutHeader() {
+  const {
+    totalUsd,
+    totalVes,
+    tasaNum,
+    totals,
+    totalDivisasItems,
+    divisasSummary,
+  } = useCheckoutContext();
 
-export default function CheckoutHeader({
-  totalUsd,
-  totalVes,
-  tasaNum,
-  totals,
-  totalDivisasItems,
-  divisasSummary,
-}: CheckoutHeaderProps) {
   return (
     <div className="mb-3 rounded-xl bg-slate-50 px-3 py-4 text-center">
       <div className="text-xl font-bold text-info">{formatCurrency(totalUsd)}</div>

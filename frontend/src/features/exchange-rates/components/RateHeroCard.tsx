@@ -1,6 +1,7 @@
 import { Clock, RefreshCw, TrendingUp, TrendingDown, BadgeCheck } from "lucide-react";
 import Button from "@/ui-components/Button";
 import { formatRateFull, formatDateTimeVE } from "@/lib/utils";
+import { calculateVariation, type VariationResult } from "../utils/variations";
 
 interface RateHeroCardProps {
   usd?: string | null;
@@ -11,22 +12,6 @@ interface RateHeroCardProps {
   loading: boolean;
   canUpdate?: boolean;
   onOpenPanel: () => void;
-}
-
-interface VariationResult {
-  pct: number;
-  abs: number;
-}
-
-function variation(after?: string | null, before?: string | number | null): VariationResult | null {
-  if (!after || before === null || before === undefined) return null;
-  const prev = Number(before);
-  const current = Number(after);
-  if (!Number.isFinite(prev) || prev === 0 || !Number.isFinite(current)) return null;
-  return {
-    pct: ((current - prev) / prev) * 100,
-    abs: current - prev,
-  };
 }
 
 function RateFigure({
@@ -53,17 +38,17 @@ function RateFigure({
       {variation !== null && (
         <span
           className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold tabular-nums ${
-            variation.pct >= 0 ? "bg-green-50 text-success" : "bg-red-50 text-danger"
+            variation.up ? "bg-green-50 text-success" : "bg-red-50 text-danger"
           }`}
         >
-          {variation.pct >= 0 ? (
+          {variation.up ? (
             <TrendingUp className="size-3.5" />
           ) : (
             <TrendingDown className="size-3.5" />
           )}
           {variation.pct > 0 ? "+" : ""}
-          {variation.pct.toFixed(2)}% ({variation.abs > 0 ? "+" : ""}
-          {variation.abs.toFixed(4)} Bs)
+          {variation.pct.toFixed(2)}% ({variation.diff > 0 ? "+" : ""}
+          {variation.diff.toFixed(2)} Bs)
         </span>
       )}
     </div>
@@ -80,8 +65,8 @@ export default function RateHeroCard({
   canUpdate = true,
   onOpenPanel,
 }: RateHeroCardProps) {
-  const usdVar = variation(usd, previousUsd);
-  const eurVar = variation(eur, previousEur);
+  const usdVar = calculateVariation(usd, previousUsd);
+  const eurVar = calculateVariation(eur, previousEur);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-surface shadow-sm">

@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { api } from "@/services/api";
-import type { PaymentMethodOut } from "@/types/api";
 import type { FacturaOut as Invoice } from "@/types/api";
 import Button from "@/ui-components/Button";
 import Drawer from "@/ui-components/Drawer";
-import { useToast } from "@/ui-components/Toast";
-import { formatBs } from "@/lib/text";
-import { toCents } from "@/lib/money";
+import { usePaymentDrawer } from "../hooks/usePaymentDrawer";
+import PaymentDrawerSummary from "./PaymentDrawerSummary";
+import PaymentDrawerMethodGrid from "./PaymentDrawerMethodGrid";
 
 interface PaymentDrawerProps {
   open: boolean;
@@ -16,74 +13,41 @@ interface PaymentDrawerProps {
 }
 
 export default function PaymentDrawer({ open, onClose, invoice, onSuccess }: PaymentDrawerProps) {
-  const { toast } = useToast();
-  const [methods, setMethods] = useState<PaymentMethodOut[]>([]);
-  const [selectedMethodId, setSelectedMethodId] = useState<number | null>(null);
-  const [monto, setMonto] = useState("");
-  const [referencia, setReferencia] = useState("");
-  const [comprobantes, setComprobantes] = useState<File[]>([]);
-  const [observaciones, setObservaciones] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const isBs = invoice.moneda_principal === "BS";
-  const saldoPendiente = isBs ? invoice.total_bs : invoice.total_usd;
-  const prefix = isBs ? "Bs." : "$";
-
-  useEffect(() => {
-    if (open) {
-      setMonto(String(saldoPendiente));
-      setSelectedMethodId(null);
-      setReferencia("");
-      setComprobantes([]);
-      setObservaciones("");
-      api.getPaymentMethods(true).then((data) => {
-        setMethods(Array.isArray(data) ? data : []);
-      }).catch(() => {});
-    }
-  }, [open, saldoPendiente]);
-
-  const selectedMethod = methods.find((m) => m.id === selectedMethodId);
-  const montoNum = Number(monto) || 0;
-  const excedeSaldo = montoNum > saldoPendiente + 0.01;
-  const isValid = montoNum > 0 && selectedMethodId !== null && !excedeSaldo;
-
-  const handleConfirm = useCallback(async () => {
-    if (!isValid || saving) return;
-    setSaving(true);
-    try {
-      await api.registerInvoicePayment(
-        invoice.id,
-        {
-          metodo_pago_id: selectedMethodId!,
-          monto_usd: isBs ? 0 : toCents(montoNum),
-          monto_bs: isBs ? toCents(montoNum) : 0,
-          referencia: referencia.trim() || null,
-          observaciones: observaciones.trim() || null,
-        },
-        comprobantes.length > 0 ? comprobantes : undefined,
-      );
-      toast(`Pago de ${prefix} ${formatBs(montoNum)} registrado`, "success");
-      onSuccess();
-      onClose();
-    } catch (err) {
-      toast(err instanceof Error ? err.message : "Error al registrar pago", "error");
-    } finally {
-      setSaving(false);
-    }
-  }, [isValid, saving, invoice.id, selectedMethodId, montoNum, isBs, referencia, observaciones, comprobantes, prefix, toast, onSuccess, onClose]);
+  const {
+    methods,
+    selectedMethodId,
+    setSelectedMethodId,
+    monto,
+    setMonto,
+    referencia,
+    setReferencia,
+    setComprobantes,
+    observaciones,
+    setObservaciones,
+    saving,
+    isBs,
+    saldoPendiente,
+    prefix,
+    selectedMethod,
+    excedeSaldo,
+    isValid,
+    handleConfirm,
+  } = usePaymentDrawer({
+    open,
+    onClose,
+    invoice,
+    onSuccess,
+  });
 
   return (
     <Drawer open={open} onClose={onClose} title="Registrar Pago">
       <div className="space-y-5">
-        <div className="space-y-1 rounded-xl bg-slate-50 p-3">
-          <p className="text-xs text-slate-500">Factura #{invoice.numero_factura}</p>
-          <p className="text-sm font-medium">{invoice.supplier?.nombre}</p>
-          <div className="mt-2 flex justify-between text-xs">
-            <span>Total: <strong>{prefix} {formatBs(isBs ? invoice.total_bs : invoice.total_usd)}</strong></span>
-            <span className="text-green-600">Pagado: <strong>{prefix} {formatBs(isBs ? invoice.total_bs - saldoPendiente : invoice.total_usd - saldoPendiente)}</strong></span>
-            <span className="text-red-600">Saldo: <strong>{prefix} {formatBs(saldoPendiente)}</strong></span>
-          </div>
-        </div>
+        <PaymentDrawerSummary
+          invoice={invoice}
+          isBs={isBs}
+          prefix={prefix}
+          saldoPendiente={saldoPendiente}
+        />
 
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-700">Monto a pagar</label>
@@ -100,26 +64,11 @@ export default function PaymentDrawer({ open, onClose, invoice, onSuccess }: Pay
           )}
         </div>
 
-        <div>
-          <label className="mb-2 block text-xs font-medium text-slate-700">Método de pago</label>
-          <div className="grid grid-cols-2 gap-2">
-            {methods.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setSelectedMethodId(m.id)}
-                className={`cursor-pointer rounded-lg border-2 px-3 py-2 text-center transition-all ${
-                  selectedMethodId === m.id
-                    ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
-                    : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <div className="text-xs">{m.nombre}</div>
-                <div className="text-[10px] opacity-70">{m.moneda_default}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+        <PaymentDrawerMethodGrid
+          methods={methods}
+          selectedMethodId={selectedMethodId}
+          onSelectMethod={setSelectedMethodId}
+        />
 
         {selectedMethod?.acepta_referencia && (
           <div>

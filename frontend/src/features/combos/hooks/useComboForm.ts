@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { api } from "@/services/api";
-import type { ComboOut, ComboGroupEntry } from "@/types/api";
+import type { ComboOut, ComboGroupEntry, ComboCreate } from "@/types/api";
 
 interface FormProductEntry {
   producto_id: number;
@@ -28,14 +28,14 @@ interface UseComboFormReturn {
   handleProductSearch: (query: string) => Promise<{ value: number; label: string; subtitle?: string }[]>;
 
   addGroup: () => void;
-  updateGroup: (idx: number, field: keyof FormGroup, value: unknown) => void;
+  updateGroup: <K extends keyof FormGroup>(idx: number, field: K, value: FormGroup[K]) => void;
   removeGroup: (idx: number) => void;
   addProductToGroup: (groupIdx: number) => void;
   updateProductInGroup: (groupIdx: number, prodIdx: number, producto_id: number) => void;
   removeProductFromGroup: (groupIdx: number, prodIdx: number) => void;
   toggleMethod: (id: number) => void;
 
-  validateAndBuildPayload: () => { valid: boolean; payload: any | null };
+  validateAndBuildPayload: () => { valid: boolean; payload: ComboCreate | null };
 }
 
 export function useComboForm(): UseComboFormReturn {
@@ -75,7 +75,7 @@ export function useComboForm(): UseComboFormReturn {
     setFormGroups((prev) => [...prev, { nombre: "", min_cantidad: 0, max_cantidad: 8, productos: [] }]);
   }, []);
 
-  const updateGroup = useCallback((idx: number, field: keyof FormGroup, value: unknown) => {
+  const updateGroup = useCallback(<K extends keyof FormGroup>(idx: number, field: K, value: FormGroup[K]) => {
     setFormGroups((prev) => prev.map((g, i) => (i === idx ? { ...g, [field]: value } : g)));
   }, []);
 
@@ -116,33 +116,60 @@ export function useComboForm(): UseComboFormReturn {
   }, []);
 
   const handleProductSearch = useCallback(async (query: string) => {
-    const data = await api.getProducts({ search: query || undefined });
-    return data.items.map((p) => ({
-      value: p.id,
-      label: p.nombre,
-      subtitle: p.codigo_barra || undefined,
-    }));
+    try {
+      const data = await api.getProducts({ search: query.trim() || undefined });
+      return data.items.map((p) => ({
+        value: p.id,
+        label: p.nombre,
+        subtitle: p.codigo_barra || undefined,
+      }));
+    } catch {
+      return [];
+    }
   }, []);
 
-  const validateAndBuildPayload = useCallback(() => {
-    if (!formName.trim() || !formPrecio || Number(formPrecio) <= 0 || formGroups.length === 0 || formMethodIds.length === 0) {
+  const validateAndBuildPayload = useCallback((): { valid: boolean; payload: ComboCreate | null } => {
+    const rawPrice = Number(formPrecio);
+    if (
+      !formName.trim() ||
+      !formPrecio.trim() ||
+      Number.isNaN(rawPrice) ||
+      rawPrice <= 0 ||
+      formGroups.length === 0 ||
+      formMethodIds.length === 0
+    ) {
       return { valid: false, payload: null };
     }
 
-    const grupos: ComboGroupEntry[] = formGroups.map((g) => ({
-      nombre: g.nombre,
-      min_cantidad: g.min_cantidad,
-      max_cantidad: g.max_cantidad,
-      productos: g.productos.filter((p) => p.producto_id > 0).map((p) => ({ producto_id: p.producto_id })),
-    }));
+    const validGroups: ComboGroupEntry[] = [];
+    for (const g of formGroups) {
+      const trimmedName = g.nombre.trim();
+      if (
+        !trimmedName ||
+        g.min_cantidad < 0 ||
+        g.max_cantidad < 1 ||
+        g.min_cantidad > g.max_cantidad
+      ) {
+        return { valid: false, payload: null };
+      }
+
+      validGroups.push({
+        nombre: trimmedName,
+        min_cantidad: g.min_cantidad,
+        max_cantidad: g.max_cantidad,
+        productos: g.productos
+          .filter((p) => p.producto_id > 0)
+          .map((p) => ({ producto_id: p.producto_id })),
+      });
+    }
 
     return {
       valid: true,
       payload: {
         nombre: formName.trim(),
         descripcion: formDesc.trim() || null,
-        precio_total_usd: Number(formPrecio),
-        grupos,
+        precio_total_usd: Math.round(rawPrice * 100) / 100,
+        grupos: validGroups,
         metodo_pago_ids: formMethodIds,
       },
     };

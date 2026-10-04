@@ -4,8 +4,8 @@ import Modal from "@/ui-components/Modal";
 import Button from "@/ui-components/Button";
 import Input from "@/ui-components/Input";
 import Textarea from "@/ui-components/Textarea";
-import { api } from "@/services/api";
 import { useToast } from "@/ui-components/Toast";
+import { useCrearReporteRetornable } from "../hooks/useRetornableMutations";
 
 const BOTELLAS_POR_CAJA: Record<string, number> = { "222": 36, "333": 24 };
 
@@ -78,7 +78,8 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
   const [realizadoPor, setRealizadoPor] = useState("");
   const [observaciones, setObservaciones] = useState("");
   const [detalles, setDetalles] = useState<DetalleLinea[]>(buildEmptyDetalles);
-  const [loading, setLoading] = useState(false);
+
+  const { crearReporte, isCreando } = useCrearReporteRetornable();
 
   const updateDetalle = (
     presentacion: string,
@@ -106,23 +107,26 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
       toast("El campo 'Realizado por' es obligatorio", "error");
       return;
     }
-    setLoading(true);
-    try {
-      await api.crearRetornableReporte({
+
+    const success = await crearReporte(
+      {
         realizado_por: realizadoPor.trim(),
         observaciones: observaciones.trim() || null,
         detalles,
-      });
-      toast("Reporte creado exitosamente", "success");
-      onSaved();
-      onClose();
+      },
+      () => {
+        onSaved();
+        onClose();
+        setRealizadoPor("");
+        setObservaciones("");
+        setDetalles(buildEmptyDetalles());
+      }
+    );
+
+    if (success) {
       setRealizadoPor("");
       setObservaciones("");
       setDetalles(buildEmptyDetalles());
-    } catch (e: unknown) {
-      toast(e instanceof Error ? e.message : "Error al crear reporte", "error");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -184,7 +188,7 @@ export function NuevoReporteModal({ open, onClose, onSaved }: Props) {
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleSubmit} loading={loading}>
+          <Button variant="primary" onClick={handleSubmit} loading={isCreando}>
             Guardar Reporte
           </Button>
         </div>
