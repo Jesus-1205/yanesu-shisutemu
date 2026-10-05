@@ -17,6 +17,7 @@ from app.services.product_service import _accent_fold, _accent_fold_pattern
 from app.schemas.invoice import (
     ExtractedProduct,
     FacturaCreate,
+    FacturaListOut,
     FacturaOut,
     InvoiceAnalysisOut,
     InvoicePaymentCreate,
@@ -28,7 +29,7 @@ IVA_RATE = Decimal("16")
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 
-def _calcular_total_con_iva(factura: Factura, db: Session) -> tuple[Decimal, Decimal]:
+def _calcular_total_con_iva(factura: Factura, db: Session | None = None) -> tuple[Decimal, Decimal]:
     """Calcula el total de la factura incluyendo IVA.
 
     Retorna (total_usd_con_iva, total_bs_con_iva).
@@ -37,8 +38,15 @@ def _calcular_total_con_iva(factura: Factura, db: Session) -> tuple[Decimal, Dec
     if factura.moneda_principal != MonedaEnum.BS or not factura.aplica_iva:
         return (factura.total_usd, factura.total_bs)
 
-    stmt = select(DetalleFactura).where(DetalleFactura.factura_id == factura.id)
-    detalles = db.execute(stmt).scalars().all()
+    detalles = None
+    if "detalles" in factura.__dict__:
+        detalles = factura.detalles
+    elif db is not None:
+        stmt = select(DetalleFactura).where(DetalleFactura.factura_id == factura.id)
+        detalles = db.execute(stmt).scalars().all()
+
+    if not detalles:
+        return (factura.total_usd, factura.total_bs)
 
     base_bs = Decimal("0")
     exento_bs = Decimal("0")
@@ -677,9 +685,8 @@ def get_invoices(
     offset = (page - 1) * page_size
     stmt = stmt.offset(offset).limit(page_size).options(
         selectinload(Factura.supplier),
-        selectinload(Factura.detalles).selectinload(DetalleFactura.product),
         selectinload(Factura.payments),
-        selectinload(Factura.obsequios),
+        selectinload(Factura.detalles),
     )
 
     items = list(db.execute(stmt).scalars().all())
@@ -749,7 +756,12 @@ def get_pending_invoices_summary(db: Session) -> dict:
     usando _calcular_total_con_iva, resta lo ya pagado, y suma todo.
     """
     facturas = db.execute(
-        select(Factura).where(
+        select(Factura)
+        .options(
+            selectinload(Factura.detalles),
+            selectinload(Factura.payments),
+        )
+        .where(
             Factura.estado_pago.in_(["PENDIENTE", "PARCIALMENTE_PAGADA"])
         )
     ).scalars().all()
@@ -758,10 +770,7 @@ def get_pending_invoices_summary(db: Session) -> dict:
 
     for factura in facturas:
         total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
-
-        pagos = db.execute(
-            select(InvoicePayment).where(InvoicePayment.factura_id == factura.id)
-        ).scalars().all()
+        pagos = factura.payments or []
 
         total_pagado_usd = sum(p.monto_usd for p in pagos)
 
@@ -1026,18 +1035,46 @@ def get_payment_receipt(db: Session, payment_id: int, receipt_id: int) -> Invoic
     return receipt
 
 
-def enrich_invoice_out(factura: Factura) -> FacturaOut:
+def enrich_invoice_out(factura: Factura, db: Session | None = None) -> FacturaOut:
     out = FacturaOut.model_validate(factura)
+    total_con_iva_usd, total_con_iva_bs = _calcular_total_con_iva(factura, db)
+    out.total_con_iva_usd = total_con_iva_usd
+    out.total_con_iva_bs = total_con_iva_bs
+
     if factura.payments:
         total_pagado_usd = sum(p.monto_usd for p in factura.payments)
         total_pagado_bs = sum(p.monto_bs for p in factura.payments)
         out.total_pagado_usd = total_pagado_usd
         out.total_pagado_bs = total_pagado_bs
-        if out.moneda_principal == "BS" and out.total_bs > 0:
-            out.porcentaje_pagado = min(float(total_pagado_bs / out.total_bs * 100), 100.0)
-        elif out.total_usd > 0:
-            out.porcentaje_pagado = min(float(total_pagado_usd / out.total_usd * 100), 100.0)
-    out.saldo_pendiente_usd = max(out.total_usd - out.total_pagado_usd, Decimal("0"))
-    out.saldo_pendiente_bs = max(out.total_bs - out.total_pagado_bs, Decimal("0"))
+        if out.moneda_principal == MonedaEnum.BS and total_con_iva_bs > 0:
+            porcentaje = (total_pagado_bs / total_con_iva_bs * Decimal("100")).quantize(Decimal("0.01"))
+            out.porcentaje_pagado = min(porcentaje, Decimal("100.00"))
+        elif total_con_iva_usd > 0:
+            porcentaje = (total_pagado_usd / total_con_iva_usd * Decimal("100")).quantize(Decimal("0.01"))
+            out.porcentaje_pagado = min(porcentaje, Decimal("100.00"))
+    out.saldo_pendiente_usd = max(total_con_iva_usd - out.total_pagado_usd, Decimal("0"))
+    out.saldo_pendiente_bs = max(total_con_iva_bs - out.total_pagado_bs, Decimal("0"))
+    return out
+
+
+def enrich_invoice_list_out(factura: Factura, db: Session | None = None) -> FacturaListOut:
+    out = FacturaListOut.model_validate(factura)
+    total_con_iva_usd, total_con_iva_bs = _calcular_total_con_iva(factura, db)
+    out.total_con_iva_usd = total_con_iva_usd
+    out.total_con_iva_bs = total_con_iva_bs
+
+    if factura.payments:
+        total_pagado_usd = sum(p.monto_usd for p in factura.payments)
+        total_pagado_bs = sum(p.monto_bs for p in factura.payments)
+        out.total_pagado_usd = total_pagado_usd
+        out.total_pagado_bs = total_pagado_bs
+        if out.moneda_principal == MonedaEnum.BS and total_con_iva_bs > 0:
+            porcentaje = (total_pagado_bs / total_con_iva_bs * Decimal("100")).quantize(Decimal("0.01"))
+            out.porcentaje_pagado = min(porcentaje, Decimal("100.00"))
+        elif total_con_iva_usd > 0:
+            porcentaje = (total_pagado_usd / total_con_iva_usd * Decimal("100")).quantize(Decimal("0.01"))
+            out.porcentaje_pagado = min(porcentaje, Decimal("100.00"))
+    out.saldo_pendiente_usd = max(total_con_iva_usd - out.total_pagado_usd, Decimal("0"))
+    out.saldo_pendiente_bs = max(total_con_iva_bs - out.total_pagado_bs, Decimal("0"))
     return out
 

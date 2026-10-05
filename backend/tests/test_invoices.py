@@ -147,6 +147,21 @@ class TestListInvoices:
         assert len(data["items"]) == 2
         assert data["total"] == 3
 
+    def test_list_lightweight_payload_without_detalles(self, client):
+        _login(client)
+        sup = _create_supplier(client).json()
+        prod = _create_product(client).json()
+        client.post("/api/invoices", data={"data": json.dumps(
+            _invoice_payload(sup["id"], prod["id"], "F-LIGHT-001")
+        )})
+        response = client.get("/api/invoices")
+        assert response.status_code == 200
+        item = response.json()["items"][0]
+        assert "detalles" not in item
+        assert "obsequios" not in item
+        assert "total_con_iva_usd" in item
+        assert "total_con_iva_bs" in item
+
     def test_list_filter_proveedor(self, client):
         _login(client)
         sup1 = _create_supplier(client).json()

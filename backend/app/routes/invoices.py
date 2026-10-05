@@ -15,7 +15,9 @@ from app.models.supplier import Supplier
 from app.models.user import User
 from app.schemas.invoice import (
     FacturaCreate,
+    FacturaListOut,
     FacturaOut,
+    FacturaPaginationListOut,
     FacturaPaginationOut,
     InvoiceAnalysisOut,
     InvoicePaymentCreate,
@@ -31,6 +33,7 @@ from app.services.invoice_service import (
     analyze_invoice_from_image,
     create_invoice,
     delete_invoice_payment,
+    enrich_invoice_list_out,
     enrich_invoice_out,
     get_invoice,
     get_invoice_payment_summary,
@@ -189,7 +192,7 @@ async def create(
     return enrich_invoice_out(factura)
 
 
-@router.get("", response_model=FacturaPaginationOut, status_code=status.HTTP_200_OK)
+@router.get("", response_model=FacturaPaginationListOut, status_code=status.HTTP_200_OK)
 def list_all(
     proveedor_id: int | None = None,
     tipo_documento: str | None = None,
@@ -207,7 +210,7 @@ def list_all(
 
     Recibe: query params (proveedor_id, tipo_documento, estado_pago, search, sort_by, fecha_desde, fecha_hasta, page, page_size)
     Hace:   consulta facturas con filtros, ordenamiento y paginación
-    Devuelve: 200 + FacturaPaginationOut
+    Devuelve: 200 + FacturaPaginationListOut
     """
     result = get_invoices(
         db,
@@ -222,7 +225,7 @@ def list_all(
         page_size=page_size,
     )
     return {
-        "items": [enrich_invoice_out(f) for f in result["items"]],
+        "items": [enrich_invoice_list_out(f, db) for f in result["items"]],
         "total": result["total"],
         "page": result["page"],
         "page_size": result["page_size"],

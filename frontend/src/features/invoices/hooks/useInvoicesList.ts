@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/services/api";
-import type { Invoice, InvoiceStatsOut } from "../types";
+import type { InvoiceListItem, InvoiceStatsOut } from "../types";
 import { useInvoiceFiltersStore } from "../store/invoiceFiltersStore";
 
 const PAGE_SIZE = 20;
@@ -14,7 +14,7 @@ const baseStatusTabs = [
 ];
 
 export interface UseInvoicesListReturn {
-  invoices: Invoice[];
+  invoices: InvoiceListItem[];
   stats: InvoiceStatsOut;
   loading: boolean;
   error: string | null;
@@ -29,7 +29,7 @@ export interface UseInvoicesListReturn {
 
 export function useInvoicesList(): UseInvoicesListReturn {
   const [searchParams] = useSearchParams();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceListItem[]>([]);
   const [stats, setStats] = useState<InvoiceStatsOut>({
     pendientes: 0,
     parciales: 0,

@@ -19,7 +19,7 @@ import type {
   ExchangeRatesResponse,
   FacturaCreate,
   FacturaOut,
-  FacturaPaginationOut,
+  FacturaPaginationListOut,
   InvoiceAnalysisOut,
   InvoicePaymentCreate,
   InvoicePaymentOut,
@@ -507,7 +507,7 @@ export const api = {
     if (params?.page) qs.set("page", String(params.page));
     if (params?.page_size) qs.set("page_size", String(params.page_size));
     const q = qs.toString();
-    return request<FacturaPaginationOut>(`/invoices${q ? `?${q}` : ""}`);
+    return request<FacturaPaginationListOut>(`/invoices${q ? `?${q}` : ""}`);
   },
 
   getInvoice: (id: number) =>

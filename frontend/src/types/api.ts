@@ -494,6 +494,8 @@ export interface FacturaOut {
   tasa_bs: number;
   total_usd: number;
   total_bs: number;
+  total_con_iva_usd?: number;
+  total_con_iva_bs?: number;
   aplica_iva: boolean;
   estado_pago: EstadoPago;
   fecha_limite_pago: string | null;
@@ -508,6 +510,42 @@ export interface FacturaOut {
   supplier: SupplierOut | null;
   detalles: DetalleFacturaOut[];
   obsequios: ObsequioFacturaOut[];
+}
+
+export interface FacturaListOut {
+  id: number;
+  proveedor_id: number;
+  numero_factura: string;
+  tipo_documento: TipoDocumento;
+  fecha_factura: string;
+  image_path: string | null;
+  usuario_id: number;
+  observaciones: string | null;
+  moneda_principal: MonedaEnum;
+  tasa_bs: number;
+  total_usd: number;
+  total_bs: number;
+  total_con_iva_usd?: number;
+  total_con_iva_bs?: number;
+  aplica_iva: boolean;
+  estado_pago: EstadoPago;
+  fecha_limite_pago: string | null;
+  created_at: string;
+  procesada_por_ia?: boolean;
+  total_pagado_usd: number;
+  total_pagado_bs: number;
+  saldo_pendiente_usd: number;
+  saldo_pendiente_bs: number;
+  porcentaje_pagado: number;
+  supplier: SupplierOut | null;
+}
+
+export interface FacturaPaginationListOut {
+  items: FacturaListOut[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
 }
 
 export interface FacturaPaginationOut {

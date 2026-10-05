@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/services/api";
-import type { FacturaOut, InvoicePendingSummaryOut, InvoiceStatsOut, TopSupplier } from "@/types/api";
+import type { FacturaListOut, InvoicePendingSummaryOut, InvoiceStatsOut, TopSupplier } from "@/types/api";
 
 export const NEARBY_INVOICES_LIMIT = 5;
 export const DAYS_AHEAD = 7;
@@ -18,8 +18,8 @@ export function getDaysUntil(dateStr: string): number {
 export interface UseComprasHubDataReturn {
   pending: InvoicePendingSummaryOut | null;
   stats: InvoiceStatsOut | null;
-  nearbyInvoices: FacturaOut[];
-  invoicesByDue: FacturaOut[];
+  nearbyInvoices: FacturaListOut[];
+  invoicesByDue: FacturaListOut[];
   upcomingDueCount: number;
   topSuppliers: TopSupplier[];
   loading: boolean;
@@ -30,7 +30,7 @@ export interface UseComprasHubDataReturn {
 export function useComprasHubData(): UseComprasHubDataReturn {
   const [pending, setPending] = useState<InvoicePendingSummaryOut | null>(null);
   const [stats, setStats] = useState<InvoiceStatsOut | null>(null);
-  const [nearbyInvoices, setNearbyInvoices] = useState<FacturaOut[]>([]);
+  const [nearbyInvoices, setNearbyInvoices] = useState<FacturaListOut[]>([]);
   const [topSuppliers, setTopSuppliers] = useState<TopSupplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

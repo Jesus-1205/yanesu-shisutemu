@@ -2,10 +2,10 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 import Button from "@/ui-components/Button";
 import InvoiceCard from "./InvoiceCard";
-import type { FacturaOut } from "@/types/api";
+import type { FacturaListOut } from "@/types/api";
 
 export interface ComprasHubPendingInvoicesProps {
-  invoices: FacturaOut[];
+  invoices: FacturaListOut[];
   onViewAll: () => void;
   onViewInvoice: (id: number) => void;
   onPayInvoice?: (id: number) => void;

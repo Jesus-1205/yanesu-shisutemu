@@ -66,6 +66,8 @@ class FacturaOut(BaseModel):
     tasa_bs: Decimal
     total_usd: Decimal
     total_bs: Decimal
+    total_con_iva_usd: Decimal = Decimal("0")
+    total_con_iva_bs: Decimal = Decimal("0")
     aplica_iva: bool
     estado_pago: str = "PENDIENTE"
     fecha_limite_pago: date | None = None
@@ -77,11 +79,53 @@ class FacturaOut(BaseModel):
     total_pagado_bs: Decimal = Decimal("0")
     saldo_pendiente_usd: Decimal = Decimal("0")
     saldo_pendiente_bs: Decimal = Decimal("0")
-    porcentaje_pagado: float = 0.0
+    porcentaje_pagado: Decimal = Decimal("0")
 
     supplier: SupplierOut | None = None
     detalles: list[DetalleFacturaOut] = []
     obsequios: list["ObsequioFacturaOut"] = []
+
+
+class FacturaListOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    proveedor_id: int
+    numero_factura: str
+    tipo_documento: TipoDocumentoEnum
+    fecha_factura: date
+    image_path: str | None = None
+    usuario_id: int
+    observaciones: str | None = None
+    moneda_principal: MonedaEnum
+    tasa_bs: Decimal
+    total_usd: Decimal
+    total_bs: Decimal
+    total_con_iva_usd: Decimal = Decimal("0")
+    total_con_iva_bs: Decimal = Decimal("0")
+    aplica_iva: bool
+    estado_pago: str = "PENDIENTE"
+    fecha_limite_pago: date | None = None
+    created_at: datetime
+    procesada_por_ia: bool = False
+
+    total_pagado_usd: Decimal = Decimal("0")
+    total_pagado_bs: Decimal = Decimal("0")
+    saldo_pendiente_usd: Decimal = Decimal("0")
+    saldo_pendiente_bs: Decimal = Decimal("0")
+    porcentaje_pagado: Decimal = Decimal("0")
+
+    supplier: SupplierOut | None = None
+
+
+class FacturaPaginationListOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    items: list[FacturaListOut]
+    total: int
+    page: int
+    page_size: int
+    pages: int
 
 
 class FacturaPaginationOut(BaseModel):
