@@ -432,19 +432,26 @@ def get_sales_paginated(
     page: int = 1,
     page_size: int = 20,
 ) -> dict:
+    count_stmt = select(func.count(Sale.id))
     base = select(Sale)
     if fecha_desde:
-        base = base.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
+        ve_desde = _to_ve_boundary(fecha_desde)
+        count_stmt = count_stmt.where(Sale.fecha_venta >= ve_desde)
+        base = base.where(Sale.fecha_venta >= ve_desde)
     if fecha_hasta:
-        base = base.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
+        ve_hasta = _to_ve_boundary(fecha_hasta, end_of_day=True)
+        count_stmt = count_stmt.where(Sale.fecha_venta <= ve_hasta)
+        base = base.where(Sale.fecha_venta <= ve_hasta)
     pm_filter = _payment_method_filter(metodo_pago_ids)
     if pm_filter is not None:
+        count_stmt = count_stmt.where(pm_filter)
         base = base.where(pm_filter)
     time_filter = _time_window_filter(hora_desde, hora_hasta)
     if time_filter is not None:
+        count_stmt = count_stmt.where(time_filter)
         base = base.where(time_filter)
 
-    total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
+    total = db.execute(count_stmt).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)
     offset = (page - 1) * page_size
 
