@@ -401,8 +401,7 @@ def get_sales(
         select(Sale)
         .options(
             selectinload(Sale.user),
-            selectinload(Sale.items).selectinload(SaleItem.product),
-            selectinload(Sale.payments),
+            selectinload(Sale.payments).selectinload(SalePayment.payment_method),
         )
         .order_by(Sale.fecha_venta.desc())
         .limit(limit)
@@ -453,8 +452,7 @@ def get_sales_paginated(
         base
         .options(
             selectinload(Sale.user),
-            selectinload(Sale.items).selectinload(SaleItem.product),
-            selectinload(Sale.payments),
+            selectinload(Sale.payments).selectinload(SalePayment.payment_method),
         )
         .order_by(Sale.fecha_venta.desc())
         .offset(offset)
@@ -470,7 +468,7 @@ def get_sale(db: Session, sale_id: int) -> Sale:
         .options(
             selectinload(Sale.user),
             selectinload(Sale.items).selectinload(SaleItem.product),
-            selectinload(Sale.payments),
+            selectinload(Sale.payments).selectinload(SalePayment.payment_method),
         )
         .where(Sale.id == sale_id)
     )

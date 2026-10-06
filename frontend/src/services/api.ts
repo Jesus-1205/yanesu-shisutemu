@@ -42,7 +42,9 @@ import type {
   ProductUpdate,
   RoleOut,
   SaleCreate,
+  SaleListOut,
   SaleOut,
+  SalePaginationListOut,
   SalesSummaryItem,
   SetupStatusResponse,
   SupplierAnalyticsResponse,
@@ -51,7 +53,6 @@ import type {
   SupplierOut,
   SupplierPaginationOut,
   SupplierUpdate,
-  SalePaginationOut,
   TestConnectionResponse,
   TopWeekOut,
   UserCreate,
@@ -384,7 +385,7 @@ export const api = {
     if (params?.hora_hasta) qs.set("hora_hasta", params.hora_hasta);
     if (params?.limit) qs.set("limit", String(params.limit));
     const q = qs.toString();
-    return request<SaleOut[]>(`/sales${q ? `?${q}` : ""}`);
+    return request<SaleListOut[]>(`/sales${q ? `?${q}` : ""}`);
   },
 
   getSalesPaginated: (params: { fecha_desde?: string; fecha_hasta?: string; metodo_pago_ids?: number[]; hora_desde?: string; hora_hasta?: string; page: number; page_size: number }) => {
@@ -396,7 +397,7 @@ export const api = {
     if (params.hora_hasta) qs.set("hora_hasta", params.hora_hasta);
     qs.set("page", String(params.page));
     qs.set("page_size", String(params.page_size));
-    return request<SalePaginationOut>(`/sales?${qs.toString()}`);
+    return request<SalePaginationListOut>(`/sales?${qs.toString()}`);
   },
 
   getSale: (id: number) =>

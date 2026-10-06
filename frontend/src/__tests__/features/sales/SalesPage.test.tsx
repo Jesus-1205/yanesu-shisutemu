@@ -58,6 +58,7 @@ const sampleSales = [
     total_ves: 4500,
     metodo_pago: "Efectivo",
     tasa_bcv_aplicada: 45,
+    items_count: 1,
     items: [{ id: 1, producto_nombre: "Ron", cantidad: 2 }],
     usuario_nombre: "Admin",
     observaciones: null,

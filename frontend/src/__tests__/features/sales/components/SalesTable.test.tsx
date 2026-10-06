@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import SalesTable from "../../../../features/sales/components/SalesTable";
-import type { Sale } from "../../../../features/sales/types";
+import type { SaleListItem } from "../../../../features/sales/types";
 
-const mockSales: Sale[] = [
+const mockSales: SaleListItem[] = [
   {
     id: 1,
     fecha_venta: "2025-01-15T14:30:00",
@@ -22,21 +22,7 @@ const mockSales: Sale[] = [
     monto_iva_ves: 720,
     total_ves: 4500,
     metodo_pago: "EFECTIVO",
-    items: [
-      {
-        id: 1,
-        venta_id: 1,
-        producto_id: 10,
-        producto_nombre: "Cerveza",
-        tipo_empaque: "UNIDAD",
-        cantidad: 2,
-        unidades_descontadas: 2,
-        precio_unitario_usd: 50,
-        subtotal_usd: 100,
-        iva_porcentaje: 16,
-      },
-    ],
-    pagos: [],
+    items_count: 1,
   },
 ];
 

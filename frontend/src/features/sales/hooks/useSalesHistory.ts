@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/services/api";
-import type { Sale } from "../types";
+import type { SaleListItem } from "../types";
 import type { Column } from "@/ui-components/Table";
 import { formatCurrency, formatPaymentMethodName, formatRate } from "@/lib/utils";
 import { useToast } from "@/ui-components/Toast";
@@ -10,56 +10,56 @@ import { useSalesFiltersStore } from "../store/salesFiltersStore";
 export const PAGE_SIZE = 20;
 export const EXPORT_PAGE_SIZE = 200;
 
-export const exportColumns: Column<Sale>[] = [
+export const exportColumns: Column<SaleListItem>[] = [
   {
     key: "fecha_venta",
     header: "Fecha",
-    render: (s: Sale) => new Date(s.fecha_venta).toLocaleDateString("es-VE"),
+    render: (s: SaleListItem) => new Date(s.fecha_venta).toLocaleDateString("es-VE"),
   },
   {
     key: "total_usd",
     header: "Total USD",
-    render: (s: Sale) => formatCurrency(s.total_usd),
-    exportValue: (s: Sale) => Number(s.total_usd),
+    render: (s: SaleListItem) => formatCurrency(s.total_usd),
+    exportValue: (s: SaleListItem) => Number(s.total_usd),
   },
   {
     key: "total_ves",
     header: "Total VES",
-    render: (s: Sale) => formatCurrency(s.total_ves, "Bs "),
-    exportValue: (s: Sale) => Number(s.total_ves),
+    render: (s: SaleListItem) => formatCurrency(s.total_ves, "Bs "),
+    exportValue: (s: SaleListItem) => Number(s.total_ves),
   },
   {
     key: "metodo_pago",
     header: "Método de Pago",
-    render: (s: Sale) => (s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-"),
+    render: (s: SaleListItem) => (s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-"),
   },
   {
     key: "tasa_bcv_aplicada",
     header: "Tasa BCV",
-    render: (s: Sale) => formatRate(s.tasa_bcv_aplicada),
-    exportValue: (s: Sale) => Number(s.tasa_bcv_aplicada),
+    render: (s: SaleListItem) => formatRate(s.tasa_bcv_aplicada),
+    exportValue: (s: SaleListItem) => Number(s.tasa_bcv_aplicada),
   },
   {
     key: "items_count",
     header: "Items",
-    render: (s: Sale) => s.items.length,
-    exportValue: (s: Sale) => s.items.length,
+    render: (s: SaleListItem) => s.items_count,
+    exportValue: (s: SaleListItem) => s.items_count,
   },
   {
     key: "usuario_nombre",
     header: "Vendedor",
-    render: (s: Sale) => s.usuario_nombre,
+    render: (s: SaleListItem) => s.usuario_nombre,
   },
   {
     key: "observaciones",
     header: "Observaciones",
-    render: (s: Sale) => s.observaciones || "",
+    render: (s: SaleListItem) => s.observaciones || "",
   },
 ];
 
 export function useSalesHistory() {
   const { toast } = useToast();
-  const [sales, setSales] = useState<Sale[]>([]);
+  const [sales, setSales] = useState<SaleListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
@@ -100,7 +100,7 @@ export function useSalesHistory() {
 
   const handleExportAll = useCallback(async () => {
     try {
-      const allSales: Sale[] = [];
+      const allSales: SaleListItem[] = [];
       let currentPage = 1;
       let pages = 1;
       do {

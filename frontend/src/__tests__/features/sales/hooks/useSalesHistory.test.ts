@@ -6,13 +6,13 @@ import { ToastProvider } from "../../../../ui-components/Toast";
 import { api } from "../../../../services/api";
 import { exportToExcel } from "../../../../lib/exportToExcel";
 import { useSalesFiltersStore } from "../../../../features/sales/store/salesFiltersStore";
-import type { Sale } from "../../../../features/sales/types";
+import type { SaleListItem } from "../../../../features/sales/types";
 
 vi.mock("../../../../lib/exportToExcel", () => ({
   exportToExcel: vi.fn().mockReturnValue("Ventas_2025.xlsx"),
 }));
 
-const mockSales: Sale[] = [
+const mockSales: SaleListItem[] = [
   {
     id: 1,
     fecha_venta: "2025-01-15T14:30:00",
@@ -30,21 +30,7 @@ const mockSales: Sale[] = [
     monto_iva_ves: 720,
     total_ves: 4500,
     metodo_pago: "Efectivo",
-    items: [
-      {
-        id: 1,
-        venta_id: 1,
-        producto_id: 10,
-        producto_nombre: "Ron",
-        tipo_empaque: "UNIDAD",
-        cantidad: 2,
-        unidades_descontadas: 2,
-        precio_unitario_usd: 50,
-        subtotal_usd: 100,
-        iva_porcentaje: 16,
-      },
-    ],
-    pagos: [],
+    items_count: 1,
   },
 ];
 
@@ -111,8 +97,8 @@ describe("useSalesHistory", () => {
   });
 
   it("exports all sales across multiple pages", async () => {
-    const saleA: Sale = { ...mockSales[0], id: 1 };
-    const saleB: Sale = { ...mockSales[0], id: 2 };
+    const saleA: SaleListItem = { ...mockSales[0], id: 1 };
+    const saleB: SaleListItem = { ...mockSales[0], id: 2 };
 
     const getSalesPaginatedSpy = vi.spyOn(api, "getSalesPaginated")
       .mockResolvedValueOnce({ items: [saleA], total: 2, page: 1, page_size: 20, pages: 2 })

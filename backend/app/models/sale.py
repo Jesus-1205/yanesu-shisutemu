@@ -1,8 +1,21 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Integer, DECIMAL, DateTime, ForeignKey, Computed, CheckConstraint, Index, Enum as SAEnum, Text, Boolean
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Computed,
+    DateTime,
+    DECIMAL,
+    Enum as SAEnum,
+    ForeignKey,
+    func,
+    Index,
+    Integer,
+    select,
+    Text,
+)
+from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from app.core.database import Base
 from app.core.timezone import VE_NOW
@@ -108,3 +121,11 @@ class SaleItem(Base):
     sale: Mapped["Sale"] = relationship("Sale", back_populates="items")
     product: Mapped["Product"] = relationship("Product", back_populates="sale_items")
     combo: Mapped["Combo | None"] = relationship("Combo")
+
+
+Sale.items_count = column_property(
+    select(func.count(SaleItem.id))
+    .where(SaleItem.venta_id == Sale.id)
+    .correlate_except(SaleItem)
+    .scalar_subquery()
+)

@@ -89,11 +89,43 @@ class SaleOut(BaseModel):
     pagos: list[SalePaymentOut] = Field(default=[], validation_alias="payments")
 
 
+class SaleListOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    fecha_venta: datetime
+    usuario_id: int
+    usuario_nombre: str = ""
+    tasa_bcv_aplicada: Decimal
+    historico_tasa_id: int | None
+    observaciones: str | None = None
+    monto_exento_usd: Decimal
+    base_imponible_usd: Decimal
+    monto_iva_usd: Decimal
+    total_usd: Decimal
+    monto_exento_ves: Decimal
+    base_imponible_ves: Decimal
+    monto_iva_ves: Decimal
+    total_ves: Decimal
+    metodo_pago: str = "-"
+    items_count: int = 0
+
+
 class TopWeekOut(BaseModel):
     periodo: str
     total_ventas: int
     total_usd: Decimal
     total_ves: Decimal
+
+
+class SalePaginationListOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    items: list[SaleListOut]
+    total: int
+    page: int
+    page_size: int
+    pages: int
 
 
 class SalePaginationOut(BaseModel):

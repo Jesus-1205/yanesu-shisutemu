@@ -12,7 +12,9 @@ from app.schemas.sale import (
     CalculateRequest,
     CalculateResponse,
     SaleCreate,
+    SaleListOut,
     SaleOut,
+    SalePaginationListOut,
     SalePaginationOut,
     TopWeekOut,
 )
@@ -85,8 +87,8 @@ def list_all(
             page=page,
             page_size=page_size,
         )
-        return SalePaginationOut(
-            items=[SaleOut.model_validate(s) for s in result["items"]],
+        return SalePaginationListOut(
+            items=[SaleListOut.model_validate(s) for s in result["items"]],
             total=result["total"],
             page=result["page"],
             page_size=result["page_size"],
@@ -102,7 +104,7 @@ def list_all(
         hora_hasta=hora_hasta,
         limit=limit,
     )
-    return [SaleOut.model_validate(s) for s in sales]
+    return [SaleListOut.model_validate(s) for s in sales]
 
 
 @router.get("/top-week", status_code=status.HTTP_200_OK)

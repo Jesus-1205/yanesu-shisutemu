@@ -2,25 +2,25 @@ import type { Column } from "@/ui-components/Table";
 import Table from "@/ui-components/Table";
 import Button from "@/ui-components/Button";
 import { formatCurrency, formatPaymentMethodName, formatRate } from "@/lib/utils";
-import type { Sale } from "../types";
+import type { SaleListItem } from "../types";
 
 export interface SalesTableProps {
-  sales: Sale[];
+  sales: SaleListItem[];
   loading: boolean;
   onViewSale: (id: number) => void;
 }
 
 export default function SalesTable({ sales, loading, onViewSale }: SalesTableProps) {
-  const columns: Column<Sale>[] = [
+  const columns: Column<SaleListItem>[] = [
     {
       key: "fecha_venta",
       header: "Fecha",
-      render: (s: Sale) => new Date(s.fecha_venta).toLocaleDateString("es-VE"),
+      render: (s: SaleListItem) => new Date(s.fecha_venta).toLocaleDateString("es-VE"),
     },
     {
       key: "total_usd",
       header: "Total USD",
-      render: (s: Sale) => (
+      render: (s: SaleListItem) => (
         <span className="font-semibold text-slate-900">{formatCurrency(s.total_usd)}</span>
       ),
     },
@@ -28,13 +28,13 @@ export default function SalesTable({ sales, loading, onViewSale }: SalesTablePro
       key: "total_ves",
       header: "Total VES",
       hideOnMobile: true,
-      render: (s: Sale) => formatCurrency(s.total_ves, "Bs "),
+      render: (s: SaleListItem) => formatCurrency(s.total_ves, "Bs "),
     },
     {
       key: "metodo_pago",
       header: "Método de Pago",
       hideOnMobile: true,
-      render: (s: Sale) => (
+      render: (s: SaleListItem) => (
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
           {s.metodo_pago ? s.metodo_pago.split(", ").map(formatPaymentMethodName).join(", ") : "-"}
         </span>
@@ -44,17 +44,17 @@ export default function SalesTable({ sales, loading, onViewSale }: SalesTablePro
       key: "tasa_bcv_aplicada",
       header: "Tasa BCV",
       hideOnMobile: true,
-      render: (s: Sale) => formatRate(s.tasa_bcv_aplicada),
+      render: (s: SaleListItem) => formatRate(s.tasa_bcv_aplicada),
     },
     {
       key: "items",
       header: "Items",
-      render: (s: Sale) => s.items.length,
+      render: (s: SaleListItem) => s.items_count,
     },
     {
       key: "acciones",
       header: "",
-      render: (s: Sale) => (
+      render: (s: SaleListItem) => (
         <Button
           variant="ghost"
           size="sm"

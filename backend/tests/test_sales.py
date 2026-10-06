@@ -163,6 +163,19 @@ class TestListSales:
         assert response.status_code == 200
         assert len(response.json()) == 1
 
+    def test_list_lightweight_payload(self, client):
+        _login(client, _ADMIN)
+        prod = _create_product(client).json()
+        _create_sale(client, prod["id"])
+        response = client.get("/api/sales")
+        assert response.status_code == 200
+        sale = response.json()[0]
+        assert "items" not in sale
+        assert "pagos" not in sale
+        assert sale["items_count"] == 1
+        assert "total_usd" in sale
+        assert "metodo_pago" in sale
+
     def test_list_operator_sees_current_week(self, client):
         _login(client, _OPERATOR)
         _login(client, _ADMIN)
@@ -275,7 +288,9 @@ class TestListSalesPaymentMethodFilter:
         resp = client.get(f"/api/sales?metodo_pago_ids={methods['DIVISAS']}")
         assert resp.status_code == 200
         assert len(resp.json()) == 1
-        assert resp.json()[0]["pagos"][0]["metodo_pago_id"] == methods["DIVISAS"]
+        sale_id = resp.json()[0]["id"]
+        detail = client.get(f"/api/sales/{sale_id}").json()
+        assert detail["pagos"][0]["metodo_pago_id"] == methods["DIVISAS"]
 
     def test_filter_multiple_methods_or(self, client):
         _login(client, _ADMIN)

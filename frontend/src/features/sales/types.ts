@@ -1,5 +1,9 @@
 export type {
   SaleOut as Sale,
+  SaleOut as SaleDetail,
+  SaleListOut as SaleListItem,
+  SalePaginationListOut as SalePagination,
+  SalePaginationOut,
   SaleCreate as CreateSaleData,
   SaleItemOut as SaleItem,
   SaleItemCreate as CreateSaleItemData,

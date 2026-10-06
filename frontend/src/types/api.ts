@@ -391,8 +391,29 @@ export interface SaleOut {
   monto_iva_ves: number;
   total_ves: number;
   metodo_pago: string;
+  items_count?: number;
   items: SaleItemOut[];
   pagos: SalePaymentOut[];
+}
+
+export interface SaleListOut {
+  id: number;
+  fecha_venta: string;
+  usuario_id: number;
+  usuario_nombre: string;
+  tasa_bcv_aplicada: number;
+  historico_tasa_id: number | null;
+  observaciones: string | null;
+  monto_exento_usd: number;
+  base_imponible_usd: number;
+  monto_iva_usd: number;
+  total_usd: number;
+  monto_exento_ves: number;
+  base_imponible_ves: number;
+  monto_iva_ves: number;
+  total_ves: number;
+  metodo_pago: string;
+  items_count: number;
 }
 
 export interface SalesSummaryItem {
@@ -419,6 +440,14 @@ export interface PaymentMethodSummaryItem {
   total_usd: number;
   total_ves: number;
   total_equivalente_usd: number;
+}
+
+export interface SalePaginationListOut {
+  items: SaleListOut[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
 }
 
 export interface SalePaginationOut {
