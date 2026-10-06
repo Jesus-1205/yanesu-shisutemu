@@ -7,6 +7,7 @@ Uso:
     py scripts/benchmark_api.py -u tu_usuario -p tu_clave -e /sales?page=1&page_size=20 -n 1000 -c 50
     py scripts/benchmark_api.py -u tu_usuario -p tu_clave -e /invoices?page=1&page_size=20
     py scripts/benchmark_api.py -u tu_usuario -p tu_clave -e /products?page=1&page_size=20 --inspect-only
+
 """
 
 import argparse
