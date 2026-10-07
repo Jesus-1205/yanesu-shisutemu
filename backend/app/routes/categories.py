@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
-from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryOut, CategoryAnalyticsResponse, CategoryDetailAnalyticsOut, CategoryPaginationOut
+from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryOut, CategoryAnalyticsResponse, CategorySummaryResponse, CategoryDetailAnalyticsOut, CategoryPaginationOut
 from app.services.audit_service import log_action
 from app.services.category_service import (
     create_category,
@@ -13,6 +13,7 @@ from app.services.category_service import (
     get_categories_paginated,
     get_category,
     get_category_analytics,
+    get_category_summary,
     get_category_detail_analytics,
     get_low_rotation_categories,
     get_lowest_margin_categories,
@@ -77,6 +78,21 @@ def analytics(
     Devuelve: 200 + CategoryAnalyticsResponse | 401 no autenticado | 403 no admin
     """
     result = get_category_analytics(db)
+    return result
+
+
+@router.get("/summary", status_code=status.HTTP_200_OK)
+def summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /categories/summary - Resumen ligero de KPIs de categorías
+
+    Recibe: cookie access_token
+    Hace:   calcula KPIs globales y líderes en categorías
+    Devuelve: 200 + CategorySummaryResponse | 401 no autenticado | 403 sin permisos
+    """
+    result = get_category_summary(db)
     return result
 
 

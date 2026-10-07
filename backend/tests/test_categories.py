@@ -229,3 +229,16 @@ class TestCategoryDetailAnalyticsRoute:
         resp = client.get("/api/categories/99999/analytics")
         assert resp.status_code == 404
 
+
+class TestCategorySummaryRoute:
+    def test_get_category_summary(self, client):
+        _register_admin(client)
+        client.post("/api/categories", json={"nombre": "Ron"})
+        resp = client.get("/api/categories/summary")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "total_categorias" in data
+        assert "total_productos" in data
+        assert data["total_categorias"] >= 1
+
+

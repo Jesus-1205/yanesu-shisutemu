@@ -465,4 +465,39 @@ describe("api - normalización de decimales (responses complejas)", () => {
     expect(result.rates.EUR).toBe("50.2300");
     expect(result.fecha_ultima_actualizacion).toBe("2025-01-01T00:00:00");
   });
+
+  it("getCategorySummary fetches category summary", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockOk({
+        total_categorias: 10,
+        total_productos: 100,
+        categoria_lider_nombre: "Cerveza",
+        mayor_margen_porcentaje: 45.5,
+      }),
+    );
+    const result = await api.getCategorySummary();
+    expect(result.total_categorias).toBe(10);
+    expect(result.categoria_lider_nombre).toBe("Cerveza");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/categories/summary",
+      expect.anything(),
+    );
+  });
+
+  it("getSupplierSummary fetches supplier summary", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockOk({
+        total_proveedores: 8,
+        total_productos: 50,
+        proveedor_principal_nombre: "Polar",
+      }),
+    );
+    const result = await api.getSupplierSummary();
+    expect(result.total_proveedores).toBe(8);
+    expect(result.proveedor_principal_nombre).toBe("Polar");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/suppliers/summary",
+      expect.anything(),
+    );
+  });
 });

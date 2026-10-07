@@ -13,6 +13,7 @@ from app.schemas.category import (
     CategoryUpdate,
     CategoryAnalyticsOut,
     CategoryAnalyticsResponse,
+    CategorySummaryResponse,
     CategoryDetailAnalyticsOut,
     CategoryDetailProductOut,
 )
@@ -187,6 +188,62 @@ def get_category_analytics(db: Session) -> CategoryAnalyticsResponse:
         unidades_vendidas=unidades_vendidas,
         ingresos_usd=ingresos_usd,
         categorias=categorias,
+    )
+
+
+def get_category_summary(db: Session) -> CategorySummaryResponse:
+    total_categorias = db.execute(select(func.count(Category.id))).scalar() or 0
+    total_productos = db.execute(select(func.count(Product.id))).scalar() or 0
+
+    lider_stmt = (
+        select(Category.nombre)
+        .join(producto_categoria, producto_categoria.c.categoria_id == Category.id)
+        .join(Product, Product.id == producto_categoria.c.producto_id)
+        .join(SaleItem, SaleItem.producto_id == Product.id)
+        .group_by(Category.id, Category.nombre)
+        .order_by(func.sum(SaleItem.subtotal_usd).desc())
+        .limit(1)
+    )
+    categoria_lider = db.execute(lider_stmt).scalar()
+
+    product_margins = (
+        select(
+            producto_categoria.c.categoria_id,
+            Product.precio_unidad_usd,
+            Product.precio_costo_usd,
+            func.coalesce(func.sum(SaleItem.unidades_descontadas), 0).label("uv"),
+        )
+        .select_from(producto_categoria)
+        .join(Product, Product.id == producto_categoria.c.producto_id)
+        .outerjoin(SaleItem, SaleItem.producto_id == Product.id)
+        .group_by(producto_categoria.c.categoria_id, Product.id, Product.precio_unidad_usd, Product.precio_costo_usd)
+    ).subquery()
+
+    pm_rows = db.execute(select(product_margins)).all()
+    margins_by_category: dict[int, list[Decimal]] = {}
+    for cat_id, p_unidad, p_costo, uv in pm_rows:
+        if int(uv) <= 0:
+            continue
+        p_costo_dec = Decimal(str(p_costo))
+        p_unidad_dec = Decimal(str(p_unidad))
+        if p_costo_dec > 0 and p_unidad_dec > 0:
+            margen_pct = ((p_unidad_dec - p_costo_dec) / p_unidad_dec) * Decimal("100")
+        else:
+            margen_pct = Decimal("0")
+        margins_by_category.setdefault(cat_id, []).append(margen_pct)
+
+    mayor_margen_pct: Decimal | None = None
+    for cat_id, margins in margins_by_category.items():
+        if margins:
+            avg_m = (sum(margins) / len(margins)).quantize(Decimal("0.1"))
+            if mayor_margen_pct is None or avg_m > mayor_margen_pct:
+                mayor_margen_pct = avg_m
+
+    return CategorySummaryResponse(
+        total_categorias=total_categorias,
+        total_productos=total_productos,
+        categoria_lider_nombre=categoria_lider,
+        mayor_margen_porcentaje=mayor_margen_pct,
     )
 
 

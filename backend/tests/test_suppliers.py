@@ -210,3 +210,16 @@ class TestSupplierDetailAnalyticsAndPagination:
         resp = client.get("/api/suppliers/99999/analytics")
         assert resp.status_code == 404
 
+
+class TestSupplierSummaryRoute:
+    def test_get_supplier_summary(self, client):
+        _register_admin(client)
+        client.post("/api/suppliers", json={"nombre": "Polar"})
+        resp = client.get("/api/suppliers/summary")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "total_proveedores" in data
+        assert "total_productos" in data
+        assert data["total_proveedores"] >= 1
+
+

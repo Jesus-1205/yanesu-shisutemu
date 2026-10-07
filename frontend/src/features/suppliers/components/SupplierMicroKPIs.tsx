@@ -1,8 +1,8 @@
 import { Building2, TrendingUp, Receipt } from "lucide-react";
-import type { SupplierAnalyticsResponse } from "@/types/api";
+import type { SupplierSummaryResponse } from "@/types/api";
 
 interface SupplierMicroKPIsProps {
-  data: SupplierAnalyticsResponse | null;
+  data: SupplierSummaryResponse | null;
   loading: boolean;
 }
 
@@ -20,10 +20,7 @@ export default function SupplierMicroKPIs({ data, loading }: SupplierMicroKPIsPr
     );
   }
 
-  const principal = data.proveedores.length > 0
-    ? data.proveedores.reduce((a, b) => a.ingresos_usd > b.ingresos_usd ? a : b)
-    : null;
-
+  const principalNombre = data.proveedor_principal_nombre || null;
   const totalFacturas = data.total_proveedores;
 
   return (
@@ -34,8 +31,8 @@ export default function SupplierMicroKPIs({ data, loading }: SupplierMicroKPIsPr
         </div>
         <div className="min-w-0">
           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Proveedor Principal</p>
-          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl" title={principal ? principal.nombre : undefined}>
-            {principal ? principal.nombre : "—"}
+          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl" title={principalNombre ?? undefined}>
+            {principalNombre || "—"}
           </p>
         </div>
       </div>

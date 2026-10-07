@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
-from app.schemas.supplier import SupplierCreate, SupplierUpdate, SupplierOut, SupplierAnalyticsResponse, SupplierDetailAnalyticsOut, SupplierPaginationOut
+from app.schemas.supplier import SupplierCreate, SupplierUpdate, SupplierOut, SupplierAnalyticsResponse, SupplierSummaryResponse, SupplierDetailAnalyticsOut, SupplierPaginationOut
 from app.services.audit_service import log_action
-from app.services.supplier_service import get_suppliers, get_suppliers_paginated, get_supplier, create_supplier, update_supplier, delete_supplier, get_supplier_analytics, get_supplier_detail_analytics
+from app.services.supplier_service import get_suppliers, get_suppliers_paginated, get_supplier, create_supplier, update_supplier, delete_supplier, get_supplier_analytics, get_supplier_summary, get_supplier_detail_analytics
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 
@@ -64,6 +64,21 @@ def analytics(
     Devuelve: 200 + SupplierAnalyticsResponse | 401 no autenticado | 403 no admin
     """
     result = get_supplier_analytics(db)
+    return result
+
+
+@router.get("/summary", status_code=status.HTTP_200_OK)
+def summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMINISTRADOR", "OPERADOR")),
+):
+    """GET /suppliers/summary - Resumen ligero de KPIs de proveedores
+
+    Recibe: cookie access_token
+    Hace:   calcula KPIs globales y proveedor principal
+    Devuelve: 200 + SupplierSummaryResponse | 401 no autenticado | 403 sin permisos
+    """
+    result = get_supplier_summary(db)
     return result
 
 

@@ -4,6 +4,7 @@ import type {
   CalculateRequest,
   CalculateResponse,
   CategoryAnalyticsResponse,
+  CategorySummaryResponse,
   CategoryCreate,
   CategoryDetailAnalytics,
   CategoryOut,
@@ -48,6 +49,7 @@ import type {
   SalesSummaryItem,
   SetupStatusResponse,
   SupplierAnalyticsResponse,
+  SupplierSummaryResponse,
   SupplierCreate,
   SupplierDetailAnalytics,
   SupplierOut,
@@ -433,11 +435,17 @@ export const api = {
   getCategoryAnalytics: () =>
     request<CategoryAnalyticsResponse>("/categories/analytics"),
 
+  getCategorySummary: () =>
+    request<CategorySummaryResponse>("/categories/summary"),
+
   getCategoryDetailAnalytics: (categoryId: number) =>
     request<CategoryDetailAnalytics>(`/categories/${categoryId}/analytics`),
 
   getSupplierAnalytics: () =>
     request<SupplierAnalyticsResponse>("/suppliers/analytics"),
+
+  getSupplierSummary: () =>
+    request<SupplierSummaryResponse>("/suppliers/summary"),
 
   getSupplierDetailAnalytics: (supplierId: number) =>
     request<SupplierDetailAnalytics>(`/suppliers/${supplierId}/analytics`),

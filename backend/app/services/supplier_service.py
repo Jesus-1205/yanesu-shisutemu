@@ -13,6 +13,7 @@ from app.schemas.supplier import (
     SupplierUpdate,
     SupplierAnalyticsOut,
     SupplierAnalyticsResponse,
+    SupplierSummaryResponse,
     SupplierDetailAnalyticsOut,
     SupplierDetailProductOut,
 )
@@ -189,6 +190,27 @@ def get_supplier_analytics(db: Session) -> SupplierAnalyticsResponse:
         unidades_vendidas=unidades_vendidas,
         ingresos_usd=ingresos_usd,
         proveedores=proveedores,
+    )
+
+
+def get_supplier_summary(db: Session) -> SupplierSummaryResponse:
+    total_proveedores = db.execute(select(func.count(Supplier.id))).scalar() or 0
+    total_productos = db.execute(select(func.count(Product.id))).scalar() or 0
+
+    principal_stmt = (
+        select(Supplier.nombre)
+        .join(Product, Product.proveedor_id == Supplier.id)
+        .join(SaleItem, SaleItem.producto_id == Product.id)
+        .group_by(Supplier.id, Supplier.nombre)
+        .order_by(func.sum(SaleItem.subtotal_usd).desc())
+        .limit(1)
+    )
+    proveedor_principal = db.execute(principal_stmt).scalar()
+
+    return SupplierSummaryResponse(
+        total_proveedores=total_proveedores,
+        total_productos=total_productos,
+        proveedor_principal_nombre=proveedor_principal,
     )
 
 

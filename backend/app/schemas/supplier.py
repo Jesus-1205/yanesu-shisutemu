@@ -50,6 +50,13 @@ class SupplierAnalyticsResponse(BaseModel):
     proveedores: list[SupplierAnalyticsOut]
 
 
+class SupplierSummaryResponse(BaseModel):
+    total_proveedores: int
+    total_productos: int
+    proveedor_principal_nombre: str | None = None
+
+
+
 class SupplierDetailProductOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

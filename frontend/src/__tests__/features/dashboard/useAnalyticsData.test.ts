@@ -155,30 +155,16 @@ describe("useAnalyticsData - refetch manual", () => {
 // ── useCategoryAnalytics (integración con api mock) ───────────────────────────
 
 describe("useCategoryAnalytics - integración", () => {
-  it("llama a api.getCategoryAnalytics y expone los datos", async () => {
+  it("llama a api.getCategorySummary y expone los datos", async () => {
     const mockApi = await import("@/services/api");
     const payload = {
       total_categorias: 5,
       total_productos: 50,
-      stock_total: 200,
-      margen_promedio_general: 25.5,
-      unidades_vendidas: 1000,
-      ingresos_usd: 5000,
-      categorias: [
-        {
-          id: 1,
-          nombre: "Licores",
-          descripcion: null,
-          total_productos: 10,
-          stock_total: 40,
-          margen_promedio: 30,
-          unidades_vendidas: 200,
-          ingresos_usd: 2000,
-        },
-      ],
+      categoria_lider_nombre: "Licores",
+      mayor_margen_porcentaje: 30,
     };
 
-    vi.spyOn(mockApi.api, "getCategoryAnalytics").mockResolvedValueOnce(payload);
+    vi.spyOn(mockApi.api, "getCategorySummary").mockResolvedValueOnce(payload);
 
     const { useCategoryAnalytics } = await import(
       "@/features/categories/hooks/useCategoryAnalytics"
@@ -189,7 +175,7 @@ describe("useCategoryAnalytics - integración", () => {
 
     expect(result.current.data).toEqual(payload);
     expect(result.current.error).toBeNull();
-    expect(mockApi.api.getCategoryAnalytics).toHaveBeenCalledTimes(1);
+    expect(mockApi.api.getCategorySummary).toHaveBeenCalledTimes(1);
   });
 });
 

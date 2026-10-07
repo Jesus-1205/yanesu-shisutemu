@@ -8,7 +8,7 @@ import SupplierAnalyticsDrawer from "@/features/suppliers/components/SupplierAna
 import { ToastProvider } from "@/ui-components/Toast";
 import { api } from "@/services/api";
 import type {
-  SupplierAnalyticsResponse,
+  SupplierSummaryResponse,
   SupplierDetailAnalytics,
   SupplierDetailProduct,
 } from "@/types/api";
@@ -25,37 +25,10 @@ function renderWithToast(ui: ReactNode) {
   return render(<ToastProvider>{ui}</ToastProvider>);
 }
 
-const mockSupplierAnalyticsData: SupplierAnalyticsResponse = {
+const mockSupplierSummaryData: SupplierSummaryResponse = {
   total_proveedores: 2,
   total_productos: 20,
-  stock_total: 300,
-  margen_promedio_general: 30.0,
-  unidades_vendidas: 150,
-  ingresos_usd: 4000.0,
-  proveedores: [
-    {
-      id: 1,
-      nombre: "EMPRESAS POLAR",
-      telefono: "02121111111",
-      email: "polar@test.com",
-      total_productos: 12,
-      stock_total: 200,
-      margen_promedio: 28.0,
-      unidades_vendidas: 100,
-      ingresos_usd: 2800.0,
-    },
-    {
-      id: 2,
-      nombre: "SANTA TERESA",
-      telefono: "02122222222",
-      email: "st@test.com",
-      total_productos: 8,
-      stock_total: 100,
-      margen_promedio: 33.0,
-      unidades_vendidas: 50,
-      ingresos_usd: 1200.0,
-    },
-  ],
+  proveedor_principal_nombre: "EMPRESAS POLAR",
 };
 
 const mockDetailProducts: SupplierDetailProduct[] = [
@@ -112,7 +85,7 @@ describe("SupplierMicroKPIs", () => {
 
   it("calcula y renderiza el proveedor principal con mayor ingreso", () => {
     renderWithToast(
-      <SupplierMicroKPIs data={mockSupplierAnalyticsData} loading={false} />,
+      <SupplierMicroKPIs data={mockSupplierSummaryData} loading={false} />,
     );
 
     expect(screen.getByText("Proveedor Principal")).toBeInTheDocument();

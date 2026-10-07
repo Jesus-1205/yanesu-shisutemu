@@ -93,6 +93,13 @@ export interface CategoryAnalyticsResponse {
   categorias: CategoryAnalyticsOut[];
 }
 
+export interface CategorySummaryResponse {
+  total_categorias: number;
+  total_productos: number;
+  categoria_lider_nombre?: string | null;
+  mayor_margen_porcentaje?: number | null;
+}
+
 export interface CategoryDetailProduct {
   id: number;
   nombre: string;
@@ -163,6 +170,12 @@ export interface SupplierAnalyticsResponse {
   unidades_vendidas: number;
   ingresos_usd: number;
   proveedores: SupplierAnalyticsOut[];
+}
+
+export interface SupplierSummaryResponse {
+  total_proveedores: number;
+  total_productos: number;
+  proveedor_principal_nombre?: string | null;
 }
 
 export interface SupplierDetailProduct {

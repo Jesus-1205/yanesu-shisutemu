@@ -1,8 +1,8 @@
 import { Crown, TrendingUp, Package } from "lucide-react";
-import type { CategoryAnalyticsResponse } from "@/types/api";
+import type { CategorySummaryResponse } from "@/types/api";
 
 interface CategoryMicroKPIsProps {
-  data: CategoryAnalyticsResponse | null;
+  data: CategorySummaryResponse | null;
   loading: boolean;
 }
 
@@ -20,13 +20,8 @@ export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsPr
     );
   }
 
-  const lider = data.categorias.length > 0
-    ? data.categorias.reduce((a, b) => a.ingresos_usd > b.ingresos_usd ? a : b)
-    : null;
-
-  const mayorMargen = data.categorias.length > 0
-    ? data.categorias.reduce((a, b) => a.margen_promedio > b.margen_promedio ? a : b)
-    : null;
+  const liderNombre = data.categoria_lider_nombre || null;
+  const mayorMargen = data.mayor_margen_porcentaje != null ? Number(data.mayor_margen_porcentaje) : null;
 
   return (
     <div className="mb-6 grid grid-cols-1 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs sm:grid-cols-3 sm:divide-y-0 sm:divide-x sm:divide-slate-200">
@@ -36,8 +31,8 @@ export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsPr
         </div>
         <div className="min-w-0">
           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Categoría Líder</p>
-          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl" title={lider ? lider.nombre : undefined}>
-            {lider ? lider.nombre : "—"}
+          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl" title={liderNombre ?? undefined}>
+            {liderNombre || "—"}
           </p>
         </div>
       </div>
@@ -49,7 +44,7 @@ export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsPr
         <div className="min-w-0">
           <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Mayor Margen</p>
           <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl">
-            {mayorMargen ? `${Number(mayorMargen.margen_promedio).toFixed(1)}%` : "—"}
+            {mayorMargen !== null ? `${mayorMargen.toFixed(1)}%` : "—"}
           </p>
         </div>
       </div>

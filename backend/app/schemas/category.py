@@ -46,6 +46,14 @@ class CategoryAnalyticsResponse(BaseModel):
     categorias: list[CategoryAnalyticsOut]
 
 
+class CategorySummaryResponse(BaseModel):
+    total_categorias: int
+    total_productos: int
+    categoria_lider_nombre: str | None = None
+    mayor_margen_porcentaje: Decimal | None = None
+
+
+
 class CategoryDetailProductOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
