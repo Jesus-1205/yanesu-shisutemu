@@ -64,6 +64,20 @@ def test_get_products_filter_categoria_ids(db):
     assert result[0].nombre == "A"
 
 
+def test_get_products_filter_multiple_categoria_ids_count_distinct(db):
+    cat1 = _cat(db, "CAT1")
+    cat2 = _cat(db, "CAT2")
+    create_product(db, ProductCreate(
+        nombre="MULTI_CAT_PROD", categoria_ids=[cat1, cat2],
+        precio_costo_caja_usd=Decimal("1"), precio_unidad_usd=Decimal("2"),
+        precio_caja_usd=Decimal("48"),
+    ))
+    res = get_products(db, categoria_ids=[cat1, cat2], search="MULTI_CAT_PROD")
+    assert res["total"] == 1
+    assert len(res["items"]) == 1
+    assert res["items"][0].nombre == "MULTI_CAT_PROD"
+
+
 def test_get_products_filter_sin_stock(db):
     create_product(db, ProductCreate(
         nombre="A", categoria_ids=[_cat(db)], stock_unidades=10,

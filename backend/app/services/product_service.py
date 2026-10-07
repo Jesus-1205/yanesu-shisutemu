@@ -66,10 +66,10 @@ def get_products(
     base_stmt = select(Product)
 
     if categoria_ids:
-        base_stmt = (
-            base_stmt.join(producto_categoria, producto_categoria.c.producto_id == Product.id)
-            .where(producto_categoria.c.categoria_id.in_(categoria_ids))
+        cat_subquery = select(producto_categoria.c.producto_id).where(
+            producto_categoria.c.categoria_id.in_(categoria_ids)
         )
+        base_stmt = base_stmt.where(Product.id.in_(cat_subquery))
     if proveedor_id is not None:
         base_stmt = base_stmt.where(Product.proveedor_id == proveedor_id)
 
@@ -97,8 +97,7 @@ def get_products(
     if es_favorito is not None:
         base_stmt = base_stmt.where(Product.es_favorito == es_favorito)
 
-    # Count query using subquery to support join count correctly
-    count_stmt = select(func.count()).select_from(base_stmt.subquery())
+    count_stmt = base_stmt.with_only_columns(func.count(Product.id.distinct())).order_by(None)
     total = db.execute(count_stmt).scalar() or 0
 
     # Main query with pagination
