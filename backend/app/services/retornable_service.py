@@ -348,11 +348,12 @@ def confirmar_reporte(db: Session, reporte_id: int) -> None:
 def listar_reportes(
     db: Session, page: int = 1, page_size: int = 20
 ) -> RetornableReportePaginationOut:
-    total_stmt = select(func.count()).select_from(RetornableReporte)
-    total = db.execute(total_stmt).scalar() or 0
+    stmt = select(RetornableReporte)
+    count_stmt = stmt.with_only_columns(func.count(RetornableReporte.id)).order_by(None)
+    total = db.execute(count_stmt).scalar() or 0
 
     stmt = (
-        select(RetornableReporte)
+        stmt
         .order_by(desc(RetornableReporte.fecha))
         .offset((page - 1) * page_size)
         .limit(page_size)
@@ -474,21 +475,17 @@ def listar_movimientos(
     fecha_hasta: datetime | None = None,
 ) -> RetornableMovimientoPaginationOut:
     stmt = select(RetornableMovimiento)
-    count_stmt = select(func.count()).select_from(RetornableMovimiento)
 
     if presentacion:
         stmt = stmt.where(RetornableMovimiento.presentacion == presentacion)
-        count_stmt = count_stmt.where(RetornableMovimiento.presentacion == presentacion)
     if tipo_movimiento:
         stmt = stmt.where(RetornableMovimiento.tipo_movimiento == tipo_movimiento)
-        count_stmt = count_stmt.where(RetornableMovimiento.tipo_movimiento == tipo_movimiento)
     if fecha_desde:
         stmt = stmt.where(RetornableMovimiento.fecha >= fecha_desde)
-        count_stmt = count_stmt.where(RetornableMovimiento.fecha >= fecha_desde)
     if fecha_hasta:
         stmt = stmt.where(RetornableMovimiento.fecha <= fecha_hasta)
-        count_stmt = count_stmt.where(RetornableMovimiento.fecha <= fecha_hasta)
 
+    count_stmt = stmt.with_only_columns(func.count(RetornableMovimiento.id)).order_by(None)
     total = db.execute(count_stmt).scalar() or 0
 
     stmt = stmt.order_by(desc(RetornableMovimiento.fecha))

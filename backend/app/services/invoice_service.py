@@ -679,7 +679,7 @@ def get_invoices(
     else:
         stmt = stmt.order_by(Factura.created_at.desc())
 
-    count_stmt = select(func.count()).select_from(stmt.subquery())
+    count_stmt = stmt.with_only_columns(func.count(Factura.id)).order_by(None)
     total = db.execute(count_stmt).scalar() or 0
 
     offset = (page - 1) * page_size

@@ -28,7 +28,8 @@ def get_categories_paginated(db: Session, page: int = 1, page_size: int = 20, se
     if search and search.strip():
         pattern = f"%{_accent_fold_pattern(search.strip())}%"
         base = base.where(or_(_accent_fold(Category.nombre).ilike(pattern), _accent_fold(Category.descripcion).ilike(pattern)))
-    total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
+    count_stmt = base.with_only_columns(func.count(Category.id)).order_by(None)
+    total = db.execute(count_stmt).scalar() or 0
     pages = max(1, (total + page_size - 1) // page_size)
     offset = (page - 1) * page_size
     stmt = base.order_by(Category.nombre).offset(offset).limit(page_size)
