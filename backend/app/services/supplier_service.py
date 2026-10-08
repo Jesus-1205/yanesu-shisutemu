@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -169,18 +169,18 @@ def get_supplier_analytics(db: Session) -> SupplierAnalyticsResponse:
             email=s.email,
             total_productos=int(tp),
             stock_total=int(st),
-            margen_promedio=margen_promedio.quantize(Decimal("0.1")),
+            margen_promedio=margen_promedio.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
             unidades_vendidas=int(uv),
-            ingresos_usd=Decimal(str(iu)),
+            ingresos_usd=Decimal(str(iu)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         ))
 
     total_proveedores = len(proveedores)
     total_productos = sum(p.total_productos for p in proveedores)
     stock_total = sum(p.stock_total for p in proveedores)
     unidades_vendidas = sum(p.unidades_vendidas for p in proveedores)
-    ingresos_usd = sum(p.ingresos_usd for p in proveedores)
+    ingresos_usd = sum((p.ingresos_usd for p in proveedores), Decimal("0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     margenes = [p.margen_promedio for p in proveedores if p.total_productos > 0]
-    margen_promedio_general = sum(margenes) / len(margenes) if margenes else Decimal("0")
+    margen_promedio_general = (sum(margenes) / len(margenes)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP) if margenes else Decimal("0")
 
     return SupplierAnalyticsResponse(
         total_proveedores=total_proveedores,
@@ -246,9 +246,9 @@ def get_supplier_detail_analytics(db: Session, supplier_id: int) -> SupplierDeta
 
     for pid, pnombre, pcodigo, p_stock, p_precio_unidad, p_precio_costo, uv, iu in rows:
         uv = int(uv)
-        iu = Decimal(str(iu))
-        precio_costo = Decimal(str(p_precio_costo))
-        precio_unidad = Decimal(str(p_precio_unidad))
+        iu = Decimal(str(iu)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        precio_costo = Decimal(str(p_precio_costo)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        precio_unidad = Decimal(str(p_precio_unidad)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         stock = int(p_stock)
 
         if precio_costo > 0:
@@ -264,7 +264,7 @@ def get_supplier_detail_analytics(db: Session, supplier_id: int) -> SupplierDeta
             precio_unidad_usd=precio_unidad,
             unidades_vendidas=uv,
             ingresos_usd=iu,
-            margen_porcentaje=margen_pct.quantize(Decimal("0.1")),
+            margen_porcentaje=margen_pct.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
         ))
 
         total_stock += stock
@@ -274,7 +274,7 @@ def get_supplier_detail_analytics(db: Session, supplier_id: int) -> SupplierDeta
             margenes.append(margen_pct)
 
     margen_promedio = (
-        sum(margenes) / len(margenes) if margenes else Decimal("0")
+        (sum(margenes) / len(margenes)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP) if margenes else Decimal("0")
     )
 
     return SupplierDetailAnalyticsOut(
@@ -283,7 +283,7 @@ def get_supplier_detail_analytics(db: Session, supplier_id: int) -> SupplierDeta
         total_productos=len(top_productos),
         stock_total=total_stock,
         unidades_vendidas=total_unidades,
-        ingresos_usd=total_ingresos,
-        margen_promedio=margen_promedio.quantize(Decimal("0.1")),
+        ingresos_usd=total_ingresos.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        margen_promedio=margen_promedio,
         top_productos=top_productos,
     )

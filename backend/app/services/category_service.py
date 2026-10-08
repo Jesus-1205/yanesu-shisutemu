@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -167,18 +167,18 @@ def get_category_analytics(db: Session) -> CategoryAnalyticsResponse:
             descripcion=c.descripcion,
             total_productos=int(tp),
             stock_total=int(st),
-            margen_promedio=margen_promedio.quantize(Decimal("0.1")),
+            margen_promedio=margen_promedio.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
             unidades_vendidas=int(uv),
-            ingresos_usd=Decimal(str(iu)),
+            ingresos_usd=Decimal(str(iu)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         ))
 
     total_categorias = len(categorias)
     total_productos = sum(p.total_productos for p in categorias)
     stock_total = sum(p.stock_total for p in categorias)
     unidades_vendidas = sum(p.unidades_vendidas for p in categorias)
-    ingresos_usd = sum(p.ingresos_usd for p in categorias)
+    ingresos_usd = sum((p.ingresos_usd for p in categorias), Decimal("0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     margenes = [p.margen_promedio for p in categorias if p.total_productos > 0]
-    margen_promedio_general = sum(margenes) / len(margenes) if margenes else Decimal("0")
+    margen_promedio_general = (sum(margenes) / len(margenes)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP) if margenes else Decimal("0")
 
     return CategoryAnalyticsResponse(
         total_categorias=total_categorias,
@@ -330,9 +330,9 @@ def get_category_detail_analytics(db: Session, category_id: int) -> CategoryDeta
 
     for pid, pnombre, pcodigo, p_stock, p_precio_unidad, p_precio_costo, uv, iu in rows:
         uv = int(uv)
-        iu = Decimal(str(iu))
-        precio_costo = Decimal(str(p_precio_costo))
-        precio_unidad = Decimal(str(p_precio_unidad))
+        iu = Decimal(str(iu)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        precio_costo = Decimal(str(p_precio_costo)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        precio_unidad = Decimal(str(p_precio_unidad)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         if precio_costo > 0:
             margen_pct = ((precio_unidad - precio_costo) / precio_unidad) * Decimal("100")
@@ -347,7 +347,7 @@ def get_category_detail_analytics(db: Session, category_id: int) -> CategoryDeta
             precio_unidad_usd=precio_unidad,
             unidades_vendidas=uv,
             ingresos_usd=iu,
-            margen_porcentaje=margen_pct.quantize(Decimal("0.1")),
+            margen_porcentaje=margen_pct.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP),
         ))
 
         total_unidades += uv
@@ -356,7 +356,7 @@ def get_category_detail_analytics(db: Session, category_id: int) -> CategoryDeta
             margenes.append(margen_pct)
 
     margen_promedio = (
-        sum(margenes) / len(margenes) if margenes else Decimal("0")
+        (sum(margenes) / len(margenes)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP) if margenes else Decimal("0")
     )
 
     distribucion_ventas = [
@@ -379,8 +379,8 @@ def get_category_detail_analytics(db: Session, category_id: int) -> CategoryDeta
         nombre=category.nombre,
         total_productos=len(top_productos),
         unidades_vendidas=total_unidades,
-        ingresos_usd=total_ingresos,
-        margen_promedio=margen_promedio.quantize(Decimal("0.1")),
+        ingresos_usd=total_ingresos.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        margen_promedio=margen_promedio,
         top_productos=top_productos,
         distribucion_ventas=distribucion_ventas,
     )

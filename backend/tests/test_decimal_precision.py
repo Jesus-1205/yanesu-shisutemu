@@ -161,3 +161,103 @@ class TestExchangeRateDecimals:
         })
         assert resp.status_code == 201
         assert resp.json()["tasa_usd"] == "36.1234"
+
+
+class TestAggregationPrecision:
+    """Verifica que las agregaciones SQL (func.sum) mantengan exactamente 2 decimales sin ruido binario."""
+
+    def test_invoice_payment_summary_aggregation_precision(self, client):
+        import json
+        _login(client, _ADMIN)
+        sup = client.post("/api/suppliers", json={"nombre": "Sup Dec"}).json()
+        prod = client.post("/api/products", json={
+            "nombre": "Prod Dec",
+            "precio_costo_caja_usd": 100,
+            "precio_unidad_usd": 10,
+            "precio_caja_usd": 100,
+            "stock_unidades": 100,
+        }).json()
+        pm = client.post("/api/payment-methods", json={
+            "nombre": "PM Dec",
+            "moneda_default": "USD",
+            "acepta_referencia": False,
+            "activo": True,
+        }).json()
+
+        payload = {
+            "proveedor_id": sup["id"],
+            "numero_factura": "INV-DEC-001",
+            "moneda_principal": "USD",
+            "tasa_bs": 100.00,
+            "detalles": [{
+                "producto_id": prod["id"],
+                "tipo_empaque": "UNIDAD",
+                "cantidad": 10,
+                "costo_unitario_usd": 10.00,
+                "costo_unitario_bs": 1000.00,
+            }],
+        }
+        inv = client.post("/api/invoices", data={"data": json.dumps(payload)}).json()
+
+        # Registrar 3 pagos con fracciones que en float binario generan ruido: 33.33 + 33.33 + 33.34 = 100.00
+        client.post(f"/api/invoices/{inv['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 33.33,
+            "monto_bs": 0,
+        })})
+        client.post(f"/api/invoices/{inv['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 33.33,
+            "monto_bs": 0,
+        })})
+        client.post(f"/api/invoices/{inv['id']}/payments", data={"data": json.dumps({
+            "metodo_pago_id": pm["id"],
+            "monto_usd": 33.34,
+            "monto_bs": 0,
+        })})
+
+        summary_resp = client.get(f"/api/invoices/{inv['id']}/payments/summary")
+        assert summary_resp.status_code == 200
+        data = summary_resp.json()
+
+        # Verificar que ningún campo monetario tenga más de 2 decimales o ruido de punto flotante
+        for key in ["total_factura_usd", "total_factura_bs", "total_pagado_usd", "total_pagado_bs",
+                    "total_mora_bs", "diferencia_cambiaria_bs", "saldo_pendiente_usd", "saldo_pendiente_bs"]:
+            val_str = str(data[key])
+            if "." in val_str:
+                decimals = len(val_str.split(".")[1])
+                assert decimals <= 2, f"Campo {key} tiene {decimals} decimales: {val_str}"
+
+        assert data["total_pagado_usd"] == "100.00"
+        assert data["saldo_pendiente_usd"] == "0.00"
+
+    def test_category_analytics_aggregation_precision(self, client):
+        _login(client, _ADMIN)
+        cat = client.post("/api/categories", json={"nombre": "Cat Dec Precision"}).json()
+        prod = client.post("/api/products", json={
+            "nombre": "Prod Cat Dec",
+            "precio_costo_caja_usd": 10,
+            "precio_unidad_usd": 10.33,
+            "precio_caja_usd": 100,
+            "stock_unidades": 100,
+            "categoria_ids": [cat["id"]],
+        }).json()
+
+        # Crear 3 ventas usando el helper _create_sale
+        for _ in range(3):
+            resp = _create_sale(client, prod["id"], precio_unitario=10.33, cantidad=1, unidades=1)
+            assert resp.status_code == 201
+
+        analytics_resp = client.get("/api/categories/analytics")
+        assert analytics_resp.status_code == 200
+        data = analytics_resp.json()
+        
+        target_cat = next((c for c in data["categorias"] if c["id"] == cat["id"]), None)
+        assert target_cat is not None
+        
+        val_str = str(target_cat["ingresos_usd"])
+        if "." in val_str:
+            decimals = len(val_str.split(".")[1])
+            assert decimals <= 2, f"ingresos_usd tiene {decimals} decimales: {val_str}"
+        assert target_cat["ingresos_usd"] == "30.99"
+

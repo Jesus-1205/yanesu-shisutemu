@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Literal
 
@@ -810,21 +810,21 @@ def _recalculate_invoice_payment_status(db: Session, factura: Factura) -> None:
     stmt_usd = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
         InvoicePayment.factura_id == factura.id
     )
-    total_pagado_usd = Decimal(str(db.execute(stmt_usd).scalar()))
+    total_pagado_usd = Decimal(str(db.execute(stmt_usd).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     stmt_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
         InvoicePayment.factura_id == factura.id
     )
-    total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar()))
+    total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     stmt_bs_only = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
         InvoicePayment.factura_id == factura.id,
         InvoicePayment.monto_usd == 0,
     )
-    total_pagado_bs_only = Decimal(str(db.execute(stmt_bs_only).scalar()))
+    total_pagado_bs_only = Decimal(str(db.execute(stmt_bs_only).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     if factura.tasa_bs > 0 and total_pagado_bs_only > 0:
-        total_pagado_usd += (total_pagado_bs_only / factura.tasa_bs).quantize(Decimal("0.01"))
+        total_pagado_usd += (total_pagado_bs_only / factura.tasa_bs).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
 
@@ -863,14 +863,14 @@ def register_invoice_payment(
     stmt_pagado = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
         InvoicePayment.factura_id == factura_id
     )
-    pagado_actual = Decimal(str(db.execute(stmt_pagado).scalar()))
+    pagado_actual = Decimal(str(db.execute(stmt_pagado).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if factura.tasa_bs > 0:
         stmt_pagado_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
             InvoicePayment.factura_id == factura_id,
             InvoicePayment.monto_usd == 0,
         )
-        pagado_actual_bs = Decimal(str(db.execute(stmt_pagado_bs).scalar()))
-        pagado_actual += (pagado_actual_bs / factura.tasa_bs).quantize(Decimal("0.01"))
+        pagado_actual_bs = Decimal(str(db.execute(stmt_pagado_bs).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        pagado_actual += (pagado_actual_bs / factura.tasa_bs).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     total_con_iva_usd, _ = _calcular_total_con_iva(factura, db)
     saldo = total_con_iva_usd - pagado_actual
@@ -941,26 +941,26 @@ def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentS
     stmt_usd = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
         InvoicePayment.factura_id == factura_id
     )
-    total_pagado_usd = Decimal(str(db.execute(stmt_usd).scalar()))
+    total_pagado_usd = Decimal(str(db.execute(stmt_usd).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     stmt_bs = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
         InvoicePayment.factura_id == factura_id
     )
-    total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar()))
+    total_pagado_bs = Decimal(str(db.execute(stmt_bs).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     stmt_mora = select(func.coalesce(func.sum(InvoicePayment.monto_mora), 0)).where(
         InvoicePayment.factura_id == factura_id
     )
-    total_mora_bs = Decimal(str(db.execute(stmt_mora).scalar()))
+    total_mora_bs = Decimal(str(db.execute(stmt_mora).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     stmt_bs_only = select(func.coalesce(func.sum(InvoicePayment.monto_bs), 0)).where(
         InvoicePayment.factura_id == factura_id,
         InvoicePayment.monto_usd == 0,
     )
-    total_pagado_bs_only = Decimal(str(db.execute(stmt_bs_only).scalar()))
+    total_pagado_bs_only = Decimal(str(db.execute(stmt_bs_only).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     if factura.tasa_bs > 0 and total_pagado_bs_only > 0:
-        total_pagado_usd += (total_pagado_bs_only / factura.tasa_bs).quantize(Decimal("0.01"))
+        total_pagado_usd += (total_pagado_bs_only / factura.tasa_bs).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     total_con_iva_usd, total_con_iva_bs = _calcular_total_con_iva(factura, db)
 
@@ -971,35 +971,35 @@ def get_invoice_payment_summary(db: Session, factura_id: int) -> InvoicePaymentS
             InvoicePayment.tasa_bs != factura.tasa_bs,
             InvoicePayment.tasa_bs > 0,
         )
-        total_bs_tasa_diferente = Decimal(str(db.execute(stmt_diff_bs).scalar()))
+        total_bs_tasa_diferente = Decimal(str(db.execute(stmt_diff_bs).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if total_bs_tasa_diferente > 0:
             stmt_diff_usd = select(func.coalesce(func.sum(InvoicePayment.monto_usd), 0)).where(
                 InvoicePayment.factura_id == factura_id,
                 InvoicePayment.tasa_bs != factura.tasa_bs,
                 InvoicePayment.tasa_bs > 0,
             )
-            usd_tasa_diferente = Decimal(str(db.execute(stmt_diff_usd).scalar()))
-            esperado_bs = (usd_tasa_diferente * factura.tasa_bs).quantize(Decimal("0.01"))
-            diferencia_cambiaria_bs = total_bs_tasa_diferente - esperado_bs
+            usd_tasa_diferente = Decimal(str(db.execute(stmt_diff_usd).scalar())).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            esperado_bs = (usd_tasa_diferente * factura.tasa_bs).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            diferencia_cambiaria_bs = (total_bs_tasa_diferente - esperado_bs).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     saldo_usd = total_con_iva_usd - total_pagado_usd
     saldo_bs = total_con_iva_bs - total_pagado_bs
 
-    pct = float((total_pagado_usd * Decimal("100") / total_con_iva_usd).quantize(Decimal("0.01"))) if total_con_iva_usd > 0 else 0.0
+    pct = float((total_pagado_usd * Decimal("100") / total_con_iva_usd).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)) if total_con_iva_usd > 0 else 0.0
 
     stmt_count = select(func.count()).where(InvoicePayment.factura_id == factura_id)
     count = db.execute(stmt_count).scalar() or 0
 
     return InvoicePaymentSummary(
         estado_pago=factura.estado_pago,
-        total_factura_usd=total_con_iva_usd.quantize(Decimal("0.01")),
-        total_factura_bs=total_con_iva_bs.quantize(Decimal("0.01")),
-        total_pagado_usd=total_pagado_usd.quantize(Decimal("0.01")),
-        total_pagado_bs=total_pagado_bs.quantize(Decimal("0.01")),
-        total_mora_bs=total_mora_bs.quantize(Decimal("0.01")),
-        diferencia_cambiaria_bs=diferencia_cambiaria_bs.quantize(Decimal("0.01")),
-        saldo_pendiente_usd=max(saldo_usd, Decimal("0")).quantize(Decimal("0.01")),
-        saldo_pendiente_bs=max(saldo_bs, Decimal("0")).quantize(Decimal("0.01")),
+        total_factura_usd=total_con_iva_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_factura_bs=total_con_iva_bs.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_pagado_usd=total_pagado_usd.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_pagado_bs=total_pagado_bs.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        total_mora_bs=total_mora_bs.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        diferencia_cambiaria_bs=diferencia_cambiaria_bs.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        saldo_pendiente_usd=max(saldo_usd, Decimal("0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        saldo_pendiente_bs=max(saldo_bs, Decimal("0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         cantidad_pagos=count,
         porcentaje_pagado=min(pct, 100.0),
     )
