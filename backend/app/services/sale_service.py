@@ -526,22 +526,47 @@ def get_sales_summary(
     fecha_desde: datetime | None = None,
     fecha_hasta: datetime | None = None,
 ) -> list[dict]:
-    stmt = (
-        select(Sale)
-        .options(selectinload(Sale.items).selectinload(SaleItem.product))
+    stmt_sales = (
+        select(
+            Sale.id,
+            Sale.fecha_venta,
+            Sale.total_usd,
+            Sale.total_ves,
+        )
         .order_by(Sale.fecha_venta)
     )
 
     if fecha_desde:
-        stmt = stmt.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
+        stmt_sales = stmt_sales.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
-        stmt = stmt.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
+        stmt_sales = stmt_sales.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
 
-    sales = list(db.execute(stmt).scalars().unique().all())
+    sales_rows = db.execute(stmt_sales).all()
+
+    cost_by_sale: dict[int, Decimal] = {}
+    if sales_rows:
+        stmt_costs = (
+            select(
+                SaleItem.venta_id,
+                SaleItem.unidades_descontadas,
+                Product.precio_costo_usd,
+            )
+            .join(Product, Product.id == SaleItem.producto_id)
+            .join(Sale, Sale.id == SaleItem.venta_id)
+        )
+        if fecha_desde:
+            stmt_costs = stmt_costs.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
+        if fecha_hasta:
+            stmt_costs = stmt_costs.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
+
+        cost_rows = db.execute(stmt_costs).all()
+        for venta_id, unidades, precio_costo in cost_rows:
+            if precio_costo is not None and unidades:
+                cost_by_sale[venta_id] = cost_by_sale.get(venta_id, Decimal("0")) + Decimal(str(unidades)) * precio_costo
 
     groups: dict[str, dict] = {}
-    for sale in sales:
-        key = _period_key(sale.fecha_venta, rango)
+    for sale_id, fecha_venta, total_usd, total_ves in sales_rows:
+        key = _period_key(fecha_venta, rango)
         if key not in groups:
             groups[key] = {
                 "periodo": key,
@@ -552,11 +577,11 @@ def get_sales_summary(
                 "margen_usd": Decimal("0"),
             }
         groups[key]["total_ventas"] += 1
-        groups[key]["total_usd"] += sale.total_usd or Decimal("0")
-        groups[key]["total_ves"] += sale.total_ves or Decimal("0")
-        costo = _sale_costo_usd(sale)
+        groups[key]["total_usd"] += total_usd or Decimal("0")
+        groups[key]["total_ves"] += total_ves or Decimal("0")
+        costo = cost_by_sale.get(sale_id, Decimal("0"))
         groups[key]["costo_usd"] += costo
-        groups[key]["margen_usd"] += (sale.total_usd or Decimal("0")) - costo
+        groups[key]["margen_usd"] += (total_usd or Decimal("0")) - costo
 
     result = []
     for group in groups.values():
@@ -588,15 +613,21 @@ def current_day_range() -> tuple[datetime, datetime]:
 
 def get_top_week_sales(db: Session, rango: str = "semanal") -> TopWeekOut | None:
     dos_meses = datetime.now(timezone.utc) - timedelta(days=60)
-    stmt = select(Sale).where(Sale.fecha_venta >= dos_meses)
-    sales = list(db.execute(stmt).scalars().all())
+    stmt = select(
+        Sale.fecha_venta,
+        Sale.monto_exento_usd,
+        Sale.base_imponible_usd,
+        Sale.monto_iva_usd,
+        Sale.tasa_bcv_aplicada,
+    ).where(Sale.fecha_venta >= dos_meses)
+    sales_rows = db.execute(stmt).all()
 
-    if not sales:
+    if not sales_rows:
         return None
 
     groups: dict[str, dict] = {}
-    for sale in sales:
-        key = _period_key(sale.fecha_venta, rango)
+    for fecha_venta, monto_exento_usd, base_imponible_usd, monto_iva_usd, tasa_bcv_aplicada in sales_rows:
+        key = _period_key(fecha_venta, rango)
         if key not in groups:
             groups[key] = {
                 "periodo": key,
@@ -605,9 +636,10 @@ def get_top_week_sales(db: Session, rango: str = "semanal") -> TopWeekOut | None
                 "total_ves": Decimal("0"),
             }
         groups[key]["total_ventas"] += 1
-        total_usd = (sale.monto_exento_usd or Decimal("0")) + (sale.base_imponible_usd or Decimal("0")) + (sale.monto_iva_usd or Decimal("0"))
+        total_usd = (monto_exento_usd or Decimal("0")) + (base_imponible_usd or Decimal("0")) + (monto_iva_usd or Decimal("0"))
         groups[key]["total_usd"] += total_usd
-        groups[key]["total_ves"] += (total_usd * sale.tasa_bcv_aplicada).quantize(Decimal("0.01"))
+        if tasa_bcv_aplicada:
+            groups[key]["total_ves"] += (total_usd * tasa_bcv_aplicada).quantize(Decimal("0.01"))
 
     top = max(groups.values(), key=lambda x: x["total_usd"])
     return TopWeekOut(**top)
