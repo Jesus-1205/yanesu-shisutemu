@@ -6,7 +6,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
-from app.schemas.product import ProductCreate, ProductOut, ProductUpdate, ProductPaginationOut
+from app.schemas.product import (
+    ProductCreate,
+    ProductOut,
+    ProductPaginationOut,
+    ProductRankingItemOut,
+    ProductRankingOut,
+    ProductUpdate,
+)
 from app.services.audit_service import log_action
 from app.services.product_service import (
     create_product,
@@ -98,7 +105,7 @@ def list_all(
     }
 
 
-@router.get("/top-selling", status_code=status.HTTP_200_OK)
+@router.get("/top-selling", response_model=list[ProductRankingOut], status_code=status.HTTP_200_OK)
 def top_selling(
     limit: int = 10,
     db: Session = Depends(get_db),
@@ -112,7 +119,7 @@ def top_selling(
     """
     results = get_top_selling(db, limit=limit)
     return [
-        {"producto": ProductOut.model_validate(p), "total_vendido": count}
+        {"producto": ProductRankingItemOut.model_validate(p), "total_vendido": count}
         for p, count in results
     ]
 
@@ -149,7 +156,7 @@ def lowest_margin(
     return [ProductOut.model_validate(p) for p in products]
 
 
-@router.get("/low-rotation", status_code=status.HTTP_200_OK)
+@router.get("/low-rotation", response_model=list[ProductRankingOut], status_code=status.HTTP_200_OK)
 def low_rotation(
     limit: int = 10,
     db: Session = Depends(get_db),
@@ -163,7 +170,7 @@ def low_rotation(
     """
     results = get_low_rotation(db, limit=limit)
     return [
-        {"producto": ProductOut.model_validate(p), "total_vendido": count}
+        {"producto": ProductRankingItemOut.model_validate(p), "total_vendido": count}
         for p, count in results
     ]
 

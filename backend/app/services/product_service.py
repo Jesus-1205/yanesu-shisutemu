@@ -8,7 +8,7 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.category import Category, producto_categoria
 from app.models.product import Product
 from app.models.sale import Sale, SaleItem
-from app.schemas.product import ProductCreate, ProductUpdate
+from app.schemas.product import ProductCreate, ProductRankingItemOut, ProductUpdate
 from app.services.price_rule_service import get_active_divisas_prices
 
 
@@ -233,16 +233,32 @@ def delete_product(db: Session, product_id: int) -> None:
     db.commit()
 
 
-def get_top_selling(db: Session, limit: int = 10) -> list[tuple[Product, int]]:
+def get_top_selling(db: Session, limit: int = 10) -> list[tuple[ProductRankingItemOut, int]]:
     stmt = (
-        select(Product, func.count(SaleItem.id).label("total_vendido"))
-        .options(selectinload(Product.categories))
+        select(
+            Product.id,
+            Product.nombre,
+            Product.precio_unidad_usd,
+            Product.stock_unidades,
+            func.count(SaleItem.id).label("total_vendido"),
+        )
         .join(SaleItem, Product.id == SaleItem.producto_id)
         .group_by(Product.id)
         .order_by(func.count(SaleItem.id).desc())
         .limit(limit)
     )
-    return [(row[0], row[1]) for row in db.execute(stmt).all()]
+    return [
+        (
+            ProductRankingItemOut(
+                id=row.id,
+                nombre=row.nombre,
+                precio_unidad_usd=row.precio_unidad_usd,
+                stock_unidades=row.stock_unidades,
+            ),
+            row.total_vendido,
+        )
+        for row in db.execute(stmt).all()
+    ]
 
 
 def get_top_margin(db: Session, limit: int = 10) -> list[Product]:
@@ -275,16 +291,32 @@ def get_lowest_margin(db: Session, limit: int = 10) -> list[Product]:
     return list(db.execute(stmt).scalars().all())
 
 
-def get_low_rotation(db: Session, limit: int = 10) -> list[tuple[Product, int]]:
+def get_low_rotation(db: Session, limit: int = 10) -> list[tuple[ProductRankingItemOut, int]]:
     stmt = (
-        select(Product, func.count(SaleItem.id).label("total_vendido"))
-        .options(selectinload(Product.categories))
+        select(
+            Product.id,
+            Product.nombre,
+            Product.precio_unidad_usd,
+            Product.stock_unidades,
+            func.count(SaleItem.id).label("total_vendido"),
+        )
         .outerjoin(SaleItem, Product.id == SaleItem.producto_id)
         .group_by(Product.id)
         .order_by(func.count(SaleItem.id).asc())
         .limit(limit)
     )
-    return [(row[0], row[1]) for row in db.execute(stmt).all()]
+    return [
+        (
+            ProductRankingItemOut(
+                id=row.id,
+                nombre=row.nombre,
+                precio_unidad_usd=row.precio_unidad_usd,
+                stock_unidades=row.stock_unidades,
+            ),
+            row.total_vendido,
+        )
+        for row in db.execute(stmt).all()
+    ]
 
 
 def get_favorites(db: Session, limit: int = 10) -> dict:

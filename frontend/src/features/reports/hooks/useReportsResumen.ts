@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/services/api";
-import type { ProductOut } from "@/types/api";
+import type { ProductOut, ProductRankingItem } from "@/types/api";
 import type { SalesSummaryItem } from "@/features/sales/types";
 import { useToast } from "@/ui-components/Toast";
 
@@ -17,10 +17,10 @@ interface UseReportsResumenReturn {
   loading: boolean;
   salesSummary: SalesSummaryItem[];
   topWeek: TopWeek | null;
-  topSelling: { producto: ProductOut; total_vendido: number }[];
+  topSelling: { producto: ProductRankingItem; total_vendido: number }[];
   topMargin: ProductOut[];
   lowestMargin: ProductOut[];
-  lowRotation: { producto: ProductOut; total_vendido: number }[];
+  lowRotation: { producto: ProductRankingItem; total_vendido: number }[];
   categoriesTotal: number;
   categoriesCount: number;
   refetch: () => void;
@@ -31,10 +31,10 @@ export function useReportsResumen(rango: string): UseReportsResumenReturn {
   const [loading, setLoading] = useState(true);
   const [salesSummary, setSalesSummary] = useState<SalesSummaryItem[]>([]);
   const [topWeek, setTopWeek] = useState<TopWeek | null>(null);
-  const [topSelling, setTopSelling] = useState<{ producto: ProductOut; total_vendido: number }[]>([]);
+  const [topSelling, setTopSelling] = useState<{ producto: ProductRankingItem; total_vendido: number }[]>([]);
   const [topMargin, setTopMargin] = useState<ProductOut[]>([]);
   const [lowestMargin, setLowestMargin] = useState<ProductOut[]>([]);
-  const [lowRotation, setLowRotation] = useState<{ producto: ProductOut; total_vendido: number }[]>([]);
+  const [lowRotation, setLowRotation] = useState<{ producto: ProductRankingItem; total_vendido: number }[]>([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);

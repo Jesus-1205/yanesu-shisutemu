@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import type { ProductOut, SalesSummaryItem } from "@/types/api";
+import type { ProductRankingItem, SalesSummaryItem } from "@/types/api";
 import ChartContainer from "@/ui-components/charts/ChartContainer";
 import ChartSkeleton from "@/ui-components/charts/ChartSkeleton";
 
@@ -8,7 +8,7 @@ const TopProductsBarChart = lazy(() => import("./TopProductsBarChart"));
 
 interface DashboardChartsProps {
   salesSummary: SalesSummaryItem[];
-  topProducts: { producto: ProductOut; total_vendido: number }[];
+  topProducts: { producto: ProductRankingItem; total_vendido: number }[];
 }
 
 export default function DashboardCharts({

@@ -1,9 +1,9 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { chartPalette } from "@/ui-components/charts/theme";
-import type { ProductOut } from "@/types/api";
+import type { ProductRankingItem } from "@/types/api";
 
 interface TopProductsBarChartProps {
-  data: { producto: ProductOut; total_vendido: number }[];
+  data: { producto: ProductRankingItem; total_vendido: number }[];
 }
 
 export default function TopProductsBarChart({ data }: TopProductsBarChartProps) {

@@ -40,6 +40,7 @@ import type {
   ProductMatrixItem,
   ProductOut,
   ProductPaginationOut,
+  ProductRankingItem,
   ProductUpdate,
   RoleOut,
   SaleCreate,
@@ -451,7 +452,7 @@ export const api = {
     request<SupplierDetailAnalytics>(`/suppliers/${supplierId}/analytics`),
 
   getTopSellingProducts: (limit = 5) =>
-    request<{ producto: ProductOut; total_vendido: number }[]>(
+    request<{ producto: ProductRankingItem; total_vendido: number }[]>(
       `/products/top-selling?limit=${limit}`,
     ),
 
@@ -479,7 +480,7 @@ export const api = {
     request<ProductOut[]>(`/products/lowest-margin?limit=${limit}`),
 
   getLowRotationProducts: (limit = 5) =>
-    request<{ producto: ProductOut; total_vendido: number }[]>(
+    request<{ producto: ProductRankingItem; total_vendido: number }[]>(
       `/products/low-rotation?limit=${limit}`,
     ),
 

@@ -98,3 +98,20 @@ class ProductMatrixOut(BaseModel):
     margen_porcentaje: Decimal
     stock_unidades: int
 
+
+class ProductRankingItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    precio_unidad_usd: Decimal
+    stock_unidades: int
+
+
+class ProductRankingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    producto: ProductRankingItemOut
+    total_vendido: int
+
+

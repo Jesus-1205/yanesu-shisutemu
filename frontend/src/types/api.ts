@@ -263,8 +263,15 @@ export interface ProductUpdate {
   es_favorito?: boolean;
 }
 
+export interface ProductRankingItem {
+  id: number;
+  nombre: string;
+  precio_unidad_usd: number;
+  stock_unidades: number;
+}
+
 export interface ProductSold {
-  producto: ProductOut;
+  producto: ProductRankingItem;
   total_vendido: number;
 }
 

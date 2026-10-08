@@ -2,7 +2,7 @@ import { Suspense, lazy, useMemo, useState } from "react";
 import { BarChart3, DollarSign, TrendingUp } from "lucide-react";
 import { useCallback } from "react";
 import { api } from "@/services/api";
-import type { ProductOut } from "@/types/api";
+import type { ProductRankingItem } from "@/types/api";
 import type { SalesSummaryItem } from "@/features/sales/types";
 import { formatPeriodRange } from "@/utils/dateUtils";
 import StatCard from "@/ui-components/StatCard";
@@ -34,7 +34,7 @@ const RANGO_OPTIONS = [
 interface ResumenTabProps {
   salesSummary: SalesSummaryItem[];
   topWeek: { periodo: string; total_ventas: number; total_usd: number; total_ves: number } | null;
-  topSelling: { producto: ProductOut; total_vendido: number }[];
+  topSelling: { producto: ProductRankingItem; total_vendido: number }[];
   categoriesTotal: number;
   categoriesCount: number;
   rango: string;
@@ -115,9 +115,9 @@ export default function ResumenTab({
             <Table
               headerLeft={<Select value={String(limitTopSelling)} onChange={(e) => setLimitTopSelling(Number(e.target.value))} options={LIMIT_OPTIONS} size="sm" />}
               columns={[
-                { key: "nombre", header: "Producto", render: (r: { producto: ProductOut }) => <span className="block max-w-[150px] truncate" title={r.producto.nombre}>{r.producto.nombre}</span> },
+                { key: "nombre", header: "Producto", render: (r: { producto: ProductRankingItem }) => <span className="block max-w-[150px] truncate" title={r.producto.nombre}>{r.producto.nombre}</span> },
                 { key: "total", header: "Vendidos", render: (r: { total_vendido: number }) => String(r.total_vendido), exportValue: (r: { total_vendido: number }) => r.total_vendido },
-                { key: "ingresos", header: "Ingresos ($)", render: (r: { producto: ProductOut; total_vendido: number }) => formatCurrency(Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100), exportValue: (r: { producto: ProductOut; total_vendido: number }) => Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100 },
+                { key: "ingresos", header: "Ingresos ($)", render: (r: { producto: ProductRankingItem; total_vendido: number }) => formatCurrency(Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100), exportValue: (r: { producto: ProductRankingItem; total_vendido: number }) => Math.round((r.total_vendido * r.producto.precio_unidad_usd) * 100) / 100 },
               ]}
               data={visibleTopSelling}
               keyExtractor={(_, i) => i}

@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { api } from "@/services/api";
-import type { ProductOut, ProductMatrixItem } from "@/types/api";
+import type { ProductOut, ProductMatrixItem, ProductRankingItem } from "@/types/api";
 import { useSortableData } from "@/hooks/useSortableData";
 import Table from "@/ui-components/Table";
 import Select from "@/ui-components/Select";
@@ -18,10 +18,10 @@ const LIMIT_OPTIONS = [
 ];
 
 interface ProductosTabProps {
-  topSelling: { producto: ProductOut; total_vendido: number }[];
+  topSelling: { producto: ProductRankingItem; total_vendido: number }[];
   topMargin: ProductOut[];
   lowestMargin: ProductOut[];
-  lowRotation: { producto: ProductOut; total_vendido: number }[];
+  lowRotation: { producto: ProductRankingItem; total_vendido: number }[];
   matrixData: ProductMatrixItem[];
   loadingMatrix: boolean;
 }

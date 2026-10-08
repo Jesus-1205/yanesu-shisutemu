@@ -4,12 +4,12 @@ import type {
   DashboardStatsOut,
   InvoicePendingSummaryOut,
   InvoiceStatsOut,
-  ProductOut,
+  ProductRankingItem,
   SalesSummaryItem,
 } from "@/types/api";
 
 export interface TopProductItem {
-  producto: ProductOut;
+  producto: ProductRankingItem;
   total_vendido: number;
 }
 
