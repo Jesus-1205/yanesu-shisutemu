@@ -118,20 +118,15 @@ def _calcular_movimientos_desde(
 
 
 def _calcular_lleno_esperado(
-    db: Session, presentacion: str
+    asociados: list[tuple[RetornableProducto, Product | None]],
+    presentacion: str,
 ) -> int:
     """Calcula el stock de lleno esperado por el sistema (productos asociados)."""
-    stmt = select(RetornableProducto).where(
-        RetornableProducto.presentacion == presentacion
-    )
-    asociados = list(db.execute(stmt).scalars().all())
     if not asociados:
         return 0
 
     total_botellas = 0
-    for asoc in asociados:
-        prod_stmt = select(Product).where(Product.id == asoc.producto_id)
-        product = db.execute(prod_stmt).scalars().first()
+    for _asoc, product in asociados:
         if product:
             total_botellas += product.stock_cajas * BOTELLAS_POR_CAJA[presentacion] + product.stock_unidades
 
@@ -139,11 +134,11 @@ def _calcular_lleno_esperado(
 
 
 def _construir_estado_out(
-    db: Session,
     presentacion: str,
     estado: str,
     movimientos_acumulados: dict[tuple[str, str], int],
     reporte_detalle: dict[tuple[str, str], tuple[int, int]] | None,
+    inventarios_map: dict[tuple[str, str], RetornableInventario],
 ) -> RetornableEstadoOut:
     """Construye la vista de un estado desde el inventario del sistema."""
     clave = (presentacion, estado)
@@ -151,9 +146,12 @@ def _construir_estado_out(
     if reporte_detalle and clave in reporte_detalle:
         botellas, cajas = reporte_detalle[clave]
     else:
-        inv = _obtener_o_crear_inventario(db, presentacion, estado)
-        botellas = inv.cantidad_botellas
-        cajas = inv.cantidad_cajas
+        if clave in inventarios_map:
+            inv = inventarios_map[clave]
+            botellas = inv.cantidad_botellas
+            cajas = inv.cantidad_cajas
+        else:
+            botellas, cajas = 0, 0
 
     delta = movimientos_acumulados.get(clave, 0)
     botellas_sistema = botellas + delta
@@ -179,9 +177,7 @@ def _construir_estado_out(
     )
 
 
-def _construir_producto_out(db: Session, asoc: RetornableProducto) -> RetornableProductoOut:
-    prod_stmt = select(Product).where(Product.id == asoc.producto_id)
-    product = db.execute(prod_stmt).scalars().first()
+def _construir_producto_out(asoc: RetornableProducto, product: Product | None) -> RetornableProductoOut:
     return RetornableProductoOut(
         id=asoc.id,
         producto_id=asoc.producto_id,
@@ -193,19 +189,20 @@ def _construir_producto_out(db: Session, asoc: RetornableProducto) -> Retornable
 
 
 def _construir_presentacion_out(
-    db: Session,
     presentacion: str,
     movimientos_acumulados: dict[tuple[str, str], int],
     reporte_detalle: dict[tuple[str, str], tuple[int, int]] | None,
+    inventarios_map: dict[tuple[str, str], RetornableInventario],
+    asociados_list: list[tuple[RetornableProducto, Product | None]],
 ) -> RetornablePresentacionOut:
-    casillero = _construir_estado_out(db, presentacion, "CASILLERO", movimientos_acumulados, reporte_detalle)
-    vacio = _construir_estado_out(db, presentacion, "VACIO", movimientos_acumulados, reporte_detalle)
-    lleno = _construir_estado_out(db, presentacion, "LLENO", movimientos_acumulados, reporte_detalle)
+    casillero = _construir_estado_out(presentacion, "CASILLERO", movimientos_acumulados, reporte_detalle, inventarios_map)
+    vacio = _construir_estado_out(presentacion, "VACIO", movimientos_acumulados, reporte_detalle, inventarios_map)
+    lleno = _construir_estado_out(presentacion, "LLENO", movimientos_acumulados, reporte_detalle, inventarios_map)
 
     total_botellas = vacio.total_botellas + lleno.total_botellas
     total_cajas_enteras = _botellas_a_cajas_enteras(total_botellas, presentacion)
 
-    lleno_esperado = _calcular_lleno_esperado(db, presentacion)
+    lleno_esperado = _calcular_lleno_esperado(asociados_list, presentacion)
     dif_lleno = lleno_esperado - lleno.total_botellas
 
     vacio_anterior = 0
@@ -217,9 +214,7 @@ def _construir_presentacion_out(
     vacio_esperado = vacio_anterior + mov_vacio
     dif_vacio = vacio_esperado - vacio.total_botellas
 
-    stmt = select(RetornableProducto).where(RetornableProducto.presentacion == presentacion)
-    asociados = list(db.execute(stmt).scalars().all())
-    productos = [_construir_producto_out(db, a) for a in asociados]
+    productos = [_construir_producto_out(a, p) for a, p in asociados_list]
 
     return RetornablePresentacionOut(
         presentacion=presentacion,
@@ -248,10 +243,32 @@ def obtener_resumen(db: Session) -> RetornableResumenOut:
             for d in detalles
         }
 
+    inv_stmt = select(RetornableInventario)
+    inventarios_db = db.execute(inv_stmt).scalars().all()
+    inventarios_map = {
+        (inv.presentacion, inv.estado): inv
+        for inv in inventarios_db
+    }
+
+    prod_stmt = select(RetornableProducto, Product).outerjoin(
+        Product, Product.id == RetornableProducto.producto_id
+    )
+    prods_db = db.execute(prod_stmt).all()
+    asociados_map: dict[str, list[tuple[RetornableProducto, Product | None]]] = {}
+    for rp, p in prods_db:
+        asociados_map.setdefault(rp.presentacion, []).append((rp, p))
+
     presentaciones = []
     for pres in PRESENTACIONES:
+        asoc_list = asociados_map.get(pres, [])
         presentaciones.append(
-            _construir_presentacion_out(db, pres, movimientos, reporte_detalle)
+            _construir_presentacion_out(
+                pres,
+                movimientos,
+                reporte_detalle,
+                inventarios_map,
+                asoc_list,
+            )
         )
 
     return RetornableResumenOut(
