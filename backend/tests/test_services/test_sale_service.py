@@ -9,6 +9,7 @@ from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.payment_method import PaymentMethod
 from app.models.product import Product
 from app.models.sale import Sale, SaleItem
+from app.models.sale_payment import SalePayment
 from app.models.user import User
 from app.schemas.product import ProductCreate
 from app.schemas.sale import SaleCreate, SaleItemCreate, SalePaymentCreate
@@ -16,6 +17,7 @@ from app.services.product_service import create_product
 from app.services.sale_service import (
     create_sale,
     current_week_range,
+    get_payment_method_summary,
     get_sale,
     get_sales,
     get_sales_paginated,
@@ -853,3 +855,65 @@ def test_get_top_week_sales_with_mixed_amounts(db):
     assert result.periodo == expected_monday
     assert result.total_ventas == 1
     assert result.total_usd == Decimal("120")
+
+
+# --- get_payment_method_summary ---
+
+def test_get_payment_method_summary_empty(db):
+    pm = _payment_method(db)
+    result = get_payment_method_summary(db)
+    assert len(result) == 1
+    assert result[0].metodo_pago_id == pm.id
+    assert result[0].metodo_pago_nombre == pm.nombre
+    assert result[0].cantidad_pagos == 0
+    assert result[0].total_usd == Decimal("0.00")
+    assert result[0].total_ves == Decimal("0.00")
+    assert result[0].total_equivalente_usd == Decimal("0.00")
+
+
+def test_get_payment_method_summary_with_payments(db):
+    u = _user(db)
+    pm1 = _payment_method(db)
+    pm2 = PaymentMethod(nombre="Punto VES", moneda_default="VES", activo=True)
+    db.add(pm2)
+    db.commit()
+
+    s = Sale(
+        usuario_id=u.id,
+        tasa_bcv_aplicada=Decimal("50.00"),
+        fecha_venta=datetime(2026, 7, 13, 10, 0, tzinfo=timezone.utc),
+        monto_exento_usd=Decimal("150.00"),
+        base_imponible_usd=Decimal("0.00"),
+        monto_iva_usd=Decimal("0.00"),
+    )
+    db.add(s)
+    db.commit()
+
+    sp1 = SalePayment(
+        venta_id=s.id,
+        metodo_pago_id=pm1.id,
+        monto_usd=Decimal("100.00"),
+        monto_ves=Decimal("0.00"),
+    )
+    sp2 = SalePayment(
+        venta_id=s.id,
+        metodo_pago_id=pm2.id,
+        monto_usd=Decimal("0.00"),
+        monto_ves=Decimal("2500.00"),  # 2500 / 50 = 50 USD eq
+    )
+    db.add_all([sp1, sp2])
+    db.commit()
+
+    result = get_payment_method_summary(db)
+    assert len(result) == 2
+    # Sorted by total_equivalente_usd DESC
+    assert result[0].metodo_pago_id == pm1.id
+    assert result[0].cantidad_pagos == 1
+    assert result[0].total_usd == Decimal("100.00")
+    assert result[0].total_equivalente_usd == Decimal("100.00")
+
+    assert result[1].metodo_pago_id == pm2.id
+    assert result[1].cantidad_pagos == 1
+    assert result[1].total_ves == Decimal("2500.00")
+    assert result[1].total_equivalente_usd == Decimal("50.00")
+
