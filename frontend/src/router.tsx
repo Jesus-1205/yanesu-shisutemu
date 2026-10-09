@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import AppLayout from "./App";
 import PrivateRoute from "./features/auth/components/PrivateRoute";
 import RoleGuard from "./features/auth/components/RoleGuard";
@@ -122,7 +122,25 @@ export const router = createBrowserRouter([
           },
           {
             path: "reports",
-            lazy: adminOnly(() => import("./features/reports/pages/ReportsPage")),
+            lazy: adminOnly(() => import("./features/reports/components/ReportsLayout")),
+            children: [
+              {
+                index: true,
+                element: <Navigate to="sales" replace />,
+              },
+              {
+                path: "sales",
+                lazy: adminOnly(() => import("./features/reports/pages/ReportsSalesPage")),
+              },
+              {
+                path: "products",
+                lazy: adminOnly(() => import("./features/reports/pages/ReportsProductsPage")),
+              },
+              {
+                path: "payments",
+                lazy: adminOnly(() => import("./features/reports/pages/ReportsPaymentsPage")),
+              },
+            ],
           },
           {
             path: "retornables",
