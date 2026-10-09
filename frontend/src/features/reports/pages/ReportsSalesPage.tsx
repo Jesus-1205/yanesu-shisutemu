@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ResponsiveContainer,
@@ -22,11 +22,12 @@ import {
 } from "lucide-react";
 import { api } from "@/services/api";
 import type { SalesSummaryItem } from "@/types/api";
-import { formatCurrency, formatPeriod } from "@/lib/utils";
+import { formatCurrency, formatPeriod, getReportPresetDates } from "@/lib/utils";
 import { exportToExcel } from "@/lib/exportToExcel";
 import { Skeleton } from "@/ui-components/Skeleton";
 import Button from "@/ui-components/Button";
 import ErrorBanner from "@/ui-components/ErrorBanner";
+import Pagination from "@/ui-components/Pagination";
 import type { Column } from "@/ui-components/Table";
 
 type Grouping = "diario" | "semanal" | "mensual";
@@ -34,14 +35,26 @@ type Grouping = "diario" | "semanal" | "mensual";
 export default function ReportsSalesPage() {
   const [searchParams] = useSearchParams();
   const currency = (searchParams.get("currency") as "USD" | "VES") || "USD";
-  const from = searchParams.get("from") || undefined;
-  const to = searchParams.get("to") || undefined;
+  const defaultDates = useMemo(() => getReportPresetDates("30d"), []);
+  const from = searchParams.get("from") || defaultDates.from;
+  const to = searchParams.get("to") || defaultDates.to;
 
   const [grouping, setGrouping] = useState<Grouping>("diario");
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
   const [data, setData] = useState<SalesSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const handleRetry = () => setRetryCount((c) => c + 1);
+
+  // Pagination state for table view
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  // Reset page when grouping or dates change
+  useEffect(() => {
+    setPage(1);
+  }, [grouping, from, to]);
 
   // Series visibility toggles for chart
   const [visibleSeries, setVisibleSeries] = useState({
@@ -50,26 +63,35 @@ export default function ReportsSalesPage() {
     margen: true,
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.getSalesSummary({
-        rango: grouping,
-        fecha_desde: from,
-        fecha_hasta: to,
-      });
-      setData(res || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar resumen de ventas");
-    } finally {
-      setLoading(false);
-    }
-  }, [grouping, from, to]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.getSalesSummary({
+          rango: grouping,
+          fecha_desde: from,
+          fecha_hasta: to,
+        });
+        if (!cancelled) {
+          setData(res || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Error al cargar resumen de ventas");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [grouping, from, to, retryCount]);
 
   // Aggregate KPIs
   const totals = useMemo(() => {
@@ -123,6 +145,17 @@ export default function ReportsSalesPage() {
     });
   }, [data, currency]);
 
+  // Table data: sorted descending (newest period first)
+  const tableData = useMemo(() => {
+    return [...chartData].reverse();
+  }, [chartData]);
+
+  const totalPages = Math.ceil(tableData.length / pageSize);
+  const paginatedData = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return tableData.slice(start, start + pageSize);
+  }, [tableData, page, pageSize]);
+
   const handleLegendClick = (dataKey: string) => {
     setVisibleSeries((prev) => ({
       ...prev,
@@ -155,14 +188,14 @@ export default function ReportsSalesPage() {
     ];
 
     exportToExcel({
-      data: chartData,
+      data: tableData,
       columns,
       filename: `reporte_ventas_${grouping}`,
     });
   };
 
   if (error) {
-    return <ErrorBanner onRetry={fetchData}>{error}</ErrorBanner>;
+    return <ErrorBanner onRetry={handleRetry}>{error}</ErrorBanner>;
   }
 
   return (
@@ -440,44 +473,55 @@ export default function ReportsSalesPage() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
-                <tr>
-                  <th className="px-4 py-3">Período</th>
-                  <th className="px-4 py-3 text-center">N° de Ventas</th>
-                  <th className="px-4 py-3 text-right">Ingresos ({currency})</th>
-                  <th className="px-4 py-3 text-right">Costos ({currency})</th>
-                  <th className="px-4 py-3 text-right">Margen ({currency})</th>
-                  <th className="px-4 py-3 text-right">Rentabilidad</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {chartData.map((row) => {
-                  const pct = row.ingresos > 0 ? ((row.margen / row.ingresos) * 100).toFixed(1) : "0.0";
-                  return (
-                    <tr key={row.periodoRaw} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900">{row.periodoFormatted}</td>
-                      <td className="px-4 py-3 text-center font-mono text-xs">{row.ventas}</td>
-                      <td className="px-4 py-3 text-right font-medium text-blue-600">
-                        {formatCurrency(row.ingresos, currSymbol)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-600">
-                        {formatCurrency(row.costos, currSymbol)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                        {formatCurrency(row.margen, currSymbol)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                          {pct}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+                  <tr>
+                    <th className="px-4 py-3">Período</th>
+                    <th className="px-4 py-3 text-center">N° de Ventas</th>
+                    <th className="px-4 py-3 text-right">Ingresos ({currency})</th>
+                    <th className="px-4 py-3 text-right">Costos ({currency})</th>
+                    <th className="px-4 py-3 text-right">Margen ({currency})</th>
+                    <th className="px-4 py-3 text-right">Rentabilidad</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedData.map((row) => {
+                    const pct = row.ingresos > 0 ? ((row.margen / row.ingresos) * 100).toFixed(1) : "0.0";
+                    return (
+                      <tr key={row.periodoRaw} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="px-4 py-3 font-medium text-slate-900">{row.periodoFormatted}</td>
+                        <td className="px-4 py-3 text-center font-mono text-xs">{row.ventas}</td>
+                        <td className="px-4 py-3 text-right font-medium text-blue-600">
+                          {formatCurrency(row.ingresos, currSymbol)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-600">
+                          {formatCurrency(row.costos, currSymbol)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-emerald-600">
+                          {formatCurrency(row.margen, currSymbol)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            {pct}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                <p className="text-xs text-slate-500">
+                  Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, tableData.length)} de {tableData.length} registros
+                </p>
+                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+              </div>
+            )}
           </div>
         )}
       </div>

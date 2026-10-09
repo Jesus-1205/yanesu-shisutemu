@@ -95,10 +95,8 @@ export function getTodayInCaracas(): string {
 
 /** Retorna un Date en midnight de zona horaria America/Caracas. */
 export function todayInCaracas(): Date {
-  const now = new Date();
-  const veDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Caracas" }));
-  veDate.setHours(0, 0, 0, 0);
-  return veDate;
+  const [year, month, day] = getTodayInCaracas().split("-").map(Number);
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
 }
 
 /** Verifica si un timestamp (naive en hora de Caracas) corresponde al día actual en Caracas. */
@@ -137,4 +135,21 @@ export function formatPeriod(periodo: string): string {
   const d = new Date(parts[0], parts[1] - 1, parts[2]);
   if (isNaN(d.getTime())) return periodo;
   return `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`;
+}
+
+/** Calcula el rango de fechas 'from' y 'to' (YYYY-MM-DD) para presets en hora de Caracas. */
+export function getReportPresetDates(presetId: "7d" | "30d" | "this_month"): { from: string; to: string } {
+  const todayStr = getTodayInCaracas();
+  const d = todayInCaracas();
+  if (presetId === "7d") {
+    d.setDate(d.getDate() - 6);
+  } else if (presetId === "30d") {
+    d.setDate(d.getDate() - 29);
+  } else if (presetId === "this_month") {
+    d.setDate(1);
+  }
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return { from: `${yyyy}-${mm}-${dd}`, to: todayStr };
 }

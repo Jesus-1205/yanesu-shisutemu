@@ -1,54 +1,44 @@
-import { NavLink, Outlet, useSearchParams } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { NavLink, Outlet, useSearchParams, useLocation } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import PageHeader from "@/ui-components/PageHeader";
-import { getTodayInCaracas } from "@/lib/utils";
+import { getReportPresetDates } from "@/lib/utils";
 
 const PRESETS = [
   { id: "7d", label: "Últimos 7 días", days: 7 },
   { id: "30d", label: "Últimos 30 días", days: 30 },
   { id: "this_month", label: "Este mes" },
-  { id: "all", label: "Todo" },
 ] as const;
 
 export default function ReportsLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [showCustomDates, setShowCustomDates] = useState(false);
 
   const currency = (searchParams.get("currency") as "USD" | "VES") || "USD";
   const from = searchParams.get("from") || "";
   const to = searchParams.get("to") || "";
 
+  // Auto-initialize with last 30 days if no dates in URL (skip if currently on index route to let <Navigate> work)
+  useEffect(() => {
+    if (location.pathname === "/reports" || location.pathname === "/reports/") return;
+
+    if (!searchParams.get("from") || !searchParams.get("to")) {
+      const dates = getReportPresetDates("30d");
+      const newParams = new URLSearchParams(searchParams);
+      if (!newParams.get("from")) newParams.set("from", dates.from);
+      if (!newParams.get("to")) newParams.set("to", dates.to);
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, location.pathname]);
+
   // Helper to compute date range
   const setPreset = (presetId: (typeof PRESETS)[number]["id"]) => {
-    const todayStr = getTodayInCaracas();
-    const today = new Date();
-
+    const dates = getReportPresetDates(presetId);
     const newParams = new URLSearchParams(searchParams);
-
-    if (presetId === "7d") {
-      const past = new Date(today);
-      past.setDate(today.getDate() - 6);
-      newParams.set("from", past.toISOString().slice(0, 10));
-      newParams.set("to", todayStr);
-      setShowCustomDates(false);
-    } else if (presetId === "30d") {
-      const past = new Date(today);
-      past.setDate(today.getDate() - 29);
-      newParams.set("from", past.toISOString().slice(0, 10));
-      newParams.set("to", todayStr);
-      setShowCustomDates(false);
-    } else if (presetId === "this_month") {
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-      newParams.set("from", firstDay.toISOString().slice(0, 10));
-      newParams.set("to", todayStr);
-      setShowCustomDates(false);
-    } else if (presetId === "all") {
-      newParams.delete("from");
-      newParams.delete("to");
-      setShowCustomDates(false);
-    }
-
+    newParams.set("from", dates.from);
+    newParams.set("to", dates.to);
+    setShowCustomDates(false);
     setSearchParams(newParams, { replace: true });
   };
 
@@ -69,20 +59,16 @@ export default function ReportsLayout() {
   };
 
   const activePreset = useMemo(() => {
-    if (!from && !to) return "all";
-    const todayStr = getTodayInCaracas();
-    const today = new Date();
+    if (!from || !to) return "30d";
 
-    const d7 = new Date(today);
-    d7.setDate(today.getDate() - 6);
-    if (from === d7.toISOString().slice(0, 10) && to === todayStr) return "7d";
+    const d7 = getReportPresetDates("7d");
+    if (from === d7.from && to === d7.to) return "7d";
 
-    const d30 = new Date(today);
-    d30.setDate(today.getDate() - 29);
-    if (from === d30.toISOString().slice(0, 10) && to === todayStr) return "30d";
+    const d30 = getReportPresetDates("30d");
+    if (from === d30.from && to === d30.to) return "30d";
 
-    const mFirst = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
-    if (from === mFirst && to === todayStr) return "this_month";
+    const mFirst = getReportPresetDates("this_month");
+    if (from === mFirst.from && to === mFirst.to) return "this_month";
 
     return "custom";
   }, [from, to]);

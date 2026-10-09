@@ -1,38 +1,50 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/services/api";
 import type { PaymentMethodSummaryItem } from "@/types/api";
+import { getReportPresetDates } from "@/lib/utils";
 import PagosTab from "../components/PagosTab";
 import ErrorBanner from "@/ui-components/ErrorBanner";
 
 export default function ReportsPaymentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const from = searchParams.get("from") || "";
-  const to = searchParams.get("to") || "";
+  const defaultDates = useMemo(() => getReportPresetDates("30d"), []);
+  const from = searchParams.get("from") || defaultDates.from;
+  const to = searchParams.get("to") || defaultDates.to;
 
   const [data, setData] = useState<PaymentMethodSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.getPaymentMethodSummary({
-        fecha_desde: from || undefined,
-        fecha_hasta: to || undefined,
-      });
-      setData(res || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar reporte de pagos");
-    } finally {
-      setLoading(false);
-    }
-  }, [from, to]);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.getPaymentMethodSummary({
+          fecha_desde: from,
+          fecha_hasta: to,
+        });
+        if (!cancelled) {
+          setData(res || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Error al cargar reporte de pagos");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [from, to, retryCount]);
 
   const handleDesdeChange = (v: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -56,7 +68,7 @@ export default function ReportsPaymentsPage() {
   };
 
   if (error) {
-    return <ErrorBanner onRetry={fetchData}>{error}</ErrorBanner>;
+    return <ErrorBanner onRetry={() => setRetryCount((c) => c + 1)}>{error}</ErrorBanner>;
   }
 
   return (

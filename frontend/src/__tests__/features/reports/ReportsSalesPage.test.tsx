@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import ReportsSalesPage from "@/features/reports/pages/ReportsSalesPage";
 import { api } from "@/services/api";
 import { exportToExcel } from "@/lib/exportToExcel";
+import { getReportPresetDates } from "@/lib/utils";
 
 vi.mock("@/services/api", () => ({
   api: {
@@ -52,6 +53,7 @@ beforeEach(() => {
 
 describe("ReportsSalesPage", () => {
   it("renders micro-KPI cards and loads sales summary", async () => {
+    const expectedDates = getReportPresetDates("30d");
     renderWithRouter();
 
     expect(screen.getByText("Ingresos Brutos")).toBeInTheDocument();
@@ -62,8 +64,8 @@ describe("ReportsSalesPage", () => {
     await waitFor(() => {
       expect(api.getSalesSummary).toHaveBeenCalledWith({
         rango: "diario",
-        fecha_desde: undefined,
-        fecha_hasta: undefined,
+        fecha_desde: expectedDates.from,
+        fecha_hasta: expectedDates.to,
       });
     });
 
@@ -75,6 +77,7 @@ describe("ReportsSalesPage", () => {
   });
 
   it("switches grouping to semanal and mensual", async () => {
+    const expectedDates = getReportPresetDates("30d");
     renderWithRouter();
 
     await waitFor(() => {
@@ -87,8 +90,8 @@ describe("ReportsSalesPage", () => {
     await waitFor(() => {
       expect(api.getSalesSummary).toHaveBeenCalledWith({
         rango: "semanal",
-        fecha_desde: undefined,
-        fecha_hasta: undefined,
+        fecha_desde: expectedDates.from,
+        fecha_hasta: expectedDates.to,
       });
     });
   });
@@ -114,6 +117,23 @@ describe("ReportsSalesPage", () => {
     await userEvent.click(exportBtn);
 
     expect(exportToExcel).toHaveBeenCalledTimes(1);
+    // Verifies data exported is descending (newest first)
+    const exportCall = vi.mocked(exportToExcel).mock.calls[0][0];
+    const firstRow = exportCall.data[0] as { periodoRaw: string };
+    expect(firstRow.periodoRaw).toBe("2026-10-02");
+  });
+
+  it("renders table rows in descending order (most recent first)", async () => {
+    renderWithRouter();
+
+    const tableBtn = screen.getByRole("button", { name: /tabla/i });
+    await userEvent.click(tableBtn);
+
+    await waitFor(() => {
+      const cells = screen.getAllByRole("cell");
+      // First row should have 2 Oct and second row 1 Oct
+      expect(cells[0]).toHaveTextContent(/2 Oct/i);
+    });
   });
 
   it("adapts numbers when currency is set to VES via search params", async () => {
