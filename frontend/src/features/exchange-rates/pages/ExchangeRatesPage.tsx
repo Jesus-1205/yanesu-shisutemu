@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw, X } from "lucide-react";
 import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
@@ -51,15 +51,6 @@ export default function ExchangeRatesPage() {
     refreshTrend,
   } = useRateTrend();
 
-  const lastUpdateRef = useRef(fechaUltimaActualizacion);
-  useEffect(() => {
-    if (fechaUltimaActualizacion && fechaUltimaActualizacion !== lastUpdateRef.current) {
-      lastUpdateRef.current = fechaUltimaActualizacion;
-      refreshHistory();
-      refreshTrend();
-    }
-  }, [fechaUltimaActualizacion, refreshHistory, refreshTrend]);
-
   const handleRefreshAll = async () => {
     await loadTasa();
     await refreshHistory();
@@ -68,6 +59,8 @@ export default function ExchangeRatesPage() {
 
   const refreshAfterSave = async () => {
     await loadTasa();
+    await refreshHistory();
+    await refreshTrend();
   };
 
   const previousUsd = history.length > 1 ? history[1].tasa_usd : null;

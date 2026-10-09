@@ -10,6 +10,8 @@ interface ExchangeRateState {
   setRates: (usd: number, eur: number, fechaUltimaActualizacion?: string | null) => void;
 }
 
+let inFlightPromise: Promise<void> | null = null;
+
 export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
   tasa: 0,
   tasaEUR: 0,
@@ -26,19 +28,29 @@ export const useExchangeRateStore = create<ExchangeRateState>((set) => ({
   },
 
   loadTasa: async () => {
-    set({ loading: true });
-    try {
-      const data = await api.getLatestRates();
-      const usd = Number(data.rates.USD) || 0;
-      const eur = Number(data.rates.EUR) || 0;
-      set({
-        tasa: usd,
-        tasaEUR: eur,
-        loading: false,
-        fechaUltimaActualizacion: data.fecha_ultima_actualizacion ?? null,
-      });
-    } catch {
-      set({ loading: false });
+    if (inFlightPromise) {
+      return inFlightPromise;
     }
+
+    inFlightPromise = (async () => {
+      set({ loading: true });
+      try {
+        const data = await api.getLatestRates();
+        const usd = Number(data.rates.USD) || 0;
+        const eur = Number(data.rates.EUR) || 0;
+        set({
+          tasa: usd,
+          tasaEUR: eur,
+          loading: false,
+          fechaUltimaActualizacion: data.fecha_ultima_actualizacion ?? null,
+        });
+      } catch {
+        set({ loading: false });
+      } finally {
+        inFlightPromise = null;
+      }
+    })();
+
+    return inFlightPromise;
   },
 }));
