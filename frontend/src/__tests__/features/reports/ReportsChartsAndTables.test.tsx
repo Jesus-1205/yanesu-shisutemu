@@ -125,18 +125,12 @@ describe("RentabilityScatterChart", () => {
     expect(
       screen.getByText("Matriz de Rendimiento: Rotación vs. Margen %"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("Estrella (Alta Rotación / Alto Margen)"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Nicho (Baja Rotación / Alto Margen)"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Caballo de Batalla (Alta Rotación / Bajo Margen)"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Producto Hueso (Baja Rotación / Bajo Margen)"),
-    ).toBeInTheDocument();
+    // Legend now shows short labels + tooltip icon (HelpCircle)
+    // Note: "Nicho" also appears as an SVG quadrant label; use getAllByText
+    expect(screen.getAllByText("Estrella").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Nicho").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Caballo de Batalla").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Hueso").length).toBeGreaterThanOrEqual(1);
   });
 });
 
