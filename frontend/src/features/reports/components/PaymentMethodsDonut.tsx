@@ -25,9 +25,17 @@ interface ChartDatum {
 
 interface PaymentMethodsDonutProps {
   data: PaymentMethodSummaryItem[];
+  currency?: "USD" | "VES";
+  currSymbol?: string;
+  conversionRate?: number;
 }
 
-export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) {
+export default function PaymentMethodsDonut({
+  data,
+  currency = "USD",
+  currSymbol = "$",
+  conversionRate = 1,
+}: PaymentMethodsDonutProps) {
   const withValue = data.filter((m) => (m.cantidad_pagos || 0) > 0);
 
   if (!withValue.length) {
@@ -41,23 +49,29 @@ export default function PaymentMethodsDonut({ data }: PaymentMethodsDonutProps) 
   const sorted = [...withValue].sort(
     (a, b) => (Number(b.total_equivalente_usd) || 0) - (Number(a.total_equivalente_usd) || 0),
   );
-  const total = Math.round(sorted.reduce((sum, m) => sum + (Number(m.total_equivalente_usd) || 0), 0) * 100) / 100;
 
-  const chartData: ChartDatum[] = sorted.map((m, index) => {
-    const value = Number(m.total_equivalente_usd) || 0;
+  const rawChartData = sorted.map((m, index) => {
+    const rawEquiv = Number(m.total_equivalente_usd) || 0;
+    const value = currency === "USD" ? rawEquiv : Math.round(rawEquiv * conversionRate * 100) / 100;
     return {
       name: formatPaymentMethodName(m.metodo_pago_nombre),
       value,
-      amount: `$${value.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0.0",
       color: PALETTE[index % PALETTE.length],
     };
   });
 
+  const total = Math.round(rawChartData.reduce((sum, d) => sum + d.value, 0) * 100) / 100;
+
+  const chartData: ChartDatum[] = rawChartData.map((d) => ({
+    ...d,
+    amount: `${currSymbol}${d.value.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    percentage: total > 0 ? ((d.value / total) * 100).toFixed(1) : "0.0",
+  }));
+
   return (
     <div>
       <h2 className="mb-4 text-lg font-semibold text-text-main">
-        Monto recibido por Método de Pago (equiv. USD)
+        Monto recibido por Método de Pago (equiv. {currency})
       </h2>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
