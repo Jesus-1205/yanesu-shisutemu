@@ -515,8 +515,8 @@ export default function ReportsSalesPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                <p className="text-xs text-slate-500">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                <p className="text-xs text-slate-500 text-center sm:text-left">
                   Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, tableData.length)} de {tableData.length} registros
                 </p>
                 <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

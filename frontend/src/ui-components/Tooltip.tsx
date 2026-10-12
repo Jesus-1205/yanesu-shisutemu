@@ -41,7 +41,7 @@ export default function Tooltip({
           ${sideStyles[side]}
         `}
       >
-        <span className="block rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white">
+        <span className="block rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium max-w-xs whitespace-normal text-white shadow-md">
           {content}
         </span>
         <span className={`absolute ${arrowStyles[side]}`} />

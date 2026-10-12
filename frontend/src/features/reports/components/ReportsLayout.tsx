@@ -113,14 +113,14 @@ export default function ReportsLayout() {
             </div>
 
             {/* Quick Range Presets */}
-            <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-surface p-1 text-xs">
-              <Calendar className="size-3.5 text-slate-400 ml-1" />
+            <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-surface p-1 text-xs max-w-full overflow-x-auto scrollbar-none flex-nowrap">
+              <Calendar className="size-3.5 text-slate-400 ml-1 shrink-0" />
               {PRESETS.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => setPreset(p.id)}
-                  className={`cursor-pointer rounded-md px-2 py-1 font-medium transition-colors ${
+                  className={`cursor-pointer shrink-0 rounded-md px-2 py-1 font-medium transition-colors ${
                     activePreset === p.id && !showCustomDates
                       ? "bg-brand-blue text-white shadow-xs"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -132,7 +132,7 @@ export default function ReportsLayout() {
               <button
                 type="button"
                 onClick={() => setShowCustomDates((v) => !v)}
-                className={`cursor-pointer rounded-md px-2 py-1 font-medium transition-colors ${
+                className={`cursor-pointer shrink-0 rounded-md px-2 py-1 font-medium transition-colors ${
                   activePreset === "custom" || showCustomDates
                     ? "bg-brand-blue text-white shadow-xs"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -171,14 +171,14 @@ export default function ReportsLayout() {
       )}
 
       {/* Nav Pills for Domains */}
-      <div className="flex border-b border-slate-200 pb-1">
-        <nav className="flex space-x-2" aria-label="Tabs">
+      <div className="flex border-b border-slate-200 pb-1 overflow-x-auto scrollbar-none">
+        <nav className="flex space-x-2 shrink-0" aria-label="Tabs">
           {navItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.to}
               className={({ isActive }) =>
-                `rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                `shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                   isActive
                     ? "bg-brand-blue text-white shadow-xs"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"

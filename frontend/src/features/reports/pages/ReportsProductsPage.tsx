@@ -256,7 +256,7 @@ export default function ReportsProductsPage() {
       </div>
 
       {/* ── Main Interactive Container ── */}
-      <div className="rounded-xl border border-slate-200 bg-surface p-5 shadow-xs">
+      <div className="rounded-xl border border-slate-200 bg-surface p-4 sm:p-5 shadow-xs min-w-0 max-w-full">
         {/* Controls Toolbar */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
           <div>
@@ -358,13 +358,13 @@ export default function ReportsProductsPage() {
           /* ── TABLE MODE ── */
           <div className="space-y-4">
             {/* Sub-tabs */}
-            <div className="flex flex-wrap gap-1 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none border-b border-slate-100 pb-3 -mx-1 px-1 flex-nowrap">
               {TABLE_TABS.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => { setTableTab(tab.id); setPage(1); }}
-                  className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`cursor-pointer shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                     tableTab === tab.id
                       ? "bg-brand-blue text-white shadow-xs"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -381,8 +381,8 @@ export default function ReportsProductsPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full min-w-[620px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
                   <tr>
                     <th className="px-4 py-3">Producto</th>
@@ -454,8 +454,8 @@ export default function ReportsProductsPage() {
 
             {/* Pagination + count */}
             {filteredTableData.length > 0 && (
-              <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                <p className="text-xs text-slate-500">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                <p className="text-xs text-slate-500 text-center sm:text-left">
                   Mostrando{" "}
                   <span className="font-medium text-slate-700">
                     {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, filteredTableData.length)}

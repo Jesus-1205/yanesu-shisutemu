@@ -132,6 +132,38 @@ describe("RentabilityScatterChart", () => {
     expect(screen.getAllByText("Caballo de Batalla").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Hueso").length).toBeGreaterThanOrEqual(1);
   });
+
+  it("muestra tarjeta explicativa al hacer clic o tap en un cuadrante y la cierra", async () => {
+    const data = [
+      {
+        id: 1,
+        nombre: "Vino",
+        precio_costo_usd: 8.0,
+        precio_unidad_usd: 10.0,
+        margen_porcentaje: 20.0,
+        stock_unidades: 2,
+        total_vendido: 1,
+      },
+    ];
+
+    render(<RentabilityScatterChart data={data} />);
+
+    // Initially, explanation only appears inside the tooltip span
+    expect(screen.getAllByText(/Alta Rotación \+ Alto Margen/).length).toBe(1);
+
+    // Click on Estrella legend button
+    const estrellaBtn = screen.getByRole("button", { name: /ver información de cuadrante estrella/i });
+    await userEvent.click(estrellaBtn);
+
+    // Card appears: now it appears in both tooltip and the open explanation card
+    expect(screen.getAllByText(/Alta Rotación \+ Alto Margen/).length).toBe(2);
+
+    // Close button dismisses the card
+    const closeBtn = screen.getByRole("button", { name: /cerrar explicación/i });
+    await userEvent.click(closeBtn);
+
+    expect(screen.getAllByText(/Alta Rotación \+ Alto Margen/).length).toBe(1);
+  });
 });
 
 describe("VentasVsCostosChart", () => {

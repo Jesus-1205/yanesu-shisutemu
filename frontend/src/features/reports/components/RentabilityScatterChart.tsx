@@ -1,8 +1,9 @@
+import { useState } from "react";
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine
 } from "recharts";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, X } from "lucide-react";
 import Tooltip from "@/ui-components/Tooltip";
 import type { ProductMatrixItem } from "@/types/api";
 
@@ -22,15 +23,32 @@ interface LegendItemProps {
   tooltip: string;
 }
 
-function LegendItem({ color, label, tooltip }: LegendItemProps) {
+function LegendItem({
+  color,
+  label,
+  tooltip,
+  isSelected,
+  onToggle,
+}: LegendItemProps & { isSelected: boolean; onToggle: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`cursor-pointer inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition-colors border select-none ${
+        isSelected
+          ? "border-slate-300 bg-slate-100 text-slate-900 font-semibold shadow-xs"
+          : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+      }`}
+      aria-label={`Ver información de cuadrante ${label}`}
+    >
       <span className="size-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-      {label}
+      <span>{label}</span>
       <Tooltip content={tooltip} side="top">
-        <HelpCircle className="size-3 text-slate-400 cursor-help flex-shrink-0" />
+        <span className="p-0.5 text-slate-400 hover:text-slate-600">
+          <HelpCircle className="size-3 flex-shrink-0" />
+        </span>
       </Tooltip>
-    </span>
+    </button>
   );
 }
 
@@ -39,6 +57,8 @@ interface RentabilityScatterChartProps {
 }
 
 export default function RentabilityScatterChart({ data }: RentabilityScatterChartProps) {
+  const [selectedLegend, setSelectedLegend] = useState<LegendItemProps | null>(null);
+
   if (!data.length) {
     return (
       <div className="flex h-75 items-center justify-center">
@@ -94,11 +114,46 @@ export default function RentabilityScatterChart({ data }: RentabilityScatterChar
         Matriz de Rendimiento: Rotación vs. Margen %
       </h2>
 
-      <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2">
+      <div className="mb-2 flex flex-wrap gap-1.5 sm:gap-3">
         {LEGEND_ITEMS.map((item) => (
-          <LegendItem key={item.label} {...item} />
+          <LegendItem
+            key={item.label}
+            {...item}
+            isSelected={selectedLegend?.label === item.label}
+            onToggle={() =>
+              setSelectedLegend((prev) => (prev?.label === item.label ? null : item))
+            }
+          />
         ))}
       </div>
+
+      {/* Tarjeta explicativa contextual al hacer clic o tap */}
+      {selectedLegend && (
+        <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs shadow-xs animate-in fade-in duration-150">
+          <div className="flex items-start gap-2.5">
+            <span
+              className="size-3 rounded-full mt-0.5 flex-shrink-0"
+              style={{ backgroundColor: selectedLegend.color }}
+            />
+            <div>
+              <p className="font-semibold text-slate-900">
+                {selectedLegend.label}
+              </p>
+              <p className="mt-0.5 text-slate-600 leading-relaxed">
+                {selectedLegend.tooltip}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedLegend(null)}
+            aria-label="Cerrar explicación"
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 cursor-pointer flex-shrink-0"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
 
       <ResponsiveContainer width="100%" height={300}>
         <ScatterChart margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
