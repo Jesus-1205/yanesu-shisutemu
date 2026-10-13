@@ -79,8 +79,8 @@ export function useSalesSummary({
     return {
       totalVentas,
       ingresos,
-      costos,
-      margen,
+      costos: Math.round(costos * 100) / 100,
+      margen: Math.round(margen * 100) / 100,
       margenPct,
     };
   }, [rawData, currency]);
@@ -108,7 +108,10 @@ export function useSalesSummary({
     return [...chartData].reverse();
   }, [chartData]);
 
-  const totalPages = Math.ceil(tableData.length / pageSize) || 1;
+  const totalPages = useMemo<number>(
+    () => Math.ceil(tableData.length / pageSize) || 1,
+    [tableData, pageSize],
+  );
 
   const paginatedData = useMemo<SalesChartRow[]>(() => {
     const start = (page - 1) * pageSize;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useSalesSummary } from "@/features/reports/hooks/useSalesSummary";
 import { api } from "@/services/api";
 
@@ -188,7 +188,9 @@ describe("useSalesSummary", () => {
 
     vi.mocked(api.getSalesSummary).mockResolvedValueOnce(mockSalesData);
 
-    result.current.retry();
+    act(() => {
+      result.current.retry();
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
