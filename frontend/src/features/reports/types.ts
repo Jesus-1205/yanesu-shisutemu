@@ -1,4 +1,4 @@
-import type { SalesSummaryItem, ProductMatrixItem } from "@/types/api";
+import type { SalesSummaryItem, ProductMatrixItem, PaymentMethodSummaryItem } from "@/types/api";
 
 export type SalesGrouping = "diario" | "semanal" | "mensual";
 export type ReportViewMode = "chart" | "table";
@@ -85,3 +85,51 @@ export interface UseProductsReportReturn {
   retry: () => void;
 }
 
+export type PaymentChartMode = "donut" | "bars";
+export type PaymentTableTab = "todos" | "divisas" | "bolivares";
+
+export interface PaymentKpis {
+  totalUsd: number;
+  totalVes: number;
+  totalTransacciones: number;
+  totalEquivUsd: number;
+  totalRecaudado: number;
+  lider: PaymentMethodSummaryItem | null;
+  ventaPromedio: number;
+}
+
+export interface PaymentTableRow {
+  id: number;
+  nombre: string;
+  nombreFormatted: string;
+  monedaDefault: "USD" | "VES";
+  cantidadPagos: number;
+  totalUsd: number;
+  totalVes: number;
+  totalEquiv: number;
+  participacionPct: number;
+  participacionFormatted: string;
+}
+
+export interface UsePaymentsReportParams {
+  from: string;
+  to: string;
+  currency: "USD" | "VES";
+  tableTab: PaymentTableTab;
+  page: number;
+  pageSize: number;
+}
+
+export interface UsePaymentsReportReturn {
+  rawData: PaymentMethodSummaryItem[];
+  kpis: PaymentKpis;
+  tableData: PaymentTableRow[];
+  paginatedData: PaymentTableRow[];
+  totalPages: number;
+  totalRows: number;
+  conversionRate: number;
+  currSymbol: string;
+  loading: boolean;
+  error: string | null;
+  retry: () => void;
+}
