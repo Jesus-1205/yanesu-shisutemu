@@ -1,6 +1,6 @@
 import { formatCurrency } from "@/lib/utils";
 
-interface TooltipPayloadItem {
+export interface TooltipPayloadItem {
   name: string;
   value: number;
   color: string;
@@ -9,7 +9,7 @@ interface TooltipPayloadItem {
 export interface SalesChartTooltipProps {
   active?: boolean;
   payload?: TooltipPayloadItem[];
-  label?: string;
+  label?: string | number;
   currSymbol: string;
 }
 
