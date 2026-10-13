@@ -78,7 +78,7 @@ export function useSalesSummary({
 
     return {
       totalVentas,
-      ingresos,
+      ingresos: Math.round(ingresos * 100) / 100,
       costos: Math.round(costos * 100) / 100,
       margen: Math.round(margen * 100) / 100,
       margenPct,
