@@ -10,7 +10,7 @@ export interface ProductsTableProps {
   pageSize: number;
   tableTab: ProductTableTab;
   sinRotacionCount: number;
-  currency: string;
+  currency: "USD" | "VES";
   currSymbol: string;
   onTabChange: (tab: ProductTableTab) => void;
   onPageChange: (page: number) => void;
