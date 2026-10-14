@@ -88,3 +88,18 @@ class CategoryPaginationOut(BaseModel):
     page: int
     page_size: int
     pages: int
+
+
+class CategoryReportItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    total_productos: int
+    stock_total: int
+    unidades_vendidas: int
+    ingresos_usd: Decimal
+    costos_usd: Decimal
+    margen_usd: Decimal
+    margen_porcentaje: Decimal
+

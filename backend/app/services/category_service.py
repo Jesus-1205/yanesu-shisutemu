@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import func, or_, select
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import ConflictError, EntityNotFoundError
 from app.models.category import Category, producto_categoria
 from app.models.product import Product
-from app.models.sale import SaleItem
+from app.models.sale import Sale, SaleItem
 from app.services.product_service import _accent_fold, _accent_fold_pattern
 from app.schemas.category import (
     CategoryCreate,
@@ -384,3 +385,86 @@ def get_category_detail_analytics(db: Session, category_id: int) -> CategoryDeta
         top_productos=top_productos,
         distribucion_ventas=distribucion_ventas,
     )
+
+
+def get_category_report(
+    db: Session,
+    *,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+) -> list[dict]:
+    from app.services.sale_service import _to_ve_boundary
+
+    # Subquery de productos y stock por categoría
+    ps = (
+        select(
+            producto_categoria.c.categoria_id,
+            func.count(Product.id).label("total_productos"),
+            func.coalesce(
+                func.sum(Product.stock_cajas * Product.unidades_por_caja + Product.stock_unidades), 0
+            ).label("stock_total"),
+        )
+        .select_from(producto_categoria)
+        .join(Product, Product.id == producto_categoria.c.producto_id)
+        .group_by(producto_categoria.c.categoria_id)
+    ).subquery()
+
+    # Subquery de ventas agrupadas por producto con filtro de fecha
+    sales_filter = select(
+        SaleItem.producto_id,
+        func.coalesce(func.sum(SaleItem.unidades_descontadas), 0).label("unidades_vendidas"),
+        func.coalesce(func.sum(SaleItem.subtotal_usd), 0).label("ingresos_usd"),
+    ).join(Sale, Sale.id == SaleItem.venta_id)
+
+    if fecha_desde:
+        sales_filter = sales_filter.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
+    if fecha_hasta:
+        sales_filter = sales_filter.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
+
+    sales_sub = sales_filter.group_by(SaleItem.producto_id).subquery()
+
+    # Query principal de categorías cruzadas con productos y ventas
+    stmt = (
+        select(
+            Category.id,
+            Category.nombre,
+            func.coalesce(ps.c.total_productos, 0).label("total_productos"),
+            func.coalesce(ps.c.stock_total, 0).label("stock_total"),
+            func.coalesce(func.sum(sales_sub.c.unidades_vendidas), 0).label("unidades_vendidas"),
+            func.coalesce(func.sum(sales_sub.c.ingresos_usd), 0).label("ingresos_usd"),
+            func.coalesce(
+                func.sum(sales_sub.c.unidades_vendidas * Product.precio_costo_usd), 0
+            ).label("costos_usd"),
+        )
+        .outerjoin(ps, ps.c.categoria_id == Category.id)
+        .outerjoin(producto_categoria, producto_categoria.c.categoria_id == Category.id)
+        .outerjoin(Product, Product.id == producto_categoria.c.producto_id)
+        .outerjoin(sales_sub, sales_sub.c.producto_id == Product.id)
+        .group_by(Category.id, Category.nombre, ps.c.total_productos, ps.c.stock_total)
+        .order_by(func.coalesce(func.sum(sales_sub.c.ingresos_usd), 0).desc(), Category.nombre)
+    )
+
+    rows = db.execute(stmt).all()
+    result = []
+    for r in rows:
+        ingresos = Decimal(str(r.ingresos_usd)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        costos = Decimal(str(r.costos_usd)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        margen = (ingresos - costos).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        margen_pct = (
+            ((ingresos - costos) / ingresos * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+            if ingresos > Decimal("0")
+            else Decimal("0.0")
+        )
+        result.append({
+            "id": r.id,
+            "nombre": r.nombre,
+            "total_productos": int(r.total_productos),
+            "stock_total": int(r.stock_total),
+            "unidades_vendidas": int(r.unidades_vendidas),
+            "ingresos_usd": ingresos,
+            "costos_usd": costos,
+            "margen_usd": margen,
+            "margen_porcentaje": margen_pct,
+        })
+    return result
+
