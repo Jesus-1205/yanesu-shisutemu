@@ -462,6 +462,19 @@ export interface PaymentMethodSummaryItem {
   total_equivalente_usd: number;
 }
 
+export interface CategoryReportItemOut {
+  id: number;
+  nombre: string;
+  total_productos: number;
+  stock_total: number;
+  unidades_vendidas: number;
+  ingresos_usd: number | string;
+  costos_usd: number | string;
+  margen_usd: number | string;
+  margen_porcentaje: number | string;
+}
+
+
 export interface SalePaginationListOut {
   items: SaleListOut[];
   total: number;

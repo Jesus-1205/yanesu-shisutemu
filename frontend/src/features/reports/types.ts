@@ -1,4 +1,4 @@
-import type { SalesSummaryItem, ProductMatrixItem, PaymentMethodSummaryItem } from "@/types/api";
+import type { SalesSummaryItem, ProductMatrixItem, PaymentMethodSummaryItem, CategoryReportItemOut } from "@/types/api";
 
 export type SalesGrouping = "diario" | "semanal" | "mensual";
 export type ReportViewMode = "chart" | "table";
@@ -133,3 +133,50 @@ export interface UsePaymentsReportReturn {
   error: string | null;
   retry: () => void;
 }
+
+export type CategoryChartMode = "donut" | "bars";
+export type CategoryTableTab = "todos" | "mas_vendidas" | "mayor_margen" | "menor_margen";
+
+export interface CategoryKpis {
+  totalIngresos: number;
+  lider: CategoryReportItemOut | null;
+  totalUnidades: number;
+  margenPromedio: number;
+}
+
+export interface CategoryTableRow {
+  id: number;
+  nombre: string;
+  total_productos: number;
+  stock_total: number;
+  unidades_vendidas: number;
+  ingresos: number;
+  costos: number;
+  margen: number;
+  rentabilidad_pct: number;
+  participacion_pct: number;
+}
+
+export interface UseCategoriesReportParams {
+  from: string;
+  to: string;
+  currency: "USD" | "VES";
+  tableTab: CategoryTableTab;
+  page: number;
+  pageSize: number;
+}
+
+export interface UseCategoriesReportReturn {
+  rawData: CategoryReportItemOut[];
+  kpis: CategoryKpis;
+  tableData: CategoryTableRow[];
+  paginatedData: CategoryTableRow[];
+  totalPages: number;
+  totalRows: number;
+  conversionRate: number;
+  currSymbol: string;
+  loading: boolean;
+  error: string | null;
+  retry: () => void;
+}
+

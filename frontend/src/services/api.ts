@@ -9,6 +9,7 @@ import type {
   CategoryDetailAnalytics,
   CategoryOut,
   CategoryPaginationOut,
+  CategoryReportItemOut,
   CategoryUpdate,
   ComboActiveOut,
   ComboCreate,
@@ -471,6 +472,14 @@ export const api = {
     if (params?.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
     const q = qs.toString();
     return request<PaymentMethodSummaryItem[]>(`/reports/payment-methods${q ? `?${q}` : ""}`);
+  },
+
+  getCategoryReport: (params?: { fecha_desde?: string; fecha_hasta?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.fecha_desde) qs.set("fecha_desde", params.fecha_desde);
+    if (params?.fecha_hasta) qs.set("fecha_hasta", params.fecha_hasta);
+    const qStr = qs.toString();
+    return request<CategoryReportItemOut[]>(`/reports/categories${qStr ? `?${qStr}` : ""}`);
   },
 
   getTopMarginProducts: (limit = 5) =>

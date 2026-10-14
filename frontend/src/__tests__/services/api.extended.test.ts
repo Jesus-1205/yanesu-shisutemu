@@ -501,3 +501,35 @@ describe("api - normalización de decimales (responses complejas)", () => {
     );
   });
 });
+
+// ── Reportes ──────────────────────────────────────────────────────────────────
+
+describe("api - reportes de categorías", () => {
+  it("getCategoryReport llama a /reports/categories con query params", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        {
+          id: 1,
+          nombre: "Bebidas",
+          total_productos: 5,
+          stock_total: 20,
+          unidades_vendidas: 10,
+          ingresos_usd: 100,
+          costos_usd: 60,
+          margen_usd: 40,
+          margen_porcentaje: 40,
+        },
+      ],
+    });
+
+    const res = await api.getCategoryReport({ fecha_desde: "2026-09-01", fecha_hasta: "2026-09-30" });
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/reports/categories?fecha_desde=2026-09-01&fecha_hasta=2026-09-30"),
+      expect.any(Object),
+    );
+    expect(res).toHaveLength(1);
+    expect(res[0].nombre).toBe("Bebidas");
+  });
+});
+
