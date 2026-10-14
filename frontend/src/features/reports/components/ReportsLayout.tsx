@@ -77,6 +77,7 @@ export default function ReportsLayout() {
     { to: `sales?${searchParams.toString()}`, label: "Ventas y Rentabilidad" },
     { to: `products?${searchParams.toString()}`, label: "Inventario y Productos" },
     { to: `payments?${searchParams.toString()}`, label: "Métodos de Pago" },
+    { to: `categories?${searchParams.toString()}`, label: "Categorías" },
   ];
 
   return (
