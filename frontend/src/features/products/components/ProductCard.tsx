@@ -36,13 +36,19 @@ export default function ProductCard({
       : "success";
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200/90 bg-surface shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+    <div
+      title={product.nombre}
+      className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200/90 bg-surface shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+    >
       {/* Top section: Title, barcode, categories, packaging and margin */}
       <div className="flex flex-1 flex-col justify-between p-4 pb-3">
         <div>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="truncate text-sm font-semibold tracking-tight text-slate-900">
+              <h3
+                title={product.nombre}
+                className="truncate text-sm font-semibold tracking-tight text-slate-900"
+              >
                 {product.nombre}
               </h3>
               {product.codigo_barra && (
