@@ -36,68 +36,70 @@ export default function ProductCard({
       : "success";
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-xl border border-slate-200/90 bg-surface p-4 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
-      {/* Top section: Title, barcode and clean action buttons */}
-      <div>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-semibold tracking-tight text-slate-900">
-              {product.nombre}
-            </h3>
-            {product.codigo_barra && (
-              <p className="mt-0.5 font-mono text-xs text-slate-400">
-                {product.codigo_barra}
-              </p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => onToggleFavorite?.(product)}
-              className="cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-yellow-50/80"
-              title={
-                product.es_favorito
-                  ? "Quitar de favoritos"
-                  : "Agregar a favoritos"
-              }
-            >
-              <Star
-                className={`size-4 transition-colors ${
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200/90 bg-surface shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+      {/* Top section: Title, barcode, categories, packaging and margin */}
+      <div className="flex flex-1 flex-col justify-between p-4 pb-3">
+        <div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-sm font-semibold tracking-tight text-slate-900">
+                {product.nombre}
+              </h3>
+              {product.codigo_barra && (
+                <p className="mt-0.5 font-mono text-xs text-slate-400">
+                  {product.codigo_barra}
+                </p>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => onToggleFavorite?.(product)}
+                className="cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-yellow-50/80"
+                title={
                   product.es_favorito
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-slate-300 hover:text-yellow-400"
-                }`}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit(product)}
-              className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-blue-50/80 hover:text-brand-blue"
-              aria-label="Editar"
-            >
-              <Pencil className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(product)}
-              className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50/80 hover:text-danger"
-              aria-label="Eliminar"
-            >
-              <Trash2 className="size-4" />
-            </button>
+                    ? "Quitar de favoritos"
+                    : "Agregar a favoritos"
+                }
+              >
+                <Star
+                  className={`size-4 transition-colors ${
+                    product.es_favorito
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-slate-300 hover:text-yellow-400"
+                  }`}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() => onEdit(product)}
+                className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-blue-50/80 hover:text-brand-blue"
+                aria-label="Editar"
+              >
+                <Pencil className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(product)}
+                className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50/80 hover:text-danger"
+                aria-label="Eliminar"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Categories chips */}
-        {product.categories.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-1">
-            {product.categories.map((c) => (
-              <Badge key={c.id} variant="info" className="text-[11px] py-0.5">
-                {c.nombre}
-              </Badge>
-            ))}
-          </div>
-        )}
+          {/* Categories chips */}
+          {product.categories.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap gap-1">
+              {product.categories.map((c) => (
+                <Badge key={c.id} variant="info" className="text-[11px] py-0.5">
+                  {c.nombre}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Package & Margin info */}
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
@@ -116,8 +118,8 @@ export default function ProductCard({
         </div>
       </div>
 
-      {/* Bottom section: Stock status and refined Price hierarchy */}
-      <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-3">
+      {/* Bottom tray section: Stock status and refined Price hierarchy */}
+      <div className="flex items-end justify-between border-t border-slate-100 bg-slate-50/70 px-4 py-3 transition-colors group-hover:bg-slate-50">
         <div className="flex items-center gap-1.5">
           <Box className="size-3.5 text-slate-400" />
           <Badge variant={stockVariant} className="text-xs font-semibold">
