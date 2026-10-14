@@ -85,6 +85,11 @@ export function useCategoriesReport({
           )
         : null;
 
+    const liderParticipacion =
+      lider && totalIngresosUsd > 0
+        ? Math.round(((Number(lider.ingresos_usd) || 0) / totalIngresosUsd) * 100 * 10) / 10
+        : 0;
+
     const totalIngresos =
       currency === "USD"
         ? Math.round(totalIngresosUsd * 100) / 100
@@ -98,6 +103,7 @@ export function useCategoriesReport({
     return {
       totalIngresos,
       lider,
+      liderParticipacion,
       totalUnidades,
       margenPromedio,
     };

@@ -140,6 +140,7 @@ export type CategoryTableTab = "todos" | "mas_vendidas" | "mayor_margen" | "meno
 export interface CategoryKpis {
   totalIngresos: number;
   lider: CategoryReportItemOut | null;
+  liderParticipacion?: number;
   totalUnidades: number;
   margenPromedio: number;
 }
