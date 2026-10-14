@@ -25,8 +25,8 @@ vi.mock("recharts", () => ({
       {children}
     </div>
   ),
-  BarChart: ({ children }: { children: ReactNode }) => (
-    <div data-testid="bar-chart">{children}</div>
+  BarChart: ({ children, data }: { children: ReactNode; data?: unknown[] }) => (
+    <div data-testid="bar-chart" data-count={data?.length}>{children}</div>
   ),
   Bar: ({ dataKey, fill }: { dataKey: string; fill: string }) => (
     <div data-testid={`bar-${dataKey}`} data-fill={fill} />
@@ -36,7 +36,9 @@ vi.mock("recharts", () => ({
   YAxis: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,
-  Legend: () => null,
+  Legend: ({ content }: { content?: () => ReactNode }) => (
+    <div data-testid="legend">{content ? content() : null}</div>
+  ),
 }));
 
 describe("CategoriesKpiCards", () => {
@@ -263,6 +265,39 @@ describe("CategoriesChartSection", () => {
       />,
     );
     expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
+  });
+
+  it("agrupa en 'Otras categorías' cuando hay más de 5 categorías", () => {
+    const manyCategories: CategoryReportItemOut[] = Array.from({ length: 8 }, (_, i) => ({
+      id: i + 1,
+      nombre: `Categoría ${i + 1}`,
+      total_productos: 5,
+      stock_total: 20,
+      stock_valorado_usd: 100,
+      total_ordenes: 10,
+      unidades_vendidas: 10,
+      ingresos_usd: (100 - i * 10).toString(),
+      costos_usd: "30",
+      margen_usd: (70 - i * 10).toString(),
+      margen_porcentaje: "50",
+    }));
+
+    render(
+      <CategoriesChartSection
+        chartMode="donut"
+        data={manyCategories}
+        currency="USD"
+        currSymbol="$"
+        conversionRate={1}
+      />,
+    );
+
+    // Debe mostrar las 5 principales y "Otras categorías"
+    expect(screen.getByText(/Categoría 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Categoría 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Otras categorías/)).toBeInTheDocument();
+    // No debe mostrar la Categoría 6 en la leyenda
+    expect(screen.queryByText(/Categoría 6/)).not.toBeInTheDocument();
   });
 });
 

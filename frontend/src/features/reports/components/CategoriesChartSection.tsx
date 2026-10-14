@@ -37,8 +37,12 @@ const PALETTE = [
   "#059669",
 ];
 
+const TOP_LIMIT = 5;
+const OTHER_COLOR = "#94A3B8";
+
 interface DonutDatum {
   name: string;
+  fullName: string;
   value: number;
   amount: string;
   unidades: number;
@@ -65,24 +69,71 @@ export default function CategoriesChartSection({
     );
   }
 
-  if (chartMode === "donut") {
-    const sorted = [...activeItems].sort(
-      (a, b) => (Number(b.ingresos_usd) || 0) - (Number(a.ingresos_usd) || 0),
-    );
+  const sorted = [...activeItems].sort(
+    (a, b) => (Number(b.ingresos_usd) || 0) - (Number(a.ingresos_usd) || 0),
+  );
 
-    const rawChartData = sorted.map((c, index) => {
-      const rawIncome = Number(c.ingresos_usd) || 0;
-      const value =
+  if (chartMode === "donut") {
+    let rawChartData: {
+      name: string;
+      fullName: string;
+      value: number;
+      unidades: number;
+      color: string;
+    }[];
+
+    if (sorted.length <= TOP_LIMIT) {
+      rawChartData = sorted.map((c, index) => {
+        const rawIncome = Number(c.ingresos_usd) || 0;
+        const value =
+          currency === "USD"
+            ? Math.round(rawIncome * 100) / 100
+            : Math.round(rawIncome * conversionRate * 100) / 100;
+        return {
+          name: c.nombre,
+          fullName: c.nombre,
+          value,
+          unidades: Number(c.unidades_vendidas) || 0,
+          color: PALETTE[index % PALETTE.length],
+        };
+      });
+    } else {
+      const top = sorted.slice(0, TOP_LIMIT);
+      const rest = sorted.slice(TOP_LIMIT);
+
+      const topData = top.map((c, index) => {
+        const rawIncome = Number(c.ingresos_usd) || 0;
+        const value =
+          currency === "USD"
+            ? Math.round(rawIncome * 100) / 100
+            : Math.round(rawIncome * conversionRate * 100) / 100;
+        return {
+          name: c.nombre,
+          fullName: c.nombre,
+          value,
+          unidades: Number(c.unidades_vendidas) || 0,
+          color: PALETTE[index % PALETTE.length],
+        };
+      });
+
+      const restIncome = rest.reduce((acc, c) => acc + (Number(c.ingresos_usd) || 0), 0);
+      const restValue =
         currency === "USD"
-          ? Math.round(rawIncome * 100) / 100
-          : Math.round(rawIncome * conversionRate * 100) / 100;
-      return {
-        name: c.nombre,
-        value,
-        unidades: Number(c.unidades_vendidas) || 0,
-        color: PALETTE[index % PALETTE.length],
-      };
-    });
+          ? Math.round(restIncome * 100) / 100
+          : Math.round(restIncome * conversionRate * 100) / 100;
+      const restUnidades = rest.reduce((acc, c) => acc + (Number(c.unidades_vendidas) || 0), 0);
+
+      rawChartData = [
+        ...topData,
+        {
+          name: "Otras categorías",
+          fullName: `Otras categorías (${rest.length} restantes)`,
+          value: restValue,
+          unidades: restUnidades,
+          color: OTHER_COLOR,
+        },
+      ];
+    }
 
     const total = Math.round(rawChartData.reduce((sum, d) => sum + d.value, 0) * 100) / 100;
 
@@ -118,7 +169,7 @@ export default function CategoriesChartSection({
                 const d = payload[0].payload as DonutDatum;
                 return (
                   <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs shadow-lg space-y-0.5">
-                    <p className="font-semibold text-slate-900">{d.name}</p>
+                    <p className="font-semibold text-slate-900">{d.fullName}</p>
                     <p className="text-slate-600">
                       Ingresos: <span className="font-medium text-brand-blue">{d.amount}</span> ({d.percentage}%)
                     </p>
@@ -149,9 +200,47 @@ export default function CategoriesChartSection({
   }
 
   // Bar Chart mode ("bars")
-  const barChartData = [...activeItems]
-    .sort((a, b) => (Number(b.ingresos_usd) || 0) - (Number(a.ingresos_usd) || 0))
-    .map((c) => {
+  let barChartData: {
+    id: number;
+    nombre: string;
+    nombreCompleto: string;
+    ingresos: number;
+    costos: number;
+    margen: number;
+    unidades: number;
+    rentabilidadPct: number;
+  }[];
+
+  if (sorted.length <= TOP_LIMIT) {
+    barChartData = sorted.map((c) => {
+      const rawIncome = Number(c.ingresos_usd) || 0;
+      const rawCost = Number(c.costos_usd) || 0;
+      const ingresos =
+        currency === "USD"
+          ? Math.round(rawIncome * 100) / 100
+          : Math.round(rawIncome * conversionRate * 100) / 100;
+      const costos =
+        currency === "USD"
+          ? Math.round(rawCost * 100) / 100
+          : Math.round(rawCost * conversionRate * 100) / 100;
+      const margen = Math.round((ingresos - costos) * 100) / 100;
+
+      return {
+        id: c.id,
+        nombre: c.nombre.length > 20 ? `${c.nombre.slice(0, 20)}…` : c.nombre,
+        nombreCompleto: c.nombre,
+        ingresos,
+        costos,
+        margen,
+        unidades: Number(c.unidades_vendidas) || 0,
+        rentabilidadPct: Number(c.margen_porcentaje) || 0,
+      };
+    });
+  } else {
+    const top = sorted.slice(0, TOP_LIMIT);
+    const rest = sorted.slice(TOP_LIMIT);
+
+    const topBars = top.map((c) => {
       const rawIncome = Number(c.ingresos_usd) || 0;
       const rawCost = Number(c.costos_usd) || 0;
       const ingresos =
@@ -176,8 +265,38 @@ export default function CategoriesChartSection({
       };
     });
 
+    const restRawIncome = rest.reduce((acc, c) => acc + (Number(c.ingresos_usd) || 0), 0);
+    const restRawCost = rest.reduce((acc, c) => acc + (Number(c.costos_usd) || 0), 0);
+    const restIngresos =
+      currency === "USD"
+        ? Math.round(restRawIncome * 100) / 100
+        : Math.round(restRawIncome * conversionRate * 100) / 100;
+    const restCostos =
+      currency === "USD"
+        ? Math.round(restRawCost * 100) / 100
+        : Math.round(restRawCost * conversionRate * 100) / 100;
+    const restMargen = Math.round((restIngresos - restCostos) * 100) / 100;
+    const restUnidades = rest.reduce((acc, c) => acc + (Number(c.unidades_vendidas) || 0), 0);
+    const restRentabilidad =
+      restIngresos > 0 ? Math.round(((restIngresos - restCostos) / restIngresos) * 1000) / 10 : 0;
+
+    barChartData = [
+      ...topBars,
+      {
+        id: -1,
+        nombre: "Otras categorías",
+        nombreCompleto: `Otras categorías (${rest.length} restantes)`,
+        ingresos: restIngresos,
+        costos: restCostos,
+        margen: restMargen,
+        unidades: restUnidades,
+        rentabilidadPct: restRentabilidad,
+      },
+    ];
+  }
+
   const maxVal = Math.max(...barChartData.map((d) => Math.max(d.ingresos, d.costos)), 1);
-  const chartHeight = Math.max(320, barChartData.length * 48);
+  const chartHeight = Math.max(300, barChartData.length * 52);
 
   return (
     <div>
