@@ -87,10 +87,10 @@ export default function ProductsToolbar({
   };
 
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+    <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Search + Filters row */}
-      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-        <div className="relative min-w-50 flex-1 sm:max-w-xs md:max-w-md">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
+        <div className="relative min-w-[200px] flex-1 sm:max-w-xs md:max-w-sm">
           <SearchInput
             ref={searchRef}
             value={search}
@@ -105,11 +105,13 @@ export default function ProductsToolbar({
           />
         </div>
         <button
+          type="button"
           onClick={toggleFavoritesOnly}
-          className={`shrink-0 cursor-pointer rounded-lg p-2 transition-colors ${showFavoritesOnly
-              ? "bg-yellow-100 text-yellow-600"
-              : "text-slate-400 hover:bg-yellow-50 hover:text-yellow-500"
-            }`}
+          className={`shrink-0 cursor-pointer rounded-lg border p-2 shadow-xs transition-colors ${
+            showFavoritesOnly
+              ? "border-yellow-200 bg-yellow-50 text-yellow-600"
+              : "border-slate-200 bg-surface text-slate-400 hover:border-slate-300 hover:bg-slate-50 hover:text-yellow-500"
+          }`}
           title={
             showFavoritesOnly
               ? "Mostrar todos los productos"
@@ -122,21 +124,21 @@ export default function ProductsToolbar({
         </button>
 
         {!isOperator && (
-          <div className="hidden w-44 md:block lg:w-48">
+          <div className="hidden min-w-[190px] w-48 sm:w-52 md:block">
             <Select
               value={sortValue}
               onChange={(e) => handleSortChange(e.target.value)}
               options={sortOptionsAdmin}
-              className="text-xs"
+              className="text-xs shadow-xs"
             />
           </div>
         )}
         <div className="relative shrink-0">
-          <Button variant="outline" onClick={openDrawer}>
+          <Button variant="outline" onClick={openDrawer} className="shadow-xs">
             <SlidersHorizontal className="size-4" />
             <span className="hidden sm:inline">Filtros</span>
             {activeFiltersCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-brand-blue text-[11px] font-bold text-white">
+              <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-brand-blue text-[11px] font-bold text-white shadow-xs">
                 {activeFiltersCount}
               </span>
             )}
@@ -145,7 +147,7 @@ export default function ProductsToolbar({
       </div>
 
       {/* Actions row */}
-      <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-2.5">
         {!isOperator && <ViewToggle view={view} onChange={setView} />}
         {!isOperator && (
           <div className="relative" ref={internalCatalogRef}>
@@ -153,12 +155,14 @@ export default function ProductsToolbar({
               variant="outline"
               onClick={handleCatalogButtonClick}
               title="Gestión de Catálogo"
+              className="shadow-xs"
             >
               <Boxes className="size-4 text-brand-blue" />
               <span className="hidden xl:inline">Catálogo</span>
               <ChevronDown
-                className={`size-3.5 transition-transform duration-200 ${catalogMenuOpen ? "rotate-180" : ""
-                  }`}
+                className={`size-3.5 transition-transform duration-200 ${
+                  catalogMenuOpen ? "rotate-180" : ""
+                }`}
               />
             </Button>
             {catalogMenuOpen && (
@@ -211,11 +215,15 @@ export default function ProductsToolbar({
             )}
           </div>
         )}
-        <Button variant="accent" onClick={handleCreate}>
+        <Button variant="accent" onClick={handleCreate} className="shadow-xs">
           <Plus className="size-4" />
           <span>Nuevo</span>
         </Button>
-        <Button variant="outline" onClick={() => navigate("/invoices/new")}>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/invoices/new")}
+          className="shadow-xs"
+        >
           <FileText className="size-4" />
           <span className="hidden lg:inline">Agregar Factura</span>
         </Button>
