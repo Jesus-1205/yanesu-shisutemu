@@ -107,11 +107,10 @@ export default function ProductsToolbar({
         <button
           type="button"
           onClick={toggleFavoritesOnly}
-          className={`shrink-0 cursor-pointer rounded-lg border p-2 shadow-xs transition-colors ${
-            showFavoritesOnly
+          className={`shrink-0 cursor-pointer rounded-lg border p-2 shadow-xs transition-colors ${showFavoritesOnly
               ? "border-yellow-200 bg-yellow-50 text-yellow-600"
               : "border-slate-200 bg-surface text-slate-400 hover:border-slate-300 hover:bg-slate-50 hover:text-yellow-500"
-          }`}
+            }`}
           title={
             showFavoritesOnly
               ? "Mostrar todos los productos"
@@ -147,7 +146,7 @@ export default function ProductsToolbar({
       </div>
 
       {/* Actions row */}
-      <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-2.5">
+      <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:gap-2.5 self-start">
         {!isOperator && <ViewToggle view={view} onChange={setView} />}
         {!isOperator && (
           <div className="relative" ref={internalCatalogRef}>
@@ -160,9 +159,8 @@ export default function ProductsToolbar({
               <Boxes className="size-4 text-brand-blue" />
               <span className="hidden xl:inline">Catálogo</span>
               <ChevronDown
-                className={`size-3.5 transition-transform duration-200 ${
-                  catalogMenuOpen ? "rotate-180" : ""
-                }`}
+                className={`size-3.5 transition-transform duration-200 ${catalogMenuOpen ? "rotate-180" : ""
+                  }`}
               />
             </Button>
             {catalogMenuOpen && (
