@@ -39,8 +39,9 @@ export default function ProductTable({
       className: "w-10",
       render: (p: Product) => (
         <button
+          type="button"
           onClick={() => onToggleFavorite?.(p)}
-          className="cursor-pointer rounded p-1 transition-colors hover:bg-yellow-50"
+          className="cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-yellow-50/80"
           title={p.es_favorito ? "Quitar de favoritos" : "Agregar a favoritos"}
         >
           <Star className={`size-4 ${p.es_favorito ? "fill-yellow-400 text-yellow-400" : "text-slate-300 hover:text-yellow-400"}`} />
@@ -95,7 +96,7 @@ export default function ProductTable({
       className: "text-right",
       ...sortable("precio"),
       render: (p: Product) => (
-        <span className="font-semibold text-text-main">{formatCurrency(p.precio_unidad_usd)}</span>
+        <span className="font-bold text-slate-900">{formatCurrency(p.precio_unidad_usd)}</span>
       ),
     },
     {
@@ -104,7 +105,7 @@ export default function ProductTable({
       className: "text-right",
       hideOnMobile: true,
       render: (p: Product) => (
-        <span className="font-semibold text-text-main">{tasa > 0 ? formatCurrency(p.precio_unidad_usd * tasa, "Bs ") : "—"}</span>
+        <span className="text-xs font-medium text-slate-600">{tasa > 0 ? formatCurrency(p.precio_unidad_usd * tasa, "Bs ") : "—"}</span>
       ),
     },
     {
@@ -126,16 +127,18 @@ export default function ProductTable({
       render: (p: Product) => (
         <div className="flex items-center justify-end gap-1">
           <button
+            type="button"
             onClick={() => onEdit(p)}
-            className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-brand-blue/10 hover:text-brand-blue"
+            className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-blue-50/80 hover:text-brand-blue"
             aria-label="Editar"
           >
             <Pencil className="size-4" />
           </button>
           {role === "admin" && (
             <button
+              type="button"
               onClick={() => onDelete(p)}
-              className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-danger/10 hover:text-danger"
+              className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50/80 hover:text-danger"
               aria-label="Eliminar"
             >
               <Trash2 className="size-4" />

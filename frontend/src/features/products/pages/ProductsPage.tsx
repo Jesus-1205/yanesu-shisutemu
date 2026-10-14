@@ -35,7 +35,7 @@ export default function ProductsPage() {
         }
         actions={
           !isOperator ? (
-            <Button variant="outline" onClick={catalog.handleExportAll}>
+            <Button variant="outline" onClick={catalog.handleExportAll} className="shadow-xs">
               <Download className="size-4" />
               Descargar Excel
             </Button>
