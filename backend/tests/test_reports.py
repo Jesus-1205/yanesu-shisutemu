@@ -79,6 +79,10 @@ def test_get_reports_categories_endpoint(client, auth_headers):
         item = data[0]
         assert "id" in item
         assert "nombre" in item
+        assert "total_productos" in item
+        assert "stock_total" in item
+        assert "stock_valorado_usd" in item
+        assert "total_ordenes" in item
         assert "unidades_vendidas" in item
         assert "ingresos_usd" in item
         assert "costos_usd" in item
@@ -272,6 +276,10 @@ def test_get_category_report_service(db_session, test_user):
     assert len(validated_items) >= 1
     cat_entry = next(r for r in report if r["id"] == cat.id)
     assert cat_entry["nombre"] == "Licores Premium"
+    assert cat_entry["total_productos"] == 1
+    assert cat_entry["stock_total"] == 15
+    assert cat_entry["stock_valorado_usd"] == Decimal("300.00")
+    assert cat_entry["total_ordenes"] == 1
     assert cat_entry["unidades_vendidas"] == 1
     assert cat_entry["ingresos_usd"] == Decimal("30.00")
     assert cat_entry["costos_usd"] == Decimal("20.00")

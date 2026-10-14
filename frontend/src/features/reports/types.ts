@@ -150,6 +150,8 @@ export interface CategoryTableRow {
   nombre: string;
   total_productos: number;
   stock_total: number;
+  stock_valorado: number;
+  total_ordenes: number;
   unidades_vendidas: number;
   ingresos: number;
   costos: number;

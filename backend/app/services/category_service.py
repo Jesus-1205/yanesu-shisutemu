@@ -395,7 +395,7 @@ def get_category_report(
 ) -> list[dict]:
     from app.services.sale_service import _to_ve_boundary
 
-    # Subquery de productos y stock por categoría
+    # 1. Subquery de productos, stock y valor de inventario por categoría
     ps = (
         select(
             producto_categoria.c.categoria_id,
@@ -403,45 +403,59 @@ def get_category_report(
             func.coalesce(
                 func.sum(Product.stock_cajas * Product.unidades_por_caja + Product.stock_unidades), 0
             ).label("stock_total"),
+            func.coalesce(
+                func.sum(
+                    (Product.stock_cajas * Product.unidades_por_caja + Product.stock_unidades)
+                    * func.coalesce(Product.precio_costo_usd, 0)
+                ),
+                0,
+            ).label("stock_valorado_usd"),
         )
         .select_from(producto_categoria)
         .join(Product, Product.id == producto_categoria.c.producto_id)
         .group_by(producto_categoria.c.categoria_id)
     ).subquery()
 
-    # Subquery de ventas agrupadas por producto con filtro de fecha
-    sales_filter = select(
-        SaleItem.producto_id,
-        func.coalesce(func.sum(SaleItem.unidades_descontadas), 0).label("unidades_vendidas"),
-        func.coalesce(func.sum(SaleItem.subtotal_usd), 0).label("ingresos_usd"),
-    ).join(Sale, Sale.id == SaleItem.venta_id)
+    # 2. Subquery de ventas agrupadas directamente por categoría con filtro de fecha
+    sales_filter = (
+        select(
+            producto_categoria.c.categoria_id,
+            func.count(func.distinct(Sale.id)).label("total_ordenes"),
+            func.coalesce(func.sum(SaleItem.unidades_descontadas), 0).label("unidades_vendidas"),
+            func.coalesce(func.sum(SaleItem.subtotal_usd), 0).label("ingresos_usd"),
+            func.coalesce(
+                func.sum(SaleItem.unidades_descontadas * func.coalesce(Product.precio_costo_usd, 0)), 0
+            ).label("costos_usd"),
+        )
+        .select_from(SaleItem)
+        .join(Sale, Sale.id == SaleItem.venta_id)
+        .join(Product, Product.id == SaleItem.producto_id)
+        .join(producto_categoria, producto_categoria.c.producto_id == Product.id)
+    )
 
     if fecha_desde:
         sales_filter = sales_filter.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
     if fecha_hasta:
         sales_filter = sales_filter.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
 
-    sales_sub = sales_filter.group_by(SaleItem.producto_id).subquery()
+    sales_sub = sales_filter.group_by(producto_categoria.c.categoria_id).subquery()
 
-    # Query principal de categorías cruzadas con productos y ventas
+    # 3. Query principal: directa, plana y sin GROUP BY externo
     stmt = (
         select(
             Category.id,
             Category.nombre,
             func.coalesce(ps.c.total_productos, 0).label("total_productos"),
             func.coalesce(ps.c.stock_total, 0).label("stock_total"),
-            func.coalesce(func.sum(sales_sub.c.unidades_vendidas), 0).label("unidades_vendidas"),
-            func.coalesce(func.sum(sales_sub.c.ingresos_usd), 0).label("ingresos_usd"),
-            func.coalesce(
-                func.sum(sales_sub.c.unidades_vendidas * Product.precio_costo_usd), 0
-            ).label("costos_usd"),
+            func.coalesce(ps.c.stock_valorado_usd, 0).label("stock_valorado_usd"),
+            func.coalesce(sales_sub.c.total_ordenes, 0).label("total_ordenes"),
+            func.coalesce(sales_sub.c.unidades_vendidas, 0).label("unidades_vendidas"),
+            func.coalesce(sales_sub.c.ingresos_usd, 0).label("ingresos_usd"),
+            func.coalesce(sales_sub.c.costos_usd, 0).label("costos_usd"),
         )
         .outerjoin(ps, ps.c.categoria_id == Category.id)
-        .outerjoin(producto_categoria, producto_categoria.c.categoria_id == Category.id)
-        .outerjoin(Product, Product.id == producto_categoria.c.producto_id)
-        .outerjoin(sales_sub, sales_sub.c.producto_id == Product.id)
-        .group_by(Category.id, Category.nombre, ps.c.total_productos, ps.c.stock_total)
-        .order_by(func.coalesce(func.sum(sales_sub.c.ingresos_usd), 0).desc(), Category.nombre)
+        .outerjoin(sales_sub, sales_sub.c.categoria_id == Category.id)
+        .order_by(func.coalesce(sales_sub.c.ingresos_usd, 0).desc(), Category.nombre)
     )
 
     rows = db.execute(stmt).all()
@@ -449,6 +463,7 @@ def get_category_report(
     for r in rows:
         ingresos = Decimal(str(r.ingresos_usd)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         costos = Decimal(str(r.costos_usd)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        stock_valorado = Decimal(str(r.stock_valorado_usd)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         margen = (ingresos - costos).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         margen_pct = (
             ((ingresos - costos) / ingresos * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
@@ -460,6 +475,8 @@ def get_category_report(
             "nombre": r.nombre,
             "total_productos": int(r.total_productos),
             "stock_total": int(r.stock_total),
+            "stock_valorado_usd": stock_valorado,
+            "total_ordenes": int(r.total_ordenes),
             "unidades_vendidas": int(r.unidades_vendidas),
             "ingresos_usd": ingresos,
             "costos_usd": costos,

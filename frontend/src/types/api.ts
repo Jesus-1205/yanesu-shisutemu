@@ -467,6 +467,8 @@ export interface CategoryReportItemOut {
   nombre: string;
   total_productos: number;
   stock_total: number;
+  stock_valorado_usd: number | string;
+  total_ordenes: number;
   unidades_vendidas: number;
   ingresos_usd: number | string;
   costos_usd: number | string;

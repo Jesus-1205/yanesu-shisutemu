@@ -97,6 +97,8 @@ class CategoryReportItemOut(BaseModel):
     nombre: str
     total_productos: int
     stock_total: int
+    stock_valorado_usd: Decimal
+    total_ordenes: int
     unidades_vendidas: int
     ingresos_usd: Decimal
     costos_usd: Decimal

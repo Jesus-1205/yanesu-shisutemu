@@ -62,6 +62,12 @@ export default function ReportsCategoriesPage() {
       { key: "nombre", header: "Categoría" },
       { key: "total_productos", header: "Cant. Productos" },
       { key: "stock_total", header: "Stock Total" },
+      {
+        key: "stock_valorado",
+        header: `Valor Inventario (${currency})`,
+        exportValue: (r) => r.stock_valorado,
+      },
+      { key: "total_ordenes", header: "Transacciones" },
       { key: "unidades_vendidas", header: "Unidades Vendidas" },
       {
         key: "ingresos",

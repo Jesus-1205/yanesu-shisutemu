@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -52,7 +52,7 @@ def payment_methods_summary(
     return get_payment_method_summary(db, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
 
 
-@router.get("/categories", response_model=list[CategoryReportItemOut])
+@router.get("/categories", status_code=status.HTTP_200_OK, response_model=list[CategoryReportItemOut])
 def categories_report(
     fecha_desde: Optional[date] = None,
     fecha_hasta: Optional[date] = None,

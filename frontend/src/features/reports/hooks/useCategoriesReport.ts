@@ -144,8 +144,10 @@ export function useCategoriesReport({
     return sorted.map((c): CategoryTableRow => {
       const rawIncome = Number(c.ingresos_usd) || 0;
       const rawCost = Number(c.costos_usd) || 0;
+      const rawStockVal = Number(c.stock_valorado_usd) || 0;
       const ingresos = Math.round(rawIncome * conversionRate * 100) / 100;
       const costos = Math.round(rawCost * conversionRate * 100) / 100;
+      const stock_valorado = Math.round(rawStockVal * conversionRate * 100) / 100;
       const margen = Math.round((ingresos - costos) * 100) / 100;
       const participacion_pct =
         totalIngresosUsd > 0
@@ -157,6 +159,8 @@ export function useCategoriesReport({
         nombre: c.nombre,
         total_productos: c.total_productos,
         stock_total: c.stock_total,
+        stock_valorado,
+        total_ordenes: c.total_ordenes || 0,
         unidades_vendidas: c.unidades_vendidas,
         ingresos,
         costos,
