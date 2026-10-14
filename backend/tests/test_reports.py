@@ -64,6 +64,57 @@ def db_session():
 
 
 @pytest.fixture
+def auth_headers(client):
+    _register_admin(client)
+    _login_as_admin(client)
+    return {}
+
+
+def test_get_reports_categories_endpoint(client, auth_headers):
+    response = client.get("/api/reports/categories", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    if data:
+        item = data[0]
+        assert "id" in item
+        assert "nombre" in item
+        assert "unidades_vendidas" in item
+        assert "ingresos_usd" in item
+        assert "costos_usd" in item
+        assert "margen_usd" in item
+        assert "margen_porcentaje" in item
+
+
+def test_get_reports_categories_unauthenticated(client):
+    response = client.get("/api/reports/categories")
+    assert response.status_code == 401
+
+
+def test_get_reports_categories_operator_forbidden(client):
+    client.post("/api/auth/register", json={
+        "username": "operator_rep",
+        "email": "operator_rep@test.com",
+        "password": "op123",
+        "nombre_completo": "Operator Rep",
+        "rol_id": 2,
+    })
+    client.post("/api/auth/login", json={
+        "username": "operator_rep",
+        "password": "op123",
+    })
+    response = client.get("/api/reports/categories")
+    assert response.status_code == 403
+
+
+def test_get_reports_categories_with_dates(client, auth_headers):
+    response = client.get("/api/reports/categories?fecha_desde=2026-01-01&fecha_hasta=2026-12-31", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+
+
+@pytest.fixture
 def test_user(db_session):
     user = User(
         username="report_admin",
