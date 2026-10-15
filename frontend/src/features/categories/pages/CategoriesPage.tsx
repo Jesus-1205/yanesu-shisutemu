@@ -86,11 +86,11 @@ export default function CategoriesPage() {
         description="Administra las categorías de productos"
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExportAll}>
+            <Button variant="outline" onClick={handleExportAll} className="shadow-xs">
               <Download className="size-4" />
               Descargar Excel
             </Button>
-            <Button variant="accent" onClick={() => setCreateModalOpen(true)}>
+            <Button variant="accent" onClick={() => setCreateModalOpen(true)} className="shadow-xs">
               <Plus className="size-4" />
               Nueva Categoría
             </Button>
@@ -107,14 +107,25 @@ export default function CategoriesPage() {
       )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        {/* Card Header matching Reports */}
         <div className="border-b border-slate-100 p-4 sm:p-5">
-          <div className="w-full max-w-md">
-            <SearchInput
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onClear={() => setSearch("")}
-              placeholder="Buscar categoría por nombre o descripción..."
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-slate-900">
+                Catálogo de Categorías
+              </h2>
+              <p className="text-xs text-slate-500">
+                Haz clic en cualquier categoría para ver su analítica y productos asociados
+              </p>
+            </div>
+            <div className="w-full sm:w-72">
+              <SearchInput
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClear={() => setSearch("")}
+                placeholder="Buscar categoría por nombre o descripción..."
+              />
+            </div>
           </div>
         </div>
 
@@ -126,7 +137,10 @@ export default function CategoriesPage() {
           onDelete={setDeleteTarget}
         />
 
-        <div className="border-t border-slate-100 bg-slate-50/50 p-4">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/50 p-4 sm:flex-row">
+          <p className="text-xs font-medium text-slate-500">
+            Mostrando <span className="font-semibold text-slate-700">{categories.length}</span> categorías
+          </p>
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       </div>
