@@ -47,7 +47,7 @@ export default function SalesKpiCards({ totals, loading }: SalesKpiCardsProps) {
               {formatCurrency(totals.totalVes, "Bs ")}
             </div>
           )}
-          <p className="mt-1 text-xs text-slate-500">Equivalente en moneda nacional</p>
+          <p className="mt-1 text-xs text-slate-500">Equivalente BS</p>
         </div>
       </div>
 
@@ -71,10 +71,10 @@ export default function SalesKpiCards({ totals, loading }: SalesKpiCardsProps) {
         </div>
       </div>
 
-      {/* Ticket Promedio */}
+      {/* Venta Promedio */}
       <div className="rounded-xl border border-slate-200 bg-surface p-5 shadow-xs transition-shadow hover:shadow-sm">
         <div className="flex items-center justify-between text-slate-500">
-          <span className="text-xs font-semibold uppercase tracking-wider">Ticket Promedio</span>
+          <span className="text-xs font-semibold uppercase tracking-wider">Venta Promedio</span>
           <div className="rounded-lg bg-purple-50 p-2 text-purple-600">
             <TrendingUp className="size-4" />
           </div>

@@ -18,7 +18,7 @@ describe("SalesKpiCards", () => {
     expect(screen.getByText("Bs 256.500,50")).toBeInTheDocument();
     expect(screen.getByText("N° de Ventas")).toBeInTheDocument();
     expect(screen.getByText("68")).toBeInTheDocument();
-    expect(screen.getByText("Ticket Promedio")).toBeInTheDocument();
+    expect(screen.getByText("Venta Promedio")).toBeInTheDocument();
     expect(screen.getByText("$4,38")).toBeInTheDocument();
   });
 

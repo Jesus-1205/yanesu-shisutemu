@@ -102,7 +102,7 @@ describe("SalesPage", () => {
       expect(screen.getByText("Ingresos (USD)")).toBeInTheDocument();
       expect(screen.getByText("Total Bolívares")).toBeInTheDocument();
       expect(screen.getByText("N° de Ventas")).toBeInTheDocument();
-      expect(screen.getByText("Ticket Promedio")).toBeInTheDocument();
+      expect(screen.getByText("Venta Promedio")).toBeInTheDocument();
     });
   });
 
