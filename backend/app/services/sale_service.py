@@ -432,26 +432,33 @@ def get_sales_paginated(
     page: int = 1,
     page_size: int = 20,
 ) -> dict:
-    count_stmt = select(func.count(Sale.id))
+    agg_stmt = select(
+        func.count(Sale.id),
+        func.coalesce(func.sum(Sale.total_usd), Decimal("0")),
+        func.coalesce(func.sum(Sale.total_ves), Decimal("0")),
+    )
     base = select(Sale)
     if fecha_desde:
         ve_desde = _to_ve_boundary(fecha_desde)
-        count_stmt = count_stmt.where(Sale.fecha_venta >= ve_desde)
+        agg_stmt = agg_stmt.where(Sale.fecha_venta >= ve_desde)
         base = base.where(Sale.fecha_venta >= ve_desde)
     if fecha_hasta:
         ve_hasta = _to_ve_boundary(fecha_hasta, end_of_day=True)
-        count_stmt = count_stmt.where(Sale.fecha_venta <= ve_hasta)
+        agg_stmt = agg_stmt.where(Sale.fecha_venta <= ve_hasta)
         base = base.where(Sale.fecha_venta <= ve_hasta)
     pm_filter = _payment_method_filter(metodo_pago_ids)
     if pm_filter is not None:
-        count_stmt = count_stmt.where(pm_filter)
+        agg_stmt = agg_stmt.where(pm_filter)
         base = base.where(pm_filter)
     time_filter = _time_window_filter(hora_desde, hora_hasta)
     if time_filter is not None:
-        count_stmt = count_stmt.where(time_filter)
+        agg_stmt = agg_stmt.where(time_filter)
         base = base.where(time_filter)
 
-    total = db.execute(count_stmt).scalar() or 0
+    agg_res = db.execute(agg_stmt).first()
+    total = agg_res[0] if agg_res and agg_res[0] is not None else 0
+    total_usd = Decimal(str(agg_res[1])) if agg_res and agg_res[1] is not None else Decimal("0")
+    total_ves = Decimal(str(agg_res[2])) if agg_res and agg_res[2] is not None else Decimal("0")
     pages = max(1, (total + page_size - 1) // page_size)
     offset = (page - 1) * page_size
 
@@ -466,7 +473,15 @@ def get_sales_paginated(
         .limit(page_size)
     )
     items = list(db.execute(stmt).scalars().unique().all())
-    return {"items": items, "total": total, "page": page, "page_size": page_size, "pages": pages}
+    return {
+        "items": items,
+        "total": total,
+        "total_usd": total_usd,
+        "total_ves": total_ves,
+        "page": page,
+        "page_size": page_size,
+        "pages": pages,
+    }
 
 
 def get_sale(db: Session, sale_id: int) -> Sale:

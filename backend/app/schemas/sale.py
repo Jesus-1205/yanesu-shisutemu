@@ -123,6 +123,8 @@ class SalePaginationListOut(BaseModel):
 
     items: list[SaleListOut]
     total: int
+    total_usd: Decimal = Decimal("0")
+    total_ves: Decimal = Decimal("0")
     page: int
     page_size: int
     pages: int

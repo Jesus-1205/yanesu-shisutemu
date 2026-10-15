@@ -90,6 +90,8 @@ def list_all(
         return SalePaginationListOut(
             items=[SaleListOut.model_validate(s) for s in result["items"]],
             total=result["total"],
+            total_usd=result["total_usd"],
+            total_ves=result["total_ves"],
             page=result["page"],
             page_size=result["page_size"],
             pages=result["pages"],

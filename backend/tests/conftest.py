@@ -18,6 +18,7 @@ from app.main import app
 from app.models.category import Category
 from app.models.payment_method import PaymentMethod
 from app.models.role import Role
+from app.models.user import User
 
 
 @app.get("/admin-only")
@@ -60,7 +61,6 @@ def db_session():
         PaymentMethod(nombre="PAGO_MOVIL", activo=True),
     ])
     session.commit()
-    session.close()
 
     def override_get_db():
         db = TestSessionLocal()
@@ -71,11 +71,27 @@ def db_session():
 
     app.dependency_overrides[db_module.get_db] = override_get_db
 
-    yield
+    yield session
 
+    session.close()
     Base.metadata.drop_all(bind=engine)
     app.dependency_overrides.clear()
     tmp.close()
+
+
+@pytest.fixture
+def test_user(db_session):
+    user = User(
+        username="test_admin",
+        email="test_admin@test.com",
+        hashed_password="pw",
+        nombre_completo="Test Admin",
+        rol_id=1,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
 
 
 @pytest.fixture
