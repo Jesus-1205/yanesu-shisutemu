@@ -26,9 +26,13 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
 
   return (
     <div>
-      <h3 className="mb-2 text-sm font-semibold text-text-main">Inventario</h3>
-      <div className="max-h-65 overflow-y-auto">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-sm font-semibold tracking-tight text-slate-900">Inventario</h3>
+        <span className="text-xs font-medium text-slate-400">{data.length} productos</span>
+      </div>
+      <div className="max-h-65 overflow-y-auto rounded-xl border border-slate-200/90 shadow-xs">
         <Table
+          className="!rounded-none !border-0 !shadow-none"
           columns={[
             {
               key: "nombre",
@@ -36,7 +40,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               sortable: true,
               onSort: () => requestSort("nombre"),
               sortDirection: sortConfig?.key === "nombre" ? sortConfig.direction : null,
-              className: "max-w-40 truncate",
+              className: "max-w-44 truncate font-medium text-slate-900",
             },
             {
               key: "stock_unidades",
@@ -45,12 +49,16 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               onSort: () => requestSort("stock_unidades"),
               sortDirection: sortConfig?.key === "stock_unidades" ? sortConfig.direction : null,
               render: (p: CategoryDetailProduct) =>
-                p.stock_unidades <= 5 ? (
-                  <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
+                p.stock_unidades <= 0 ? (
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                    0
+                  </span>
+                ) : p.stock_unidades <= 5 ? (
+                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
                     {p.stock_unidades}
                   </span>
                 ) : (
-                  <span>{p.stock_unidades}</span>
+                  <span className="text-xs font-semibold text-slate-700">{p.stock_unidades}</span>
                 ),
               exportValue: (p: CategoryDetailProduct) => p.stock_unidades,
             },
@@ -60,7 +68,11 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               sortable: true,
               onSort: () => requestSort("precio_unidad_usd"),
               sortDirection: sortConfig?.key === "precio_unidad_usd" ? sortConfig.direction : null,
-              render: (p: CategoryDetailProduct) => formatCurrency(Number(p.precio_unidad_usd)),
+              render: (p: CategoryDetailProduct) => (
+                <span className="font-semibold text-slate-900">
+                  {formatCurrency(Number(p.precio_unidad_usd))}
+                </span>
+              ),
               exportValue: (p: CategoryDetailProduct) => Number(p.precio_unidad_usd),
             },
             {
@@ -69,7 +81,11 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
               sortable: true,
               onSort: () => requestSort("margen_porcentaje"),
               sortDirection: sortConfig?.key === "margen_porcentaje" ? sortConfig.direction : null,
-              render: (p: CategoryDetailProduct) => `${Number(p.margen_porcentaje).toFixed(1)}%`,
+              render: (p: CategoryDetailProduct) => (
+                <span className="text-xs font-semibold text-emerald-600">
+                  {Number(p.margen_porcentaje).toFixed(1)}%
+                </span>
+              ),
               exportValue: (p: CategoryDetailProduct) => Number(p.margen_porcentaje),
             },
           ]}
