@@ -32,7 +32,7 @@ export default function CategoryInventoryTable({ data, categoryName }: CategoryI
       </div>
       <div className="max-h-65 overflow-y-auto rounded-xl border border-slate-200/90 shadow-xs">
         <Table
-          className="!rounded-none !border-0 !shadow-none"
+          className="rounded-none! border-0! shadow-none!"
           columns={[
             {
               key: "nombre",

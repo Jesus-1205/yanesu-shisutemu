@@ -40,13 +40,13 @@ export default function SupplierAnalyticsDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} title={supplierName} className="sm:w-135!">
-      {loading || !data ? (
+      {loading ? (
         <Spinner />
       ) : error ? (
         <div className="flex h-50 items-center justify-center">
           <p className="text-sm text-red-500">{error}</p>
         </div>
-      ) : (
+      ) : !data ? null : (
         <div className="space-y-5">
           {/* Action banner: link to products catalog */}
           <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/50 p-3">
