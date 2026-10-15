@@ -70,6 +70,22 @@ describe("useProductFilters", () => {
     expect(result.current.showFavoritesOnly).toBe(false);
   });
 
+  it("initializes category and supplier filters from URL searchParams", () => {
+    const customWrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={["/products?categoria_id=5&proveedor_id=2"]}>
+        {children}
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useProductFilters(), { wrapper: customWrapper });
+
+    expect(result.current.filters.categoria_ids).toEqual([5]);
+    expect(result.current.filters.proveedor_id).toBe(2);
+    expect(result.current.draftFilters.categoria_ids).toEqual([5]);
+    expect(result.current.draftFilters.proveedor_id).toBe(2);
+    expect(result.current.activeFiltersCount).toBe(2);
+  });
+
   it("handles search actions (setSearch, clearSearch)", () => {
     const { result } = renderHook(() => useProductFilters(), { wrapper });
 

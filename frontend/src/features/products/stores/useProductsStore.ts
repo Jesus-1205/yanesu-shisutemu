@@ -76,6 +76,8 @@ export interface ProductsState {
   setStockStatusFromUrl: (
     stockStatus: ProductFiltersState["stockStatus"],
   ) => void;
+  setCategoryFromUrl: (categoryId: number) => void;
+  setSupplierFromUrl: (supplierId: number) => void;
 
   // UI Actions
   setView: (view: ViewMode) => void;
@@ -193,6 +195,20 @@ export const useProductsStore = create<ProductsState>((set) => ({
     set((state) => ({
       filters: { ...state.filters, stockStatus },
       draftFilters: { ...state.draftFilters, stockStatus },
+      page: 1,
+    })),
+
+  setCategoryFromUrl: (categoryId) =>
+    set((state) => ({
+      filters: { ...state.filters, categoria_ids: [categoryId] },
+      draftFilters: { ...state.draftFilters, categoria_ids: [categoryId] },
+      page: 1,
+    })),
+
+  setSupplierFromUrl: (supplierId) =>
+    set((state) => ({
+      filters: { ...state.filters, proveedor_id: supplierId },
+      draftFilters: { ...state.draftFilters, proveedor_id: supplierId },
       page: 1,
     })),
 

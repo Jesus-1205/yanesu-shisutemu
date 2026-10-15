@@ -31,6 +31,8 @@ export function useProductFilters() {
   const setStockStatusFromUrl = useProductsStore(
     (s) => s.setStockStatusFromUrl,
   );
+  const setCategoryFromUrl = useProductsStore((s) => s.setCategoryFromUrl);
+  const setSupplierFromUrl = useProductsStore((s) => s.setSupplierFromUrl);
 
   const activeFiltersCount = useMemo(
     () => countActiveFilters(filters),
@@ -47,7 +49,28 @@ export function useProductFilters() {
     if (stockParam && ["disponible", "bajo", "agotado"].includes(stockParam)) {
       setStockStatusFromUrl(stockParam as ProductFiltersState["stockStatus"]);
     }
-  }, [searchParams, setStockStatusFromUrl]);
+
+    const catParam = searchParams.get("categoria_id");
+    if (catParam) {
+      const id = Number(catParam);
+      if (!isNaN(id) && id > 0) {
+        setCategoryFromUrl(id);
+      }
+    }
+
+    const provParam = searchParams.get("proveedor_id");
+    if (provParam) {
+      const id = Number(provParam);
+      if (!isNaN(id) && id > 0) {
+        setSupplierFromUrl(id);
+      }
+    }
+  }, [
+    searchParams,
+    setStockStatusFromUrl,
+    setCategoryFromUrl,
+    setSupplierFromUrl,
+  ]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
