@@ -87,6 +87,25 @@ describe("SalesPage", () => {
     });
   });
 
+  it("renders KPI summary cards with aggregate metrics", async () => {
+    mockGetSalesPaginated.mockResolvedValue({
+      items: sampleSales,
+      total: 1,
+      total_usd: 100,
+      total_ves: 4500,
+      page: 1,
+      page_size: 20,
+      pages: 1,
+    });
+    render(<SalesPage />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText("Ingresos (USD)")).toBeInTheDocument();
+      expect(screen.getByText("Total Bolívares")).toBeInTheDocument();
+      expect(screen.getByText("N° de Ventas")).toBeInTheDocument();
+      expect(screen.getByText("Ticket Promedio")).toBeInTheDocument();
+    });
+  });
+
   it("shows error banner on fetch failure and retries", async () => {
     mockGetSalesPaginated
       .mockRejectedValueOnce(new Error("Network error"))

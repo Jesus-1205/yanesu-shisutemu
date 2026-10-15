@@ -2,13 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Download } from "lucide-react";
 import Button from "@/ui-components/Button";
 import PageHeader from "@/ui-components/PageHeader";
-import Pagination from "@/ui-components/Pagination";
 import ErrorBanner from "@/ui-components/ErrorBanner";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import SalesKpiCards from "../components/SalesKpiCards";
 import SalesFilters from "../components/SalesFilters";
 import OperatorSalesNotice from "../components/OperatorSalesNotice";
 import SalesTable from "../components/SalesTable";
-import { useSalesHistory } from "../hooks/useSalesHistory";
+import { useSalesHistory, PAGE_SIZE } from "../hooks/useSalesHistory";
 
 export default function SalesPage() {
   const navigate = useNavigate();
@@ -20,6 +20,8 @@ export default function SalesPage() {
     error,
     page,
     totalPages,
+    totalSales,
+    totals,
     fetchSales,
     handleExportAll,
     handlePageChange,
@@ -50,18 +52,23 @@ export default function SalesPage() {
         </ErrorBanner>
       )}
 
+      {/* Tarjetas KPI Superiores */}
+      <SalesKpiCards totals={totals} loading={loading} />
+
+      {/* Contenedor de Filtros y Tabla */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         {isOperator ? <OperatorSalesNotice /> : <SalesFilters />}
 
         <SalesTable
           sales={sales}
           loading={loading}
+          totalRows={totalSales}
+          page={page}
+          totalPages={totalPages}
+          pageSize={PAGE_SIZE}
+          onPageChange={handlePageChange}
           onViewSale={(id) => navigate(`/sales/${id}`)}
         />
-
-        <div className="border-t border-slate-100 bg-slate-50/50 p-4">
-          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-        </div>
       </div>
     </div>
   );
