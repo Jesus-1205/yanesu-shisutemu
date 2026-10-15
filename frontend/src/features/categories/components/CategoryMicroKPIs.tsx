@@ -9,11 +9,19 @@ interface CategoryMicroKPIsProps {
 export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsProps) {
   if (loading || !data) {
     return (
-      <div className="mb-6 grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs sm:grid-cols-3 sm:divide-x sm:divide-slate-100">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse p-5">
-            <div className="mb-3 h-4 w-24 rounded bg-slate-200" />
-            <div className="h-7 w-20 rounded bg-slate-200" />
+          <div
+            key={i}
+            className="animate-pulse rounded-xl border border-slate-200/90 bg-surface p-5 shadow-xs"
+          >
+            <div className="flex items-center gap-4">
+              <div className="size-11 shrink-0 rounded-xl bg-slate-200" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-24 rounded bg-slate-200" />
+                <div className="h-6 w-20 rounded bg-slate-200" />
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -21,41 +29,56 @@ export default function CategoryMicroKPIs({ data, loading }: CategoryMicroKPIsPr
   }
 
   const liderNombre = data.categoria_lider_nombre || null;
-  const mayorMargen = data.mayor_margen_porcentaje != null ? Number(data.mayor_margen_porcentaje) : null;
+  const mayorMargen =
+    data.mayor_margen_porcentaje != null
+      ? Number(data.mayor_margen_porcentaje)
+      : null;
 
   return (
-    <div className="mb-6 grid grid-cols-1 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs sm:grid-cols-3 sm:divide-y-0 sm:divide-x sm:divide-slate-200">
-      <div className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50/50">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* KPI 1: Categoría Líder */}
+      <div className="group relative flex items-center gap-4 rounded-xl border border-slate-200/90 bg-surface p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-105">
           <Crown className="size-5" />
         </div>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Categoría Líder</p>
-          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl" title={liderNombre ?? undefined}>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            Categoría Líder
+          </p>
+          <p
+            className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl"
+            title={liderNombre ?? undefined}
+          >
             {liderNombre || "—"}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50/50">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+      {/* KPI 2: Mayor Margen */}
+      <div className="group relative flex items-center gap-4 rounded-xl border border-slate-200/90 bg-surface p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-transform group-hover:scale-105">
           <TrendingUp className="size-5" />
         </div>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Mayor Margen</p>
-          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            Mayor Margen
+          </p>
+          <p className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
             {mayorMargen !== null ? `${mayorMargen.toFixed(1)}%` : "—"}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 p-5 transition-colors hover:bg-slate-50/50">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+      {/* KPI 3: Total Ítems */}
+      <div className="group relative flex items-center gap-4 rounded-xl border border-slate-200/90 bg-surface p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 transition-transform group-hover:scale-105">
           <Package className="size-5" />
         </div>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Total Ítems</p>
-          <p className="text-xl font-bold text-slate-900 sm:text-2xl">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            Total Ítems
+          </p>
+          <p className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
             {String(data.total_productos)}
           </p>
         </div>
