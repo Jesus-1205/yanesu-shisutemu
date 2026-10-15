@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/services/api";
 import type { ExchangeRate } from "../types";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export function useRateHistory() {
   const [history, setHistory] = useState<ExchangeRate[]>([]);
