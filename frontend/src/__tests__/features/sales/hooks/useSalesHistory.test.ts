@@ -6,6 +6,7 @@ import { ToastProvider } from "../../../../ui-components/Toast";
 import { api } from "../../../../services/api";
 import { exportToExcel } from "../../../../lib/exportToExcel";
 import { useSalesFiltersStore } from "../../../../features/sales/store/salesFiltersStore";
+import { getTodayInCaracas } from "../../../../lib/utils";
 import type { SaleListItem } from "../../../../features/sales/types";
 
 vi.mock("../../../../lib/exportToExcel", () => ({
@@ -45,6 +46,8 @@ describe("useSalesHistory", () => {
     vi.spyOn(api, "getSalesPaginated").mockResolvedValue({
       items: mockSales,
       total: 1,
+      total_usd: 100,
+      total_ves: 4500,
       page: 1,
       page_size: 20,
       pages: 1,
@@ -62,7 +65,44 @@ describe("useSalesHistory", () => {
 
     expect(result.current.sales).toEqual(mockSales);
     expect(result.current.totalPages).toBe(1);
+    expect(result.current.totalSales).toBe(1);
+    expect(result.current.totals).toEqual({
+      totalVentas: 1,
+      totalUsd: 100,
+      totalVes: 4500,
+      ticketPromedioUsd: 100,
+    });
     expect(result.current.error).toBeNull();
+  });
+
+  it("applies date presets correctly", async () => {
+    const { result } = renderHook(() => useSalesHistory(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.setPresetDates("today");
+    });
+    const today = getTodayInCaracas();
+    expect(useSalesFiltersStore.getState().fechaDesde).toBe(today);
+    expect(useSalesFiltersStore.getState().fechaHasta).toBe(today);
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.setPresetDates("7d");
+    });
+    expect(useSalesFiltersStore.getState().fechaDesde).toBeTruthy();
+    expect(useSalesFiltersStore.getState().fechaHasta).toBeTruthy();
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.setPresetDates("all");
+    });
+    expect(useSalesFiltersStore.getState().fechaDesde).toBe("");
+    expect(useSalesFiltersStore.getState().fechaHasta).toBe("");
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it("handles fetch error gracefully", async () => {

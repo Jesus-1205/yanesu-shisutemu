@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/services/api";
-import type { SaleListItem } from "../types";
+import type { SaleListItem, SalesKpisData, SalesDatePreset } from "../types";
 import type { Column } from "@/ui-components/Table";
-import { formatCurrency, formatPaymentMethodName, formatRate } from "@/lib/utils";
+import { formatCurrency, formatPaymentMethodName, formatRate, getReportPresetDates, getTodayInCaracas } from "@/lib/utils";
 import { useToast } from "@/ui-components/Toast";
 import { exportToExcel } from "@/lib/exportToExcel";
 import { useSalesFiltersStore } from "../store/salesFiltersStore";
@@ -63,6 +63,9 @@ export function useSalesHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalSales, setTotalSales] = useState(0);
+  const [totalUsd, setTotalUsd] = useState(0);
+  const [totalVes, setTotalVes] = useState(0);
 
   const fechaDesde = useSalesFiltersStore((s) => s.fechaDesde);
   const fechaHasta = useSalesFiltersStore((s) => s.fechaHasta);
@@ -87,6 +90,9 @@ export function useSalesHistory() {
       });
       setSales(res.items);
       setTotalPages(res.pages);
+      setTotalSales(res.total ?? 0);
+      setTotalUsd(Number(res.total_usd) || 0);
+      setTotalVes(Number(res.total_ves) || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar ventas");
     } finally {
@@ -97,6 +103,38 @@ export function useSalesHistory() {
   useEffect(() => {
     fetchSales();
   }, [fetchSales]);
+
+  const totals: SalesKpisData = useMemo(() => {
+    const usd = Number(totalUsd) || 0;
+    const ves = Number(totalVes) || 0;
+    const count = totalSales || 0;
+    return {
+      totalVentas: count,
+      totalUsd: usd,
+      totalVes: ves,
+      ticketPromedioUsd: count > 0 ? Math.round((usd / count) * 100) / 100 : 0,
+    };
+  }, [totalUsd, totalVes, totalSales]);
+
+  const setPresetDates = useCallback((preset: SalesDatePreset) => {
+    if (preset === "all") {
+      setField("fechaDesde", "");
+      setField("fechaHasta", "");
+    } else if (preset === "today") {
+      const today = getTodayInCaracas();
+      setField("fechaDesde", today);
+      setField("fechaHasta", today);
+    } else if (preset === "7d") {
+      const dates = getReportPresetDates("7d");
+      setField("fechaDesde", dates.from);
+      setField("fechaHasta", dates.to);
+    } else if (preset === "this_month") {
+      const dates = getReportPresetDates("this_month");
+      setField("fechaDesde", dates.from);
+      setField("fechaHasta", dates.to);
+    }
+    setField("page", 1);
+  }, [setField]);
 
   const handleExportAll = useCallback(async () => {
     try {
@@ -134,8 +172,11 @@ export function useSalesHistory() {
     error,
     page,
     totalPages,
+    totalSales,
+    totals,
     fetchSales,
     handleExportAll,
     handlePageChange,
+    setPresetDates,
   };
 }
