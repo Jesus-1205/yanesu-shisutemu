@@ -13,3 +13,13 @@ export type {
   TopWeekOut,
   SalesSummaryItem,
 } from "@/types/api";
+
+export interface SalesKpisData {
+  totalVentas: number;
+  totalUsd: number;
+  totalVes: number;
+  ticketPromedioUsd: number;
+}
+
+export type SalesDatePreset = "today" | "7d" | "this_month" | "all" | "custom";
+

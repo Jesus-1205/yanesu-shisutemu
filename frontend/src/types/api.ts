@@ -480,6 +480,8 @@ export interface CategoryReportItemOut {
 export interface SalePaginationListOut {
   items: SaleListOut[];
   total: number;
+  total_usd?: number | string;
+  total_ves?: number | string;
   page: number;
   page_size: number;
   pages: number;
