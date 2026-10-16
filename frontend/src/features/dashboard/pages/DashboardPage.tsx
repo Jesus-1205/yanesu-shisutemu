@@ -25,7 +25,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-responsive-h1 text-text-main">Dashboard</h1>
+      <div>
+        <h1 className="text-responsive-h1 text-text-main">Dashboard</h1>
+        <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+          Resumen general y métricas clave del negocio
+        </p>
+      </div>
 
       <DashboardShortcuts />
       <DashboardKpis

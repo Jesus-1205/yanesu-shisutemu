@@ -198,4 +198,23 @@ describe("DashboardPage", () => {
       screen.getByText("Facturas pendientes — 0 facturas sin pagar"),
     ).toBeInTheDocument();
   });
+
+  it("renderiza el titulo y subtitulo descriptivo del dashboard", async () => {
+    vi.mocked(api.getDashboardStats).mockResolvedValue(mockStats);
+    vi.mocked(api.getSalesSummary).mockResolvedValue(mockSalesSummary);
+    vi.mocked(api.getTopSellingProducts).mockResolvedValue([]);
+    vi.mocked(api.getInvoiceStats).mockResolvedValue(mockInvoiceStats);
+    vi.mocked(api.getInvoicePendingSummary).mockResolvedValue(mockPendingSummary);
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
+      expect(screen.getByText("Resumen general y métricas clave del negocio")).toBeInTheDocument();
+    });
+  });
 });
