@@ -16,7 +16,7 @@ export default function LoginLeftPanel() {
           Yanesu Shisutemu
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-white/70 drop-shadow">
-          Sistema de control de inventario para gestión de productos, ventas y proveedores.
+          Software administrativo para la gestión integral de ventas, compras e inventario.
         </p>
       </div>
     </div>

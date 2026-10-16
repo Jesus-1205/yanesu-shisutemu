@@ -47,7 +47,7 @@ export default function BrandLogo({ collapsed = false, className = "" }: BrandLo
             Yanesu Shisutemu
           </span>
           <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-            Control de Inventario
+            Software Administrativo
           </span>
         </div>
       )}

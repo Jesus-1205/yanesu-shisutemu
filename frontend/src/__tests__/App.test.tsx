@@ -101,7 +101,7 @@ describe("AppLayout", () => {
     renderApp("/sales");
 
     expect(screen.getByText("Yanesu Shisutemu")).toBeInTheDocument();
-    expect(screen.getByText("Control de Inventario")).toBeInTheDocument();
+    expect(screen.getByText("Software Administrativo")).toBeInTheDocument();
 
     const inventarioBtn = screen.getByRole("button", { name: /INVENTARIO/i });
     expect(inventarioBtn).toBeInTheDocument();

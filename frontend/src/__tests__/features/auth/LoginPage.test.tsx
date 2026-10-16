@@ -108,7 +108,7 @@ describe("LoginPage", () => {
 
   it("renders branding elements and institutional footer", async () => {
     render(<LoginPage />, { wrapper });
-    expect(screen.getByText("Yanesu Shisutemu • Control de Inventario")).toBeInTheDocument();
+    expect(screen.getByText("Yanesu Shisutemu • Software Administrativo")).toBeInTheDocument();
     await waitFor(() => expect(api.getSetupStatus).toHaveBeenCalled());
   });
 });

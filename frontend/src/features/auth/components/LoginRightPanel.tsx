@@ -21,7 +21,7 @@ export default function LoginRightPanel() {
 
         {/* Pie de pantalla institucional */}
         <p className="mt-10 text-center text-xs text-slate-400">
-          Yanesu Shisutemu • Control de Inventario
+          Yanesu Shisutemu • Software Administrativo
         </p>
       </div>
     </div>
