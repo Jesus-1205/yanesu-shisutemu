@@ -22,6 +22,36 @@
   to { opacity: 1; }
 }
 
+@keyframes sidebarFlyoutIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes sidebarTooltipIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.animate-sidebar-flyout {
+  animation: sidebarFlyoutIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-sidebar-tooltip {
+  animation: sidebarTooltipIn 140ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }

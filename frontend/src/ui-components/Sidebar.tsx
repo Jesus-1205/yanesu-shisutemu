@@ -100,9 +100,8 @@ function SidebarLink({
               position: "fixed",
               top: pos.top,
               left: pos.left,
-              transform: "translateY(-50%)",
             }}
-            className="pointer-events-none z-50 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
+            className="pointer-events-none z-50 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg animate-sidebar-tooltip"
           >
             {item.label}
           </div>,
@@ -180,11 +179,7 @@ function SidebarDropdown({
 
   const flyoutMenu = (
     <div
-      className={`
-        z-50 min-w-44 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-xl border border-slate-100 bg-white p-1 shadow-xl
-        transition-all duration-150 ease-out
-        ${isHovering ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"}
-      `}
+      className="z-50 min-w-44 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl animate-sidebar-flyout"
       style={{ position: "fixed", top: hoverPos.top, left: hoverPos.left }}
       onMouseEnter={keepHoverMenu}
       onMouseLeave={hideHoverMenu}
@@ -329,17 +324,23 @@ export default function Sidebar({
 
       {/* Brand */}
       {(brand || logo) && (
-        <div className="flex items-center gap-3 overflow-hidden px-4 pt-5 pb-4">
+        <div
+          className={`flex items-center gap-3 overflow-hidden pt-5 pb-4 transition-all duration-300 ${
+            collapsed ? "justify-center px-2" : "px-4"
+          }`}
+        >
           {logo && <span className="shrink-0">{logo}</span>}
-          <span
-            className={`
-              text-base font-semibold whitespace-nowrap text-text-main
-              transition-opacity duration-300
-              ${collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100"}
-            `}
-          >
-            {brand}
-          </span>
+          {brand && (
+            <span
+              className={`
+                text-base font-semibold whitespace-nowrap text-text-main
+                transition-opacity duration-300
+                ${collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100"}
+              `}
+            >
+              {brand}
+            </span>
+          )}
         </div>
       )}
 
