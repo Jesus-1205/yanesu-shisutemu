@@ -114,7 +114,7 @@ describe("ComprasHubPage", () => {
   it("displays pending total USD KPI", async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText("$150.00")).toBeInTheDocument();
+      expect(screen.getByText("$150,00")).toBeInTheDocument();
     });
   });
 

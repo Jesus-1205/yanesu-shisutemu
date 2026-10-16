@@ -63,7 +63,7 @@ describe("ComprasHubStats", () => {
     );
 
     expect(screen.getByText("Total Pendiente (USD)")).toBeInTheDocument();
-    expect(screen.getByText("$1,250.75")).toBeInTheDocument();
+    expect(screen.getByText("$1.250,75")).toBeInTheDocument();
     expect(screen.getByText("Facturas Pagadas")).toBeInTheDocument();
     expect(screen.getByText("18")).toBeInTheDocument();
     expect(screen.getByText("Por Vencer (7 días)")).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("ComprasHubStats", () => {
       />,
     );
 
-    expect(screen.getByText("$0.00")).toBeInTheDocument();
+    expect(screen.getByText("$0,00")).toBeInTheDocument();
     const zeros = screen.getAllByText("0");
     expect(zeros.length).toBeGreaterThanOrEqual(3);
   });
