@@ -104,16 +104,16 @@ describe("AppLayout", () => {
 
     const inventarioBtn = screen.getByRole("button", { name: /INVENTARIO/i });
     expect(inventarioBtn).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /REPORTES Y CONTROL/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^CONTROL$/i })).toBeInTheDocument();
 
     // Expand INVENTARIO dropdown and check sub-items
     await userEvent.click(inventarioBtn);
     expect(screen.getByRole("link", { name: "Productos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Categorías" })).toBeInTheDocument();
 
-    // Expand REPORTES Y CONTROL dropdown and check sub-items
-    const reportesBtn = screen.getByRole("button", { name: /REPORTES Y CONTROL/i });
-    await userEvent.click(reportesBtn);
+    // Expand CONTROL dropdown and check sub-items
+    const controlBtn = screen.getByRole("button", { name: /^CONTROL$/i });
+    await userEvent.click(controlBtn);
     expect(screen.getByRole("link", { name: "Reportes" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Retornables" })).toBeInTheDocument();
   });
