@@ -30,3 +30,4 @@ export { default as Spinner } from "./Spinner";
 export { default as Table } from "./Table";
 export { ToastProvider, useToast } from "./Toast";
 export { default as TasaBcvIndicator } from "./TasaBcvIndicator";
+export { default as BrandLogo } from "./BrandLogo";
