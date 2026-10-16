@@ -95,4 +95,26 @@ describe("AppLayout", () => {
     await userEvent.click(screen.getByText("Go POS"));
     expect(sidebarClass(container)).toContain(EXPANDED);
   });
+
+  it("renders the BrandLogo and grouped navigation menus for admin", async () => {
+    renderApp("/sales");
+
+    expect(screen.getByText("Yanesu Shisutemu")).toBeInTheDocument();
+    expect(screen.getByText("Control de Inventario")).toBeInTheDocument();
+
+    const inventarioBtn = screen.getByRole("button", { name: /INVENTARIO/i });
+    expect(inventarioBtn).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /REPORTES Y CONTROL/i })).toBeInTheDocument();
+
+    // Expand INVENTARIO dropdown and check sub-items
+    await userEvent.click(inventarioBtn);
+    expect(screen.getByRole("link", { name: "Productos" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Categorías" })).toBeInTheDocument();
+
+    // Expand REPORTES Y CONTROL dropdown and check sub-items
+    const reportesBtn = screen.getByRole("button", { name: /REPORTES Y CONTROL/i });
+    await userEvent.click(reportesBtn);
+    expect(screen.getByRole("link", { name: "Reportes" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Retornables" })).toBeInTheDocument();
+  });
 });

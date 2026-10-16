@@ -9,9 +9,9 @@ import {
   Settings,
   DollarSign,
   BarChart3,
-  Tags,
 } from "lucide-react";
 import Sidebar, { type SidebarItem } from "./ui-components/Sidebar";
+import BrandLogo from "./ui-components/BrandLogo";
 import Breadcrumbs, { type Crumb } from "./ui-components/Breadcrumbs";
 import { ToastProvider, useToast } from "./ui-components/Toast";
 import { useAuth } from "./features/auth/context/AuthContext";
@@ -31,12 +31,24 @@ const adminSidebarItems: SidebarItem[] = [
       { label: "Historial de Ventas", to: "/sales" },
     ],
   },
-  { label: "Productos", icon: <Package size={18} />, to: "/products" },
-  { label: "Categorías", icon: <Tags size={18} />, to: "/categories" },
-  { label: "Facturas", icon: <Truck size={18} />, to: "/buys" },
+  {
+    label: "INVENTARIO",
+    icon: <Package size={18} />,
+    items: [
+      { label: "Productos", to: "/products" },
+      { label: "Categorías", to: "/categories" },
+    ],
+  },
+  { label: "Facturas de Compra", icon: <Truck size={18} />, to: "/buys" },
   { label: "Tasas de Cambio", icon: <DollarSign size={18} />, to: "/exchange-rates" },
-  { label: "Reportes", icon: <BarChart3 size={18} />, to: "/reports" },
-  { label: "Retornables", icon: <Package size={18} />, to: "/retornables" },
+  {
+    label: "REPORTES Y CONTROL",
+    icon: <BarChart3 size={18} />,
+    items: [
+      { label: "Reportes", to: "/reports" },
+      { label: "Retornables", to: "/retornables" },
+    ],
+  },
 ];
 
 const operatorSidebarItems: SidebarItem[] = [
@@ -284,7 +296,7 @@ function AppLayoutInner({
       >
         <Sidebar
           items={sidebarItems}
-          brand="Yanesu Shisutemu"
+          logo={<BrandLogo collapsed={collapsed} />}
           collapsed={collapsed}
           onCollapsedChange={setCollapsed}
           expandAll={isOperator}
