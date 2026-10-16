@@ -73,6 +73,7 @@ function getSidebarItems(rolNombre: string | undefined): SidebarItem[] {
 
 const breadcrumbMap: Record<string, string> = {
   dashboard: "Dashboard",
+  buys: "Compras",
   compras: "Compras",
   products: "Productos",
   categories: "Categorías",

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route, Link } from "react-router-dom";
 import AppLayout from "../App";
@@ -40,6 +40,7 @@ function renderApp(initialPath: string) {
           <Route index element={<TestOutlet />} />
           <Route path="sales" element={<TestOutlet />} />
           <Route path="sales/new" element={<TestOutlet />} />
+          <Route path="buys" element={<TestOutlet />} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -116,5 +117,12 @@ describe("AppLayout", () => {
     await userEvent.click(controlBtn);
     expect(screen.getByRole("link", { name: "Reportes" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Retornables" })).toBeInTheDocument();
+  });
+
+  it("displays 'Compras' in breadcrumb when navigating to /buys", async () => {
+    renderApp("/buys");
+    const breadcrumbNav = screen.getByRole("navigation", { name: /Breadcrumb/i });
+    expect(within(breadcrumbNav).getByText("Compras")).toBeInTheDocument();
+    expect(within(breadcrumbNav).queryByText("buys")).not.toBeInTheDocument();
   });
 });
