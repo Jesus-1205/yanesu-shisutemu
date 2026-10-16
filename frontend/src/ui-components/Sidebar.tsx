@@ -1,6 +1,6 @@
-import { ChevronLeft, ChevronDown, Search, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronDown, LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useState, useRef, useCallback, type ReactNode } from "react";
+import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 export interface SidebarItem {
@@ -44,25 +44,71 @@ function SidebarLink({
   item: SidebarItem;
   collapsed: boolean;
 }) {
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  const handleMouseEnter = () => {
+    if (!collapsed) return;
+    if (linkRef.current) {
+      const rect = linkRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.top + rect.height / 2,
+        left: rect.right + 8,
+      });
+    }
+    setShowTooltip(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
   return (
-    <NavLink
-      to={item.to!}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-          isActive
-            ? "bg-brand-blue/10 text-brand-blue"
-            : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-        }`
-      }
-      title={collapsed ? item.label : undefined}
-    >
-      <span className="flex size-5 shrink-0 items-center justify-center">
-        {item.icon || <DefaultIcon />}
-      </span>
-      <span className={`transition-opacity duration-300 ${collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100"}`}>
-        {item.label}
-      </span>
-    </NavLink>
+    <>
+      <NavLink
+        ref={linkRef}
+        to={item.to!}
+        onClick={() => setShowTooltip(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={({ isActive }) =>
+          `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            isActive
+              ? "bg-brand-blue/10 text-brand-blue"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+          }`
+        }
+      >
+        <span className="flex size-5 shrink-0 items-center justify-center">
+          {item.icon || <DefaultIcon />}
+        </span>
+        <span
+          className={`transition-opacity duration-300 ${
+            collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100"
+          }`}
+        >
+          {item.label}
+        </span>
+      </NavLink>
+
+      {collapsed &&
+        showTooltip &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              transform: "translateY(-50%)",
+            }}
+            className="pointer-events-none z-50 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
+          >
+            {item.label}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
@@ -82,7 +128,7 @@ function SidebarDropdown({
   const btnRef = useRef<HTMLButtonElement>(null);
   const [hoverPos, setHoverPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [isHovering, setIsHovering] = useState(false);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const showHoverMenu = useCallback(() => {
     if (!collapsed) return;
@@ -96,14 +142,24 @@ function SidebarDropdown({
 
   const hideHoverMenu = useCallback(() => {
     if (!collapsed) return;
-    hoverTimeoutRef.current = setTimeout(() => setIsHovering(false), 100);
+    hoverTimeoutRef.current = setTimeout(() => setIsHovering(false), 120);
   }, [collapsed]);
 
   const keepHoverMenu = useCallback(() => {
     clearTimeout(hoverTimeoutRef.current);
   }, []);
 
-  const submenuVisible = collapsed ? isHovering : expanded;
+  useEffect(() => {
+    return () => {
+      clearTimeout(hoverTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!collapsed) {
+      setIsHovering(false);
+    }
+  }, [collapsed]);
 
   const submenuItems = item.items?.map((sub, i) => (
     <NavLink
@@ -113,29 +169,48 @@ function SidebarDropdown({
       className={({ isActive }) =>
         `block px-3 py-2 text-sm rounded-md transition-colors whitespace-nowrap ${
           isActive
-            ? "text-brand-blue font-medium"
+            ? "text-brand-blue font-medium bg-brand-blue/10"
             : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
         }`
       }
-      onMouseEnter={keepHoverMenu}
-      onMouseLeave={hideHoverMenu}
     >
       {sub.label}
     </NavLink>
   ));
 
-  const submenu = (
+  const flyoutMenu = (
     <div
       className={`
-        z-50 min-w-40 rounded-lg bg-surface py-1 shadow-lg
-        transition-all duration-200 ease-in-out
-        ${submenuVisible ? "translate-x-0 scale-100 opacity-100" : "pointer-events-none -translate-x-1 scale-95 opacity-0"}
+        z-50 min-w-44 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-xl border border-slate-100 bg-white p-1 shadow-xl
+        transition-all duration-150 ease-out
+        ${isHovering ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"}
       `}
-      style={collapsed ? { position: "fixed" as const, top: hoverPos.top, left: hoverPos.left } : undefined}
+      style={{ position: "fixed", top: hoverPos.top, left: hoverPos.left }}
       onMouseEnter={keepHoverMenu}
       onMouseLeave={hideHoverMenu}
     >
-      {submenuItems}
+      <div className="border-b border-slate-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        {item.label}
+      </div>
+      <div className="pt-1 space-y-0.5">
+        {item.items?.map((sub, i) => (
+          <NavLink
+            key={i}
+            to={sub.to!}
+            end
+            onClick={() => setIsHovering(false)}
+            className={({ isActive }) =>
+              `block px-3 py-2 text-sm rounded-lg transition-colors whitespace-nowrap ${
+                isActive
+                  ? "bg-brand-blue/10 text-brand-blue font-medium"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`
+            }
+          >
+            {sub.label}
+          </NavLink>
+        ))}
+      </div>
     </div>
   );
 
@@ -152,12 +227,15 @@ function SidebarDropdown({
           flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
           ${expanded ? "bg-slate-100 text-slate-800" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"}
         `}
-        title={item.label}
       >
         <span className="flex size-5 shrink-0 items-center justify-center">
           {item.icon || <DefaultIcon />}
         </span>
-        <span className={`truncate transition-opacity duration-300 ${collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100"}`}>
+        <span
+          className={`truncate transition-opacity duration-300 ${
+            collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100"
+          }`}
+        >
           {item.label}
         </span>
         {!collapsed && !expandAll && (
@@ -168,20 +246,20 @@ function SidebarDropdown({
         )}
       </button>
 
-      {/* Submenu — portal when collapsed, inline when expanded */}
+      {/* Submenu — portal when collapsed, CSS Grid accordion when expanded */}
       {collapsed
-        ? createPortal(submenu, document.body)
+        ? isHovering && createPortal(flyoutMenu, document.body)
         : expanded && (
-          <div
-            className={`
-              max-h-125 overflow-hidden pl-9 opacity-100 transition-all
-              duration-300 ease-in-out
-            `}
-          >
-            {submenuItems}
-          </div>
-        )
-      }
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+                expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              }`}
+            >
+              <div className="overflow-hidden pl-7 space-y-0.5">
+                {submenuItems}
+              </div>
+            </div>
+          )}
     </div>
   );
 }
@@ -201,7 +279,6 @@ export default function Sidebar({
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed = forceExpanded ? false : (controlledCollapsed ?? internalCollapsed);
   const setCollapsed = onCollapsedChange ?? setInternalCollapsed;
-  const [search, setSearch] = useState("");
   const [expandedMenus, setExpandedMenus] = useState<Set<number>>(() => {
     if (expandAll) {
       return new Set(items.map((_, i) => i));
@@ -219,13 +296,6 @@ export default function Sidebar({
       return next;
     });
   };
-
-  const filteredItems = items.filter(
-    (item) =>
-      !search ||
-      item.label.toLowerCase().includes(search.toLowerCase()) ||
-      item.items?.some((sub) => sub.label.toLowerCase().includes(search.toLowerCase()))
-  );
 
   return (
     <aside
@@ -273,32 +343,9 @@ export default function Sidebar({
         </div>
       )}
 
-      {/* Search */}
-      <div className="mb-3 px-3">
-        <div
-          className={`
-            flex cursor-pointer items-center rounded-lg border
-            border-slate-300 transition-all duration-300
-            ${collapsed ? "justify-start border-transparent px-2.5 py-2 hover:bg-slate-100" : "gap-2 px-2.5 py-1.5 hover:border-slate-500"}
-          `}
-        >
-          <Search size={16} className="shrink-0 text-slate-500" />
-          {!collapsed && (
-            <input
-              type="text"
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-transparent text-sm text-text-main outline-none placeholder:text-slate-400"
-              autoComplete="off"
-            />
-          )}
-        </div>
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2.5">
-        {filteredItems.map((item, i) =>
+        {items.map((item, i) =>
           item.items ? (
             <SidebarDropdown
               key={i}
@@ -323,7 +370,7 @@ export default function Sidebar({
                 <button
                   onClick={onLogout}
                   className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-danger text-white transition-colors hover:bg-red-700"
-                  title="Cerrar sesión"
+                  aria-label="Cerrar sesión"
                 >
                   <LogOut size={14} />
                 </button>
@@ -341,14 +388,16 @@ export default function Sidebar({
                 )}
               </div>
               <div className="flex flex-col overflow-hidden whitespace-nowrap opacity-100">
-                <span className="truncate text-sm font-semibold text-text-main" title={user.name}>{user.name}</span>
+                <span className="truncate text-sm font-semibold text-text-main">
+                  {user.name}
+                </span>
                 <span className="truncate text-xs text-slate-500">{user.email}</span>
               </div>
               {onLogout && (
                 <button
                   onClick={onLogout}
                   className="ml-auto flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-danger text-white transition-colors hover:bg-red-700"
-                  title="Cerrar sesión"
+                  aria-label="Cerrar sesión"
                 >
                   <LogOut size={14} />
                 </button>

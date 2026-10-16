@@ -47,19 +47,6 @@ describe("Sidebar", () => {
     expect(screen.getByText("juan@test.com")).toBeInTheDocument();
   });
 
-  it("renders search input", () => {
-    renderWithRouter(<Sidebar items={items} />);
-    expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
-  });
-
-  it("filters items by search", async () => {
-    renderWithRouter(<Sidebar items={items} />);
-    const search = screen.getByPlaceholderText("Search...");
-    await userEvent.type(search, "Product");
-    expect(screen.getByText("Products")).toBeInTheDocument();
-    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
-  });
-
   it("toggles submenu when clicking dropdown item", async () => {
     renderWithRouter(<Sidebar items={items} />);
     const settings = screen.getByText("Settings");
@@ -90,6 +77,13 @@ describe("Sidebar", () => {
     expect(onCollapsedChange).toHaveBeenCalledWith(true);
   });
 
+  it("uses h-dvh on the aside element", () => {
+    const { container } = renderWithRouter(<Sidebar items={items} />);
+    const aside = container.querySelector("aside");
+    expect(aside).toBeInTheDocument();
+    expect(aside!.className).toMatch(/\bh-dvh\b/);
+  });
+
   it("renders user initial when no avatar", () => {
     renderWithRouter(
       <Sidebar items={items} user={{ name: "Ana Lopez", email: "ana@test.com" }} />,
@@ -97,11 +91,34 @@ describe("Sidebar", () => {
     expect(screen.getByText("A")).toBeInTheDocument();
   });
 
-  it("uses h-dvh on the aside element instead of h-screen", () => {
-    const { container } = renderWithRouter(<Sidebar items={items} />);
-    const aside = container.querySelector("aside");
-    expect(aside).toBeInTheDocument();
-    expect(aside!.className).toMatch(/\bh-dvh\b/);
-    expect(aside!.className).not.toMatch(/\bh-screen\b/);
+  it("does not render native title attribute on navigation links or dropdown buttons", () => {
+    renderWithRouter(<Sidebar items={items} collapsed={true} />);
+    const link = screen.getByText("Dashboard").closest("a");
+    expect(link).not.toHaveAttribute("title");
+    const button = screen.getByText("Settings").closest("button");
+    expect(button).not.toHaveAttribute("title");
+  });
+
+  it("shows flyout menu when hovering dropdown in collapsed mode", async () => {
+    renderWithRouter(<Sidebar items={items} collapsed={true} />);
+    const settingsBtn = screen.getByText("Settings").closest("div");
+    expect(settingsBtn).toBeInTheDocument();
+    expect(screen.queryByText("Profile")).not.toBeInTheDocument();
+
+    await userEvent.hover(settingsBtn!);
+    expect(screen.getByText("Profile")).toBeInTheDocument();
+    expect(screen.getByText("Security")).toBeInTheDocument();
+  });
+
+  it("shows styled tooltip when hovering direct link in collapsed mode", async () => {
+    renderWithRouter(<Sidebar items={items} collapsed={true} />);
+    const dashboardLink = screen.getByText("Dashboard").closest("a");
+    expect(dashboardLink).toBeInTheDocument();
+
+    await userEvent.hover(dashboardLink!);
+    const elements = screen.getAllByText("Dashboard");
+    expect(elements.length).toBeGreaterThan(1);
+    const tooltip = elements.find((el) => el.className.includes("bg-slate-900"));
+    expect(tooltip).toBeInTheDocument();
   });
 });
