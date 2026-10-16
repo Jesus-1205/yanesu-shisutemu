@@ -90,4 +90,25 @@ describe("LoginPage", () => {
     resolveLogin!(undefined);
     await waitFor(() => expect(screen.getByPlaceholderText("tu_usuario")).not.toBeDisabled());
   });
+
+  it("toggles password visibility when clicking eye button", async () => {
+    render(<LoginPage />, { wrapper });
+    const passwordInput = screen.getByPlaceholderText("••••••••");
+    expect(passwordInput).toHaveAttribute("type", "password");
+
+    const toggleBtn = screen.getByRole("button", { name: "Mostrar contraseña" });
+    await userEvent.click(toggleBtn);
+    expect(passwordInput).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: "Ocultar contraseña" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Ocultar contraseña" }));
+    expect(passwordInput).toHaveAttribute("type", "password");
+    expect(screen.getByRole("button", { name: "Mostrar contraseña" })).toBeInTheDocument();
+  });
+
+  it("renders branding elements and institutional footer", async () => {
+    render(<LoginPage />, { wrapper });
+    expect(screen.getByText("Yanesu Shisutemu • Control de Inventario")).toBeInTheDocument();
+    await waitFor(() => expect(api.getSetupStatus).toHaveBeenCalled());
+  });
 });
