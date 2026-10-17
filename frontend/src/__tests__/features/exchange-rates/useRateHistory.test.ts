@@ -1,7 +1,7 @@
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { api } from "@/services/api";
-import { useRateHistory } from "@/features/exchange-rates/hooks/useRateHistory";
+import { useRateHistory, PAGE_SIZE } from "@/features/exchange-rates/hooks/useRateHistory";
 import type { ExchangeRate } from "@/features/exchange-rates/types";
 
 vi.mock("@/services/api", () => ({
@@ -34,7 +34,7 @@ describe("useRateHistory", () => {
       pages: 3,
       total: 50,
       page: 1,
-      page_size: 20,
+      page_size: PAGE_SIZE,
     });
 
     const { result } = renderHook(() => useRateHistory());
@@ -49,7 +49,7 @@ describe("useRateHistory", () => {
     expect(result.current.history).toEqual(mockHistoryItems);
     expect(result.current.totalPages).toBe(3);
     expect(result.current.error).toBeNull();
-    expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 1, page_size: 20 });
+    expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 1, page_size: PAGE_SIZE });
   });
 
   it("handles page changes by refetching from the API", async () => {
@@ -58,7 +58,7 @@ describe("useRateHistory", () => {
       pages: 3,
       total: 50,
       page: 1,
-      page_size: 20,
+      page_size: PAGE_SIZE,
     });
 
     const { result } = renderHook(() => useRateHistory());
@@ -70,7 +70,7 @@ describe("useRateHistory", () => {
     });
 
     await waitFor(() => {
-      expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 2, page_size: 20 });
+      expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 2, page_size: PAGE_SIZE });
     });
     expect(result.current.page).toBe(2);
   });
@@ -95,7 +95,7 @@ describe("useRateHistory", () => {
       pages: 1,
       total: 1,
       page: 1,
-      page_size: 20,
+      page_size: PAGE_SIZE,
     });
 
     const { result } = renderHook(() => useRateHistory());
@@ -116,7 +116,7 @@ describe("useRateHistory", () => {
         pages: 2,
         total: 2,
         page: 1,
-        page_size: 20,
+        page_size: PAGE_SIZE,
       })
       .mockResolvedValueOnce({
         items: [{ ...mockHistoryItems[0], id: 2 }],
@@ -144,5 +144,20 @@ describe("useRateHistory", () => {
     expect(allRates.length).toBe(2);
     expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 1, page_size: 200 });
     expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 2, page_size: 200 });
+  });
+
+  it("respects a custom pageSize when passed", async () => {
+    mockApi.getRateHistoryPaginated.mockResolvedValue({
+      items: mockHistoryItems,
+      pages: 1,
+      total: 1,
+      page: 1,
+      page_size: 25,
+    });
+
+    const { result } = renderHook(() => useRateHistory(25));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 1, page_size: 25 });
   });
 });

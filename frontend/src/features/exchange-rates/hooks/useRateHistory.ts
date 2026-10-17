@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/services/api";
 import type { ExchangeRate } from "../types";
 
-const PAGE_SIZE = 10;
+export const PAGE_SIZE = 10;
 
-export function useRateHistory() {
+export function useRateHistory(pageSize: number = PAGE_SIZE) {
   const [history, setHistory] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export function useRateHistory() {
     setLoading(true);
     setError(null);
     try {
-      const historyRes = await api.getRateHistoryPaginated({ page, page_size: PAGE_SIZE });
+      const historyRes = await api.getRateHistoryPaginated({ page, page_size: pageSize });
       setHistory(historyRes.items);
       setTotalPages(historyRes.pages);
     } catch (err) {
@@ -25,7 +25,7 @@ export function useRateHistory() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, pageSize]);
 
   useEffect(() => {
     refreshHistory();

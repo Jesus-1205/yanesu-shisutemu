@@ -105,7 +105,7 @@ describe("ExchangeRatesPage", () => {
       pages: 1,
       total: 2,
       page: 1,
-      page_size: 20,
+      page_size: 10,
     });
     mockApi.getDailyStatus.mockResolvedValue({
       needs_update: false,
@@ -264,7 +264,7 @@ describe("ExchangeRatesPage", () => {
       pages: 0,
       total: 0,
       page: 1,
-      page_size: 20,
+      page_size: 10,
     });
     renderPage();
     await waitFor(() => {
@@ -278,13 +278,13 @@ describe("ExchangeRatesPage", () => {
       pages: 3,
       total: 50,
       page: 1,
-      page_size: 20,
+      page_size: 10,
     });
     renderPage();
     await waitFor(() => expect(screen.getByText("Siguiente")).toBeInTheDocument());
     await userEvent.click(screen.getByText("Siguiente"));
     await waitFor(() => {
-      expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 2, page_size: 20 });
+      expect(mockApi.getRateHistoryPaginated).toHaveBeenCalledWith({ page: 2, page_size: 10 });
     });
   });
 
