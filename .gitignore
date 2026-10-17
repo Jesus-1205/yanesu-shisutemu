@@ -40,12 +40,13 @@ frontend/.env.production.local
 Thumbs.db
 
 # ──────────────────────────────────────
-# Testing / Coverage
+# Testing / Coverage / Benchmarks
 # ──────────────────────────────────────
 .coverage
 htmlcov/
 .pytest_cache/
 coverage/
+benchmark_results/
 
 # ──────────────────────────────────────
 # Bases de datos locales
