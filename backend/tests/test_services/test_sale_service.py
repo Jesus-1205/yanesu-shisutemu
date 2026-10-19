@@ -655,6 +655,52 @@ def test_get_sales_summary_incluye_costo_y_margen(db):
     assert result[0]["margen_usd"] == Decimal("21.20")
 
 
+def test_get_sales_summary_multiple_items_different_costs(db):
+    u = _user(db)
+    pm = _payment_method(db)
+    p1 = create_product(db, ProductCreate(
+        nombre="Prod Cost 2.50",
+        precio_costo_caja_usd=Decimal("25"),
+        precio_unidad_usd=Decimal("10"),
+        precio_caja_usd=Decimal("100"),
+        stock_unidades=100,
+        stock_cajas=0,
+        unidades_por_caja=10,
+    ))
+    p2 = create_product(db, ProductCreate(
+        nombre="Prod Cost 4.00",
+        precio_costo_caja_usd=Decimal("40"),
+        precio_unidad_usd=Decimal("15"),
+        precio_caja_usd=Decimal("150"),
+        stock_unidades=100,
+        stock_cajas=0,
+        unidades_por_caja=10,
+    ))
+
+    # sale 1: 2 units p1 (cost 5.00), 3 units p2 (cost 12.00) -> total cost 17.00
+    # sale 1 total: base 65.00 + iva 10.40 = 75.40
+    data1 = _sale_data(pm, [
+        _item(p1.id, cantidad=2, precio=Decimal("10")),
+        _item(p2.id, cantidad=3, precio=Decimal("15")),
+    ])
+    create_sale(db, data1, usuario_id=u.id)
+
+    # sale 2: 1 unit p1 (cost 2.50) -> total cost 2.50
+    # sale 2 total: base 10.00 + iva 1.60 = 11.60
+    data2 = _sale_data(pm, [
+        _item(p1.id, cantidad=1, precio=Decimal("10")),
+    ])
+    create_sale(db, data2, usuario_id=u.id)
+
+    result = get_sales_summary(db, rango="diario")
+
+    assert len(result) == 1
+    assert result[0]["total_ventas"] == 2
+    assert result[0]["total_usd"] == Decimal("87.00")
+    assert result[0]["costo_usd"] == Decimal("19.50")
+    assert result[0]["margen_usd"] == Decimal("67.50")
+
+
 # --- get_top_week_sales ---
 
 def test_get_top_week_sales_empty(db):

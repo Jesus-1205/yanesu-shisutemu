@@ -563,11 +563,12 @@ def get_sales_summary(
         stmt_costs = (
             select(
                 SaleItem.venta_id,
-                SaleItem.unidades_descontadas,
-                Product.precio_costo_usd,
+                func.sum(SaleItem.unidades_descontadas * Product.precio_costo_usd).label("costo_total"),
             )
             .join(Product, Product.id == SaleItem.producto_id)
             .join(Sale, Sale.id == SaleItem.venta_id)
+            .where(Product.precio_costo_usd.isnot(None), SaleItem.unidades_descontadas > 0)
+            .group_by(SaleItem.venta_id)
         )
         if fecha_desde:
             stmt_costs = stmt_costs.where(Sale.fecha_venta >= _to_ve_boundary(fecha_desde))
@@ -575,9 +576,9 @@ def get_sales_summary(
             stmt_costs = stmt_costs.where(Sale.fecha_venta <= _to_ve_boundary(fecha_hasta, end_of_day=True))
 
         cost_rows = db.execute(stmt_costs).all()
-        for venta_id, unidades, precio_costo in cost_rows:
-            if precio_costo is not None and unidades:
-                cost_by_sale[venta_id] = cost_by_sale.get(venta_id, Decimal("0")) + Decimal(str(unidades)) * precio_costo
+        for venta_id, costo_total in cost_rows:
+            if costo_total is not None:
+                cost_by_sale[venta_id] = Decimal(str(costo_total))
 
     groups: dict[str, dict] = {}
     for sale_id, fecha_venta, total_usd, total_ves in sales_rows:
