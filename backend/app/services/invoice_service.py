@@ -783,7 +783,10 @@ def get_pending_invoices_summary(db: Session) -> dict:
         if saldo > 0:
             total_pendiente += saldo
 
-    return {"total_pendiente_usd": total_pendiente.quantize(Decimal("0.01"))}
+    return {
+        "total_pendiente_usd": total_pendiente.quantize(Decimal("0.01")),
+        "total_facturas_pendientes": len(facturas),
+    }
 
 
 def get_invoice(db: Session, invoice_id: int) -> Factura:

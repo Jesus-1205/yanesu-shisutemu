@@ -3,7 +3,6 @@ import { api } from "@/services/api";
 import type {
   DashboardStatsOut,
   InvoicePendingSummaryOut,
-  InvoiceStatsOut,
   ProductRankingItem,
   SalesSummaryItem,
 } from "@/types/api";
@@ -18,7 +17,6 @@ export interface DashboardDataState {
   ventasSemana: SalesSummaryItem | null;
   salesSummary: SalesSummaryItem[];
   topProducts: TopProductItem[];
-  invoiceStats: InvoiceStatsOut | null;
   pendingSummary: InvoicePendingSummaryOut | null;
 }
 
@@ -49,7 +47,6 @@ export function useDashboardData() {
     ventasSemana: null,
     salesSummary: [],
     topProducts: [],
-    invoiceStats: null,
     pendingSummary: null,
   });
 
@@ -61,13 +58,11 @@ export function useDashboardData() {
       statsRes,
       salesSummaryRes,
       topProductsRes,
-      invoiceStatsRes,
       pendingSummaryRes,
     ] = await Promise.allSettled([
       api.getDashboardStats(),
       api.getSalesSummary({ rango: "semanal", fecha_desde: fechaDesde, fecha_hasta: fechaHasta }),
       api.getTopSellingProducts(5),
-      api.getInvoiceStats(),
       api.getInvoicePendingSummary(),
     ]);
 
@@ -86,7 +81,6 @@ export function useDashboardData() {
         salesSummary: nextSalesSummary,
         ventasSemana: nextVentasSemana,
         topProducts: topProductsRes.status === "fulfilled" ? topProductsRes.value : prev.topProducts,
-        invoiceStats: invoiceStatsRes.status === "fulfilled" ? invoiceStatsRes.value : prev.invoiceStats,
         pendingSummary: pendingSummaryRes.status === "fulfilled" ? pendingSummaryRes.value : prev.pendingSummary,
       };
     });
@@ -98,7 +92,7 @@ export function useDashboardData() {
     fetchData();
   }, [fetchData]);
 
-  const pendingCount = (data.invoiceStats?.pendientes ?? 0) + (data.invoiceStats?.parciales ?? 0);
+  const pendingCount = data.pendingSummary?.total_facturas_pendientes ?? 0;
 
   return {
     loading,

@@ -80,6 +80,7 @@ const mockInvoiceStats: InvoiceStatsOut = {
 
 const mockPendingSummary: InvoicePendingSummaryOut = {
   total_pendiente_usd: 1200.0,
+  total_facturas_pendientes: 5,
 };
 
 describe("getDashboardWeeklyDateRange", () => {
@@ -113,7 +114,6 @@ describe("useDashboardData", () => {
     expect(result.current.salesSummary).toEqual([]);
     expect(result.current.ventasSemana).toBeNull();
     expect(result.current.topProducts).toEqual([]);
-    expect(result.current.invoiceStats).toBeNull();
     expect(result.current.pendingSummary).toBeNull();
     expect(result.current.pendingCount).toBe(0);
   });
@@ -137,9 +137,9 @@ describe("useDashboardData", () => {
     expect(result.current.topProducts).toEqual([
       { producto: mockProduct, total_vendido: 40 },
     ]);
-    expect(result.current.invoiceStats).toEqual(mockInvoiceStats);
+    expect(api.getInvoiceStats).not.toHaveBeenCalled();
     expect(result.current.pendingSummary).toEqual(mockPendingSummary);
-    expect(result.current.pendingCount).toBe(5); // 3 pendientes + 2 parciales
+    expect(result.current.pendingCount).toBe(5);
   });
 
   it("soporta reintento/refetch actualizando los datos", async () => {
@@ -179,7 +179,6 @@ describe("useDashboardData", () => {
     expect(result.current.salesSummary).toEqual([]);
     expect(result.current.ventasSemana).toBeNull();
     expect(result.current.topProducts).toEqual([]);
-    expect(result.current.invoiceStats).toBeNull();
     expect(result.current.pendingSummary).toBeNull();
     expect(result.current.pendingCount).toBe(0);
   });

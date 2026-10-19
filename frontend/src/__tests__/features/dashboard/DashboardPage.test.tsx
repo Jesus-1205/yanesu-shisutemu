@@ -86,6 +86,7 @@ const mockInvoiceStats: InvoiceStatsOut = {
 
 const mockPendingSummary: InvoicePendingSummaryOut = {
   total_pendiente_usd: 1450.0,
+  total_facturas_pendientes: 3,
 };
 
 describe("DashboardPage", () => {
@@ -158,6 +159,7 @@ describe("DashboardPage", () => {
     });
     vi.mocked(api.getInvoicePendingSummary).mockResolvedValue({
       total_pendiente_usd: 250.0,
+      total_facturas_pendientes: 1,
     });
 
     render(

@@ -18,6 +18,7 @@ vi.mock("@/services/api", () => ({
 
 const mockPending: InvoicePendingSummaryOut = {
   total_pendiente_usd: 250.5,
+  total_facturas_pendientes: 5,
 };
 
 const mockStats: InvoiceStatsOut = {

@@ -7,6 +7,7 @@ import type { FacturaOut, TopSupplier } from "@/types/api";
 
 const mockPendingSummary = {
   total_pendiente_usd: 1250.75,
+  total_facturas_pendientes: 7,
 };
 
 const mockStats = {

@@ -76,6 +76,7 @@ describe("DashboardKpis", () => {
 
   const mockPendingSummary: InvoicePendingSummaryOut = {
     total_pendiente_usd: 600.0,
+    total_facturas_pendientes: 4,
   };
 
   it("renderiza las tarjetas de KPI y la sección de facturas pendientes con datos", () => {

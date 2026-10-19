@@ -1700,6 +1700,22 @@ class TestGetPendingInvoicesSummary:
         result = get_pending_invoices_summary(db)
         assert result["total_pendiente_usd"] == Decimal("300.00")
 
+    def test_pending_summary_includes_invoice_count(self, db):
+        """El resumen incluye el conteo de facturas pendientes o parciales."""
+        sup = _sup(db)
+        prod = _prod(db, precio=Decimal("50"), unidades_caja=12)
+        user = _user(db)
+
+        res0 = get_pending_invoices_summary(db)
+        assert res0.get("total_facturas_pendientes") == 0
+
+        for i in range(2):
+            data = _factura_data(sup, prod, f"F-PEND-CNT-{i}", cajas=1, costo_usd=Decimal("50"))
+            create_invoice(db, data, usuario_id=user.id)
+
+        res2 = get_pending_invoices_summary(db)
+        assert res2["total_facturas_pendientes"] == 2
+
 
 # ── Tests NUEVOS: register_invoice_payment - Monedas ──────────────────────
 

@@ -147,8 +147,9 @@ class InvoiceStatsOut(BaseModel):
 
 
 class InvoicePendingSummaryOut(BaseModel):
-    """Resumen de monto total pendiente de pago (con IVA incluido)."""
+    """Resumen de monto total pendiente de pago (con IVA incluido) y conteo de facturas."""
     total_pendiente_usd: Decimal = Decimal("0")
+    total_facturas_pendientes: int = 0
 
 
 class TopSupplierOut(BaseModel):

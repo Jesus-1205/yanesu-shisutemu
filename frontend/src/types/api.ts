@@ -631,6 +631,7 @@ export interface InvoiceStatsOut {
 
 export interface InvoicePendingSummaryOut {
   total_pendiente_usd: number;
+  total_facturas_pendientes: number;
 }
 
 export interface TopSupplier {
