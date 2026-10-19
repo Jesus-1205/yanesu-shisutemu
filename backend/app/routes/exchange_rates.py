@@ -1,11 +1,12 @@
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.broadcaster import rate_broadcaster
-from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_role
+from app.core.database import SessionLocal, get_db
+from app.core.dependencies import decode_access_token, get_current_user, require_role
 from app.models.user import User
 from app.schemas.exchange_rate import ExchangeRateBulkSave, ExchangeRateOut, ExchangeRatePaginationOut
 from app.services.audit_service import log_action
@@ -82,10 +83,43 @@ def latest(
     }
 
 
+def authenticate_stream_user(access_token: str | None = Cookie(None)) -> User:
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token no proporcionado",
+        )
+
+    payload = decode_access_token(access_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+        )
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido",
+        )
+
+    with SessionLocal() as db:
+        stmt = select(User).options(selectinload(User.role)).where(User.id == int(user_id))
+        user = db.execute(stmt).scalars().first()
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuario no encontrado o inactivo",
+            )
+        db.expunge(user)
+        return user
+
+
 @router.get("/stream")
 async def stream_rates(
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(authenticate_stream_user),
 ):
     """GET /exchange-rates/stream - Server-Sent Events (SSE) para actualización de tasas en tiempo real
 
