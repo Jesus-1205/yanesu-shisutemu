@@ -14,8 +14,11 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 if DATABASE_URL.startswith("postgresql"):
     engine = create_engine(
         DATABASE_URL,
+        pool_size=10,
+        max_overflow=20,
+        pool_timeout=30.0,
         pool_pre_ping=True,
-        pool_recycle=3600,
+        pool_recycle=1800,
         connect_args={"options": "-c timezone=America/Caracas"},
     )
 else:
