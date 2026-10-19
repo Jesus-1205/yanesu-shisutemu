@@ -51,6 +51,7 @@ describe("CheckoutSpeedPayment", () => {
     const handleExpressClick = vi.fn();
     const setIsSplit = vi.fn();
     const setReferences = vi.fn();
+    const resetAmounts = vi.fn();
 
     mockUseCheckoutContext.mockReturnValue({
       methods: mockMethods,
@@ -60,6 +61,7 @@ describe("CheckoutSpeedPayment", () => {
       handleExpressClick,
       setReferences,
       setIsSplit,
+      resetAmounts,
     });
 
     render(<CheckoutSpeedPayment />);
@@ -74,7 +76,7 @@ describe("CheckoutSpeedPayment", () => {
     const splitBtn = screen.getByText("Pago dividido / monto exacto?");
     await userEvent.click(splitBtn);
     expect(setIsSplit).toHaveBeenCalledWith(true);
-    expect(handleExpressClick).toHaveBeenCalledWith(mockMethods[0]);
+    expect(resetAmounts).toHaveBeenCalled();
   });
 
   it("renders reference input when method accepts reference and has amount", async () => {

@@ -5,6 +5,7 @@ export default function CheckoutSpeedPayment() {
   const {
     methods,
     amounts,
+    resetAmounts,
     references,
     hasAnyAmount,
     handleExpressClick,
@@ -14,9 +15,7 @@ export default function CheckoutSpeedPayment() {
 
   const handleSwitchToSplit = () => {
     setIsSplit(true);
-    if (!hasAnyAmount && methods.length > 0) {
-      handleExpressClick(methods[0]);
-    }
+    resetAmounts();
   };
 
   return (
@@ -32,10 +31,9 @@ export default function CheckoutSpeedPayment() {
               onClick={() => handleExpressClick(m)}
               className={`
                 rounded-lg border-2 p-2 text-center transition-all duration-150
-                ${
-                  active
-                    ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
-                    : "border-slate-200 bg-surface text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                ${active
+                  ? "border-brand-blue bg-blue-50 font-semibold text-brand-blue"
+                  : "border-slate-200 bg-surface text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                 }
               `}
             >

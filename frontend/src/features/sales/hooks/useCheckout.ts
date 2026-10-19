@@ -71,6 +71,11 @@ export function useCheckout({ open, onClose, onSuccess }: UseCheckoutProps) {
     setAmounts((prev) => ({ ...prev, [id]: value }));
   }, []);
 
+  const resetAmounts = useCallback(() => {
+    setAmounts({});
+    setReferences({});
+  }, []);
+
   const {
     pagadoUSD,
     pagadoVES,
@@ -251,6 +256,7 @@ export function useCheckout({ open, onClose, onSuccess }: UseCheckoutProps) {
     amounts,
     setAmount,
     setAmounts,
+    resetAmounts,
     references,
     setReferences,
     isSplit,
