@@ -123,7 +123,7 @@ SUITE_PRE: List[EndpointSpec] = [
         id="report_sales",
         name="Reporte Ventas",
         category="Ventas",
-        path="/sales/summary?rango=semanal",
+        path="/sales/summary?rango=diario",
     ),
     EndpointSpec(
         id="report_categories",
@@ -154,6 +154,12 @@ SUITE_PRE: List[EndpointSpec] = [
         name="Productos (Página 1, size 20)",
         category="Inventario",
         path="/products?page=1&page_size=20",
+    ),
+    EndpointSpec(
+        id="top_selling_products",
+        name="Productos (Top Vendidos)",
+        category="Inventario",
+        path="/products/top-selling?limit=5",
     ),
     EndpointSpec(
         id="invoices_history",
@@ -277,6 +283,12 @@ SUITE_POST: List[EndpointSpec] = [
         name="Productos (Página 1, size 20)",
         category="Inventario",
         path="/products?page=1&page_size=20",
+    ),
+    EndpointSpec(
+        id="top_selling_products",
+        name="Productos (Top Vendidos)",
+        category="Inventario",
+        path="/products/top-selling?limit=5",
     ),
     EndpointSpec(
         id="invoices_history",
