@@ -11,22 +11,27 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 
-if DATABASE_URL.startswith("postgresql"):
-    engine = create_engine(
-        DATABASE_URL,
-        pool_size=10,
-        max_overflow=20,
-        pool_timeout=30.0,
-        pool_pre_ping=True,
-        pool_recycle=1800,
-        connect_args={"options": "-c timezone=America/Caracas"},
-    )
-else:
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False},
-    )
-    event.listen(engine, "connect", set_sqlite_pragma)
+def create_app_engine(database_url: str):
+    if database_url.startswith("postgresql"):
+        return create_engine(
+            database_url,
+            pool_size=10,
+            max_overflow=20,
+            pool_timeout=30.0,
+            pool_pre_ping=True,
+            pool_recycle=1800,
+            connect_args={"options": "-c timezone=America/Caracas"},
+        )
+    else:
+        eng = create_engine(
+            database_url,
+            connect_args={"check_same_thread": False},
+        )
+        event.listen(eng, "connect", set_sqlite_pragma)
+        return eng
+
+
+engine = create_app_engine(DATABASE_URL)
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
