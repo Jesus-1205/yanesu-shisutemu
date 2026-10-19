@@ -1,5 +1,5 @@
 import { useDashboardData } from "../hooks/useDashboardData";
-import Spinner from "@/ui-components/Spinner";
+import DashboardSkeleton from "../components/DashboardSkeleton";
 import DashboardShortcuts from "../components/DashboardShortcuts";
 import DashboardKpis from "../components/DashboardKpis";
 import DashboardCharts from "../components/DashboardCharts";
@@ -15,14 +15,6 @@ export default function DashboardPage() {
     pendingCount,
   } = useDashboardData();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -32,18 +24,23 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <DashboardShortcuts />
-      <DashboardKpis
-        stats={stats}
-        ventasSemana={ventasSemana}
-        pendingSummary={pendingSummary}
-        pendingCount={pendingCount}
-      />
-
-      <DashboardCharts
-        salesSummary={salesSummary}
-        topProducts={topProducts}
-      />
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <div className="space-y-6 motion-safe:animate-[fadeIn_250ms_ease-out]">
+          <DashboardShortcuts />
+          <DashboardKpis
+            stats={stats}
+            ventasSemana={ventasSemana}
+            pendingSummary={pendingSummary}
+            pendingCount={pendingCount}
+          />
+          <DashboardCharts
+            salesSummary={salesSummary}
+            topProducts={topProducts}
+          />
+        </div>
+      )}
     </div>
   );
 }

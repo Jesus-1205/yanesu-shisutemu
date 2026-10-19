@@ -94,7 +94,7 @@ describe("DashboardPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renderiza el spinner durante la carga inicial", () => {
+  it("renderiza el skeleton y el encabezado persistente durante la carga inicial", () => {
     vi.mocked(api.getDashboardStats).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.getSalesSummary).mockReturnValue(new Promise(() => {}));
     vi.mocked(api.getTopSellingProducts).mockReturnValue(new Promise(() => {}));
@@ -107,6 +107,9 @@ describe("DashboardPage", () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
+    expect(screen.getByText("Resumen general y métricas clave del negocio")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-skeleton")).toBeInTheDocument();
     expect(screen.queryByText("Punto de Venta")).not.toBeInTheDocument();
   });
 
@@ -127,6 +130,7 @@ describe("DashboardPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Dashboard")).toBeInTheDocument();
+      expect(screen.queryByTestId("dashboard-skeleton")).not.toBeInTheDocument();
     });
 
     // Accesos directos
