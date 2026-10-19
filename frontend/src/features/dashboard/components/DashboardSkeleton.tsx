@@ -5,14 +5,9 @@ export default function DashboardSkeleton() {
     <div
       data-testid="dashboard-skeleton"
       aria-busy="true"
+      aria-label="Cargando panel principal"
       className="space-y-6"
     >
-      {/* Header skeleton */}
-      <div>
-        <div className="h-8 w-40 animate-pulse rounded bg-slate-200" />
-        <div className="mt-2 h-4 w-64 animate-pulse rounded bg-slate-200" />
-      </div>
-
       {/* Shortcuts skeleton */}
       <div
         data-testid="skeleton-shortcuts"
