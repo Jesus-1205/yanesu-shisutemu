@@ -18,7 +18,7 @@ Antes de modificar, crear o analizar cualquier archivo, lee el archivo de reglas
 - **Frontend:** React 19 | TypeScript 5.7 | Vite 6 | Tailwind CSS v4 | Zustand 5 | Recharts 3
 - **Desktop:** Tauri 2 (`licoreria-desktop/`)
 - **Autenticación:** JWT HS256 en cookie httpOnly (python-jose 3.3.0) + passlib[bcrypt]
-- **Integraciones:** Google Gemini API, scraping BCV (beautifulsoup4 + requests), encriptación Fernet, búsqueda fuzzy (rapidfuzz)
+- **Integraciones:** Google Gemini API, scraping BCV (beautifulsoup4 + requests), encriptación Fernet
 
 ## Estructura del Repositorio
 
