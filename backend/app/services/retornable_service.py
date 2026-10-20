@@ -138,7 +138,7 @@ def _construir_estado_out(
     estado: str,
     movimientos_acumulados: dict[tuple[str, str], int],
     reporte_detalle: dict[tuple[str, str], tuple[int, int]] | None,
-    inventarios_map: dict[tuple[str, str], RetornableInventario],
+    inventarios_map: dict[tuple[str, str], RetornableInventario] | None = None,
 ) -> RetornableEstadoOut:
     """Construye la vista de un estado desde el inventario del sistema."""
     clave = (presentacion, estado)
@@ -146,7 +146,7 @@ def _construir_estado_out(
     if reporte_detalle and clave in reporte_detalle:
         botellas, cajas = reporte_detalle[clave]
     else:
-        if clave in inventarios_map:
+        if inventarios_map and clave in inventarios_map:
             inv = inventarios_map[clave]
             botellas = inv.cantidad_botellas
             cajas = inv.cantidad_cajas
@@ -581,11 +581,13 @@ def desasociar_producto(db: Session, asociacion_id: int) -> None:
 
 
 def listar_productos_asociados(db: Session) -> list[RetornableProductoOut]:
-    stmt = select(RetornableProducto).order_by(
-        RetornableProducto.presentacion, RetornableProducto.producto_id
+    stmt = (
+        select(RetornableProducto, Product)
+        .outerjoin(Product, Product.id == RetornableProducto.producto_id)
+        .order_by(RetornableProducto.presentacion, RetornableProducto.producto_id)
     )
-    asociados = list(db.execute(stmt).scalars().all())
-    return [_construir_producto_out(db, a) for a in asociados]
+    filas = db.execute(stmt).all()
+    return [_construir_producto_out(asoc, prod) for asoc, prod in filas]
 
 
 # ---------------------------------------------------------------------------

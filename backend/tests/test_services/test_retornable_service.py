@@ -916,21 +916,21 @@ class TestObtenerComparacion:
 
 
 class TestCalcularLlenoEsperado:
-    def test_sin_productos(self, db):
-        assert _calcular_lleno_esperado(db, "222") == 0
+    def test_sin_productos(self):
+        assert _calcular_lleno_esperado([], "222") == 0
 
     def test_con_producto(self, db, product_222):
-        asociar_producto(db, product_222.id, "222")
+        asoc = asociar_producto(db, product_222.id, "222")
         # stock_cajas=10, stock_unidades=18, 222ml=36 botellas/caja
         esperado = 10 * 36 + 18  # 378
-        assert _calcular_lleno_esperado(db, "222") == esperado
+        assert _calcular_lleno_esperado([(asoc, product_222)], "222") == esperado
 
     def test_dos_productos_misma_presentacion(self, db, product_222, product_333):
-        asociar_producto(db, product_222.id, "222")
-        asociar_producto(db, product_333.id, "222")
+        asoc1 = asociar_producto(db, product_222.id, "222")
+        asoc2 = asociar_producto(db, product_333.id, "222")
         esperado_222 = 10 * 36 + 18  # 378
         esperado_333 = 5 * 36 + 12  # 192
-        assert _calcular_lleno_esperado(db, "222") == esperado_222 + esperado_333
+        assert _calcular_lleno_esperado([(asoc1, product_222), (asoc2, product_333)], "222") == esperado_222 + esperado_333
 
 
 # ===========================================================================
@@ -964,14 +964,14 @@ class TestConstruirEstadoOut:
         db.commit()
 
         reporte_detalle = {("222", "CASILLERO"): (0, 5)}
-        out = _construir_estado_out(db, "222", "CASILLERO", {}, reporte_detalle)
+        out = _construir_estado_out("222", "CASILLERO", {}, reporte_detalle)
         assert out.estado == "CASILLERO"
         assert out.cantidad_botellas == 0
         assert out.cantidad_cajas == 5
 
     def test_vacio(self, db, user):
         reporte_detalle = {("222", "VACIO"): (100, 2)}
-        out = _construir_estado_out(db, "222", "VACIO", {}, reporte_detalle)
+        out = _construir_estado_out("222", "VACIO", {}, reporte_detalle)
         assert out.estado == "VACIO"
         assert out.cantidad_botellas == 100
         assert out.cajas_enteras == _botellas_a_cajas_enteras(100, "222")
@@ -980,7 +980,7 @@ class TestConstruirEstadoOut:
     def test_con_movimientos(self, db, user):
         reporte_detalle = {("222", "LLENO"): (200, 5)}
         movimientos = {("222", "LLENO"): -10}
-        out = _construir_estado_out(db, "222", "LLENO", movimientos, reporte_detalle)
+        out = _construir_estado_out("222", "LLENO", movimientos, reporte_detalle)
         assert out.cantidad_botellas == 190  # 200 + (-10)
 
     def test_sin_reporte_detalle_usa_inventario(self, db):
@@ -989,5 +989,5 @@ class TestConstruirEstadoOut:
         inv.cantidad_cajas = 1
         db.commit()
 
-        out = _construir_estado_out(db, "222", "LLENO", {}, None)
+        out = _construir_estado_out("222", "LLENO", {}, None, {("222", "LLENO"): inv})
         assert out.cantidad_botellas == 50
