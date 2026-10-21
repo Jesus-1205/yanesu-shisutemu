@@ -23,6 +23,8 @@ from app.models.invoice_payment import InvoicePayment
 from app.models.payment_method import PaymentMethod
 from app.models.product import Product
 from app.models.role import Role
+from app.models.sale import Sale, SaleItem
+from app.models.sale_payment import SalePayment
 from app.models.supplier import Supplier
 from app.models.user import User
 
@@ -560,4 +562,257 @@ def seed_invoices(
         .order_by(Factura.id.asc())
     )
     return list(db.execute(stmt_final).scalars().all())
+
+
+def seed_sales(
+    db: Session,
+    products: list[Product],
+    user_id: int,
+    rates: list[ExchangeRate],
+    payment_methods: dict[str, PaymentMethod],
+    count: int = 75,
+) -> list[Sale]:
+    """Siembra ventas simuladas en una ventana de 30 días con distribución realista.
+
+    Reglas:
+    - Ponderación de fin de semana (Viernes y Sábado peso 3x, Domingo 2x, Lun-Jue 1x).
+    - Horarios de venta entre 10:00 y 21:00 (hora local de Caracas).
+    - Filtrado de productos disponibles (precio_unidad_usd > 0, excluyendo stock 0).
+    - Entre 1 y 4 renglones por venta con desglose de empaque UNIDAD y CAJA.
+    - Desglose estricto de base imponible, exento e IVA (16%).
+    - Omisión estricta de columnas SQL Computed en la instanciación.
+    - Métodos de pago (Divisas ~40%, Pago Móvil ~35%, Punto de Venta ~15%, Mixto ~10%).
+    - Idempotencia: si ya existen >= 60 ventas, retorna las existentes.
+    """
+    existing_sales = db.execute(
+        select(Sale)
+        .options(
+            selectinload(Sale.items).selectinload(SaleItem.product),
+            selectinload(Sale.payments).selectinload(SalePayment.payment_method),
+        )
+        .order_by(Sale.fecha_venta.asc())
+    ).scalars().all()
+
+    if len(existing_sales) >= 60:
+        return list(existing_sales)
+
+    try:
+        tz = ZoneInfo("America/Caracas")
+    except Exception:
+        tz = VE_TZ
+
+    rates_by_date = {}
+    for r in rates:
+        dt_val = r.fecha_registro
+        if hasattr(dt_val, "date"):
+            rates_by_date[dt_val.date()] = r
+
+    fallback_rate = rates[-1] if rates else None
+
+    # Filtrar productos disponibles: precio_unidad_usd > 0 y stock > 0
+    available_products = [
+        p
+        for p in products
+        if p.precio_unidad_usd is not None
+        and p.precio_unidad_usd > Decimal("0")
+        and not (p.stock_cajas == 0 and p.stock_unidades == 0)
+    ]
+    if not available_products:
+        return []
+
+    available_products.sort(key=lambda p: p.id)
+
+    # Fechas de los 30 días
+    days_dates = sorted(rates_by_date.keys())
+    if not days_dates:
+        today = datetime.now(tz).date()
+        days_dates = [today - timedelta(days=29 - i) for i in range(30)]
+
+    def _day_weight(d) -> int:
+        wd = d.weekday()
+        if wd in (4, 5):  # Viernes y Sábado (3x)
+            return 3
+        elif wd == 6:     # Domingo (2x)
+            return 2
+        else:             # Lunes a Jueves (1x)
+            return 1
+
+    total_weight = sum(_day_weight(d) for d in days_dates)
+    if total_weight == 0:
+        total_weight = 1
+
+    # Asignación de número de ventas por día con el método del resto mayor
+    raw_counts = [(count * _day_weight(d)) / total_weight for d in days_dates]
+    int_counts = [int(rc) for rc in raw_counts]
+    remainders = [(raw_counts[idx] - int_counts[idx], idx) for idx in range(len(days_dates))]
+    remainders.sort(key=lambda x: x[0], reverse=True)
+    needed = count - sum(int_counts)
+    for i in range(needed):
+        int_counts[remainders[i][1]] += 1
+
+    global_sale_idx = 0
+    for day_idx, d in enumerate(days_dates):
+        num_sales_today = int_counts[day_idx]
+        rate_for_day = rates_by_date.get(d, fallback_rate)
+        tasa_bcv = rate_for_day.tasa_usd if rate_for_day else Decimal("850.0000")
+        historico_tasa_id = rate_for_day.id if rate_for_day else None
+
+        for k in range(num_sales_today):
+            sale_idx = global_sale_idx
+            global_sale_idx += 1
+
+            # Distribución de horas comerciales entre 10:00 y 20:50 Caracas
+            minute_offset = int(15 + (k * 620) / max(num_sales_today, 1))
+            hour = 10 + (minute_offset // 60)
+            minute = minute_offset % 60
+            second = (k * 17 + (d.day % 10)) % 60
+            fecha_venta = datetime(d.year, d.month, d.day, hour, minute, second, tzinfo=tz)
+
+            # Renglones por venta (1 a 4)
+            num_items = 1 + (sale_idx % 4)
+            chosen_products: list[Product] = []
+            for it_i in range(num_items):
+                prod = available_products[(sale_idx * 2 + it_i) % len(available_products)]
+                if prod not in chosen_products:
+                    chosen_products.append(prod)
+            if not chosen_products:
+                chosen_products = [available_products[0]]
+
+            sale_items: list[SaleItem] = []
+            item_exentos: list[Decimal] = []
+            item_bases: list[Decimal] = []
+            item_ivas: list[Decimal] = []
+
+            for it_idx, prod in enumerate(chosen_products):
+                can_caja = (
+                    prod.precio_caja_usd is not None
+                    and prod.precio_caja_usd > Decimal("0")
+                    and prod.unidades_por_caja > 1
+                )
+                if can_caja and (sale_idx + it_idx) % 5 == 0:
+                    tipo_empaque = "CAJA"
+                    cantidad = 1 if ((sale_idx + it_idx) % 2 == 0) else 2
+                    precio_unitario_usd = prod.precio_caja_usd
+                    unidades_descontadas = cantidad * prod.unidades_por_caja
+                else:
+                    tipo_empaque = "UNIDAD"
+                    cantidad = 1 + ((sale_idx + it_idx) % 4)
+                    precio_unitario_usd = prod.precio_unidad_usd
+                    unidades_descontadas = cantidad
+
+                subtotal = (Decimal(str(cantidad)) * precio_unitario_usd).quantize(Decimal("0.01"))
+                tipo_iva = prod.tipo_iva if prod.tipo_iva in ("GRAVADO", "EXENTO") else "GRAVADO"
+
+                if tipo_iva == "GRAVADO":
+                    iva_porcentaje = Decimal("16.00")
+                    base_item = subtotal
+                    exento_item = Decimal("0.00")
+                    iva_item = (subtotal * Decimal("0.16")).quantize(Decimal("0.01"))
+                else:
+                    iva_porcentaje = Decimal("0.00")
+                    base_item = Decimal("0.00")
+                    exento_item = subtotal
+                    iva_item = Decimal("0.00")
+
+                item_exentos.append(exento_item)
+                item_bases.append(base_item)
+                item_ivas.append(iva_item)
+
+                sale_item = SaleItem(
+                    producto_id=prod.id,
+                    tipo_empaque=tipo_empaque,
+                    cantidad=cantidad,
+                    unidades_descontadas=unidades_descontadas,
+                    precio_unitario_usd=precio_unitario_usd,
+                    iva_porcentaje=iva_porcentaje,
+                    usa_precio_divisas=False,
+                )
+                sale_items.append(sale_item)
+
+            monto_exento_usd = sum(item_exentos, Decimal("0.00"))
+            base_imponible_usd = sum(item_bases, Decimal("0.00"))
+            monto_iva_usd = sum(item_ivas, Decimal("0.00"))
+            total_usd = (monto_exento_usd + base_imponible_usd + monto_iva_usd).quantize(Decimal("0.01"))
+
+            sale = Sale(
+                fecha_venta=fecha_venta,
+                usuario_id=user_id,
+                tasa_bcv_aplicada=tasa_bcv,
+                historico_tasa_id=historico_tasa_id,
+                observaciones=f"Venta demo #{sale_idx + 1:04d}",
+                monto_exento_usd=monto_exento_usd,
+                base_imponible_usd=base_imponible_usd,
+                monto_iva_usd=monto_iva_usd,
+            )
+            sale.items = sale_items
+
+            # Pagos
+            pay_pattern = sale_idx % 20
+            if pay_pattern < 8:  # 40% -> Divisas
+                pm = _resolve_payment_method(payment_methods, db, "Divisas")
+                sale.payments = [
+                    SalePayment(
+                        metodo_pago_id=pm.id,
+                        referencia=None,
+                        monto_usd=total_usd,
+                        monto_ves=Decimal("0.00"),
+                    )
+                ]
+            elif pay_pattern < 15:  # 35% -> Pago Móvil
+                pm = _resolve_payment_method(payment_methods, db, "Pago Móvil")
+                monto_ves = (total_usd * tasa_bcv).quantize(Decimal("0.01"))
+                sale.payments = [
+                    SalePayment(
+                        metodo_pago_id=pm.id,
+                        referencia=f"PAGOMOVIL-{sale_idx + 1:04d}",
+                        monto_usd=Decimal("0.00"),
+                        monto_ves=monto_ves,
+                    )
+                ]
+            elif pay_pattern < 18:  # 15% -> Punto de Venta
+                pm = _resolve_payment_method(payment_methods, db, "Punto de Venta")
+                monto_ves = (total_usd * tasa_bcv).quantize(Decimal("0.01"))
+                sale.payments = [
+                    SalePayment(
+                        metodo_pago_id=pm.id,
+                        referencia=None,
+                        monto_usd=Decimal("0.00"),
+                        monto_ves=monto_ves,
+                    )
+                ]
+            else:  # 10% -> Split (50% Divisas, 50% Pago Móvil)
+                pm_usd = _resolve_payment_method(payment_methods, db, "Divisas")
+                pm_ves = _resolve_payment_method(payment_methods, db, "Pago Móvil")
+                half_usd = (total_usd / Decimal("2")).quantize(Decimal("0.01"))
+                rem_usd = total_usd - half_usd
+                rem_ves = (rem_usd * tasa_bcv).quantize(Decimal("0.01"))
+                sale.payments = [
+                    SalePayment(
+                        metodo_pago_id=pm_usd.id,
+                        referencia=None,
+                        monto_usd=half_usd,
+                        monto_ves=Decimal("0.00"),
+                    ),
+                    SalePayment(
+                        metodo_pago_id=pm_ves.id,
+                        referencia=f"PAGOMOVIL-{sale_idx + 1:04d}",
+                        monto_usd=Decimal("0.00"),
+                        monto_ves=rem_ves,
+                    ),
+                ]
+
+            db.add(sale)
+
+    db.commit()
+
+    stmt = (
+        select(Sale)
+        .options(
+            selectinload(Sale.items).selectinload(SaleItem.product),
+            selectinload(Sale.payments).selectinload(SalePayment.payment_method),
+        )
+        .order_by(Sale.fecha_venta.asc())
+    )
+    return list(db.execute(stmt).scalars().all())
+
 
