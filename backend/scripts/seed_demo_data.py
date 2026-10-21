@@ -5,21 +5,30 @@ utilizando SQLAlchemy 2.0 (select(), scalars()). Maneja montos monetarios estric
 con Decimal.
 """
 
+import argparse
 from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 import re
+import sys
 from typing import Any
 import unicodedata
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+# Asegurar que el directorio 'backend' esté en sys.path
+backend_dir = Path(__file__).resolve().parent.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.database import SessionLocal
 from app.core.timezone import VE_TZ
-from app.models.category import Category
+from app.models.category import Category, producto_categoria
 from app.models.exchange_rate import ExchangeRate
-from app.models.invoice import DetalleFactura, Factura, MonedaEnum, TipoDocumentoEnum
-from app.models.invoice_payment import InvoicePayment
+from app.models.invoice import DetalleFactura, Factura, MonedaEnum, ObsequioFactura, TipoDocumentoEnum
+from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.payment_method import PaymentMethod
 from app.models.product import Product
 from app.models.role import Role
@@ -814,5 +823,195 @@ def seed_sales(
         .order_by(Sale.fecha_venta.asc())
     )
     return list(db.execute(stmt).scalars().all())
+
+
+def clean_demo_data(db: Session) -> dict[str, int]:
+    """Elimina datos operacionales de demostración en orden inverso de claves foráneas.
+
+    Orden de borrado:
+    1. comprobantes_pago_facturas (InvoicePaymentReceipt)
+    2. pagos_facturas (InvoicePayment)
+    3. detalles_facturas (DetalleFactura)
+    4. obsequios_factura (ObsequioFactura si existe)
+    5. facturas (Factura)
+    6. detalle_pagos (SalePayment)
+    7. detalle_ventas (SaleItem)
+    8. ventas (Sale)
+    9. producto_categoria (tabla asociativa)
+    10. productos (Product)
+    11. historico_tasas (ExchangeRate)
+    """
+    cleaned: dict[str, int] = {}
+
+    r = db.execute(delete(InvoicePaymentReceipt))
+    cleaned["comprobantes_pago_facturas"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(InvoicePayment))
+    cleaned["pagos_facturas"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(DetalleFactura))
+    cleaned["detalles_facturas"] = max(0, r.rowcount or 0)
+
+    try:
+        r = db.execute(delete(ObsequioFactura))
+        cleaned["obsequios_factura"] = max(0, r.rowcount or 0)
+    except Exception:
+        cleaned["obsequios_factura"] = 0
+
+    r = db.execute(delete(Factura))
+    cleaned["facturas"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(SalePayment))
+    cleaned["detalle_pagos"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(SaleItem))
+    cleaned["detalle_ventas"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(Sale))
+    cleaned["ventas"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(producto_categoria))
+    cleaned["producto_categoria"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(Product))
+    cleaned["productos"] = max(0, r.rowcount or 0)
+
+    r = db.execute(delete(ExchangeRate))
+    cleaned["historico_tasas"] = max(0, r.rowcount or 0)
+
+    db.commit()
+    return cleaned
+
+
+def run_seed(db: Session, reset: bool = False) -> dict[str, int]:
+    """Orquesta la siembra completa de datos de demostración en estricto orden de dependencias.
+
+    Orden de ejecución:
+    1. seed_roles_and_payment_methods(db)
+    2. seed_admin_user(db, roles["admin_role_id"])
+    3. seed_suppliers(db)
+    4. seed_categories(db)
+    5. seed_products(db, suppliers, categories)
+    6. seed_exchange_rates(db, admin.id, days=30)
+    7. seed_invoices(db, suppliers, products, admin.id, payment_methods, base_rate=latest_rate)
+    8. seed_sales(db, products, admin.id, rates, payment_methods, count=75)
+    """
+    if reset:
+        clean_demo_data(db)
+
+    # 1. Roles y métodos de pago
+    roles_info = seed_roles_and_payment_methods(db)
+    payment_methods = roles_info["payment_methods"]
+
+    # 2. Usuario administrador demo
+    admin = seed_admin_user(db, roles_info["admin_role_id"])
+
+    # 3. Proveedores
+    suppliers = seed_suppliers(db)
+
+    # 4. Categorías
+    categories = seed_categories(db)
+
+    # 5. Productos
+    products = seed_products(db, suppliers, categories)
+
+    # 6. Tasas de cambio (últimos 30 días)
+    rates = seed_exchange_rates(db, admin.id, days=30)
+    latest_rate = rates[-1].tasa_usd if rates else Decimal("850.0000")
+
+    # 7. Facturas de compra
+    invoices = seed_invoices(
+        db,
+        suppliers=suppliers,
+        products=products,
+        user_id=admin.id,
+        payment_methods=payment_methods,
+        base_rate=latest_rate,
+    )
+
+    # 8. Ventas simuladas
+    sales = seed_sales(
+        db,
+        products=products,
+        user_id=admin.id,
+        rates=rates,
+        payment_methods=payment_methods,
+        count=75,
+    )
+
+    return {
+        "suppliers": len(suppliers),
+        "categories": len(categories),
+        "products": len(products),
+        "exchange_rates": len(rates),
+        "invoices": len(invoices),
+        "sales": len(sales),
+    }
+
+
+def run_migrations() -> None:
+    """Ejecuta las migraciones pendientes de Alembic si el archivo alembic.ini existe."""
+    backend_root = Path(__file__).resolve().parent.parent
+    ini_path = backend_root / "alembic.ini"
+    if ini_path.exists():
+        try:
+            from alembic.config import Config
+            from alembic import command
+
+            alembic_cfg = Config(str(ini_path))
+            alembic_cfg.set_main_option("script_location", str(backend_root / "alembic"))
+            command.upgrade(alembic_cfg, "head")
+        except Exception as e:
+            print(f"[!] Advertencia al ejecutar migraciones Alembic: {e}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Punto de entrada CLI para la siembra de datos de demostración."""
+    parser = argparse.ArgumentParser(
+        description="Siembra de datos de demostración para Yanesu Shisutemu"
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Limpia datos operacionales existentes antes de sembrar",
+    )
+    parser.add_argument(
+        "--no-migrate",
+        action="store_true",
+        help="Omite la ejecución automática de migraciones Alembic",
+    )
+    args = parser.parse_args(argv)
+
+    if not args.no_migrate:
+        run_migrations()
+
+    db = SessionLocal()
+    try:
+        summary = run_seed(db, reset=args.reset)
+
+        print("=" * 60)
+        print("          YANESU SHISUTEMU - DEMO SEED DATA")
+        print("=" * 60)
+        print("[*] Datos sembrados exitosamente:")
+        print(f"    - Proveedores:        {summary['suppliers']}")
+        print(f"    - Categorías:         {summary['categories']}")
+        print(f"    - Productos:          {summary['products']}")
+        print(f"    - Tasas de cambio:    {summary['exchange_rates']}")
+        print(f"    - Facturas proveedor: {summary['invoices']}")
+        print(f"    - Ventas simuladas:   {summary['sales']}")
+        print("-" * 60)
+        print("Credenciales de acceso demo:")
+        print("    Usuario:    admin")
+        print("    Contraseña: admin123")
+        print("=" * 60)
+
+        return 0
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
 
 
