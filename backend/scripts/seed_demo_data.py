@@ -26,11 +26,14 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.database import SessionLocal
 from app.core.timezone import VE_TZ
 from app.models.category import Category, producto_categoria
+from app.models.combo import ComboGroupProduct
 from app.models.exchange_rate import ExchangeRate
 from app.models.invoice import DetalleFactura, Factura, MonedaEnum, ObsequioFactura, TipoDocumentoEnum
 from app.models.invoice_payment import InvoicePayment, InvoicePaymentReceipt
 from app.models.payment_method import PaymentMethod
+from app.models.price_rule import PriceRuleProduct
 from app.models.product import Product
+from app.models.retornable import RetornableProducto
 from app.models.role import Role
 from app.models.sale import Sale, SaleItem
 from app.models.sale_payment import SalePayment
@@ -872,6 +875,24 @@ def clean_demo_data(db: Session) -> dict[str, int]:
 
     r = db.execute(delete(producto_categoria))
     cleaned["producto_categoria"] = max(0, r.rowcount or 0)
+
+    try:
+        r = db.execute(delete(PriceRuleProduct))
+        cleaned["price_rule_products"] = max(0, r.rowcount or 0)
+    except Exception:
+        cleaned["price_rule_products"] = 0
+
+    try:
+        r = db.execute(delete(ComboGroupProduct))
+        cleaned["combo_group_products"] = max(0, r.rowcount or 0)
+    except Exception:
+        cleaned["combo_group_products"] = 0
+
+    try:
+        r = db.execute(delete(RetornableProducto))
+        cleaned["retornable_productos"] = max(0, r.rowcount or 0)
+    except Exception:
+        cleaned["retornable_productos"] = 0
 
     r = db.execute(delete(Product))
     cleaned["productos"] = max(0, r.rowcount or 0)

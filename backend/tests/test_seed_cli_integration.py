@@ -90,6 +90,62 @@ def test_clean_demo_data(db_session):
     assert len(suppliers_left) > 0
 
 
+def test_clean_demo_data_cascade_product_foreign_keys(db_session):
+    """Verifica que clean_demo_data elimine registros dependientes con ondelete=RESTRICT
+    en price_rule_products, combo_group_products y retornable_productos antes de borrar productos.
+    """
+    from app.models.combo import Combo, ComboGroup, ComboGroupProduct
+    from app.models.price_rule import PriceRule, PriceRuleProduct
+    from app.models.retornable import RetornableProducto
+
+    # 1. Sembrar productos base
+    run_seed(db_session, reset=False)
+    prod = db_session.execute(select(Product)).scalars().first()
+    assert prod is not None
+
+    # 2. Crear regla de precio asociada al producto
+    rule = PriceRule(nombre="Regla Test", activo=True)
+    db_session.add(rule)
+    db_session.flush()
+    pr_prod = PriceRuleProduct(
+        regla_id=rule.id,
+        producto_id=prod.id,
+        tipo_empaque="UNIDAD",
+        precio_usd=Decimal("5.00"),
+    )
+    db_session.add(pr_prod)
+
+    # 3. Crear combo y grupo asociado al producto
+    combo = Combo(nombre="Combo Test", precio_total_usd=Decimal("15.00"), activo=True)
+    db_session.add(combo)
+    db_session.flush()
+    group = ComboGroup(combo_id=combo.id, nombre="Grupo Test", min_cantidad=1, max_cantidad=2)
+    db_session.add(group)
+    db_session.flush()
+    cg_prod = ComboGroupProduct(grupo_id=group.id, producto_id=prod.id)
+    db_session.add(cg_prod)
+
+    # 4. Crear retornable asociado al producto
+    ret_prod = RetornableProducto(producto_id=prod.id, presentacion="222")
+    db_session.add(ret_prod)
+
+    db_session.commit()
+
+    # 5. Ejecutar clean_demo_data y verificar que no hay error de ForeignKeyViolation
+    cleaned = clean_demo_data(db_session)
+    assert cleaned["productos"] > 0
+    assert cleaned.get("price_rule_products", 0) >= 1
+    assert cleaned.get("combo_group_products", 0) >= 1
+    assert cleaned.get("retornable_productos", 0) >= 1
+
+    # Verificar que los productos y las referencias fueron eliminados
+    assert len(db_session.execute(select(PriceRuleProduct)).scalars().all()) == 0
+    assert len(db_session.execute(select(ComboGroupProduct)).scalars().all()) == 0
+    assert len(db_session.execute(select(RetornableProducto)).scalars().all()) == 0
+    assert len(db_session.execute(select(Product)).scalars().all()) == 0
+
+
+
 def test_run_seed_with_reset_flag(db_session):
     """Prueba run_seed con reset=True limpiando y re-sembrando ordenadamente."""
     # Primera siembra
