@@ -351,6 +351,26 @@ pnpm install
 pnpm tauri build
 ```
 
+### 🧪 Datos de Demostración (Seed Data)
+
+Para explorar el sistema con datos de prueba realistas (catálogo de licores, tasas BCV históricas, facturas de compra y métricas de ventas en el panel analítico):
+
+```bash
+# Desde la carpeta backend/ (entorno local)
+python -m scripts.seed_demo_data
+
+# O dentro del contenedor Docker (si usas Docker Compose)
+docker compose exec backend python -m scripts.seed_demo_data
+```
+
+- **Credenciales generadas:** Usuario `admin` | Contraseña `admin123`
+- **Reiniciar datos:** Agrega la bandera `--reset` si deseas vaciar tablas operacionales y resembrar desde cero:
+  ```bash
+  python -m scripts.seed_demo_data --reset
+  ```
+
+> ⚠️ **Advertencia:** Genera transacciones sintéticas para pruebas y analíticas. **No ejecutar en bases de datos de producción.**
+
 ---
 
 ## 9. Índice de Documentación Técnica Profunda
