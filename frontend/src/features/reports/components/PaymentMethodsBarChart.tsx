@@ -53,7 +53,7 @@ export default function PaymentMethodsBarChart({
 
   if (!chartData.length) {
     return (
-      <div className="flex h-72 items-center justify-center">
+      <div className="flex h-80 items-center justify-center">
         <p className="text-sm text-slate-400">Sin pagos registrados en el período</p>
       </div>
     );

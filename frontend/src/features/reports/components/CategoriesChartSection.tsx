@@ -63,7 +63,7 @@ export default function CategoriesChartSection({
 
   if (!activeItems.length) {
     return (
-      <div className="flex h-72 items-center justify-center">
+      <div className="flex h-80 items-center justify-center">
         <p className="text-sm text-slate-400">Sin datos de categorías en el período</p>
       </div>
     );

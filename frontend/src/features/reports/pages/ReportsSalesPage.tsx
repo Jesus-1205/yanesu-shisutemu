@@ -19,7 +19,7 @@ export default function ReportsSalesPage() {
   const from = searchParams.get("from") || defaultDates.from;
   const to = searchParams.get("to") || defaultDates.to;
 
-  const [grouping, setGrouping] = useState<SalesGrouping>("diario");
+  const [grouping, setGrouping] = useState<SalesGrouping>("semanal");
   const [viewMode, setViewMode] = useState<ReportViewMode>("chart");
   const [page, setPage] = useState(1);
   const pageSize = 10;
