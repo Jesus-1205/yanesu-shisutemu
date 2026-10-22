@@ -63,7 +63,7 @@ describe("ReportsSalesPage", () => {
 
     await waitFor(() => {
       expect(api.getSalesSummary).toHaveBeenCalledWith({
-        rango: "diario",
+        rango: "semanal",
         fecha_desde: expectedDates.from,
         fecha_hasta: expectedDates.to,
       });
@@ -76,7 +76,7 @@ describe("ReportsSalesPage", () => {
     });
   });
 
-  it("switches grouping to semanal and mensual", async () => {
+  it("switches grouping to diario and mensual", async () => {
     const expectedDates = getReportPresetDates("30d");
     renderWithRouter();
 
@@ -84,12 +84,12 @@ describe("ReportsSalesPage", () => {
       expect(api.getSalesSummary).toHaveBeenCalledTimes(1);
     });
 
-    const semanalBtn = screen.getByRole("button", { name: /semanal/i });
-    await userEvent.click(semanalBtn);
+    const diarioBtn = screen.getByRole("button", { name: /diario/i });
+    await userEvent.click(diarioBtn);
 
     await waitFor(() => {
       expect(api.getSalesSummary).toHaveBeenCalledWith({
-        rango: "semanal",
+        rango: "diario",
         fecha_desde: expectedDates.from,
         fecha_hasta: expectedDates.to,
       });

@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { getReportPresetDates } from "@/lib/utils";
 import { exportToExcel } from "@/lib/exportToExcel";
 import ErrorBanner from "@/ui-components/ErrorBanner";
-import { Skeleton } from "@/ui-components/Skeleton";
 import type { Column } from "@/ui-components/Table";
 import type {
   ReportViewMode,
@@ -114,8 +113,8 @@ export default function ReportsPaymentsPage() {
         />
 
         {loading ? (
-          <div className="flex h-75 items-center justify-center">
-            <Skeleton className="h-64 w-full" />
+          <div className="h-80 w-full animate-pulse rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+            Cargando analíticas...
           </div>
         ) : viewMode === "chart" ? (
           <PaymentsChartSection

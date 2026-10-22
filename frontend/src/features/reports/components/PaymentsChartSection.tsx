@@ -1,10 +1,7 @@
-import { lazy, Suspense } from "react";
-import { Skeleton } from "@/ui-components/Skeleton";
+import PaymentMethodsDonut from "./PaymentMethodsDonut";
+import PaymentMethodsBarChart from "./PaymentMethodsBarChart";
 import type { PaymentMethodSummaryItem } from "@/types/api";
 import type { PaymentChartMode } from "../types";
-
-const PaymentMethodsDonut = lazy(() => import("./PaymentMethodsDonut"));
-const PaymentMethodsBarChart = lazy(() => import("./PaymentMethodsBarChart"));
 
 export interface PaymentsChartSectionProps {
   chartMode: PaymentChartMode;
@@ -23,23 +20,21 @@ export default function PaymentsChartSection({
 }: PaymentsChartSectionProps) {
   return (
     <div>
-      <Suspense fallback={<Skeleton className="h-75 w-full" />}>
-        {chartMode === "donut" ? (
-          <PaymentMethodsDonut
-            data={data}
-            currency={currency}
-            currSymbol={currSymbol}
-            conversionRate={conversionRate}
-          />
-        ) : (
-          <PaymentMethodsBarChart
-            data={data}
-            currency={currency}
-            currSymbol={currSymbol}
-            conversionRate={conversionRate}
-          />
-        )}
-      </Suspense>
+      {chartMode === "donut" ? (
+        <PaymentMethodsDonut
+          data={data}
+          currency={currency}
+          currSymbol={currSymbol}
+          conversionRate={conversionRate}
+        />
+      ) : (
+        <PaymentMethodsBarChart
+          data={data}
+          currency={currency}
+          currSymbol={currSymbol}
+          conversionRate={conversionRate}
+        />
+      )}
     </div>
   );
 }
