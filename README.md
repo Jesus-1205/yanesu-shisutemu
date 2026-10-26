@@ -27,6 +27,8 @@
 
 </div>
 
+> [!NOTE] 
+> **Indexado en XERJ Corpus Hub:** La implementación de datos semilla e infraestructura de testing de este repositorio (`feat(inventory): add base seed functions for demo data`) fue seleccionada e indexada en el [Corpus Hub de XERJ](https://github.com/xerj-org/xerj) (+16k ⭐) como código de referencia validado para agentes autónomos de desarrollo.
 ---
 
 ## Tabla de Contenidos
@@ -60,10 +62,32 @@
 
 ### A. Vistas Principales en Producción
 
-|                            Punto de Venta Bimoneda (POS)                            |                                   Facturación y OCR con Gemini AI                                   |                                   Reportes y Analítica Financiera                                   |
-| :---------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------: |
-| <img src="./docs/assets/screenshot-pos.png" alt="Punto de Venta POS" width="280" /> | <img src="./docs/assets/screenshot-invoices-hub.png" alt="Extracción OCR con Gemini" width="280" /> | <img src="./docs/assets/screenshot-analytics.png" alt="Panel de Reportes y Márgenes" width="280" /> |
-|     _Cobro en USD/VES a tasa oficial BCV, catálogo bimodal y desglose de IVA._      |            _Extracción multimodal estructurada (Human-in-the-Loop) con mapeo asistido._             |              _Evolución de ventas vs. costos, márgenes brutos y métricas de rotación._              |
+#### 1. Punto de Venta Bimoneda (POS)
+*Cobro en USD/VES a tasa oficial BCV, catálogo bimodal y desglose de IVA.*
+
+<div align="center">
+  <a href="./docs/assets/screenshot-pos.png">
+    <img src="./docs/assets/screenshot-pos.png" alt="Punto de Venta POS" width="850" />
+  </a>
+</div>
+
+#### 2. Facturación y OCR con Gemini AI
+*Extracción multimodal estructurada (Human-in-the-Loop) con mapeo asistido al catálogo local.*
+
+<div align="center">
+  <a href="./docs/assets/screenshot-invoices-hub.png">
+    <img src="./docs/assets/screenshot-invoices-hub.png" alt="Extracción OCR con Gemini" width="850" />
+  </a>
+</div>
+
+#### 3. Reportes y Analítica Financiera
+*Evolución de ventas vs. costos, márgenes brutos y métricas de rotación.*
+
+<div align="center">
+  <a href="./docs/assets/screenshot-analytics.png">
+    <img src="./docs/assets/screenshot-analytics.png" alt="Panel de Reportes y Márgenes" width="850" />
+  </a>
+</div>
 
 ---
 
