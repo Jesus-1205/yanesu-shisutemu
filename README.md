@@ -23,7 +23,7 @@
   <b>Plataforma comercial en producción activa</b> diseñada para operar con precisión bancaria en economías bimonetarias (USD / VES), con arquitectura híbrida <b>Cloud VPS (Docker + PostgreSQL)</b> y <b>Desktop Offline (Tauri 2 + SQLite)</b>, extracción de facturas mediante <b>Google Gemini Vision OCR</b> y automatización M2M con <b>n8n + Telegram</b>.
 </p>
 
-[Explorar Caso de Estudio en Portafolio](https://portfolio-jesus-1205s-projects.vercel.app/projects/yanesu-shisutemu) · [Informe de Rendimiento](./docs/PERFORMANCE_OPTIMIZATION_REPORT.md) · [Especificaciones del Sistema](./docs/specs/) · [Guía de Despliegue VPS](./docs/DEPLOY_VPS.md)
+[Explorar Caso de Estudio en Portafolio](https://jesus-blanco.pages.dev/projects/yanesu-shisutemu) · [Informe de Rendimiento](./docs/PERFORMANCE_OPTIMIZATION_REPORT.md) · [Especificaciones del Sistema](./docs/specs/) · [Guía de Despliegue VPS](./docs/DEPLOY_VPS.md)
 
 </div>
 
@@ -58,7 +58,7 @@
 
 ## 2. Demostraciones en Vivo (Flujos y Tiempos de Respuesta)
 
-> 💡 _¿Quieres ver el desglose visual interactivo y métricas adicionales? Visita la **[Sección Dedicada en mi Portafolio](https://portfolio-jesus-1205s-projects.vercel.app/projects/yanesu-shisutemu)**._
+> 💡 _¿Quieres ver el desglose visual interactivo y métricas adicionales? Visita la **[Sección Dedicada en mi Portafolio](https://jesus-blanco.pages.dev/projects/yanesu-shisutemu)**._
 
 ### A. Vistas Principales en Producción
 
@@ -422,6 +422,6 @@ Este proyecto se distribuye bajo la licencia **MIT** (consulta el archivo [`LICE
 
 > **¿Interesado en implementar este sistema en tu negocio, desplegarlo en un VPS privado o contratar soporte y desarrollo a medida?**
 >
-> - 🌐 **Portafolio & Caso de Estudio:** [portfolio-jesus-1205s-projects.vercel.app/](https://portfolio-jesus-1205s-projects.vercel.app/)
-> - 💼 **LinkedIn:** [linkedin.com/in/jesus-enrique-blanco](https://www.linkedin.com/in/jesus-enrique-blanco/)
+> - 🌐 **Portafolio Web:** [jesus-blanco.pages.dev](https://jesus-blanco.pages.dev)
+> - 💼 **LinkedIn:** [Jesús Enrique Blanco](https://www.linkedin.com/in/jesus-enrique-blanco)
 > - 🐙 **GitHub:** [@jesus-1205](https://github.com/jesus-1205)
