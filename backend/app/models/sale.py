@@ -4,10 +4,10 @@ from decimal import Decimal
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Computed,
     DateTime,
     DECIMAL,
     Enum as SAEnum,
+    event,
     ForeignKey,
     func,
     Index,
@@ -36,27 +36,12 @@ class Sale(Base):
     monto_exento_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
     base_imponible_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
     monto_iva_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
-    total_usd: Mapped[Decimal] = mapped_column(
-        DECIMAL(12, 2),
-        Computed("monto_exento_usd + base_imponible_usd + monto_iva_usd", persisted=True),
-    )
+    total_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
 
-    monto_exento_ves: Mapped[Decimal] = mapped_column(
-        DECIMAL(14, 2),
-        Computed("ROUND(monto_exento_usd * tasa_bcv_aplicada, 2)", persisted=True),
-    )
-    base_imponible_ves: Mapped[Decimal] = mapped_column(
-        DECIMAL(14, 2),
-        Computed("ROUND(base_imponible_usd * tasa_bcv_aplicada, 2)", persisted=True),
-    )
-    monto_iva_ves: Mapped[Decimal] = mapped_column(
-        DECIMAL(14, 2),
-        Computed("ROUND(monto_iva_usd * tasa_bcv_aplicada, 2)", persisted=True),
-    )
-    total_ves: Mapped[Decimal] = mapped_column(
-        DECIMAL(14, 2),
-        Computed("ROUND((monto_exento_usd + base_imponible_usd + monto_iva_usd) * tasa_bcv_aplicada, 2)", persisted=True),
-    )
+    monto_exento_ves: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=Decimal("0.00"))
+    base_imponible_ves: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=Decimal("0.00"))
+    monto_iva_ves: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=Decimal("0.00"))
+    total_ves: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=Decimal("0.00"))
 
     __table_args__ = (
         Index("idx_fecha_venta", "fecha_venta"),
@@ -95,10 +80,7 @@ class SaleItem(Base):
     cantidad: Mapped[int] = mapped_column(Integer, nullable=False)
     unidades_descontadas: Mapped[int] = mapped_column(Integer, nullable=False)
     precio_unitario_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
-    subtotal_usd: Mapped[Decimal] = mapped_column(
-        DECIMAL(12, 2),
-        Computed("ROUND(cantidad * precio_unitario_usd, 2)", persisted=True),
-    )
+    subtotal_usd: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=Decimal("0.00"))
     iva_porcentaje: Mapped[Decimal] = mapped_column(DECIMAL(5, 2), nullable=False, default=Decimal("16.00"))
     usa_precio_divisas: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     combo_id: Mapped[int | None] = mapped_column(
@@ -129,3 +111,30 @@ Sale.items_count = column_property(
     .correlate_except(SaleItem)
     .scalar_subquery()
 )
+
+
+@event.listens_for(SaleItem, "before_insert")
+def _calculate_sale_item_subtotal(mapper, connection, target):
+    if not target.subtotal_usd or target.subtotal_usd == Decimal("0.00"):
+        if target.cantidad and target.precio_unitario_usd:
+            target.subtotal_usd = (Decimal(str(target.cantidad)) * Decimal(str(target.precio_unitario_usd))).quantize(Decimal("0.01"))
+
+
+@event.listens_for(Sale, "before_insert")
+def _calculate_sale_totals(mapper, connection, target):
+    exento = Decimal(str(target.monto_exento_usd)) if target.monto_exento_usd is not None else Decimal("0.00")
+    base = Decimal(str(target.base_imponible_usd)) if target.base_imponible_usd is not None else Decimal("0.00")
+    iva = Decimal(str(target.monto_iva_usd)) if target.monto_iva_usd is not None else Decimal("0.00")
+    tasa = Decimal(str(target.tasa_bcv_aplicada)) if target.tasa_bcv_aplicada is not None else Decimal("1.0000")
+
+    if not target.total_usd or target.total_usd == Decimal("0.00"):
+        target.total_usd = (exento + base + iva).quantize(Decimal("0.01"))
+    if not target.monto_exento_ves or target.monto_exento_ves == Decimal("0.00"):
+        target.monto_exento_ves = (exento * tasa).quantize(Decimal("0.01"))
+    if not target.base_imponible_ves or target.base_imponible_ves == Decimal("0.00"):
+        target.base_imponible_ves = (base * tasa).quantize(Decimal("0.01"))
+    if not target.monto_iva_ves or target.monto_iva_ves == Decimal("0.00"):
+        target.monto_iva_ves = (iva * tasa).quantize(Decimal("0.01"))
+    if not target.total_ves or target.total_ves == Decimal("0.00"):
+        target.total_ves = (target.total_usd * tasa).quantize(Decimal("0.01"))
+
