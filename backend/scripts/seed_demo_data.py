@@ -730,12 +730,14 @@ def seed_sales(
                 item_bases.append(base_item)
                 item_ivas.append(iva_item)
 
+                subtotal_item = (Decimal(str(cantidad)) * precio_unitario_usd).quantize(Decimal("0.01"))
                 sale_item = SaleItem(
                     producto_id=prod.id,
                     tipo_empaque=tipo_empaque,
                     cantidad=cantidad,
                     unidades_descontadas=unidades_descontadas,
                     precio_unitario_usd=precio_unitario_usd,
+                    subtotal_usd=subtotal_item,
                     iva_porcentaje=iva_porcentaje,
                     usa_precio_divisas=False,
                 )
@@ -745,6 +747,7 @@ def seed_sales(
             base_imponible_usd = sum(item_bases, Decimal("0.00"))
             monto_iva_usd = sum(item_ivas, Decimal("0.00"))
             total_usd = (monto_exento_usd + base_imponible_usd + monto_iva_usd).quantize(Decimal("0.01"))
+            total_ves = (total_usd * tasa_bcv).quantize(Decimal("0.01"))
 
             sale = Sale(
                 fecha_venta=fecha_venta,
@@ -755,6 +758,11 @@ def seed_sales(
                 monto_exento_usd=monto_exento_usd,
                 base_imponible_usd=base_imponible_usd,
                 monto_iva_usd=monto_iva_usd,
+                total_usd=total_usd,
+                total_ves=total_ves,
+                monto_exento_ves=(monto_exento_usd * tasa_bcv).quantize(Decimal("0.01")),
+                base_imponible_ves=(base_imponible_usd * tasa_bcv).quantize(Decimal("0.01")),
+                monto_iva_ves=(monto_iva_usd * tasa_bcv).quantize(Decimal("0.01")),
             )
             sale.items = sale_items
 
