@@ -24,7 +24,7 @@ if sys.stderr is None:
 from app.core.config import get_db_path
 from app.core.database import SessionLocal
 from app.core.first_run import initialize_database
-from app.core.logging_setup import ensure_logging
+from app.core.logging_setup import ensure_logging, write_emergency_crash_log
 from app.core.port_manager import find_free_port, save_port_info
 from app.main import app
 
@@ -61,34 +61,39 @@ def run_migrations():
 
     try:
         command.upgrade(alembic_cfg, "head")
-    except Exception:
+    except Exception as exc:
         logger.exception("Fallo en migraciones de Alembic")
+        write_emergency_crash_log(exc)
         sys.exit(1)
 
 
 def main():
-    ensure_logging()
-    logger = logging.getLogger(__name__)
+    try:
+        ensure_logging()
+        logger = logging.getLogger(__name__)
 
-    run_migrations()
+        run_migrations()
 
-    db = SessionLocal()
-    needs_setup = initialize_database(db)
-    db.close()
+        db = SessionLocal()
+        needs_setup = initialize_database(db)
+        db.close()
 
-    port = find_free_port(8000, 8010)
-    save_port_info(port)
+        port = find_free_port(8000, 8010)
+        save_port_info(port)
 
-    setup_frontend()
+        setup_frontend()
 
-    import uvicorn
+        import uvicorn
 
-    logger.info("Yanesu Shisutemu iniciado en http://127.0.0.1:%s", port)
-    logger.info("Base de datos: %s", get_db_path())
-    if needs_setup:
-        logger.info("Primera ejecución: crea el usuario administrador desde la app.")
+        logger.info("Yanesu Shisutemu iniciado en http://127.0.0.1:%s", port)
+        logger.info("Base de datos: %s", get_db_path())
+        if needs_setup:
+            logger.info("Primera ejecución: crea el usuario administrador desde la app.")
 
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
+        uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
+    except BaseException as exc:
+        write_emergency_crash_log(exc)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

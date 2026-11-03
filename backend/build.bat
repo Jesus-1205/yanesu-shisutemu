@@ -99,10 +99,56 @@ if !errorlevel! neq 0 (
     for /f "tokens=*" %%v in ('cargo --version 2^>nul') do echo [OK] %%v
 )
 
+where link >nul 2>&1
+if !errorlevel! equ 0 (
+    echo [OK] MSVC linker link.exe detectado
+) else (
+    set "VSWHERE_PATH=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+    set "VCVARSALL="
+    if exist "!VSWHERE_PATH!" (
+        for /f "usebackq tokens=*" %%i in (`"!VSWHERE_PATH!" -latest -products * -property installationPath 2^>nul`) do (
+            if exist "%%i\VC\Auxiliary\Build\vcvarsall.bat" (
+                set "VCVARSALL=%%i\VC\Auxiliary\Build\vcvarsall.bat"
+            )
+        )
+    )
+    if not "!VCVARSALL!"=="" (
+        echo [INFO] Inicializando entorno MSVC x64 desde !VCVARSALL!
+        call "!VCVARSALL!" x64 >nul 2>&1
+        where link >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo [OK] MSVC x64 inicializado exitosamente
+        ) else (
+            echo [WARN] vcvarsall.bat se ejecuto pero link.exe no quedo disponible
+        )
+    ) else (
+        echo [ERROR] link.exe no encontrado y no se pudo localizar Visual Studio Build Tools.
+        echo         Para instalar las herramientas requeridas, ejecuta en PowerShell Administrador:
+        echo         winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+        set "HAS_ERROR=1"
+    )
+)
+
 if "!HAS_ERROR!"=="1" (
     echo.
     echo [ERROR] Faltan herramientas requeridas. Abortando build.
     goto :fail
+)
+
+if "%1"=="--help" (
+    echo.
+    echo Uso: build.bat [--clean] [--check] [--help]
+    echo.
+    echo Opciones:
+    echo   --clean  Limpia artefactos anteriores antes de construir
+    echo   --check  Verifica herramientas requeridas y finaliza
+    echo   --help   Muestra esta ayuda
+    goto :end
+)
+if "%1"=="--check" (
+    echo.
+    echo [OK] Verificacion de herramientas completada exitosamente.
+    goto :end
 )
 
 REM ============================================================
