@@ -170,12 +170,14 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
             unidades = item_data.cantidad
 
         iva_rate = _iva_rate_for(item_data, product)
+        subtotal_item = (Decimal(str(item_data.cantidad)) * item_data.precio_unitario_usd).quantize(Decimal("0.01"))
         items.append(SaleItem(
             producto_id=item_data.producto_id,
             tipo_empaque=item_data.tipo_empaque,
             cantidad=item_data.cantidad,
             unidades_descontadas=unidades,
             precio_unitario_usd=item_data.precio_unitario_usd,
+            subtotal_usd=subtotal_item,
             iva_porcentaje=iva_rate,
             usa_precio_divisas=item_data.usa_precio_divisas,
             combo_id=item_data.combo_id,
@@ -303,6 +305,10 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
         )
 
     total_usd = (exento + base + iva).quantize(Decimal("0.01"))
+    total_ves = (total_usd * data.tasa_bcv_aplicada).quantize(Decimal("0.01"))
+    monto_exento_ves = (exento * data.tasa_bcv_aplicada).quantize(Decimal("0.01"))
+    base_imponible_ves = (base * data.tasa_bcv_aplicada).quantize(Decimal("0.01"))
+    monto_iva_ves = (iva * data.tasa_bcv_aplicada).quantize(Decimal("0.01"))
 
     # ── Cobertura de pagos: el cobro debe cubrir el total de la venta ──
     total_pagado_usd = Decimal("0")
@@ -324,6 +330,11 @@ def create_sale(db: Session, data: SaleCreate, usuario_id: int) -> Sale:
         monto_exento_usd=exento,
         base_imponible_usd=base,
         monto_iva_usd=iva,
+        total_usd=total_usd,
+        total_ves=total_ves,
+        monto_exento_ves=monto_exento_ves,
+        base_imponible_ves=base_imponible_ves,
+        monto_iva_ves=monto_iva_ves,
         items=items,
         payments=pagos,
     )
