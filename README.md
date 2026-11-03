@@ -214,7 +214,7 @@ graph TB
 - **`routes/` (19 Routers REST):** Controladores delgados exclusivamente dedicados a validación de transporte HTTP, códigos de estado, aplicación de RBAC (`ADMINISTRADOR` / `OPERADOR`) y disparo de auditoría. **Prohibido ejecutar `db.commit()` o lógica de inventario en esta capa.**
 - **`services/` (Orquestación de Dominio):** Reglas de negocio puras, transacciones ACID atómicas, desempaque de cajas, validación financiera `Decimal` y comunicación con servicios externos.
 - **`schemas/` (Pydantic v2):** Contratos estrictos de entrada/salida con `ConfigDict(from_attributes=True, str_strip_whitespace=True)` y ocultamiento de hashes/secretos.
-- **`models/` (SQLAlchemy 2.0):** **30 tablas relacionales** tipadas con `Mapped[T]`, `mapped_column()`, columnas calculadas persistidas (`Computed`) y políticas explícitas `ondelete="RESTRICT"` / `"CASCADE"`.
+- **`models/` (SQLAlchemy 2.0):** **30 tablas relacionales** tipadas con `Mapped[T]`, `mapped_column()`, columnas DECIMAL con defaults explícitos y políticas explícitas `ondelete="RESTRICT"` / `"CASCADE"`.
 
 ### Diseño Modular en Frontend (`frontend/src/`)
 
