@@ -40,9 +40,10 @@
 5. [Pilares Técnicos y Decisiones de Diseño](#5-pilares-técnicos-y-decisiones-de-diseño)
 6. [Estrategia de Calidad: 2.662 Pruebas Automatizadas](#6-estrategia-de-calidad-2662-pruebas-automatizadas)
 7. [Stack Tecnológico](#7-stack-tecnológico)
-8. [Instalación, Ejecución y Despliegue](#8-instalación-ejecución-y-despliegue)
-9. [Índice de Documentación Técnica Profunda](#9-índice-de-documentación-técnica-profunda)
-10. [Licencia y Servicios Profesionales](#10-licencia-y-servicios-profesionales)
+8. [Descarga e Instalación Desktop](#8-descarga-e-instalación-desktop)
+9. [Instalación, Ejecución y Despliegue (Desarrollo / Cloud)](#9-instalación-ejecución-y-despliegue-desarrollo--cloud)
+10. [Índice de Documentación Técnica Profunda](#10-índice-de-documentación-técnica-profunda)
+11. [Licencia y Servicios Profesionales](#11-licencia-y-servicios-profesionales)
 
 ---
 
@@ -317,7 +318,19 @@ python backend/scripts/benchmark_suite.py --in-process --mode post -n 30 -c 5
 
 ---
 
-## 8. Instalación, Ejecución y Despliegue
+---
+
+## 8. Descarga e Instalación Desktop
+
+Para utilizar la versión de escritorio nativa en Windows sin necesidad de clonar el código ni compilar entornos:
+
+1. Dirígete a la sección de [Releases de GitHub](https://github.com/Jesus-1205/yanesu-shisutemu/releases/latest).
+2. Descarga el instalador ejecutable más reciente (`Yanesu Shisutemu_1.0.0_x64-setup.exe`).
+3. Ejecuta el archivo e instala la suite localmente (gestiona automáticamente la base de datos SQLite y el backend empaquetado).
+
+---
+
+## 9. Instalación, Ejecución y Despliegue (Desarrollo / Cloud)
 
 ### Opción A: Despliegue Completo con Docker Compose (Recomendado para VPS / Producción)
 
@@ -397,7 +410,7 @@ docker compose exec backend python -m scripts.seed_demo_data
 
 ---
 
-## 9. Índice de Documentación Técnica Profunda
+## 10. Índice de Documentación Técnica Profunda
 
 Para arquitectos de software y desarrolladores que deseen inspeccionar el diseño interno del sistema, el repositorio incluye especificaciones técnicas verificadas contra el código fuente:
 
@@ -416,7 +429,7 @@ Para arquitectos de software y desarrolladores que deseen inspeccionar el diseñ
 
 ---
 
-## 10. Licencia y Servicios Profesionales
+## 11. Licencia y Servicios Profesionales
 
 Este proyecto se distribuye bajo la licencia **MIT** (consulta el archivo [`LICENSE`](./LICENSE) para más detalles). El código fuente es público con fines de auditoría técnica, portafolio de ingeniería y uso comunitario.
 
